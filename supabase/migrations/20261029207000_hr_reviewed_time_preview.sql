@@ -51,3 +51,28 @@ REVOKE ALL ON FUNCTION public.hr_reviewed_attendance_punches(
  uuid,uuid,timestamptz,timestamptz) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.hr_reviewed_attendance_punches(
  uuid,uuid,timestamptz,timestamptz) TO service_role;
+
+
+-- Station-local business days: e.g. 00:30 Bangkok is in the previous UTC day.
+CREATE OR REPLACE FUNCTION public.hr_reviewed_attendance_punches_local(
+ p_actor_id uuid,p_employee_id uuid,p_start_date date,p_end_date date
+) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $fn$
+DECLARE v_timezone text;
+BEGIN
+ IF p_start_date IS NULL OR p_end_date IS NULL OR
+    p_end_date<=p_start_date OR p_end_date>p_start_date+35
+ THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ SELECT st.timezone INTO v_timezone
+ FROM public.employees e JOIN public.stations st ON st.id=e.station_id
+ WHERE e.id=p_employee_id;
+ IF NOT FOUND OR v_timezone IS NULL OR v_timezone=''
+ THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ RETURN public.hr_reviewed_attendance_punches(p_actor_id,p_employee_id,
+   p_start_date::timestamp AT TIME ZONE v_timezone,
+   p_end_date::timestamp AT TIME ZONE v_timezone);
+END $fn$;
+REVOKE ALL ON FUNCTION public.hr_reviewed_attendance_punches_local(
+ uuid,uuid,date,date) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.hr_reviewed_attendance_punches_local(
+ uuid,uuid,date,date) TO service_role;

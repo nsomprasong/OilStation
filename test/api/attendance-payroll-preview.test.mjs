@@ -4,8 +4,8 @@ import {createAttendancePayrollPreviewApi} from '../../src/api/attendance-payrol
 const ACTOR='11111111-1111-4111-8111-111111111111',
  EMPLOYEE='22222222-2222-4222-8222-222222222222',
  BASE='https://oilstation.goldensoft.cloud/api/hr/attendance/payroll-preview';
-const from='2026-10-01T00:00:00Z',until='2026-10-02T00:00:00Z';
-const url=BASE+'?employeeId='+EMPLOYEE+'&from='+from+'&until='+until;
+const startDate='2026-10-01',endDate='2026-10-02';
+const url=BASE+'?employeeId='+EMPLOYEE+'&startDate='+startDate+'&endDate='+endDate;
 const reviewed=[{
  id:'33333333-3333-4333-8333-333333333333',eventType:'clock_in',
  occurredAt:'2026-10-01T08:00:59+07:00',reviewStatus:'accepted'},
@@ -21,14 +21,14 @@ test('manager preview gives conservative rounded time and cannot pay salaries',a
  const a=app(),r=await a.handle(new Request(url,{headers:{authorization:'Bearer good'}}));
  assert.equal(r.status,200);
  assert.deepEqual((await r.json()).workedMinutes,59);
- assert.deepEqual(a.calls,[{actorId:ACTOR,employeeId:EMPLOYEE,from,until}]);
+ assert.deepEqual(a.calls,[{actorId:ACTOR,employeeId:EMPLOYEE,startDate,endDate}]);
 });
 test('arbitrary user, date and extra role hints cannot bypass server review',async()=>{
  const a=app();
  assert.equal((await a.handle(new Request(url))).status,401);
  assert.equal((await a.handle(new Request(url.replace(EMPLOYEE,'bad'),{
    headers:{authorization:'Bearer good'}}))).status,400);
- assert.equal((await a.handle(new Request(url.replace(until,'2027-12-30T00:00:00Z'),{
+ assert.equal((await a.handle(new Request(url.replace(endDate,'2027-12-30'),{
    headers:{authorization:'Bearer good'}}))).status,400);
  assert.equal(a.calls.length,0);
 });
