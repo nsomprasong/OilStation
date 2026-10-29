@@ -41,7 +41,12 @@ BEGIN
     'billingGroupId',i.billing_group_id,'amountSatang',i.total_satang,
     'paymentMethod',i.pricing_snapshot->>'paymentMethod',
     'serviceStart',i.pricing_snapshot->>'serviceStart',
-    'serviceEnd',i.pricing_snapshot->>'serviceEnd')
+    'serviceEnd',i.pricing_snapshot->>'serviceEnd',
+    'lines',(SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'lineId',l.id,'stationId',l.station_id,'moduleCode',l.module_code,
+      'amountSatang',l.amount_satang,'discountSatang',l.discount_satang)
+       ORDER BY l.id),'[]'::jsonb)
+      FROM public.saas_invoice_lines l WHERE l.invoice_id=i.id))
       ORDER BY i.created_at DESC)
     FROM(SELECT * FROM public.saas_invoices ORDER BY created_at DESC LIMIT 60) i),'[]'::jsonb)
  );

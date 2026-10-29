@@ -19,3 +19,12 @@ test('drafting uses only group, service window and payment method: no client amo
  assert.match(src,/organizationId:d\.get\('organizationId'\)/);
  assert.doesNotMatch(src,/stripe\.confirmPayment/);
 });
+
+
+test('paid invoice commission button reads preview only, never issues payout',()=>{
+ const src=readFileSync(new URL('../../src/client/platform-saas-billing.js',import.meta.url),'utf8');
+ assert.match(src,/api\/platform\/billing\/commission-preview/);
+ assert.match(src,/invoice\.status==='paid'/);
+ assert.match(src,/ยังไม่ได้ลงบัญชีหรืออนุมัติจ่าย/);
+ assert.doesNotMatch(src,/api\/platform\/billing\/commission\/payout/);
+});

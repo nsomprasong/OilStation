@@ -105,6 +105,33 @@ export function mountPlatformSaasBilling({target,token}){
    const card=elem('article');card.className='billing-invoice-card';
    card.append(elem('strong',invoice.number+' · '+String(invoice.amountSatang)+' สตางค์'),
      elem('p',invoice.status+' · '+invoice.serviceStart+' ถึง '+invoice.serviceEnd));
+   if(invoice.status==='paid'){
+    const heading=elem('p','ประเมินค่าคอมมิชชันจากรายการที่รับชำระแล้ว (แสดงข้อมูลเท่านั้น)');
+    card.append(heading);
+    for(const line of invoice.lines||[]){
+     const button=elem('button','ดูประมาณการ Sales: '+(line.moduleCode||'')+' · '+line.stationId.slice(0,8));
+     button.type='button';button.className='button secondary';
+     const preview=elem('p');preview.setAttribute('role','status');
+     card.append(button,preview);
+     button.addEventListener('click',async()=>{
+      button.disabled=true;preview.textContent='กำลังตรวจสิทธิ์และช่วงเวลา Sales…';
+      try{
+       const res=await fetch('/api/platform/billing/commission-preview?invoiceLineId='+
+         encodeURIComponent(line.lineId),{
+           cache:'no-store',headers:{authorization:'Bearer '+token},
+         });
+       if(!res.ok)throw new Error('preview_unavailable');
+       const data=(await res.json()).preview;
+       const items=(data.allocations||[]).map(x=>
+         x.salesId.slice(0,8)+': '+x.proposedSatang+' สตางค์').join(' | ');
+       preview.textContent='คอมมิชชันประมาณการ '+data.totalProposedSatang+
+         ' สตางค์ · '+items+' · ยังไม่ได้ลงบัญชีหรืออนุมัติจ่าย';
+      }catch{
+       preview.textContent='ประเมินไม่ได้ ต้องตรวจ Sales assignment, กฎค่าคอม และยอดรับชำระ';
+      }finally{button.disabled=false;}
+     });
+    }
+   }
    if(invoice.status==='draft'){
     const label=elem('label');label.className='saas-review-check';
     const checkbox=elem('input');checkbox.type='checkbox';
