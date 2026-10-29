@@ -13,7 +13,7 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/hr/roster': 'GET', '/api/hr/employees': 'POST',
   '/api/hr/seed-shifts': 'POST', '/api/hr/assign-shift': 'POST',
   '/api/hr/request-substitute': 'POST', '/api/hr/review-substitute': 'POST',
-  '/api/hr/pending-substitutes': 'GET' };
+  '/api/hr/pending-substitutes': 'GET', '/api/station/scan-qr': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -187,6 +187,21 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           return fail(403,'permission_denied');
         }
         return json(200,{requests: await db.pendingCorporateLinks(user.id)});
+      }
+      if (path === '/api/station/scan-qr') {
+        if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
+          return fail(415,'unsupported_media_type');
+        }
+        const body = await readBody(request);
+        if (typeof body?.qrPayload !== 'string'
+          || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[0-9a-f]{64}$/i.test(body.qrPayload)) {
+          return fail(400,'invalid_qr');
+        }
+        const operator=active.some(m => m.scope_type==='station' &&
+          ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role_code)
+          || (m.scope_type==='organization' && ['organization_owner','owner'].includes(m.role_code)));
+        if (!operator) return fail(403,'permission_denied');
+        return json(200,{coupon:await db.inspectQr(user.id,body.qrPayload)});
       }
       if (path === '/api/station/invite-first-admin') {
         if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
