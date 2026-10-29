@@ -11,7 +11,7 @@ BEGIN
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  SELECT * INTO i FROM public.fuel_evidence_intake WHERE evidence_id=e.id;
  SELECT * INTO s FROM public.fuel_sessions WHERE id=e.session_id;
- IF NOT FOUND OR i.review_status<>'pending' OR s.status<>'fueling'
+ IF i.evidence_id IS NULL OR s.id IS NULL OR i.review_status<>'pending' OR s.status<>'fueling'
   OR NOT EXISTS(SELECT 1 FROM storage.objects o
    WHERE o.bucket_id='oilstation-evidence' AND o.name=e.storage_path)
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
@@ -31,7 +31,7 @@ BEGIN
  SELECT * INTO i FROM public.fuel_evidence_intake
   WHERE evidence_id=e.id FOR UPDATE;
  PERFORM public.authorize_fuel_photo_upload(p_actor_id,e.session_id,e.kind);
- IF NOT FOUND OR i.review_status<>'pending'
+ IF i.evidence_id IS NULL OR i.review_status<>'pending'
   OR (p_liters IS NOT NULL AND (e.kind<>'pump_display'
        OR p_liters !~ '^[0-9]{1,7}\.[0-9]{3}$'))
   OR (p_gross_satang IS NOT NULL AND p_gross_satang !~ '^[0-9]{1,12}$')

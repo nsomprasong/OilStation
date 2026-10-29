@@ -22,7 +22,8 @@ async function fetchJson(url, init) {
       'PRODUCT_NOT_AVAILABLE', 'IDEMPOTENCY_CONFLICT', 'ACCOUNT_NOT_FOUND',
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
-      'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH']);
+      'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH',
+      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
@@ -30,7 +31,8 @@ async function fetchJson(url, init) {
         detail.message === 'FORBIDDEN' ? 'FORBIDDEN' :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
-        ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH'].includes(detail.message) ? detail.message :
+        ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
+         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED'].includes(detail.message) ? detail.message :
         'INVALID_REQUEST';
     }
     throw err;
@@ -84,6 +86,29 @@ export function createSupabaseAdapter(env) {
         body:JSON.stringify({p_event_id:d.eventId,p_event_type:d.eventType,
           p_payload_hash:d.hash,p_livemode:d.livemode}),
       }),
+      fuelReviewInbox: async d=>serviceRequest(env,
+        '/rest/v1/rpc/fuel_photo_review_inbox',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+        }),
+      fuelReviewPhotoAccess: async d=>serviceRequest(env,
+        '/rest/v1/rpc/fuel_review_photo_access',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_evidence_id:d.evidenceId}),
+        }),
+      reviewFuelPhoto: async d=>serviceRequest(env,
+        '/rest/v1/rpc/review_fuel_evidence_photo',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_evidence_id:d.evidenceId,
+            p_approved:d.approved,p_liters:d.liters,p_gross_satang:d.grossSatang}),
+        }),
+      finishReviewedFueling: async d=>serviceRequest(env,
+        '/rest/v1/rpc/complete_reviewed_fuel_session',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_session_id:d.sessionId,
+            p_pump_evidence_id:d.pumpEvidenceId,
+            p_receipt_evidence_id:d.receiptEvidenceId}),
+        }),
       fuelOcrContext: async d=>serviceRequest(env,
         '/rest/v1/rpc/fuel_photo_ocr_context',{
           method:'POST',headers:{'content-type':'application/json'},

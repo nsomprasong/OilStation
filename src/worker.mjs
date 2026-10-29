@@ -1,4 +1,5 @@
 import { createApi } from './api/router.mjs';
+import { createFuelReviewApi } from './api/fuel-review.mjs';
 import { createFuelOcrApi } from './api/fuel-ocr.mjs';
 import { createFuelPhotoApi } from './api/fuel-photo.mjs';
 import { createFuelStartApi } from './api/fuel-start.mjs';
@@ -32,6 +33,10 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if (['/api/evidence/fuel/reviews','/api/evidence/fuel/photo',
+             '/api/evidence/fuel/review','/api/fuel/finish'].includes(url.pathname)) {
+          return createFuelReviewApi(deps)(request);
+        }
         if (url.pathname === '/api/evidence/fuel/ocr') {
           return createFuelOcrApi({...deps,
             recognize:createGoogleVisionRecognizer(env.GOOGLE_VISION_API_KEY)})(request);
