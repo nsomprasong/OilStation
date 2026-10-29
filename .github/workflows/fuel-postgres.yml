@@ -1,0 +1,48 @@
+name: Fuel SQL Integration (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  fuel-postgresql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_fuel_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_fuel_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute fuel migrations and financial ledger assertions on disposable PostgreSQL
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_fuel_test
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/fuel-fixture.sql
+              for migration in \
+                20261029120000_coupon_reserved_atomic.sql \
+                20261029121000_fuel_session_settlement.sql \
+                20261029155000_expire_coupon_holds.sql \
+                20261029160500_private_evidence_gate.sql \
+                20261029161000_fail_closed_fuel_start.sql \
+                20261029185000_verified_fuel_start_api.sql \
+                20261029190000_fuel_photo_intake.sql \
+                20261029192000_supervisor_fuel_settlement.sql \
+                20261029208000_fuel_private_finance_gate.sql
+              do
+                psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
+              done
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/fuel-assertions.sql
+            '
