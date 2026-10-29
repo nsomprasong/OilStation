@@ -234,6 +234,52 @@ async function corporateWorkspace(accessToken) {
 }
 
 
+function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
+  const wrapper=document.createElement('div');
+  wrapper.className='invite-control';
+  const toggle=document.createElement('button');
+  toggle.className='button secondary';toggle.type='button';toggle.textContent='เชิญสมาชิก';
+  const box=document.createElement('form');
+  box.className='invite-form';box.hidden=true;
+  const email=document.createElement('input');
+  email.type='email';email.required=true;email.placeholder='อีเมลผู้รับคำเชิญ';
+  email.setAttribute('aria-label','อีเมลผู้รับคำเชิญ');
+  const roles=document.createElement('select');
+  roles.setAttribute('aria-label','สิทธิ์ที่จะเชิญ');
+  for(const [code,label] of roleChoices){
+    const opt=document.createElement('option');opt.value=code;opt.textContent=label;roles.appendChild(opt);
+  }
+  const submit=document.createElement('button');
+  submit.type='submit';submit.className='button primary';submit.textContent='สร้างคำเชิญ';
+  const status=document.createElement('small');status.setAttribute('role','status');
+  const link=document.createElement('input');link.readOnly=true;link.hidden=true;
+  link.setAttribute('aria-label','ลิงก์คำเชิญ');
+  const copy=document.createElement('button');
+  copy.className='button secondary';copy.type='button';copy.textContent='คัดลอกลิงก์';copy.hidden=true;
+  toggle.addEventListener('click',()=>{box.hidden=!box.hidden;});
+  copy.addEventListener('click',async()=>{
+    try {await navigator.clipboard.writeText(link.value);copy.textContent='คัดลอกแล้ว';}
+    catch {link.select();}
+  });
+  box.addEventListener('submit',async(event)=>{
+    event.preventDefault();submit.disabled=true;status.textContent='กำลังสร้างคำเชิญ…';
+    try{
+      const r=await getApi('/api/invitations/create',accessToken,{
+        method:'POST',body:JSON.stringify({
+          email:email.value.trim(),roleCode:roles.value,scopeType,scopeId,
+        }),
+      });
+      if(!r.ok){status.textContent='สร้างคำเชิญไม่สำเร็จ ('+responseError(r.data)+')';return;}
+      link.value=r.data.invitation.inviteUrl;link.hidden=false;copy.hidden=false;
+      status.textContent='สร้างลิงก์แล้ว คัดลอกและส่งให้ผู้รับผ่านอีเมล (ยังไม่ส่งอัตโนมัติ)';
+    }catch{status.textContent='เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ';}
+    finally{submit.disabled=false;}
+  });
+  box.append(email,roles,submit,status,link,copy);
+  wrapper.append(toggle,box);
+  return wrapper;
+}
+
 async function fuelPriceEditor(accessToken,stationId,target) {
   if (!target) return;
   target.replaceChildren();
@@ -333,7 +379,9 @@ async function platformWorkspace(accessToken) {
       manage.textContent='จัดการน้ำมัน';
       manage.addEventListener('click',()=>fuelPriceEditor(accessToken,s.id,el('fuel-editor'))
         .catch(()=>notice('เปิดจัดการน้ำมันไม่ได้',true)));
-      node.append(name,detail,manage);list.appendChild(node);
+      node.append(name,detail,manage,
+        createInviteControl(accessToken,'station',s.id,[['station_owner','เจ้าของปั๊ม']]));
+      list.appendChild(node);
     }
   }
   try {
@@ -385,6 +433,7 @@ function dashboard(data, session) {
      <div id="corporate-workspace"></div>
      <div id="platform-workspace"></div>
      <div id="station-fuel-workspace"></div>
+     <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout">ออกจากระบบ</button>
    </section>`);
@@ -411,6 +460,18 @@ function dashboard(data, session) {
   if(stationMember?.stationId) {
     fuelPriceEditor(session.access_token,stationMember.stationId,
       document.getElementById('station-fuel-workspace')).catch(()=>{});
+  }
+  const invites=document.getElementById('member-invites');
+  if (stationMember?.stationId) {
+    invites.appendChild(createInviteControl(session.access_token,'station',
+      stationMember.stationId,
+      [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม']]));
+  }
+  const corporateAdmin=memberships.find(m=>m.scopeType==='corporate_company' && m.role==='corporate_admin');
+  if (corporateAdmin?.corporateCompanyId) {
+    invites.appendChild(createInviteControl(session.access_token,'corporate_company',
+      corporateAdmin.corporateCompanyId,
+      [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']]));
   }
   if (memberships.some(m => m.scopeType==='corporate_company')) {
     corporateWorkspace(session.access_token).catch(() => {});
