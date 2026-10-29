@@ -1,0 +1,10 @@
+{
+  "snapshotDate": "2026-10-29",
+  "source": "Supabase public schema (read only)",
+  "tableCount": 65,
+  "columnCount": 552,
+  "constraintCount": 340,
+  "indexCount": 22,
+  "includesCustomerRows": false,
+  "notes": "Table columns, defaults, 340 constraints, non-constraint indexes, RLS flags; no live functions, auth/storage schema full definitions, row data or role grants."
+}
