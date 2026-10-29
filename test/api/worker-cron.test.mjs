@@ -4,6 +4,7 @@ import worker from '../../src/worker.mjs';
 
 test('scheduled coupon expiry invokes server-only RPC without public browser endpoint',async()=>{
  const env={
+  OILSTATION_API_ENABLED:'true',
   SUPABASE_URL:'https://cxihsotcpdnalswfoysx.supabase.co',
   SUPABASE_ANON_KEY:'test-anon',
   SUPABASE_SERVICE_ROLE_KEY:'test-server-only',

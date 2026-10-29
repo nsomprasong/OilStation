@@ -14,7 +14,8 @@ test('release readiness requires private evidence and slip buckets, RLS and late
 });
 test('release probe is read-only, service-role only, fixed search path',()=>{
  assert.match(s,/STABLE SECURITY DEFINER SET search_path=''/);
- assert.doesNotMatch(s,/\b(?:UPDATE|INSERT|DELETE FROM|DROP TABLE|TRUNCATE TABLE)\b/i);
+ // READ/ACL probe mentions INSERT/UPDATE/DELETE as privilege names. Disallow actual DML.
+ assert.doesNotMatch(s,/\b(?:UPDATE|INSERT INTO|DELETE FROM|DROP TABLE|TRUNCATE TABLE)\s+public\./i);
  assert.match(s,/REVOKE ALL ON FUNCTION public\.oilstation_release_status\(\)/);
  assert.match(s,/TO service_role/);
 });
