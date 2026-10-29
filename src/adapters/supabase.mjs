@@ -140,6 +140,34 @@ export function createSupabaseAdapter(env) {
             p_actor_id:d.actorId,p_station_id:d.stationId,p_company_id:d.companyId,
           }),
         }),
+      canUploadPlate: async d => serviceRequest(env,
+        '/rest/v1/rpc/authorize_station_plate_upload',{
+         method:'POST',headers:{'content-type':'application/json'},
+         body:JSON.stringify({
+           p_actor_id:d.actorId,p_station_id:d.stationId,p_coupon_id:d.couponId,
+         }),
+        }),
+      uploadPlate: async d => {
+        const ext=d.contentType==='image/jpeg'?'jpg':'png';
+        const path='stations/'+d.stationId+'/plate/'+d.couponId+'/'+crypto.randomUUID()+'.'+ext;
+        const response=await fetch(normalizeUrl(env,'/storage/v1/object/oilstation-evidence/'+path),{
+          method:'POST',
+          headers:headers(env.SUPABASE_SERVICE_ROLE_KEY,{
+            'content-type':d.contentType,'cache-control':'max-age=0','x-upsert':'false',
+          }),
+          body:d.bytes,signal:AbortSignal.timeout(15_000),
+        });
+        if(!response.ok)throw new Error('private_storage_failed');
+        return path;
+      },
+      recordPlate: async d => serviceRequest(env,
+        '/rest/v1/rpc/record_station_plate_photo',{
+         method:'POST',headers:{'content-type':'application/json'},
+         body:JSON.stringify({
+           p_actor_id:d.actorId,p_station_id:d.stationId,
+           p_coupon_id:d.couponId,p_photo_path:d.path,
+         }),
+        }),
       expireCoupons: async (limit=200) => serviceRequest(env,
         '/rest/v1/rpc/expire_reserved_coupons',{
           method:'POST',headers:{'content-type':'application/json'},
