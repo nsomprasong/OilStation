@@ -6,7 +6,7 @@ const SECRET=/^sk_test_[A-Za-z0-9_]{12,}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function createStripeTestPaymentIntents(secret,{fetchImpl=fetch}={}){
  if(typeof secret!=='string'||!SECRET.test(secret))throw new Error('test_mode_stripe_required');
- const send=async(path,init)=>{
+ const send=async(path,init={})=>{
   const res=await fetchImpl('https://api.stripe.com/v1/'+path,{...init,headers:{
    authorization:'Bearer '+secret,...(init.headers||{}),
   },signal:AbortSignal.timeout(12_000)});
