@@ -100,6 +100,7 @@ async function corporateWorkspace(accessToken) {
     <p class="lead" id="corp-help">กำลังโหลดบัญชี…</p>
     <div class="account-overview" id="account-overview"></div>
     <div id="company-link-inbox" class="module-list"></div>
+    <div id="company-bank-options" class="module-list" aria-live="polite"></div>
     <form id="coupon-form" class="coupon-form" hidden>
       <label class="field">เลือกปั๊มน้ำมัน <select required id="account-select"></select></label>
       <label class="field">ประเภทน้ำมัน <select required id="fuel-select"></select></label>
@@ -164,7 +165,7 @@ async function corporateWorkspace(accessToken) {
     });
     if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
     $('coupon-form').hidden = !accounts.some(a => a.couponModuleEnabled);
-    if (accounts.length) await reloadFuels();
+    if (accounts.length) { await reloadFuels(); await reloadBankOptions(); }
   }
   async function reloadFuels() {
     fuelSelect.replaceChildren();
@@ -186,7 +187,40 @@ async function corporateWorkspace(accessToken) {
     });
     $('coupon-submit').disabled = fuelSelect.options.length===0;
   }
-  accountSelect.addEventListener('change',() => { pendingIdempotencyKey=null;reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true)); });
+  async function reloadBankOptions() {
+    const view=$('company-bank-options');
+    view.replaceChildren();
+    const id=accountSelect.value;
+    if(!id)return;
+    const res=await getApi('/api/topup/banks?accountId='+encodeURIComponent(id),accessToken);
+    if(!res.ok)return;
+    const heading=document.createElement('div');heading.className='section-title';
+    heading.append(makeIcon('wallet'),document.createTextNode('บัญชีรับเงินของปั๊ม'));
+    view.appendChild(heading);
+    if(!res.data.banks?.length){
+      const message=document.createElement('p');
+      message.textContent='ปั๊มนี้ยังไม่ได้ตั้งค่าบัญชีธนาคารสำหรับรับเงิน';
+      view.appendChild(message);return;
+    }
+    for(const bank of res.data.banks){
+      const item=document.createElement('div');
+      item.className='module-item';
+      const line=document.createElement('strong');
+      line.textContent=bank.bankCode+' · '+bank.accountName;
+      const detail=document.createElement('p');detail.className='module-subtitle';
+      detail.textContent='บัญชี '+(bank.accountNumberMasked||'โปรดติดต่อปั๊มเพื่อขอเลขบัญชี');
+      item.append(line,detail);view.appendChild(item);
+    }
+    const note=document.createElement('p');
+    note.className='hint';
+    note.textContent='การโอนเงินและตรวจสลิปยังไม่เปิดใช้งาน: ยอดเงินจะไม่เพิ่มจนกว่าปั๊มยืนยันเงินเข้าธนาคาร';
+    view.appendChild(note);
+  }
+  accountSelect.addEventListener('change',() => {
+    pendingIdempotencyKey=null;
+    reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true));
+    reloadBankOptions().catch(()=>setNotice('โหลดบัญชีธนาคารไม่ได้',true));
+  });
   $('coupon-form').addEventListener('input',()=>{ pendingIdempotencyKey=null; pendingPayload=null; });
   $('coupon-form').addEventListener('submit',async event => {
     event.preventDefault();
