@@ -68,6 +68,12 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      hrRecordGps: async d=>serviceRequest(env,'/rest/v1/rpc/hr_record_gps_attendance',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+          p_event_type:d.eventType,p_latitude:d.latitude,p_longitude:d.longitude,
+          p_accuracy_m:d.accuracyMeters,p_idempotency_key:d.idempotencyKey}),
+      }),
       hrRequestOt: async d => serviceRequest(env,'/rest/v1/rpc/hr_request_overtime',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({

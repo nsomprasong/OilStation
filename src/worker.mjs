@@ -1,5 +1,6 @@
 import { createApi } from './api/router.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
+import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
 import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
@@ -25,6 +26,9 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if (url.pathname === '/api/hr/attendance/gps') {
+          return createGpsAttendanceApi(deps)(request);
+        }
         if (url.pathname === '/api/evidence/topup' || url.pathname === '/api/evidence/topup-slip') {
           return createTopupEvidenceApi(deps)(request);
         }
