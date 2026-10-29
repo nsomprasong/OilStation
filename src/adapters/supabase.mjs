@@ -68,6 +68,22 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      inviteFirstCorporateAdmin: async (d) => {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        const token = btoa(String.fromCharCode(...bytes))
+          .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+        const result = await serviceRequest(env, '/rest/v1/rpc/station_invite_first_corporate_admin',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_company_id:d.companyId,p_email:d.email,
+            p_token_hash:await digest(token),p_expires_at:d.expiresAt,
+          }),
+        });
+        return {...result,delivery:'manual',
+          inviteUrl:'https://oilstation.goldensoft.cloud/invite/'+token};
+      },
       createCorporateCustomer: async (d) => serviceRequest(env,
         '/rest/v1/rpc/station_create_corporate_customer',{
           method:'POST',headers:{'content-type':'application/json'},
