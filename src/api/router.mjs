@@ -99,11 +99,17 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
         }
         const body = await readBody(request);
         const email = body?.email?.trim().toLowerCase();
+        const allowedRoles = {
+          platform:['platform_sales','platform_support'],
+          organization:['organization_owner','organization_manager'],
+          station:['station_owner','manager','cashier','pump_staff','attendant'],
+          corporate_company:['corporate_admin','coupon_issuer','accountant','finance_manager','driver'],
+        };
         if (typeof email !== 'string' || email.length > 320
           || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)
           || typeof body.roleCode !== 'string'
           || !/^[a-z_]{3,40}$/.test(body.roleCode)
-          || !['platform','organization','station','corporate_company'].includes(body.scopeType)
+          || !allowedRoles[body.scopeType]?.includes(body.roleCode)
           || (body.scopeType !== 'platform' && !UUID.test(body.scopeId ?? ''))
           || (body.scopeType === 'platform' && body.scopeId)) {
           return fail(400, 'invalid_invitation');
