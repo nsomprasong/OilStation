@@ -16,7 +16,7 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/hr/pending-substitutes': 'GET', '/api/station/scan-qr': 'POST',
   '/api/hr/request-ot':'POST', '/api/hr/review-ot':'POST',
   '/api/hr/pending-ot':'GET', '/api/topup/banks':'GET',
-  '/api/topup/pending':'GET' };
+  '/api/topup/pending':'GET','/api/topup/review':'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -407,6 +407,25 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
         return json(200, { fuel: await db.configureFuel({
           actorId:user.id, stationId, stationFuelId:fuelId, enabled, publicPrice,
         }) });
+      }
+      if (path === '/api/topup/review') {
+        if (!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
+          return fail(415,'unsupported_media_type');
+        const body=await readBody(request);
+        if(!UUID.test(body?.requestId??'')||typeof body?.approved!=='boolean'
+          || (body.approved && (body.bankReceived!==true
+            || typeof body.bankReference!=='string'
+            || body.bankReference.trim().length<6
+            || body.bankReference.length>120)))
+          return fail(400,'invalid_topup_review');
+        if(!active.some(m=>m.scope_type==='station' &&
+          ['station_owner','owner','manager','cashier','finance_manager'].includes(m.role_code)))
+          return fail(403,'permission_denied');
+        return json(200,{result:await db.reviewTopup({
+          actorId:user.id,requestId:body.requestId,approved:body.approved,
+          bankReceived:body.approved ? true : false,
+          bankReference:body.approved ? body.bankReference.trim() : null,
+        })});
       }
       if (path === '/api/topup/banks') {
         const accountId=url.searchParams.get('accountId');
