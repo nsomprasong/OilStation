@@ -7,7 +7,8 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST',
   '/api/invitations/create': 'POST',
   '/api/station/customers': 'POST', '/api/station/link-company': 'POST',
-  '/api/corporate/approve-link': 'POST' };
+  '/api/corporate/approve-link': 'POST',
+  '/api/station/invite-first-admin': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -94,6 +95,27 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path === '/api/station/invite-first-admin') {
+        if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
+          return fail(415,'unsupported_media_type');
+        }
+        const body = await readBody(request);
+        if (!UUID.test(body?.stationId ?? '') || !UUID.test(body?.companyId ?? '')
+          || typeof body?.email !== 'string'
+          || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)
+          || body.email.length>320) return fail(400,'invalid_invitation');
+        const manager = active.some(m=>
+          (m.scope_type==='platform' && m.role_code==='platform_superadmin')
+          || (m.scope_type==='station' && m.station_id===body.stationId
+            && ['station_owner','owner'].includes(m.role_code))
+          || (m.scope_type==='organization' && ['organization_owner','owner'].includes(m.role_code)));
+        if (!manager) return fail(403,'permission_denied');
+        return json(201,{invitation:await db.inviteFirstCorporateAdmin({
+          actorId:user.id,stationId:body.stationId,companyId:body.companyId,
+          email:body.email.trim().toLowerCase(),
+          expiresAt:new Date(now().getTime()+7*86_400_000).toISOString(),
+        })});
       }
       if (path === '/api/station/customers' || path === '/api/station/link-company'
         || path === '/api/corporate/approve-link') {
