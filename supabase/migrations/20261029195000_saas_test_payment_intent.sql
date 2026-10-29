@@ -76,33 +76,11 @@ DECLARE a public.saas_payment_attempts%ROWTYPE;
  i public.saas_invoices%ROWTYPE;g public.billing_groups%ROWTYPE;
  v_invoice_id uuid;
 BEGIN
- IF p_payment_intent_id IS NULL OR p_payment_intent_id !~ '^pi_[A-Za-z0-9]{6,100}
- IF NOT EXISTS(SELECT 1 FROM public.memberships m WHERE m.user_id=p_actor_id
-   AND m.active AND ((m.scope_type='organization' AND m.organization_id=g.organization_id
-      AND m.role_code IN ('organization_owner','owner','manager','billing_manager'))
-   OR (m.scope_type='platform' AND m.role_code IN ('platform_superadmin'))))
- THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
- IF i.status NOT IN ('issued','pending','overdue') OR
-    a.amount_satang<>i.total_satang OR
-    a.status NOT IN ('created','requires_action','processing') OR
-    (a.stripe_payment_intent_id IS NOT NULL AND
-     a.stripe_payment_intent_id<>p_payment_intent_id)
+ IF p_payment_intent_id IS NULL OR p_payment_intent_id !~ '^pi_[A-Za-z0-9]{6,100}$'
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
- UPDATE public.saas_payment_attempts SET
-  stripe_payment_intent_id=p_payment_intent_id WHERE id=a.id;
- RETURN jsonb_build_object('paymentIntentId',p_payment_intent_id);
-END $fn$;
-REVOKE ALL ON FUNCTION public.prepare_saas_test_payment(uuid,uuid,text)
- FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.attach_saas_test_intent(uuid,uuid,text)
- FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.prepare_saas_test_payment(uuid,uuid,text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.attach_saas_test_intent(uuid,uuid,text) TO service_role;
-
- THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
- -- All payment writers acquire invoice -> attempt in the SAME order.
- -- prepare and Stripe reconciliation already lock invoice first. A prior
- -- attach attempt -> invoice order could deadlock with either operation.
+ -- Use the same lock order as prepare and signed-event reconciliation:
+ -- invoice first, payment attempt second. The initial lookup is unlocked
+ -- and the pair is revalidated after acquiring both locks.
  SELECT invoice_id INTO v_invoice_id FROM public.saas_payment_attempts
   WHERE id=p_attempt_id;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
@@ -112,14 +90,16 @@ GRANT EXECUTE ON FUNCTION public.attach_saas_test_intent(uuid,uuid,text) TO serv
   WHERE id=p_attempt_id AND invoice_id=i.id FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  SELECT * INTO g FROM public.billing_groups WHERE id=i.billing_group_id;
- IF NOT EXISTS(SELECT 1 FROM public.memberships m WHERE m.user_id=p_actor_id
+ IF NOT FOUND OR NOT EXISTS(SELECT 1 FROM public.memberships m WHERE m.user_id=p_actor_id
    AND m.active AND ((m.scope_type='organization' AND m.organization_id=g.organization_id
       AND m.role_code IN ('organization_owner','owner','manager','billing_manager'))
    OR (m.scope_type='platform' AND m.role_code IN ('platform_superadmin'))))
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
- IF a.status NOT IN ('created','requires_action','processing')
-   OR a.stripe_payment_intent_id IS NOT NULL AND
-     a.stripe_payment_intent_id<>p_payment_intent_id
+ IF i.status NOT IN ('issued','pending','overdue') OR
+    a.amount_satang<>i.total_satang OR
+    a.status NOT IN ('created','requires_action','processing') OR
+    (a.stripe_payment_intent_id IS NOT NULL AND
+     a.stripe_payment_intent_id<>p_payment_intent_id)
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  UPDATE public.saas_payment_attempts SET
   stripe_payment_intent_id=p_payment_intent_id WHERE id=a.id;
