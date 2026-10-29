@@ -2,7 +2,7 @@
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDKEY = /^[a-zA-Z0-9_-]{16,128}$/;
 const LIMIT_BYTES = 16_384;
-const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST' };
+const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -59,8 +59,9 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
   return async function handle(request) {
     const url = new URL(request.url);
     const path = url.pathname;
-    if (!(path in allowMethods)) return fail(404, 'not_found');
-    if (request.method !== allowMethods[path]) return fail(405, 'method_not_allowed');
+    const fuelPath = /^\/api\/my-accounts\/([0-9a-f-]{36})\/fuels$/i.exec(path);
+    if (!(path in allowMethods) && !fuelPath) return fail(404, 'not_found');
+    if (request.method !== (fuelPath ? 'GET' : allowMethods[path])) return fail(405, 'method_not_allowed');
     if (path === '/api/health') return json(200, { service: 'oilstation', status: 'ok' });
     if (request.method !== 'GET' && request.headers.get('origin') &&
       request.headers.get('origin') !== url.origin) return fail(403, 'origin_forbidden');
@@ -85,6 +86,17 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path === '/api/my-accounts') {
+        return json(200, { accounts: await db.corporateAccounts(user.id) });
+      }
+      if (fuelPath) {
+        const accountId = fuelPath[1];
+        if (!UUID.test(accountId)) return fail(404, 'not_found');
+        const account = await db.account(accountId);
+        if (!account) return fail(404, 'account_not_found');
+        if (!active.some(m => canIssue(m, account.company_id))) return fail(403, 'permission_denied');
+        return json(200, { fuels: await db.accountFuels(user.id, accountId) });
       }
       if (path === '/api/fuel-catalog') {
         const brand = url.searchParams.get('brand');
