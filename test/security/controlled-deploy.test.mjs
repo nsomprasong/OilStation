@@ -13,6 +13,7 @@ test('UAT Worker is distinct from production and has no scheduled money jobs',()
 });
 test('workflow is manual with pre-deployment production SQL and bindings gates',()=>{
  assert.match(wf,/workflow_dispatch:/);
+ assert.equal((wf.match(/npm install --ignore-scripts/g)||[]).length,2);
  assert.doesNotMatch(wf,/^\s+push:/m);
  assert.doesNotMatch(wf,/^\s+pull_request:/m);
  assert.match(wf,/APPROVED_OILSTATION_PRODUCTION_RELEASE/);
