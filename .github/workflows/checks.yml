@@ -24,3 +24,5 @@ jobs:
         run: npm test
       - name: Validate Cloudflare Worker bundle without deployment
         run: npx --yes wrangler@4 deploy --dry-run --outdir .wrangler-dry-run
+      - name: Validate isolated UAT Worker bundle and inherited asset binding
+        run: npx --yes wrangler@4 deploy --dry-run --env uat --outdir .wrangler-uat-dry-run
