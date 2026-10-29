@@ -28,7 +28,7 @@ BEGIN
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
  IF p_code IS NULL OR p_code !~ '^[a-z][a-z0-9_-]{2,39}$'
    OR p_name IS NULL OR char_length(btrim(p_name)) NOT BETWEEN 3 AND 120
-   OR p_frequency NOT IN ('monthly','annual')
+   OR p_frequency NOT IN ('monthly','yearly')
    OR p_coupon_price_satang NOT BETWEEN 0 AND 99999999
    OR p_hr_price_satang NOT BETWEEN 0 AND 99999999
    OR p_coupon_price_satang+p_hr_price_satang<1000
