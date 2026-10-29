@@ -1,3 +1,4 @@
+import { sendInvitationEmail } from '../notifications/invitation-email.mjs';
 /**
  * All privileged PostgREST operations run on the trusted Worker only.
  * SUPABASE_SERVICE_ROLE_KEY must be configured as an encrypted Worker secret.
@@ -337,8 +338,11 @@ export function createSupabaseAdapter(env) {
             p_token_hash:await digest(token),p_expires_at:d.expiresAt,
           }),
         });
-        return {...result,delivery:'manual',
-          inviteUrl:'https://oilstation.goldensoft.cloud/invite/'+token};
+        const inviteUrl='https://oilstation.goldensoft.cloud/invite/'+token;
+        const delivery=await sendInvitationEmail({
+          env,email:d.email,inviteUrl,id:result.id,expiresAt:d.expiresAt,
+        });
+        return {...result,...delivery,inviteUrl};
       },
       createCorporateCustomer: async (d) => serviceRequest(env,
         '/rest/v1/rpc/station_create_corporate_customer',{
@@ -478,8 +482,11 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify(scoped),
         });
-        return { ...result, delivery:'manual',
-          inviteUrl: 'https://oilstation.goldensoft.cloud/invite/' + token };
+        const inviteUrl='https://oilstation.goldensoft.cloud/invite/'+token;
+        const delivery=await sendInvitationEmail({
+          env,email:input.email,inviteUrl,id:result.id,expiresAt:input.expiresAt,
+        });
+        return {...result,...delivery,inviteUrl};
       },
       bootstrapAdmin: async (actorId) => {
         if (!env.BOOTSTRAP_ADMIN_EMAIL || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(env.BOOTSTRAP_ADMIN_EMAIL)) {
