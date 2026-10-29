@@ -79,3 +79,67 @@ The original Worker/domain remain unchanged until explicit gate completion.
 - Feature toggles and secrets reviewed; release explicitly approved.
 - **Then** prepare a single integrated test at
   `oilstation.goldensoft.cloud`; do not merge or deploy ahead of that gate.
+
+
+## Continued implementation: fueling proof chain and attendance review (2026-10-29)
+
+**Last verified CI:** Commit 72d01fa2 passed 140/140 Node tests, Vite build,
+Worker syntax, Wrangler dry-run, and both GitHub workflow runs.
+These are code/unit/mock tests, not isolated PostgreSQL integration tests.
+
+### Commits in this increment
+- ddb29405: Start fueling from an independently verified private plate photo ID.
+- 84391a0d: Private pump and receipt evidence upload, station-scoped.
+- fefa0c6b: OCR numeric preview only; no automatic settlement.
+- 443db9af: Separate authorized manager review of actual photo and
+  receipt/pump agreement; database-controlled finance settlement wrapper.
+- 374f63cb: Thai mobile photo review queue and guarded finalization UI.
+- da3e4e7f: Manager manual attendance review, immutable approval audit.
+- 2efd670d: Thai mobile attendance-review UI with required reasons.
+- 72d01fa2: Consistent Thai digits and separator normalization in SQL plate checks.
+
+### Additional unapplied SQL migrations
+- 20261029185000_verified_fuel_start_api.sql
+- 20261029190000_fuel_photo_intake.sql
+- 20261029191000_fuel_photo_ocr_preview.sql
+- 20261029192000_supervisor_fuel_settlement.sql
+- 20261029193000_attendance_supervisor_fallback.sql
+- 20261029194000_thai_plate_normalization.sql
+
+These six come after five earlier unapplied migrations (versions
+20261029180000 through 20261029184000). Do not apply to the current
+production Supabase project as a test. Migrate in version order to a
+separate isolated development/staging database with explicit approval,
+run SQL negative-role/foreign-station and concurrency tests, then review
+rollback before applying to any customer environment.
+
+### Safety contract
+The pump never accepts client-supplied prices, fuel volume, or image URLs
+as settled values. Start uses only a trusted photo ID. Both pump and
+receipt photos are uploaded privately and OCR output remains unverified.
+Only a distinct station supervisor may approve a photo after inspecting
+the actual image, with explicit original readings. Both approved images
+must have matching gross amounts. The settlement wrapper derives
+liters, gross amount and private paths from approved database rows and
+invokes the existing transactional hold-and-ledger settlement routine.
+A repeated settlement may not charge funds twice.
+
+GPS attendance likewise remains pending until separately reviewed.
+Manual attendance approval records the supervisor and a reason, but it
+must not claim face matching, liveness or legal biometric consent.
+Payroll cannot rely on unreviewed punches.
+
+### Explicit remaining release blockers
+- Test new migrations and settlement against an isolated PostgreSQL DB.
+- OCR accuracy on real Thai plates, pumps and receipts; retention and PDPA.
+- Face identity/liveness, verified consent and safe manual fallback.
+- Payroll statutory rules, OT payout, period lock, refunds, export/payee verification.
+- Stripe checkout, signed webhook reconciliation, refund and idempotent invoice-paid.
+- Sales commission journal/payout only against collected subscription revenue.
+- LINE verified recipient binding and actual notification delivery testing.
+- Google/Facebook OAuth provider config and invite-email ownership proof.
+- Security/E2E mobile, finance concurrency, backup/restore and approvals.
+
+**Draft PR stays open and unmerged. No live Worker deployment, no real
+payments/fueling/payroll, no incremental user testing.** Integrated UAT
+is permitted only after release gates and explicit authorization.
