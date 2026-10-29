@@ -13,7 +13,9 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/hr/roster': 'GET', '/api/hr/employees': 'POST',
   '/api/hr/seed-shifts': 'POST', '/api/hr/assign-shift': 'POST',
   '/api/hr/request-substitute': 'POST', '/api/hr/review-substitute': 'POST',
-  '/api/hr/pending-substitutes': 'GET', '/api/station/scan-qr': 'POST' };
+  '/api/hr/pending-substitutes': 'GET', '/api/station/scan-qr': 'POST',
+  '/api/hr/request-ot':'POST', '/api/hr/review-ot':'POST',
+  '/api/hr/pending-ot':'GET' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -187,6 +189,45 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           return fail(403,'permission_denied');
         }
         return json(200,{requests: await db.pendingCorporateLinks(user.id)});
+      }
+      if (path==='/api/hr/request-ot') {
+        if (!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
+          return fail(415,'unsupported_media_type');
+        const data=await readBody(request);
+        if(!UUID.test(data?.employeeId??'')||!UUID.test(data?.shiftId??'')
+          || typeof data?.planned!=='boolean'
+          || !Number.isInteger(data?.requestedMinutes)
+          || data.requestedMinutes<1||data.requestedMinutes>960
+          || typeof data.reason!=='string'||data.reason.trim().length<4
+          || data.reason.length>500) return fail(400,'invalid_overtime_request');
+        return json(201,{request:await db.hrRequestOt({
+          actorId:user.id,employeeId:data.employeeId,shiftId:data.shiftId,
+          planned:data.planned,requestedMinutes:data.requestedMinutes,
+          reason:data.reason.trim(),
+        })});
+      }
+      if(path==='/api/hr/review-ot'||path==='/api/hr/pending-ot') {
+        const manager=active.some(m=>
+          (m.scope_type==='platform'&&m.role_code==='platform_superadmin')
+          || (m.scope_type==='station'&&
+          ['station_owner','owner','manager','hr_manager'].includes(m.role_code)));
+        if(!manager)return fail(403,'permission_denied');
+        if(path==='/api/hr/pending-ot') {
+          const stationId=url.searchParams.get('stationId');
+          if(!UUID.test(stationId??''))return fail(400,'invalid_station');
+          return json(200,{requests:await db.hrPendingOt({
+            actorId:user.id,stationId,
+          })});
+        }
+        if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
+          return fail(415,'unsupported_media_type');
+        const body=await readBody(request);
+        if(!UUID.test(body?.requestId??'')||!Number.isInteger(body?.approvedMinutes)
+          ||body.approvedMinutes<0||body.approvedMinutes>960)
+          return fail(400,'invalid_overtime_review');
+        return json(200,{result:await db.hrReviewOt({
+          actorId:user.id,requestId:body.requestId,approvedMinutes:body.approvedMinutes,
+        })});
       }
       if (path === '/api/station/scan-qr') {
         if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
