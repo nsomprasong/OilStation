@@ -175,16 +175,17 @@ async function corporateWorkspace(accessToken) {
     if (!amountSatang) return setNotice('ระบุจำนวนเงินเป็นบาท เช่น 1500 หรือ 1500.50',true);
     const accountId=accountSelect.value, stationFuelId=fuelSelect.value;
     if (!accountId || !stationFuelId) return setNotice('กรุณาเลือกปั๊มและชนิดน้ำมัน',true);
-    const payload={
-      accountId, stationFuelId, amountSatang,
-      plate:$('plate-input').value.trim(),
-      expiresAt:new Date(Date.now()+Number($('expiry-select').value)*3600_000).toISOString(),
-    };
-    const json=JSON.stringify(payload);
-    if (pendingPayload!==json || !pendingIdempotencyKey) {
-      pendingPayload=json;
+    // Preserve the exact payload and idempotency key across network retries;
+    // do not regenerate expiresAt if the user did not change the form.
+    if (!pendingIdempotencyKey || !pendingPayload) {
+      pendingPayload=JSON.stringify({
+        accountId, stationFuelId, amountSatang,
+        plate:$('plate-input').value.trim(),
+        expiresAt:new Date(Date.now()+Number($('expiry-select').value)*3600_000).toISOString(),
+      });
       pendingIdempotencyKey=crypto.randomUUID().replace(/-/g,'');
     }
+    const payload=JSON.parse(pendingPayload);
     const btn=$('coupon-submit');
     btn.disabled=true;
     setNotice('กำลังตรวจสอบและกันวงเงิน…');
