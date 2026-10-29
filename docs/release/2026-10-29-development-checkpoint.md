@@ -205,3 +205,68 @@ is done on a Payment Element browser success. Only the signed webhook
 may mark a SaaS invoice paid.
 
 Draft PR #1 stays open and unmerged; no production deployment or UAT.
+
+
+## Further progress — reviewed SaaS invoices, Sales previews and isolated SQL CI
+
+**Implementation summary (not production release):**
+- Platform Super Admin can configure reviewed flat monthly/yearly QR/HR
+  prices, an explicit tax policy, grouped stations with autopay disabled
+  and provisional station subscriptions.
+- Authenticated, strictly checked settings APIs and a Thai-first admin
+  workspace. Prices for invoice drafts are queried from published
+  database pricing rules, never arbitrary browser-supplied totals.
+- Invoice draft/issue is two-phase: reviewed taxes, immutable snapshots,
+  exact PromptPay 2% discount, integer satang accounting, per-line
+  discount/tax split, one invoice per billing group and service window,
+  and separate explicit review checkbox before issuing.
+- Subscription quote rejects unsupported tiers/bundles/per-employee
+  pricing, price overrides and group subscription gaps rather than
+  producing guessed charges.
+- Sales commission is a **read-only preview only** after invoice paid:
+  net-of-VAT base, station and current Sales day share, explicit
+  reviewed rules, no annual upfront or overlapping/ambiguous assignments.
+  No commission entitlement or payout/ledger is created by this flow.
+- Added **disposable PostgreSQL 16 integration workflow** under
+  .github/workflows/billing-postgres.yml using test/integration/ fixtures
+  and migration source files. It actually executes the relevant SQL
+  migrations against a non-production database and runs assertions for
+  role isolation, cross-org groups, price lock, duplicate period,
+  payment-method repricing, tampered Stripe amounts, same-event replay,
+  Sales source and full transaction rollback. This is a billing-only
+  parity fixture, not a complete copy of the live Supabase database.
+
+**Quality gate:** Node unit tests 179/179 passed and Wrangler dry-run
+and Vite build passed at dc5c2b06. The isolated PostgreSQL workflow
+passed on 3417b03c after fixing ambiguity in a test-only SQL variable.
+Latest commit CI outcome should be checked before release statements.
+
+### New SQL migrations not applied to live Supabase
+- 20261029203000_platform_saas_configuration.sql
+- 20261029204000_saas_flat_invoice_draft.sql
+- 20261029205000_platform_saas_billing_overview.sql
+- 20261029206000_commission_preview_after_paid.sql
+
+Total un-applied migrations for this development series: **19**.
+No platform pricing, tax or organization records have been inserted
+into the live database. No real Stripe transactions were attempted.
+The setup UI and draft data require real company tax/legal and rate
+review plus integration against a full isolated schema before launch.
+
+### Remaining gates: explicitly not completed
+- Full Supabase schema parity test and all 19 migration integration/rollback
+  checks, after review of older fueling/GPS/LINE migrations.
+- Complete billing lifecycle: approved promotion rules, per-employee/
+  bundle/tier pricing, annual subscriptions, automatic renewal,
+  notices, pro-rata plan changes, dunning, grace, chargebacks/refunds,
+  credit notes, invoice numbers/statutory tax documents.
+- Signed Stripe sandbox 3DS/card/PromptPay end-to-end, webhook replay,
+  provider fetch reconciliation and test-mode event isolation.
+- Sales commission actual ledger accrual after *real* collected money,
+  refund/reassignment adjustments, upfront yearly policy, payouts.
+- Production OAuth invitations, LINE verified opt-in, employee payroll,
+  accurate biometrics/PDPA, station fuel camera/device/UAT tests.
+- Final integrated user UAT at the custom domain after security approvals.
+
+**Still:** No merge; no Cloudflare deploy; no changes to live Supabase;
+feature flags remain off, no money moved and no client UAT yet.
