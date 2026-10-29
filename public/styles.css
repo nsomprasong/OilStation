@@ -68,3 +68,18 @@
 .invite-form small{font-size:12px;line-height:1.5;color:#6d8798}
 .invite-form button{min-height:40px}
 @media(prefers-color-scheme:dark){.invite-form input,.invite-form select{background:#173347;color:#ecf7ff;border-color:#345b70}}
+
+
+/* OilStation shared icon language — Lucide for actions, Simple Icons for providers. */
+.app-icon{width:19px;height:19px;flex:0 0 19px;vertical-align:middle;display:inline-block}
+.brand-symbol{fill:currentColor}
+.button{gap:9px}
+.button .app-icon{width:19px;height:19px}
+.step>.app-icon{color:#26778e}
+.menu-module{display:flex;align-items:center;gap:12px;text-align:left;min-height:48px}
+.menu-module>.app-icon{color:#1b768d}
+.brand-symbol{width:18px;height:18px}
+@media (prefers-color-scheme:dark){
+ .menu-module>.app-icon,.step>.app-icon{color:#86cedf}
+}
+@media (prefers-reduced-motion:reduce){.button{transition:none}.button:active{transform:none}}
