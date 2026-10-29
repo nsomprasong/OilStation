@@ -341,6 +341,56 @@ export function createSupabaseAdapter(env) {
           }),
         });
       },
+      canUploadTopup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/authorize_corporate_topup_upload',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_account_id:d.accountId,
+            p_station_bank_id:d.bankId,p_amount_satang:d.amountSatang,
+          }),
+        }),
+      uploadTopupSlip: async d=>{
+        const ext=d.contentType==='image/png'?'png':'jpg';
+        const path='accounts/'+d.accountId+'/slips/'+crypto.randomUUID()+'.'+ext;
+        const resp=await fetch(normalizeUrl(env,
+          '/storage/v1/object/oilstation-slips/'+path),{
+          method:'POST',headers:headers(env.SUPABASE_SERVICE_ROLE_KEY,{
+            'content-type':d.contentType,'cache-control':'max-age=0','x-upsert':'false',
+          }),body:d.bytes,signal:AbortSignal.timeout(15_000),
+        });
+        if(!resp.ok)throw new Error('private_slip_upload_failed');
+        return path;
+      },
+      submitTopup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/request_corporate_topup',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_account_id:d.accountId,
+            p_station_bank_id:d.bankId,p_amount_satang:d.amountSatang,
+            p_slip_path:d.path,
+          }),
+        }),
+      getTopupSlip: async d=>{
+        const auth=await serviceRequest(env,
+          '/rest/v1/rpc/authorize_station_topup_slip',{
+            method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({p_actor_id:d.actorId,p_request_id:d.requestId}),
+          });
+        const path=auth.path;
+        if(typeof path!=='string'||!/^accounts\/[a-f0-9-]+\/slips\/[a-f0-9-]+\.(jpg|png)$/.test(path))
+          throw new Error('invalid_stored_slip_path');
+        const resp=await fetch(normalizeUrl(env,
+          '/storage/v1/object/authenticated/oilstation-slips/'+path),{
+          method:'GET',headers:headers(env.SUPABASE_SERVICE_ROLE_KEY),
+          signal:AbortSignal.timeout(10_000),
+        });
+        if(!resp.ok)throw new Error('slip_read_failed');
+        const contentLength=Number(resp.headers.get('content-length'));
+        if(contentLength>5242880)throw new Error('slip_size_invalid');
+        const bytes=new Uint8Array(await resp.arrayBuffer());
+        if(bytes.length>5242880||bytes.length<64)throw new Error('slip_size_invalid');
+        return {bytes,contentType:path.endsWith('.png')?'image/png':'image/jpeg'};
+      },
       corporateTopupBanks: async (actorId, accountId) =>
         serviceRequest(env, '/rest/v1/rpc/corporate_topup_bank_options',{
           method:'POST',headers:{'content-type':'application/json'},
