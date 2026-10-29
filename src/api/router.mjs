@@ -3,7 +3,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const IDKEY = /^[a-zA-Z0-9_-]{16,128}$/;
 const LIMIT_BYTES = 16_384;
 const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
-  '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST' };
+  '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST',
+  '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -119,6 +120,39 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           actorId: user.id, organizationName: body.organizationName.trim(),
           stationName: body.stationName.trim(), brandCode: body.brandCode,
           qrCoupon: body.modules.qrCoupon, hrPayroll: body.modules.hrPayroll,
+        }) });
+      }
+      if (path === '/api/station-fuels' || path === '/api/station-fuel-config') {
+        let stationId, fuelId, enabled, publicPrice;
+        if (path === '/api/station-fuels') {
+          stationId = url.searchParams.get('stationId');
+          if (!UUID.test(stationId ?? '')) return fail(400, 'invalid_station');
+        } else {
+          if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
+            return fail(415, 'unsupported_media_type');
+          }
+          const data = await readBody(request);
+          stationId = data?.stationId; fuelId = data?.stationFuelId;
+          enabled = data?.enabled; publicPrice = data?.publicPrice;
+          if (!UUID.test(stationId ?? '') || !UUID.test(fuelId ?? '')
+            || typeof enabled !== 'boolean'
+            || typeof publicPrice !== 'string'
+            || !/^[0-9]{1,8}(?:\.[0-9]{1,4})?$/.test(publicPrice)
+            || Number(publicPrice)<=0) return fail(400, 'invalid_fuel_price');
+        }
+        const canManage = active.some(m =>
+          (m.scope_type === 'platform' && m.role_code === 'platform_superadmin')
+          || (m.scope_type === 'station' && m.station_id === stationId
+            && (['station_owner','owner','manager'].includes(m.role_code)
+              || m.extra_permissions?.manage_fuel_prices === true))
+          || (m.scope_type === 'organization'
+            && ['organization_owner','owner'].includes(m.role_code)));
+        if (!canManage) return fail(403, 'permission_denied');
+        if (path === '/api/station-fuels') {
+          return json(200, { fuels: await db.stationFuels(user.id, stationId) });
+        }
+        return json(200, { fuel: await db.configureFuel({
+          actorId:user.id, stationId, stationFuelId:fuelId, enabled, publicPrice,
         }) });
       }
       if (path === '/api/my-accounts') {
