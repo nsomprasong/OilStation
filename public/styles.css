@@ -146,3 +146,16 @@
 .fuel-review-actions .button{min-width:0}
 @media(max-width:460px){.fuel-review-actions{grid-template-columns:1fr}}
 @media(prefers-color-scheme:dark){.fuel-review-card{background:#182e40;border-color:#37566a}.fuel-review-card input{color:#ecf8ff;background:#213a50}.fuel-review-ocr{color:#b9cad5}}
+
+/* Thai attendance review: readable on small phones, exception status as data. */
+.attendance-review{display:grid;gap:12px}
+.attendance-review .hint{text-align:left}
+.attendance-review-list{display:grid;gap:12px}
+.attendance-review-card{display:grid;gap:10px;border:1px solid #dbe7ee;border-radius:12px;padding:15px;background:#fff}
+.attendance-review-card p{font-size:13px;margin:0}
+.attendance-geofence[data-status="outside"]{color:#ac534a;font-weight:700}
+.attendance-geofence[data-status="uncertain"],.attendance-geofence[data-status="unconfigured"]{color:#a47323}
+.attendance-review-card textarea{border:1px solid #c9dbe5;border-radius:10px;min-height:74px;padding:10px;color:#173148;background:#fff;font:inherit;resize:vertical}
+.attendance-review-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:470px){.attendance-review-actions{grid-template-columns:1fr}}
+@media(prefers-color-scheme:dark){.attendance-review-card{background:#152b3c;border-color:#355366}.attendance-review-card textarea{background:#203b50;color:#f1f8ff;border-color:#587288}.attendance-geofence[data-status="outside"]{color:#ffb6a9}.attendance-geofence[data-status="uncertain"],.attendance-geofence[data-status="unconfigured"]{color:#f2c78c}}

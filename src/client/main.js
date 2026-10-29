@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
+import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
 
@@ -1293,6 +1294,7 @@ function dashboard(data, session) {
      <div id="station-finance-workspace"></div>
      <div id="hr-workspace"></div>
      <div id="attendance-workspace"></div>
+     <div id="attendance-review-workspace"></div>
      <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout"><i data-ui-icon="logout"></i>ออกจากระบบ</button>
@@ -1323,6 +1325,12 @@ function dashboard(data, session) {
   if(attendanceMember?.stationId){
     mountAttendanceWorkspace({target:document.getElementById('attendance-workspace'),
       token:session.access_token,stationId:attendanceMember.stationId});
+  }
+  const attendanceSupervisor=memberships.find(m=>m.scopeType==='station'&&
+    ['station_owner','owner','manager','hr_manager'].includes(m.role)&&m.stationId);
+  if(attendanceSupervisor){
+    mountAttendanceReview({target:document.getElementById('attendance-review-workspace'),
+      token:session.access_token,stationId:attendanceSupervisor.stationId});
   }
   const pumpMember=memberships.find(m=>m.scopeType==='station'
     && ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
