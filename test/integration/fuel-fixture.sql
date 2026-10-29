@@ -16,7 +16,7 @@ CREATE TABLE public.organizations(id uuid PRIMARY KEY);
 CREATE TABLE public.stations(
  id uuid PRIMARY KEY,organization_id uuid NOT NULL REFERENCES public.organizations(id),
  name text NOT NULL);
-CREATE TABLE public.corporate_companies(id uuid PRIMARY KEY);
+CREATE TABLE public.corporate_companies(id uuid PRIMARY KEY,name text NOT NULL DEFAULT 'Fixture Corporation');
 CREATE TABLE public.memberships(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES public.app_users(id),
  active boolean NOT NULL DEFAULT true,scope_type text NOT NULL,role_code text NOT NULL,
@@ -108,7 +108,8 @@ CREATE TABLE public.accounts_receivable(
  account_id uuid NOT NULL REFERENCES public.corporate_station_accounts(id),
  amount_satang bigint NOT NULL CHECK(amount_satang>0),
  outstanding_satang bigint NOT NULL,
- due_at timestamptz,fuel_session_id uuid REFERENCES public.fuel_sessions(id));
+ due_at timestamptz,fuel_session_id uuid REFERENCES public.fuel_sessions(id),
+ created_at timestamptz NOT NULL DEFAULT now());
 
 INSERT INTO public.app_users(id) VALUES
  ('11111111-1111-4111-8111-111111111111'),
@@ -159,3 +160,36 @@ INSERT INTO public.corporate_station_accounts(id,station_id,company_id,
 VALUES('bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb',
  'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb',
  'aaaaaaaa-2222-4222-8222-aaaaaaaaaaaa',5000,20000);
+
+-- Bank metadata and top-up storage are separate from wallet funds.
+CREATE TABLE public.station_bank_accounts(
+ id uuid PRIMARY KEY,station_id uuid NOT NULL REFERENCES public.stations(id),
+ bank_code text NOT NULL,account_name text NOT NULL,
+ account_number_encrypted text NOT NULL,account_number_masked text,
+ is_primary boolean NOT NULL DEFAULT false,
+ active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.topup_requests(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+ account_id uuid NOT NULL REFERENCES public.corporate_station_accounts(id),
+ station_bank_id uuid REFERENCES public.station_bank_accounts(id),
+ amount_satang bigint NOT NULL CHECK(amount_satang>0),
+ slip_storage_path text,bank_reference text,
+ status text NOT NULL DEFAULT 'pending'
+ CHECK(status IN ('pending','approved','rejected')),
+ requested_by uuid REFERENCES public.app_users(id),
+ reviewed_by uuid REFERENCES public.app_users(id),
+ reviewed_at timestamptz,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.audit_events(
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ actor_id uuid REFERENCES public.app_users(id),
+ station_id uuid,organization_id uuid,entity_type text NOT NULL,entity_id text,
+ action text NOT NULL,before_state jsonb,after_state jsonb,
+ created_at timestamptz NOT NULL DEFAULT now());
+INSERT INTO public.station_bank_accounts(id,station_id,bank_code,account_name,
+ account_number_encrypted,account_number_masked)
+VALUES('aaaaaaaa-aaaa-4aaa-8aaa-555555555555',
+  'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa','KBANK','Test Station A',
+  'fixture-only-ciphertext','***1234'),
+ ('bbbbbbbb-bbbb-4bbb-8bbb-555555555555',
+  'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb','SCB','Test Station B',
+  'fixture-only-ciphertext','***9876');

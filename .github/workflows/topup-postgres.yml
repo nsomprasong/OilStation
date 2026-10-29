@@ -1,0 +1,44 @@
+name: Topup SQL Integration (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  topup-postgresql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_topup_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_topup_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exercise private bank-slip and debt-first top-up finance in disposable PostgreSQL
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_topup_test
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/fuel-fixture.sql
+              for migration in \
+                20261029151000_topup_debt_first.sql \
+                20261029170500_topup_inbox_and_bank_options.sql \
+                20261029173500_private_topup_slips.sql \
+                20261029174500_verified_topup_review.sql \
+                20261029209000_private_topup_finance_gate.sql
+              do
+                psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
+              done
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/topup-assertions.sql
+            '
