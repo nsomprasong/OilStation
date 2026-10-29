@@ -341,6 +341,16 @@ export function createSupabaseAdapter(env) {
           }),
         });
       },
+      corporateTopupBanks: async (actorId, accountId) =>
+        serviceRequest(env, '/rest/v1/rpc/corporate_topup_bank_options',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_account_id:accountId}),
+        }),
+      stationPendingTopups: async (actorId, stationId) =>
+        serviceRequest(env, '/rest/v1/rpc/station_pending_topup_inbox',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_station_id:stationId}),
+        }),
       corporateAccounts: async (userId) => {
         return serviceRequest(env, '/rest/v1/rpc/corporate_account_summaries', {
           method: 'POST', headers: { 'content-type': 'application/json' },
