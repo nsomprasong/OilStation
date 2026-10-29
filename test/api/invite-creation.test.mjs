@@ -37,8 +37,6 @@ test('rejects malformed email and scope IDs without invoking service',async()=>{
  const a=app();
  assert.equal((await a.handler(request({...data,email:'bad'}))).status,400);
  assert.equal((await a.handler(request({...data,scopeId:'abc'}))).status,400);
- assert.equal((await a.handler(request({...data,roleCode:'platform_superadmin'}))).status,201);
- // The service-only SQL RPC rejects unauthorized role escalation;
- // API syntax validation is not the permission boundary.
- assert.equal(a.calls.length,1);
+ assert.equal((await a.handler(request({...data,roleCode:'platform_superadmin'}))).status,400);
+ assert.equal(a.calls.length,0);
 });
