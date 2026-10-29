@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
+import { makeIcon, decorateIcons } from './icons.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -8,7 +9,10 @@ const INVITE_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
 const COUPON_PATTERN = /^[0-9a-f-]{36}\.[a-f0-9]{64}$/i;
 let authClient;
 
-function show(html) { root.innerHTML = html; }
+function show(html) { root.innerHTML = html; decorateIcons(root); }
+// Dynamic forms are inserted after async data loads; decorate their placeholders too.
+const iconObserver = new MutationObserver(() => decorateIcons(root));
+iconObserver.observe(root, {subtree:true,childList:true});
 function message(text, tone = 'neutral') {
   const node = document.getElementById('notice');
   if (!node) return;
@@ -28,8 +32,8 @@ function platformSetupView() {
     <section class="panel"><div class="section-title">ยืนยันตัวตน</div>
     <p>ต้องใช้อีเมลที่ผู้ดูแลระบบกำหนดไว้บนเซิร์ฟเวอร์ และบัญชีอีเมลต้องผ่านการยืนยัน</p>
     <div class="auth-buttons">
-    <button class="button primary" id="google">ดำเนินการด้วย Google</button>
-    <button class="button secondary" id="facebook">ดำเนินการด้วย Facebook</button>
+    <button class="button primary" id="google"><i data-brand-icon="google"></i>ดำเนินการด้วย Google</button>
+    <button class="button secondary" id="facebook"><i data-brand-icon="facebook"></i>ดำเนินการด้วย Facebook</button>
     </div><p id="notice" class="notice" hidden role="status"></p></section>`);
   document.getElementById('google').addEventListener('click',()=>login('google'));
   document.getElementById('facebook').addEventListener('click',()=>login('facebook'));
@@ -44,11 +48,11 @@ function guestView(invited) {
         <span>${invited ? 'ยืนยันคำเชิญเพื่อเริ่มใช้งาน' : 'พื้นที่ใช้งานสำหรับผู้ได้รับเชิญ'}</span></div>
       <p>${invited ? 'เลือกบัญชีที่คุณสะดวก' : 'เจ้าของปั๊มหรือผู้ดูแลจะส่งลิงก์เชิญทางอีเมล'}</p>
       <div class="divider"></div>
-      ${invited ? `<div class="auth-buttons"><button class="button primary" id="google">เข้าสู่ระบบด้วย Google</button>
-         <button class="button secondary" id="facebook">เข้าสู่ระบบด้วย Facebook</button></div>` :
-        `<div class="step"><span class="number">1</span> รับอีเมลคำเชิญ</div>
-         <div class="step"><span class="number">2</span> เลือก Google หรือ Facebook</div>
-         <div class="step"><span class="number">3</span> เข้าสู่ระบบตามสิทธิ์</div>`}
+      ${invited ? `<div class="auth-buttons"><button class="button primary" id="google"><i data-brand-icon="google"></i>เข้าสู่ระบบด้วย Google</button>
+         <button class="button secondary" id="facebook"><i data-brand-icon="facebook"></i>เข้าสู่ระบบด้วย Facebook</button></div>` :
+        `<div class="step"><span class="number">1</span><i data-ui-icon="mail"></i> รับอีเมลคำเชิญ</div>
+         <div class="step"><span class="number">2</span><i data-ui-icon="shield"></i> เลือก Google หรือ Facebook</div>
+         <div class="step"><span class="number">3</span><i data-ui-icon="check"></i> เข้าสู่ระบบตามสิทธิ์</div>`}
       <div class="hint">ไม่เปิดรับสมัครสาธารณะ</div>
       <p id="notice" class="notice" role="status" hidden></p>
     </section>`);
@@ -108,14 +112,14 @@ async function corporateWorkspace(accessToken) {
         <option value="72">72 ชั่วโมง</option>
       </select></label>
       <p class="hint">ระบบกันวงเงินทันทีเมื่อออกคูปองสำเร็จ หากยอดพร้อมใช้ไม่พอจะออกคูปองไม่ได้</p>
-      <button id="coupon-submit" class="button primary" type="submit">ออกคูปองและกันวงเงิน</button>
+      <button id="coupon-submit" class="button primary" type="submit"><i data-ui-icon="ticket"></i>ออกคูปองและกันวงเงิน</button>
       <p id="coupon-notice" class="notice" role="status" hidden></p>
     </form>
     <section class="issue-result" id="issue-result" hidden aria-live="polite">
       <h2>คูปองออกสำเร็จ</h2>
       <p>ส่งลิงก์นี้ให้ผู้ขับรถผ่าน LINE หรือ SMS ได้</p>
       <input id="share-link" readonly aria-label="ลิงก์คูปองสำหรับคนขับ">
-      <button type="button" id="copy-link" class="button secondary">คัดลอกลิงก์</button>
+      <button type="button" id="copy-link" class="button secondary"><i data-ui-icon="clipboard"></i>คัดลอกลิงก์</button>
       <div id="issued-qr" class="qr-wrapper"></div>
     </section>
   `;
@@ -327,14 +331,14 @@ async function hrWorkspace(token,stationId,target) {
     <label class="field">ประเภทค่าจ้าง <select id="hr-wage-type"><option value="monthly">รายเดือน</option><option value="daily">รายวัน</option><option value="hourly">รายชั่วโมง</option></select></label>
     <label class="field">ค่าจ้าง (บาท) <input id="hr-wage" required inputmode="decimal" placeholder="15000.00"></label>
     <label class="field">รอบจ่ายเงิน <select id="hr-frequency"><option value="monthly">รายเดือน</option><option value="semi_monthly">เดือนละ 2 ครั้ง</option><option value="weekly">รายสัปดาห์</option></select></label>
-    <button type="submit" class="button primary">เพิ่มพนักงาน</button>
+    <button type="submit" class="button primary"><i data-ui-icon="user-plus"></i>เพิ่มพนักงาน</button>
   </form>
   <div class="divider"></div>
   <form class="coupon-form" id="hr-schedule">
     <label class="field">พนักงาน <select id="hr-select-employee" required></select></label>
     <label class="field">กะ <select id="hr-select-template" required></select></label>
     <label class="field">วันที่ทำงาน <input id="hr-shift-date" type="date" required></label>
-    <button type="submit" class="button primary">จัดกะให้พนักงาน</button>
+    <button type="submit" class="button primary"><i data-ui-icon="calendar"></i>จัดกะให้พนักงาน</button>
   </form>
   <p class="hint">การจัดสองกะในวันเดียวกันทำได้ โดยเลือกพนักงานคนเดิมแล้วเพิ่มอีกกะ</p>
   <div class="divider"></div>
@@ -355,7 +359,7 @@ async function hrWorkspace(token,stationId,target) {
     </select></label>
     <label class="field">นาทีที่ขอ (สูงสุด 960 นาที) <input id="hr-ot-minutes" type="number" min="1" max="960" required></label>
     <label class="field">เหตุผล <input id="hr-ot-reason" maxlength="500" minlength="4" required></label>
-    <button class="button secondary" type="submit">ส่งคำขอ OT</button>
+    <button class="button secondary" type="submit"><i data-ui-icon="clipboard"></i>ส่งคำขอ OT</button>
   </form>
   <h3>OT รอตรวจสอบ</h3><div id="hr-ot-pending" class="module-list"></div>
   <div class="divider"></div><h3>รายการเปลี่ยนกะรออนุมัติ</h3>
@@ -547,7 +551,7 @@ async function stationCorporateWorkspace(accessToken,stationId,target) {
         <option value="statement">สรุปยอดตามรอบบิล</option>
       </select></label>
       <label class="field" id="customer-close-wrap" hidden>วันที่ปิดรอบบิล <input id="customer-close" type="number" min="1" max="31" value="15"></label>
-      <button class="button primary" id="customer-create-btn" type="submit">เปิดบัญชีบริษัท</button>
+      <button class="button primary" id="customer-create-btn" type="submit"><i data-ui-icon="building"></i>เปิดบัญชีบริษัท</button>
     </form>
     <div id="customer-invite-area" hidden>
       <p class="hint" id="customer-invite-status"></p>
@@ -690,10 +694,10 @@ async function stationPumpWorkspace(token,stationId,target) {
    <p>สแกน QR ของคนขับ แล้วถ่ายรูปทะเบียนเพื่อเข้าสู่การตรวจสอบ</p>
    <form id="scan-form" class="coupon-form">
      <label class="field">รหัส QR คูปอง <input id="scan-payload" required autocomplete="off" placeholder="สแกน QR หรือวางข้อมูลคูปอง"></label>
-     <button class="button primary" type="submit">ตรวจสอบคูปอง</button>
+     <button class="button primary" type="submit"><i data-ui-icon="scan"></i>ตรวจสอบคูปอง</button>
    </form>
    <div class="camera-area">
-     <button id="start-camera" type="button" class="button secondary">เปิดกล้องสแกน QR</button>
+     <button id="start-camera" type="button" class="button secondary"><i data-ui-icon="camera"></i>เปิดกล้องสแกน QR</button>
      <button id="stop-camera" type="button" class="button secondary" hidden>ปิดกล้อง</button>
      <video id="scan-video" playsinline muted autoplay hidden></video>
    </div>
@@ -710,7 +714,7 @@ async function stationPumpWorkspace(token,stationId,target) {
        <label class="field">ถ่ายภาพทะเบียนรถ (จำเป็นทุกคูปอง)
          <input type="file" id="pump-plate-photo" required accept="image/jpeg,image/png" capture="environment">
        </label>
-       <button type="submit" class="button primary">ส่งรูปตรวจทะเบียน</button>
+       <button type="submit" class="button primary"><i data-ui-icon="camera"></i>ส่งรูปตรวจทะเบียน</button>
      </form>
      <p class="hint">ต้องให้ระบบตรวจภาพทะเบียนและยืนยันความถูกต้องก่อนเริ่มเติมน้ำมัน พนักงานไม่สามารถข้ามขั้นตอนนี้ได้</p>
    </div>
@@ -818,7 +822,7 @@ async function platformWorkspace(accessToken) {
         <label><input type="checkbox" id="module-hr"> HR & Payroll</label>
       </div>
       <p class="hint">รายชื่อน้ำมันจะเตรียมไว้ตามแบรนด์ โดยยังปิดการขายทั้งหมดจนกว่าจะเลือกชนิดและตั้งราคา</p>
-      <button class="button primary" id="new-station-submit" type="submit">สร้างปั๊ม</button>
+      <button class="button primary" id="new-station-submit" type="submit"><i data-ui-icon="building"></i>สร้างปั๊ม</button>
       <p id="platform-notice" class="notice" hidden role="status"></p>
     </form>
     <div class="divider"></div>
@@ -911,7 +915,7 @@ function dashboard(data, session) {
      <div id="hr-workspace"></div>
      <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
-     <button class="button secondary" id="logout">ออกจากระบบ</button>
+     <button class="button secondary" id="logout"><i data-ui-icon="logout"></i>ออกจากระบบ</button>
    </section>`);
   document.getElementById('scope-title').textContent = active.title;
   const all = document.getElementById('scopes');
@@ -924,8 +928,12 @@ function dashboard(data, session) {
   const modules = document.getElementById('modules');
   active.modules.forEach((name) => {
     const e = document.createElement('div');
-    e.className = 'module-item';
-    e.textContent = name;
+    e.className = 'module-item menu-module';
+    const iconNames = {
+      platform:['building','users','receipt'], organization:['fuel','users','wallet'],
+      station:['ticket','calendar','clipboard'], corporate_company:['qr','wallet','receipt'],
+    }[memberships[0]?.scopeType] || ['fuel','users','wallet'];
+    e.append(makeIcon(iconNames[modules.children.length]), document.createTextNode(name));
     modules.appendChild(e);
   });
   if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
