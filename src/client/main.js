@@ -926,6 +926,10 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
          <button id="plate-reject" class="button secondary" type="button">ไม่ผ่าน — ปฏิเสธภาพนี้</button>
        </form>
      </section>
+     <div id="fuel-start-panel" hidden>
+       <button type="button" id="start-verified-fueling" class="button primary">เริ่มเติมน้ำมัน</button>
+       <p id="fuel-session-status" role="status"></p>
+     </div>
    </div>
    <section id="plate-review-manager" class="plate-verification" hidden></section>
  `;
@@ -935,7 +939,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    const out=$('pump-notice');out.textContent=text;out.hidden=false;
    out.dataset.tone=error?'error':'neutral';
  };
- let current=null,stream=null,scanTimer=null,reading=false,photoId=null;
+ let current=null,stream=null,scanTimer=null,reading=false,photoId=null,sessionId=null;
  const photoPanel=$('plate-verification');
  const photoStatus=$('plate-verification-status');
  const photoRetry=$('plate-ocr-retry');
@@ -944,6 +948,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    photoStatus.textContent=text;
    photoPanel.dataset.verified=verified?'true':'false';
    photoRetry.hidden=verified;reviewerForm.hidden=verified;
+   $('fuel-start-panel').hidden=!verified||Boolean(sessionId);
  };
  const stop=()=>{
    if(scanTimer)clearInterval(scanTimer);scanTimer=null;
@@ -967,7 +972,8 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      current=null;$('coupon-inspection').hidden=true;
      return report('คูปองนี้ใช้กับปั๊มอื่น ไม่สามารถรับเติมได้',true);
    }
-   current=coupon;photoId=null;photoPanel.hidden=true;$('coupon-inspection').hidden=false;
+   current=coupon;photoId=null;sessionId=null;photoPanel.hidden=true;
+   $('fuel-start-panel').hidden=true;$('coupon-inspection').hidden=false;
    $('pump-station-name').textContent=coupon.stationName;
    $('pump-fuel').textContent='น้ำมัน: '+coupon.fuelName;
    $('pump-plate').textContent='ทะเบียน: '+(coupon.plate||'ไม่ผูกทะเบียน (ยังต้องถ่ายภาพ)');
@@ -1048,6 +1054,25 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
  }
  reviewerForm.addEventListener('submit',async e=>{e.preventDefault();await supervisorDecision(true);});
  $('plate-reject').addEventListener('click',()=>supervisorDecision(false));
+ $('start-verified-fueling').addEventListener('click',async()=>{
+   if(!photoId||!current||sessionId)return;
+   const proof=photoId,button=$('start-verified-fueling');
+   button.disabled=true;
+   $('fuel-session-status').textContent='กำลังตรวจหลักฐานและล็อกราคา…';
+   try{
+     const response=await getApi('/api/fuel/start',token,{
+       method:'POST',body:JSON.stringify({photoId:proof}),
+     });
+     if(photoId!==proof)return;
+     if(!response.ok||!response.data.session?.id)throw new Error('not_started');
+     sessionId=response.data.session.id;
+     button.hidden=true;
+     $('fuel-session-status').textContent='เริ่มเติมแล้ว · ล็อกราคา ณ เวลาเริ่มเติม · ต้องเก็บหลักฐานหัวจ่ายและใบเสร็จก่อนปิดยอด';
+     report('เริ่มเติมสำเร็จ กำลังรอหลักฐานการเติมน้ำมัน');
+   }catch{
+     $('fuel-session-status').textContent='เริ่มเติมไม่สำเร็จ ตรวจคูปองและหลักฐานอีกครั้ง';
+   }finally{button.disabled=false;}
+ });
  $('stop-camera').addEventListener('click',stop);
  $('start-camera').addEventListener('click',async()=>{
    if(!('BarcodeDetector' in window)||!navigator.mediaDevices?.getUserMedia)

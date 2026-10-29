@@ -1,4 +1,5 @@
 import { createApi } from './api/router.mjs';
+import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
@@ -29,6 +30,9 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if (url.pathname === '/api/fuel/start') {
+          return createFuelStartApi(deps)(request);
+        }
         if (url.pathname === '/api/webhooks/stripe') {
           return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET})(request);
         }

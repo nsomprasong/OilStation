@@ -84,6 +84,11 @@ export function createSupabaseAdapter(env) {
         body:JSON.stringify({p_event_id:d.eventId,p_event_type:d.eventType,
           p_payload_hash:d.hash,p_livemode:d.livemode}),
       }),
+      beginVerifiedFueling: async d=>serviceRequest(env,
+        '/rest/v1/rpc/begin_verified_fuel_session',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
+        }),
       hrRecordGps: async d=>serviceRequest(env,'/rest/v1/rpc/hr_record_gps_attendance',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
