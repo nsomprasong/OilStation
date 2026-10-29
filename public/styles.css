@@ -41,3 +41,9 @@
 .issue-result p{margin:0}
 .issue-result .qr-wrapper{margin:0}
 @media(prefers-color-scheme:dark){.balance-card{background:#203a49;border-color:#315262}.balance-card strong,.balance-card span{color:#c0d6e4}.balance-card .money{color:#7bd9e1}.field{color:#d3e2ee}.field input,.field select,.issue-result input{background:#12283a;border-color:#37596b;color:#eaf3fb}.issue-result{background:#182c3d;border-color:#345a6b}}
+
+.module-choices{display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:12px 0;font-size:14px}
+.module-choices label{display:flex;align-items:center;gap:8px;font-weight:650}
+.module-choices input{width:18px;height:18px;accent-color:#167e92}
+.module-subtitle{margin-top:6px;font-size:12px;font-weight:450;color:#7090a2}
+@media(prefers-color-scheme:dark){.module-subtitle{color:#a2bac9}}
