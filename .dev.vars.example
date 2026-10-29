@@ -8,3 +8,6 @@ COUPON_SIGNING_KEY=replace_with_long_random_secret_at_least_32_chars
 INVITATION_EMAIL_ENABLED=false
 INVITATION_FROM_EMAIL=invite@YOUR_VERIFIED_SENDER_DOMAIN
 # RESEND_API_KEY must be configured as encrypted Worker secret. Never commit a real key.
+
+# Explicit fail-closed release switch; omit/false means no business API or Cron.
+OILSTATION_API_ENABLED=false

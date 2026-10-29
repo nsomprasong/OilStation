@@ -5,7 +5,7 @@ oilstation.goldensoft.cloud runs a separate maintenance placeholder.
 
 | Gate | Verified evidence | Still required |
 | --- | --- | --- |
-| Internal Node tests | 225/225 PASS at ebe8cac6 | Real browser/device UAT |
+| Internal Node tests | 233/233 PASS at b5f2ac3a | Real browser/device UAT |
 | Isolated PostgreSQL | Fuel, Billing, HR Attendance, Topup, Cross Finance, OAuth OTP and 65-table migration parity PASS | Real isolated Supabase Auth/Storage, tenant data and DDL migrations |
 | Frontend/Worker build | Vite and Wrangler dry-run PASS | Authorized, verified Worker deployment and rollback |
 | Invitations | Token scope, OTP proof, optional outbound mail code tested | Verified sending domain/Resend secret; Google/Facebook OAuth live end-to-end; bounced mail |
@@ -44,9 +44,21 @@ occurred in this continuation. The developer has not claimed a finished release.
   scheduling through role-checked database RPCs, with regression coverage
   proving another organization's staff and templates remain inaccessible.
   Work remains to expose a complete owner-facing multi-station HR selector.
-- Full-schema sequential migration count is now 27 unapplied developer SQL
+- Full-schema sequential migration count is now 28 unapplied developer SQL
   files; production applied migration count remains 30.
 - EIGHT isolated GitHub Action workflows, 225 Node tests, frontend build and
   Wrangler dry run PASS at ebe8cac6. External test accounts and approved
   Supabase staging are still required before an end-user test.
 
+
+
+## Deployment preflight automation added (Oct 30)
+
+- The latest production-shaped PostgreSQL migration `20261029215000_release_readiness.sql` adds a read-only, service-role-only release probe requiring new fuel, finance, HR and invitation RPCs; private evidence/slip buckets; no direct browser table CRUD; and blocked legacy finance entrypoints.
+- Worker now exposes separate `GET /api/ready`. With no secrets or release flag, it returns 503, does NOT expose credentials, and all business API routes and Cron jobs remain disabled. `/api/health` does not claim application readiness.
+- `wrangler.jsonc` now includes isolated `uat` environment and `oilstation-uat` Worker, with no scheduled tasks or production domain. Production `oilstation` Worker and domain are not modified.
+- Added a manual GitHub Actions controlled deploy workflow. It builds, tests, dry-runs, requires environment secrets and a database readiness proof before production upload, then probes the deployed domain. The production path also requires the main branch and a specific release approval phrase.
+- The manual workflow is on an unmerged PR; GitHub must first merge it to the default branch before it becomes available from Actions. Avoid merging until deployment approvals and external staging evidence exist.
+- Verified at `b5f2ac3a`: 233/233 Node tests, Vite build, both UAT and production Wrangler dry runs and all 8 existing isolated SQL/Checks workflows PASS.
+- Connected Cloudflare account shows domain oilstation.goldensoft.cloud bound to Worker oilstation with **no secret bindings**. The current customer-facing Worker is unchanged; Supabase still has 30 applied historical migrations and 28 pending developer migrations.
+- **BLOCKED**: Owner must explicitly approve billed Supabase staging cost and configure scoped Cloudflare GitHub secret and isolated Worker connection secrets. No full deploy has occurred.

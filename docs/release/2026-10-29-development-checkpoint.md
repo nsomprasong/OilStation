@@ -425,3 +425,14 @@ the separate authorization, staging and UAT gates are passed. Release owner
 must authorize billed Supabase staging, configure external provider accounts,
 review payroll/PDPA, reconcile bank/Stripe test flows, and approve deployment.
 
+
+
+## Continuation — explicit safe release readiness and controlled deployment workflow
+
+- Production liveness is no longer conflated with readiness. A new service-only SQL RPC verifies migration version 20261029215000, security-relevant finance and invited-email routines, required private storage buckets, RLS and revoked legacy finance RPC access. Synthetic PostgreSQL parity tests require `ready=true`; making the slip bucket public forces readiness false.
+- Worker requires explicit OILSTATION_API_ENABLED=true for all business endpoints and scheduled expiry/LINE jobs. No API writes occur when disabled. `/api/ready` returns only a boolean readiness outcome and fails closed.
+- `wrangler.jsonc` adds an isolated UAT Worker configuration for oilstation-uat.nsomprasong.workers.dev without a production route or Cron. GitHub CI verifies both Wrangler bundles by dry-run.
+- Manual GitHub Actions deployment created, with tests, branch/approval check for production, Cloudflare encrypted-binding validation, production Supabase release-readiness check before replacing the maintenance Worker, and postdeploy health/readiness smoke tests.
+- **Verified at b5f2ac3a:** 233/233 Node tests PASS; all eight CI workflows PASS; Vite build and both Wrangler dry runs PASS.
+- **Cloudflare inspection confirmed the live Worker has zero encrypted bindings.** There is no GitHub Actions Cloudflare API token established in this task, and the UAT Staging Supabase branch has not been approved/created. The new release code is still on unmerged Draft PR #1. No app deploy to UAT or production has occurred.
+- Production remains at 30 applied SQL migrations; **28 newer migrations remain unapplied**. Do not claim production application is ready or deploy blindly.
