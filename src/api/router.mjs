@@ -136,7 +136,8 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           actorId:user.id,requestId:body.requestId,approved:body.approved,
         })});
       }
-      if (path.startsWith('/api/hr/')) {
+      if (path.startsWith('/api/hr/') &&
+        !['/api/hr/request-ot','/api/hr/review-ot','/api/hr/pending-ot'].includes(path)) {
         const body = path === '/api/hr/roster' ? null : await readBody(request);
         const stationId = path === '/api/hr/roster'
           ? url.searchParams.get('stationId') : body?.stationId;
