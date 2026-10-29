@@ -8,6 +8,7 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/invitations/create': 'POST',
   '/api/station/customers': 'POST', '/api/station/link-company': 'POST',
   '/api/corporate/approve-link': 'POST',
+  '/api/corporate/pending-links': 'GET',
   '/api/station/invite-first-admin': 'POST' };
 
 function json(status, body) {
@@ -95,6 +96,12 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path === '/api/corporate/pending-links') {
+        if (!active.some(m => m.scope_type==='corporate_company' && m.role_code==='corporate_admin')) {
+          return fail(403,'permission_denied');
+        }
+        return json(200,{requests: await db.pendingCorporateLinks(user.id)});
       }
       if (path === '/api/station/invite-first-admin') {
         if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
