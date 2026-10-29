@@ -26,3 +26,14 @@ Only after a reviewed merge to main does the GitHub workflow OilStation Controll
 - Supabase production has 30 applied historical migrations. There are 28 newer unapplied developer migrations (ending 20261029215000).
 - No staging branch exists; its creation requires separate hourly cost approval.
 - This workflow and migration probes DO NOT create billed staging, merge PR, replace production, send email or move bank funds.
+
+
+## UAT Cloudflare Canary actually provisioned
+
+- Cloudflare `oilstation-uat` Worker uploaded and deployed through its authenticated API on October 29 UTC / October 30 Bangkok time. GitHub tracked code is in `ops/uat-canary.mjs`.
+- Deployment ID: `330e0c21-352e-44e2-aae7-59fe6287048b`; deployed version ID: `fbaab272-90a6-453d-8f92-e5d61418bbe4` at 100% allocation.
+- Workers.dev subdomain was enabled; expected address: https://oilstation-uat.nsomprasong.workers.dev/ . The canary intentionally returns `status:provisioned_only` and `/api/ready` HTTP 503. It contains **no OilStation application, Auth, assets, service secrets or financial APIs**.
+- Cloudflare API confirms the UAT deployment and that the customer domain oilstation.goldensoft.cloud is still mapped to the original Worker `oilstation` (production version `be695d4c-7e64-483e-b170-733586fa5154`). It was not replaced.
+- External HTTP smoke checks from the current web tooling were not accessible; do **not** claim end-user reachability based solely on Cloudflare API state. The owner or a connected runner must verify that endpoint.
+- The manual GitHub Actions `uat` deployment will replace the canary with the real built application only after the code is reviewed/merged and a scoped GitHub Cloudflare token has been configured. Staging database secrets and approval are required before enabling business APIs.
+- Latest isolated CI at dc52b4a8: **234/234 Node tests PASS**, frontend build and both Wrangler Worker dry-runs PASS, **all eight workflows PASS**.
