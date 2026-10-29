@@ -68,6 +68,16 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      claimLineNotifications: async limit=>serviceRequest(env,
+        '/rest/v1/rpc/claim_verified_line_notifications',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_limit:limit}),
+        }),
+      finishLineNotification: async (id,decision)=>serviceRequest(env,
+        '/rest/v1/rpc/finish_verified_line_notification',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_notification_id:id,p_decision:decision}),
+        }),
       recordStripeEvent: async d=>serviceRequest(env,
         '/rest/v1/rpc/record_stripe_signed_event',{
         method:'POST',headers:{'content-type':'application/json'},

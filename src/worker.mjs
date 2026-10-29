@@ -1,5 +1,6 @@
 import { createApi } from './api/router.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
+import { drainLineNotifications } from './notifications/line.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
@@ -69,5 +70,10 @@ export default {
       createSupabaseAdapter(env).db.expireCoupons(200)
         .catch(() => { console.error('oilstation_coupon_expiry_failed'); })
     );
+    if (env.LINE_NOTIFICATIONS_ENABLED === 'true' && env.LINE_CHANNEL_ACCESS_TOKEN) {
+      ctx.waitUntil(drainLineNotifications({ db:createSupabaseAdapter(env).db,
+        accessToken:env.LINE_CHANNEL_ACCESS_TOKEN,limit:10 })
+        .catch(()=>console.error('oilstation_line_delivery_failed')));
+    }
   },
 };
