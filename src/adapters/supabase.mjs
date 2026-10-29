@@ -140,6 +140,21 @@ export function createSupabaseAdapter(env) {
             p_actor_id:d.actorId,p_station_id:d.stationId,p_company_id:d.companyId,
           }),
         }),
+      inspectQr: async (actorId, payload) => {
+        const match=/^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.([0-9a-f]{64})$/i.exec(payload);
+        if (!match) { const e=new Error('invalid_qr'); e.code='INVALID_REQUEST'; throw e; }
+        const signingKey=await crypto.subtle.importKey('raw',
+          new TextEncoder().encode(env.COUPON_SIGNING_KEY),
+          {name:'HMAC',hash:'SHA-256'},false,['verify']);
+        const signature=Uint8Array.from(match[2].match(/../g),s=>parseInt(s,16));
+        const valid=await crypto.subtle.verify('HMAC',signingKey,signature,
+          new TextEncoder().encode(match[1]+':qr'));
+        if (!valid) { const e=new Error('invalid_qr'); e.code='INVALID_REQUEST'; throw e; }
+        return serviceRequest(env,'/rest/v1/rpc/inspect_station_coupon',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_qr_hash:await digest(payload)}),
+        });
+      },
       pendingCorporateLinks: async (actorId) => serviceRequest(env,
         '/rest/v1/rpc/pending_corporate_station_links',{
           method:'POST',headers:{'content-type':'application/json'},
