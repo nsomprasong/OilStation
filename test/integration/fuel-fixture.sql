@@ -36,6 +36,8 @@ CREATE TABLE public.station_modules(
  station_id uuid NOT NULL REFERENCES public.stations(id),module_code text NOT NULL,
  status text NOT NULL,valid_from timestamptz,valid_until timestamptz,
  PRIMARY KEY(station_id,module_code));
+-- A station product's display name can resolve through a linked brand product.
+CREATE TABLE public.brand_fuel_products(id uuid PRIMARY KEY,name_th text NOT NULL);
 CREATE TABLE public.station_fuel_products(
  id uuid PRIMARY KEY,station_id uuid NOT NULL REFERENCES public.stations(id),
  brand_product_id uuid,custom_name text, name_override text,enabled boolean NOT NULL DEFAULT false,
@@ -149,3 +151,11 @@ INSERT INTO public.station_fuel_products(id,station_id,custom_name,enabled,curre
 INSERT INTO public.corporate_price_rules(account_id,station_fuel_id,rule_type,value_per_liter,effective_from)
  VALUES('aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa',
         'aaaaaaaa-4444-4444-8444-aaaaaaaaaaaa','discount',5.0,'2026-01-01T00:00:00Z');
+
+-- A second wallet of the SAME company at station B allows lawful cross-station
+-- replacement while B's unrelated corporate wallet stays fully isolated.
+INSERT INTO public.corporate_station_accounts(id,station_id,company_id,
+ prepaid_balance_satang,credit_limit_satang)
+VALUES('bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb',
+ 'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb',
+ 'aaaaaaaa-2222-4222-8222-aaaaaaaaaaaa',5000,20000);

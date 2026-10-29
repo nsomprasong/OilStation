@@ -34,6 +34,8 @@ jobs:
               for migration in \
                 20261029120000_coupon_reserved_atomic.sql \
                 20261029121000_fuel_session_settlement.sql \
+                20261029124000_coupon_atomic_replacement.sql \
+                20261029124500_fix_cross_station_coupon_link.sql \
                 20261029155000_expire_coupon_holds.sql \
                 20261029160500_private_evidence_gate.sql \
                 20261029161000_fail_closed_fuel_start.sql \

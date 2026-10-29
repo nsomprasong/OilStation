@@ -185,5 +185,71 @@ BEGIN
  IF (SELECT status FROM public.coupons WHERE id=coupon_a)<>'completed'
     OR (SELECT count(*) FROM public.wallet_ledger WHERE account_id=account_a)<>6
  THEN RAISE EXCEPTION 'unexpected_money_movement';END IF;
+
+ -- Switch a fresh coupon from station A to B for the SAME corporate company.
+ -- Never let a failed new reservation consume or cancel the old coupon.
+ r:=public.issue_reserved_coupon(
+   'aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa',issuer,account_a,product_a,
+   10000,expiry,'ABC123',repeat('1',64),repeat('2',64),
+   'fuel-replace-old-0001');
+ IF r->>'status'<>'reserved' THEN RAISE EXCEPTION 'replace_original_not_held';END IF;
+ v_failed:=false;
+ BEGIN
+  PERFORM public.replace_reserved_coupon(
+   issuer,'aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa',
+   'bbbbbbbb-9999-4999-8999-bbbbbbbbbbbb',
+   'bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb',product_b,
+   26000,expiry,'DEF234',repeat('3',64),repeat('4',64),
+   'fuel-replace-action-0001');
+ EXCEPTION WHEN OTHERS THEN v_failed:=SQLERRM='INSUFFICIENT_FUNDS';END;
+ IF NOT v_failed THEN RAISE EXCEPTION 'oversized_cross_station_replace_allowed';END IF;
+ IF (SELECT status FROM public.coupons WHERE id=
+    'aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa')<>'reserved'
+    OR (SELECT reserved_satang FROM public.corporate_station_accounts
+    WHERE id=account_a)<>10000
+    OR (SELECT reserved_satang FROM public.corporate_station_accounts
+    WHERE id='bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb')<>0
+ THEN RAISE EXCEPTION 'failed_replacement_not_atomic';END IF;
+ v_failed:=false;
+ BEGIN
+  PERFORM public.replace_reserved_coupon(
+   foreign_issuer,'aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa',
+   'bbbbbbbb-9999-4999-8999-bbbbbbbbbbbb',
+   'bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb',product_b,
+   8000,expiry,'DEF234',repeat('3',64),repeat('4',64),
+   'fuel-replace-action-0001');
+ EXCEPTION WHEN OTHERS THEN v_failed:=SQLERRM='FORBIDDEN';END;
+ IF NOT v_failed THEN RAISE EXCEPTION 'foreign_company_replaced_coupon';END IF;
+ result:=public.replace_reserved_coupon(
+   issuer,'aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa',
+   'bbbbbbbb-9999-4999-8999-bbbbbbbbbbbb',
+   'bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb',product_b,
+   8000,expiry,'DEF234',repeat('3',64),repeat('4',64),
+   'fuel-replace-action-0001');
+ IF result->>'status'<>'reserved' OR result->>'replayed'<>'false'
+ THEN RAISE EXCEPTION 'cross_station_replace_failed %',result;END IF;
+ IF (SELECT status FROM public.coupons WHERE id=
+   'aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa')<>'cancelled'
+  OR (SELECT reserved_satang FROM public.corporate_station_accounts
+   WHERE id=account_a)<>0
+  OR (SELECT reserved_satang FROM public.corporate_station_accounts
+   WHERE id='bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb')<>8000
+ THEN RAISE EXCEPTION 'cross_station_replacement_wallet_not_atomic';END IF;
+ r:=public.resolve_coupon_link('aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa',
+   repeat('1',64));
+ IF r->>'replaced'<>'true'
+   OR (r->>'id')::uuid<>'bbbbbbbb-9999-4999-8999-bbbbbbbbbbbb'::uuid
+   OR r->>'station_name'<>'Test station B'
+ THEN RAISE EXCEPTION 'old_link_did_not_follow_successor %',r;END IF;
+ v_wallet:=(SELECT count(*) FROM public.wallet_ledger);
+ r:=public.replace_reserved_coupon(
+   issuer,'aaaaaaaa-8888-4888-8888-aaaaaaaaaaaa',
+   'bbbbbbbb-9999-4999-8999-bbbbbbbbbbbb',
+   'bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb',product_b,
+   8000,expiry,'DEF234',repeat('3',64),repeat('4',64),
+   'fuel-replace-action-0001');
+ IF r->>'replayed'<>'true' OR (SELECT count(*) FROM public.wallet_ledger)<>v_wallet
+ THEN RAISE EXCEPTION 'duplicate_replacement_changed_cash';END IF;
+
 END $checks$;
 ROLLBACK;
