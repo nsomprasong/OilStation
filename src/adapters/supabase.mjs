@@ -68,6 +68,25 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      hrRoster: async d => serviceRequest(env,'/rest/v1/rpc/hr_station_roster',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+      }),
+      hrSeedTemplates: async d => serviceRequest(env,'/rest/v1/rpc/hr_seed_shift_templates',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+      }),
+      hrAddEmployee: async d => serviceRequest(env,'/rest/v1/rpc/hr_add_employee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+          p_employee_code:d.employeeCode,p_name:d.name,p_wage_type:d.wageType,
+          p_wage_satang:d.wageSatang,p_payroll_frequency:d.payrollFrequency}),
+      }),
+      hrAssignShift: async d => serviceRequest(env,'/rest/v1/rpc/hr_assign_shift',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
+          p_template_id:d.templateId,p_date:d.date}),
+      }),
       inviteFirstCorporateAdmin: async (d) => {
         const bytes = new Uint8Array(32);
         crypto.getRandomValues(bytes);
