@@ -1103,14 +1103,24 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    status.textContent='กำลังส่งหลักฐานแบบส่วนตัว…';
    const activeSession=sessionId;
    try{
+     const preview=[];
      for(const [kind,file] of uploads){
        const response=await fetch('/api/evidence/fuel?sessionId='+encodeURIComponent(activeSession)
          +'&kind='+kind,{method:'POST',headers:{authorization:'Bearer '+token,
            'content-type':file.type},body:file,cache:'no-store'});
        if(!response.ok)throw new Error('evidence_failed');
+       const saved=await response.json().catch(()=>({}));
+       const evidenceId=saved.evidence?.evidenceId;
+       if(evidenceId){
+         const ocr=await getApi('/api/evidence/fuel/ocr',token,{
+           method:'POST',body:JSON.stringify({evidenceId}),
+         }).catch(()=>null);
+         preview.push(ocr?.ok?kind+': OCR รอผู้จัดการตรวจ':
+           kind+': รับภาพแล้ว OCR ยังไม่พร้อม');
+       }
      }
      if(sessionId!==activeSession)return;
-     status.textContent='รับภาพหัวจ่ายและใบเสร็จแล้ว · รอ OCR และผู้จัดการตรวจสอบก่อนปิดยอด';
+     status.textContent='รับภาพแล้ว · '+preview.join(' / ')+' · ยังไม่ปิดยอด ไม่ตัดวงเงิน';
    }catch{
      status.textContent='ส่งหลักฐานไม่ครบ กรุณาตรวจสอบรูปภาพและลองส่งใหม่';
    }finally{button.disabled=false;}

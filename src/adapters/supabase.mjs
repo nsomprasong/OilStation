@@ -84,6 +84,37 @@ export function createSupabaseAdapter(env) {
         body:JSON.stringify({p_event_id:d.eventId,p_event_type:d.eventType,
           p_payload_hash:d.hash,p_livemode:d.livemode}),
       }),
+      fuelOcrContext: async d=>serviceRequest(env,
+        '/rest/v1/rpc/fuel_photo_ocr_context',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_evidence_id:d.evidenceId}),
+        }),
+      readFuelPhoto: async path=>{
+        if(typeof path!=='string'||
+          !/^stations\/[0-9a-f-]{36}\/sessions\/[0-9a-f-]{36}\/(pump_display|receipt)\/[0-9a-f-]{36}\.(jpg|png)$/i.test(path))
+          throw new Error('invalid_private_path');
+        const response=await fetch(normalizeUrl(env,'/storage/v1/object/oilstation-evidence/'+path),{
+          headers:headers(env.SUPABASE_SERVICE_ROLE_KEY),
+          signal:AbortSignal.timeout(15_000),
+        });
+        if(!response.ok||Number(response.headers.get('content-length'))>5*1024*1024)
+          throw new Error('private_photo_unavailable');
+        const bytes=new Uint8Array(await response.arrayBuffer());
+        if(bytes.length<64||bytes.length>5*1024*1024)throw new Error('private_photo_unavailable');
+        const type=path.endsWith('.png')?'image/png':'image/jpeg';
+        if(type==='image/jpeg'?
+           !(bytes[0]===255&&bytes[1]===216&&bytes[2]===255):
+           ![137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v))
+          throw new Error('invalid_private_photo');
+        return {bytes,contentType:type};
+      },
+      recordFuelOcr: async d=>serviceRequest(env,
+        '/rest/v1/rpc/record_fuel_photo_ocr_preview',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_evidence_id:d.evidenceId,
+           p_liters:d.preview.liters,p_gross_satang:d.preview.grossSatang,
+           p_confidence:d.preview.confidence}),
+        }),
       authorizeFuelPhoto: async d=>serviceRequest(env,
         '/rest/v1/rpc/authorize_fuel_photo_upload',{
           method:'POST',headers:{'content-type':'application/json'},
