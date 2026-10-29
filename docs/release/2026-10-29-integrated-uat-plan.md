@@ -34,6 +34,17 @@
 - **Do not confuse this with a complete top-up feature:** private bank slip intake, the bank-confirmation review UI and independent bank settlement checks are not yet live. There is deliberately no button to increase a company's available funds from an uploaded slip.
 - No change to the production placeholder Worker and no customer acceptance testing; the Draft PR remains unmerged.
 
+
+### Corporate top-up flow — private-slip implementation update (Oct 29)
+
+- Private `oilstation-slips` Storage bucket (JPEG/PNG, 5 MiB) and uploader validated against both the customer's corporate account and a bank account **owned by that station**.
+- Uploaded slip creates a pending request only. A second distinct manager with that station's finance role must inspect the original bank transfer in bank records, enter its reference and explicitly confirm money received before approving.
+- The manager can download the private slip through an authenticated Worker endpoint; it is never exposed via public Storage URLs. Banking credentials are never sent to the browser.
+- Protected approval uses an atomic database transaction: oldest outstanding corporate debt first, remainder into prepaid balance, immutable journal, single bank-reference reuse protection and idempotent replay.
+- Database rollback tests covered permission isolation, absent/duplicate slip, no credit before approval, denied self-approval, required independent bank confirmation and repeated approval.
+- **Limitation:** the bank feed itself is not integrated. A manager's explicit external-bank-statement confirmation is the trust boundary. Before real transfers, configure actual station bank accounts, reconcile negative and partial scenarios, test with at least two separate human identities and review cash-control procedures.
+- **CI at branch `3b3cf9cb` passed 84/84 Node tests, frontend build and Wrangler dry-run** (run 40888284843). Neither an OAuth login nor a real bank transfer was end-to-end tested. Production Worker remains unchanged.
+
 ## Gate A — Foundations & auth (not passed)
 
 - [ ] Configure Google and Facebook OAuth, provider redirect URLs and Supabase Auth policies.
