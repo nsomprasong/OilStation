@@ -100,3 +100,16 @@
 .finance-item .field{margin-top:8px}
 @media(prefers-color-scheme:dark){.finance-confirm{background:#1b3948}}
 @media(max-width:450px){.finance-actions{flex-direction:column}.finance-actions button{width:100%}}
+
+
+/* Operational evidence review: calm workspace, prominent verification state. */
+.plate-verification{margin-top:14px;padding:18px;border:1px solid #d5e1e7;border-radius:14px;background:#fff;display:grid;gap:12px}
+.plate-verification[hidden],.plate-verification .coupon-form[hidden]{display:none!important}
+.plate-verification .section-title{font-size:15px}
+.plate-verification .section-title svg{width:18px;height:18px;color:#0b7286}
+.plate-verification p{margin:0;line-height:1.6}
+.plate-verification[data-verified="true"]{border-inline-start:4px solid #087e65}
+.plate-verification[data-verified="true"] #plate-verification-status{font-weight:700;color:#087e65}
+.plate-verification .hint{text-align:left}
+.plate-verification .button{width:100%}
+@media(prefers-color-scheme:dark){.plate-verification{background:#152b3c;border-color:#2b4e63}.plate-verification[data-verified="true"] #plate-verification-status{color:#7cddbc}}

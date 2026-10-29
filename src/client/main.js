@@ -911,6 +911,19 @@ async function stationPumpWorkspace(token,stationId,target) {
        <button type="submit" class="button primary"><i data-ui-icon="camera"></i>ส่งรูปตรวจทะเบียน</button>
      </form>
      <p class="hint">ต้องให้ระบบตรวจภาพทะเบียนและยืนยันความถูกต้องก่อนเริ่มเติมน้ำมัน พนักงานไม่สามารถข้ามขั้นตอนนี้ได้</p>
+     <section id="plate-verification" class="plate-verification" hidden aria-label="ผลตรวจทะเบียน">
+       <div class="section-title"><i data-ui-icon="shield"></i>ยืนยันหลักฐานทะเบียน</div>
+       <p id="plate-verification-status" role="status" aria-live="polite">ยังไม่ได้ตรวจ</p>
+       <button type="button" id="plate-ocr-retry" class="button secondary">ตรวจด้วย OCR อีกครั้ง</button>
+       <form id="plate-supervisor-form" class="coupon-form">
+         <label class="field">ทะเบียนที่เห็นจากภาพจริง
+           <input id="plate-supervisor-value" autocomplete="off" maxlength="40" placeholder="ตัวอย่าง กข 1234" required>
+         </label>
+         <p class="hint">สำหรับแคชเชียร์/ผู้จัดการที่ไม่ได้ถ่ายภาพนี้เท่านั้น ต้องตรวจภาพจริงและตรงกับทะเบียนคูปอง ห้ามยืนยันจากข้อความ OCR อย่างเดียว</p>
+         <button class="button primary" type="submit">ยืนยันทะเบียนตรงกับภาพจริง</button>
+         <button id="plate-reject" class="button secondary" type="button">ไม่ผ่าน — ปฏิเสธภาพนี้</button>
+       </form>
+     </section>
    </div>
  `;
  const $=id=>document.getElementById(id);
@@ -918,7 +931,16 @@ async function stationPumpWorkspace(token,stationId,target) {
    const out=$('pump-notice');out.textContent=text;out.hidden=false;
    out.dataset.tone=error?'error':'neutral';
  };
- let current=null,stream=null,scanTimer=null,reading=false;
+ let current=null,stream=null,scanTimer=null,reading=false,photoId=null;
+ const photoPanel=$('plate-verification');
+ const photoStatus=$('plate-verification-status');
+ const photoRetry=$('plate-ocr-retry');
+ const reviewerForm=$('plate-supervisor-form');
+ const setPhotoStatus=(text,verified=false)=>{
+   photoStatus.textContent=text;
+   photoPanel.dataset.verified=verified?'true':'false';
+   photoRetry.hidden=verified;reviewerForm.hidden=verified;
+ };
  const stop=()=>{
    if(scanTimer)clearInterval(scanTimer);scanTimer=null;
    if(stream){for(const track of stream.getTracks())track.stop();}
@@ -941,7 +963,7 @@ async function stationPumpWorkspace(token,stationId,target) {
      current=null;$('coupon-inspection').hidden=true;
      return report('คูปองนี้ใช้กับปั๊มอื่น ไม่สามารถรับเติมได้',true);
    }
-   current=coupon;$('coupon-inspection').hidden=false;
+   current=coupon;photoId=null;photoPanel.hidden=true;$('coupon-inspection').hidden=false;
    $('pump-station-name').textContent=coupon.stationName;
    $('pump-fuel').textContent='น้ำมัน: '+coupon.fuelName;
    $('pump-plate').textContent='ทะเบียน: '+(coupon.plate||'ไม่ผูกทะเบียน (ยังต้องถ่ายภาพ)');
@@ -959,6 +981,7 @@ async function stationPumpWorkspace(token,stationId,target) {
    const button=$('plate-photo-form').querySelector('button');
    button.disabled=true;report('กำลังอัปโหลดภาพทะเบียนแบบส่วนตัว…');
    try{
+     const couponIdAtUpload=current.couponId;
      const endpoint='/api/evidence/plate?stationId='+encodeURIComponent(stationId)
        +'&couponId='+encodeURIComponent(current.couponId);
      const res=await fetch(endpoint,{
@@ -966,11 +989,61 @@ async function stationPumpWorkspace(token,stationId,target) {
        body:file,cache:'no-store',
      });
      const data=await res.json().catch(()=>({}));
-     report(res.ok?'รับภาพแล้ว รอผลตรวจ OCR ก่อนเริ่มเติมน้ำมัน':
-       'ส่งภาพไม่สำเร็จ ('+(data.error||'service_unavailable')+')',!res.ok);
+     if(!current || current.couponId!==couponIdAtUpload)return;
+     if(res.ok && data.evidence?.photoId){
+       photoId=data.evidence.photoId;photoPanel.hidden=false;
+       setPhotoStatus('ภาพอยู่ในพื้นที่จัดเก็บส่วนตัว กำลังตรวจ OCR…');
+       await runPlateOcr();
+     } else report('ส่งภาพไม่สำเร็จ ('+(data.error||'service_unavailable')+')',true);
    }catch{report('การอัปโหลดล้มเหลว',true);}
    finally{button.disabled=false;}
  });
+
+ async function runPlateOcr(){
+   if(!photoId)return;
+   const pendingPhotoId=photoId;photoRetry.disabled=true;
+   setPhotoStatus('กำลังอ่านทะเบียนจากภาพส่วนตัว…');
+   try{
+     const res=await getApi('/api/evidence/plate/ocr',token,{
+       method:'POST',body:JSON.stringify({photoId:pendingPhotoId}),
+     });
+     if(photoId!==pendingPhotoId)return;
+     if(res.ok && res.data.result?.verified){
+       setPhotoStatus('ตรวจทะเบียนผ่าน ✓ หลักฐานได้รับการยืนยัน',true);
+       report('ทะเบียนผ่านการตรวจสอบ OCR');
+     }else{
+       setPhotoStatus(res.ok ? 'OCR ไม่แน่ชัดหรือตรวจพบทะเบียนต่างจากคูปอง — ต้องให้แคชเชียร์/ผู้จัดการตรวจภาพจริง' :
+         'OCR ยังไม่พร้อมใช้งาน — รอผู้มีสิทธิ์ตรวจภาพจริง');
+       report('ยังไม่อนุญาตเริ่มเติมน้ำมัน',true);
+     }
+   }catch{setPhotoStatus('เชื่อมต่อ OCR ไม่สำเร็จ — รอผู้จัดการตรวจภาพ');}
+   finally{photoRetry.disabled=false;}
+ }
+ photoRetry.addEventListener('click',runPlateOcr);
+ async function supervisorDecision(approved){
+   if(!photoId)return report('กรุณาอัปโหลดภาพก่อน',true);
+   const pendingPhotoId=photoId;
+   const plate=$('plate-supervisor-value').value.trim();
+   if(approved&&!plate)return report('กรุณากรอกทะเบียนที่เห็นจากภาพจริง',true);
+   const controls=[...reviewerForm.querySelectorAll('button')];
+   controls.forEach(b=>b.disabled=true);
+   try{
+     const res=await getApi('/api/evidence/plate/review',token,{
+       method:'POST',body:JSON.stringify({photoId:pendingPhotoId,approved,observedPlate:plate}),
+     });
+     if(photoId!==pendingPhotoId)return;
+     if(res.ok){
+       setPhotoStatus(approved?'แคชเชียร์/ผู้จัดการตรวจทะเบียนผ่าน ✓':'ปฏิเสธภาพนี้ ต้องถ่ายภาพใหม่',approved);
+       report(approved?'หลักฐานทะเบียนได้รับการยืนยันแล้ว':'ภาพถูกปฏิเสธ กรุณาถ่ายภาพใหม่',!approved);
+       if(!approved){photoId=null;photoPanel.hidden=true;}
+     }else report(res.data?.error==='plate_mismatch'?
+       'ทะเบียนจริงไม่ตรงคูปอง ต้องให้บริษัทออก QR ใหม่':
+       'ยืนยันไม่ได้ — ตรวจสิทธิ์ผู้อนุมัติและตรวจว่าผู้อนุมัติไม่ใช่คนถ่ายภาพ',true);
+   }catch{report('เชื่อมต่อระบบตรวจทะเบียนไม่สำเร็จ',true);}
+   finally{controls.forEach(b=>b.disabled=false);}
+ }
+ reviewerForm.addEventListener('submit',async e=>{e.preventDefault();await supervisorDecision(true);});
+ $('plate-reject').addEventListener('click',()=>supervisorDecision(false));
  $('stop-camera').addEventListener('click',stop);
  $('start-camera').addEventListener('click',async()=>{
    if(!('BarcodeDetector' in window)||!navigator.mediaDevices?.getUserMedia)

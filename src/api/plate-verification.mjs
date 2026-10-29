@@ -46,6 +46,7 @@ export function createPlateVerificationApi({authenticate,db,recognize}){
    return json(200,{result,reason:verdict.reason});
   }catch(e){
    if(e?.code==='FORBIDDEN')return json(403,{error:'permission_denied'});
+   if(e?.code==='PLATE_MISMATCH')return json(409,{error:'plate_mismatch'});
    if(e?.code==='INVALID_REQUEST')return json(409,{error:'evidence_not_reviewable'});
    return json(503,{error:'plate_verification_unavailable'});
   }

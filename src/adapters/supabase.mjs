@@ -22,7 +22,7 @@ async function fetchJson(url, init) {
       'PRODUCT_NOT_AVAILABLE', 'IDEMPOTENCY_CONFLICT', 'ACCOUNT_NOT_FOUND',
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
-      'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED']);
+      'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
@@ -30,7 +30,7 @@ async function fetchJson(url, init) {
         detail.message === 'FORBIDDEN' ? 'FORBIDDEN' :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
-        ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED'].includes(detail.message) ? detail.message :
+        ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH'].includes(detail.message) ? detail.message :
         'INVALID_REQUEST';
     }
     throw err;

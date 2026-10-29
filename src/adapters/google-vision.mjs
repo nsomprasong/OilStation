@@ -4,16 +4,10 @@ export function createGoogleVisionRecognizer(apiKey,{fetchImpl=fetch}={}){
     if(typeof apiKey!=='string'||apiKey.length<12)throw new Error('ocr_not_configured');
     if(!(bytes instanceof Uint8Array)||bytes.byteLength<64||bytes.byteLength>5*1024*1024||
        !['image/png','image/jpeg'].includes(contentType))throw new Error('invalid_ocr_image');
+    // Chunks are multiples of three, so base64 has no midstream padding.
     let image='';
-    for(let i=0;i<bytes.length;i+=8192){
-      image+=btoa(String.fromCharCode(...bytes.subarray(i,i+8192)));
-    }
-    // Encode the WHOLE byte stream, not independently padded chunks.
-    // The 8192-byte chunks above are not divisible by three; reconstruct safely.
-    const joined=new Uint8Array(bytes);
-    let binary='';
-    for(let i=0;i<joined.length;i+=8190)binary+=String.fromCharCode(...joined.subarray(i,i+8190));
-    image=btoa(binary);
+    for(let i=0;i<bytes.length;i+=8190)
+      image+=btoa(String.fromCharCode(...bytes.subarray(i,i+8190)));
     const response=await fetchImpl('https://vision.googleapis.com/v1/images:annotate',{
       method:'POST',headers:{'content-type':'application/json','x-goog-api-key':apiKey},
       body:JSON.stringify({requests:[{
