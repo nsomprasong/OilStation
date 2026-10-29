@@ -112,6 +112,17 @@ BEGIN
  -- Audit trail remains one row per manually reviewed event.
  IF (SELECT count(*) FROM public.attendance_review_audit)<>2
  THEN RAISE EXCEPTION 'audit_trail_missing_or_duplicated';END IF;
+ bad:=false;
+ BEGIN
+  UPDATE public.attendance_review_audit SET reason='forged update'
+   WHERE attendance_event_id=event_id;
+ EXCEPTION WHEN OTHERS THEN bad:=SQLERRM='REVIEW_AUDIT_IMMUTABLE';END;
+ IF NOT bad THEN RAISE EXCEPTION 'review_audit_was_mutable';END IF;
+ bad:=false;
+ BEGIN
+  DELETE FROM public.attendance_review_audit WHERE attendance_event_id=event_id;
+ EXCEPTION WHEN OTHERS THEN bad:=SQLERRM='REVIEW_AUDIT_IMMUTABLE';END;
+ IF NOT bad THEN RAISE EXCEPTION 'review_audit_was_deletable';END IF;
 
 END $test$;
 ROLLBACK;

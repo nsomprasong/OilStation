@@ -14,6 +14,19 @@ CREATE TABLE IF NOT EXISTS public.attendance_review_audit(
 ALTER TABLE public.attendance_review_audit ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance_review_audit FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON public.attendance_review_audit FROM PUBLIC,anon,authenticated,service_role;
+-- Single-use review decisions are an append-only audit journal. Even a
+-- privileged service-role routine must not rewrite or remove history.
+CREATE OR REPLACE FUNCTION public.reject_attendance_audit_rewrite()
+RETURNS trigger LANGUAGE plpgsql SET search_path=''
+AS $fn$
+BEGIN
+ RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='REVIEW_AUDIT_IMMUTABLE';
+END $fn$;
+DROP TRIGGER IF EXISTS reject_attendance_audit_rewrite
+ ON public.attendance_review_audit;
+CREATE TRIGGER reject_attendance_audit_rewrite
+ BEFORE UPDATE OR DELETE ON public.attendance_review_audit
+ FOR EACH ROW EXECUTE FUNCTION public.reject_attendance_audit_rewrite();
 CREATE INDEX IF NOT EXISTS attendance_events_staff_pending_idx
  ON public.attendance_events(employee_id,recorded_at DESC)
  WHERE review_status='pending';
