@@ -48,6 +48,23 @@ BEGIN
     '2026-10-01','2026-11-01');
  IF d->>'replayed'<>'true' OR (d->>'invoiceId')::uuid<>v_invoice_id
  THEN RAISE EXCEPTION 'duplicate_invoice_draft_created';END IF;
+ -- Changing the selected checkout method must NOT silently reprice a
+ -- previously created invoice in-place.
+ v_err:=false;
+ BEGIN
+  PERFORM public.platform_draft_saas_flat_invoice(admin,group_id,'promptpay',
+    '2026-10-01','2026-11-01');
+ EXCEPTION WHEN OTHERS THEN v_err:=SQLERRM='INVALID_REQUEST';
+ END;
+ IF NOT v_err THEN RAISE EXCEPTION 'previous_invoice_repriced_by_method';END IF;
+ -- A corporate customer of group A cannot read billing of org B.
+ v_err:=false;
+ BEGIN
+  PERFORM public.list_issued_saas_invoices(customer,
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+ EXCEPTION WHEN OTHERS THEN v_err:=SQLERRM='FORBIDDEN';
+ END;
+ IF NOT v_err THEN RAISE EXCEPTION 'foreign_organization_invoices_visible';END IF;
  -- Issued invoices and amounts remain immutable even to service-role callers.
  PERFORM public.platform_issue_saas_invoice(admin,v_invoice_id);
  v_err:=false;
