@@ -7,7 +7,7 @@ DECLARE
  station_a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
  station_b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
  org_a uuid:='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
- plan_id uuid;group_id uuid;invoice_id uuid;line_id uuid;attempt_id uuid;
+ plan_id uuid;group_id uuid;v_invoice_id uuid;line_id uuid;attempt_id uuid;
  d jsonb;paid jsonb;v_amount bigint;v_count integer;v_err boolean;
 BEGIN
  -- Unauthorized staff never controls platform prices/tax.
@@ -37,22 +37,22 @@ BEGIN
    '2026-10-01T00:00:00Z','2026-11-01T00:00:00Z');
  d:=public.platform_draft_saas_flat_invoice(admin,group_id,'card',
     '2026-10-01','2026-11-01');
- invoice_id:=(d->>'invoiceId')::uuid;
+ v_invoice_id:=(d->>'invoiceId')::uuid;
  IF d->>'status'<>'draft' OR (d->>'totalSatang')::bigint<>128400
     OR (d->>'lineCount')::int<>2
  THEN RAISE EXCEPTION 'wrong_invoice_quote %',d;END IF;
  SELECT count(*) INTO v_count FROM public.saas_invoice_lines
-  WHERE invoice_id=invoice_id;
+  WHERE invoice_id=v_invoice_id;
  IF v_count<>2 THEN RAISE EXCEPTION 'invoice_lines_missing';END IF;
  d:=public.platform_draft_saas_flat_invoice(admin,group_id,'card',
     '2026-10-01','2026-11-01');
- IF d->>'replayed'<>'true' OR (d->>'invoiceId')::uuid<>invoice_id
+ IF d->>'replayed'<>'true' OR (d->>'invoiceId')::uuid<>v_invoice_id
  THEN RAISE EXCEPTION 'duplicate_invoice_draft_created';END IF;
  -- Issued invoices and amounts remain immutable even to service-role callers.
- PERFORM public.platform_issue_saas_invoice(admin,invoice_id);
+ PERFORM public.platform_issue_saas_invoice(admin,v_invoice_id);
  v_err:=false;
  BEGIN
-  UPDATE public.saas_invoices SET total_satang=1 WHERE id=invoice_id;
+  UPDATE public.saas_invoices SET total_satang=1 WHERE id=v_invoice_id;
  EXCEPTION WHEN OTHERS THEN
   v_err:=SQLERRM='INVOICE_SNAPSHOT_IMMUTABLE';
  END;
@@ -60,12 +60,12 @@ BEGIN
  v_err:=false;
  BEGIN
   UPDATE public.saas_invoice_lines SET discount_satang=999999
-    WHERE invoice_id=invoice_id;
+    WHERE invoice_id=v_invoice_id;
  EXCEPTION WHEN OTHERS THEN
   v_err:=SQLERRM='INVOICE_SNAPSHOT_IMMUTABLE';
  END;
  IF NOT v_err THEN RAISE EXCEPTION 'issued_invoice_line_mutable';END IF;
- SELECT (public.prepare_saas_test_payment(customer,invoice_id,'card')
+ SELECT (public.prepare_saas_test_payment(customer,v_invoice_id,'card')
       ->>'attemptId')::uuid INTO attempt_id;
  PERFORM public.attach_saas_test_intent(customer,attempt_id,'pi_TestSaaS123456');
  SELECT amount_satang INTO v_amount FROM public.saas_payment_attempts WHERE id=attempt_id;
@@ -76,21 +76,21 @@ BEGIN
  v_err:=false;
  BEGIN
   PERFORM public.reconcile_saas_test_paid_event('evt_TestInvoice123456',
-    'pi_TestSaaS123456',invoice_id,attempt_id,1000,1000,'thb','succeeded',false);
+    'pi_TestSaaS123456',v_invoice_id,attempt_id,1000,1000,'thb','succeeded',false);
  EXCEPTION WHEN OTHERS THEN
   v_err:=SQLERRM='INVALID_REQUEST';
  END;
  IF NOT v_err THEN RAISE EXCEPTION 'tampered_payment_amount_accepted';END IF;
  paid:=public.reconcile_saas_test_paid_event('evt_TestInvoice123456',
-    'pi_TestSaaS123456',invoice_id,attempt_id,128400,128400,'thb','succeeded',false);
+    'pi_TestSaaS123456',v_invoice_id,attempt_id,128400,128400,'thb','succeeded',false);
  IF paid->>'status'<>'paid' OR paid->>'replayed'<>'false'
  THEN RAISE EXCEPTION 'valid_payment_not_settled';END IF;
  paid:=public.reconcile_saas_test_paid_event('evt_TestInvoice123456',
-    'pi_TestSaaS123456',invoice_id,attempt_id,128400,128400,'thb','succeeded',false);
+    'pi_TestSaaS123456',v_invoice_id,attempt_id,128400,128400,'thb','succeeded',false);
  IF paid->>'replayed'<>'true' THEN RAISE EXCEPTION 'duplicate_payment_charged';END IF;
  -- Sales preview is read-only; paid invoices do not automatically post payouts.
  SELECT id INTO line_id FROM public.saas_invoice_lines
-   WHERE invoice_id=invoice_id ORDER BY id LIMIT 1;
+   WHERE invoice_id=v_invoice_id ORDER BY id LIMIT 1;
  INSERT INTO public.sales_assignments(station_id,sales_user_id,effective_from,effective_until)
  VALUES(station_a,'33333333-3333-4333-8333-333333333333',
         '2026-09-30T17:00:00Z','2026-10-15T17:00:00Z'),
@@ -109,7 +109,7 @@ BEGIN
  END IF;
  -- Assert test run never commits live funds or irrevocable commission payouts.
  IF EXISTS(SELECT 1 FROM public.saas_payment_attempts
-   WHERE invoice_id=invoice_id AND status<>'succeeded')
+   WHERE invoice_id=v_invoice_id AND status<>'succeeded')
  THEN RAISE EXCEPTION 'unexpected_attempt_state';END IF;
 END $t$;
 ROLLBACK;
