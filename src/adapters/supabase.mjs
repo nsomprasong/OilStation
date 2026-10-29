@@ -68,6 +68,26 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      hrPendingShiftChanges: async d => serviceRequest(env,
+        '/rest/v1/rpc/hr_station_pending_shift_changes',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+        }),
+      hrRequestShiftOverride: async d => serviceRequest(env,
+        '/rest/v1/rpc/hr_request_shift_override',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_original_assignment_id:d.originalAssignmentId,
+            p_new_template_id:d.newTemplateId,p_reason:d.reason,
+          }),
+        }),
+      hrReviewShiftOverride: async d => serviceRequest(env,
+        '/rest/v1/rpc/hr_review_shift_override',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_request_id:d.requestId,p_approved:d.approved,
+          }),
+        }),
       hrRoster: async d => serviceRequest(env,'/rest/v1/rpc/hr_station_roster',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
