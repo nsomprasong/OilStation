@@ -930,6 +930,20 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
        <button type="button" id="start-verified-fueling" class="button primary">เริ่มเติมน้ำมัน</button>
        <p id="fuel-session-status" role="status"></p>
      </div>
+     <section id="fuel-proof-panel" class="plate-verification" hidden>
+       <div class="section-title">หลักฐานหัวจ่ายและใบเสร็จ</div>
+       <p class="hint">บันทึกภาพทั้งสองรายการก่อนให้ผู้จัดการตรวจความถูกต้อง ระบบยังไม่ตัดยอดจากการอัปโหลดภาพ</p>
+       <form id="fuel-proof-form" class="coupon-form">
+         <label class="field">รูปหน้าจอหัวจ่าย
+           <input id="pump-meter-file" type="file" accept="image/jpeg,image/png" capture="environment" required>
+         </label>
+         <label class="field">รูปใบเสร็จ
+           <input id="fuel-receipt-file" type="file" accept="image/jpeg,image/png" capture="environment" required>
+         </label>
+         <button id="fuel-proof-submit" class="button primary" type="submit">ส่งหลักฐานการเติมน้ำมัน</button>
+       </form>
+       <p id="fuel-proof-status" role="status"></p>
+     </section>
    </div>
    <section id="plate-review-manager" class="plate-verification" hidden></section>
  `;
@@ -973,7 +987,8 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      return report('คูปองนี้ใช้กับปั๊มอื่น ไม่สามารถรับเติมได้',true);
    }
    current=coupon;photoId=null;sessionId=null;photoPanel.hidden=true;
-   $('fuel-start-panel').hidden=true;$('coupon-inspection').hidden=false;
+   $('fuel-start-panel').hidden=true;$('fuel-proof-panel').hidden=true;
+   $('start-verified-fueling').hidden=false;$('coupon-inspection').hidden=false;
    $('pump-station-name').textContent=coupon.stationName;
    $('pump-fuel').textContent='น้ำมัน: '+coupon.fuelName;
    $('pump-plate').textContent='ทะเบียน: '+(coupon.plate||'ไม่ผูกทะเบียน (ยังต้องถ่ายภาพ)');
@@ -1066,11 +1081,38 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      if(photoId!==proof)return;
      if(!response.ok||!response.data.session?.id)throw new Error('not_started');
      sessionId=response.data.session.id;
+     $('fuel-proof-panel').hidden=false;
      button.hidden=true;
      $('fuel-session-status').textContent='เริ่มเติมแล้ว · ล็อกราคา ณ เวลาเริ่มเติม · ต้องเก็บหลักฐานหัวจ่ายและใบเสร็จก่อนปิดยอด';
      report('เริ่มเติมสำเร็จ กำลังรอหลักฐานการเติมน้ำมัน');
    }catch{
      $('fuel-session-status').textContent='เริ่มเติมไม่สำเร็จ ตรวจคูปองและหลักฐานอีกครั้ง';
+   }finally{button.disabled=false;}
+ });
+
+ $('fuel-proof-form').addEventListener('submit',async event=>{
+   event.preventDefault();
+   if(!sessionId)return report('ยังไม่ได้เริ่มเติมน้ำมัน',true);
+   const uploads=[['pump_display',$('pump-meter-file').files?.[0]],
+     ['receipt',$('fuel-receipt-file').files?.[0]]];
+   if(uploads.some(([,file])=>!file||!['image/jpeg','image/png'].includes(file.type)
+       ||file.size<64||file.size>5*1024*1024))
+     return report('ต้องส่ง JPEG/PNG ทั้งสองภาพ ขนาดไม่เกินภาพละ 5 MB',true);
+   const button=$('fuel-proof-submit');button.disabled=true;
+   const status=$('fuel-proof-status');
+   status.textContent='กำลังส่งหลักฐานแบบส่วนตัว…';
+   const activeSession=sessionId;
+   try{
+     for(const [kind,file] of uploads){
+       const response=await fetch('/api/evidence/fuel?sessionId='+encodeURIComponent(activeSession)
+         +'&kind='+kind,{method:'POST',headers:{authorization:'Bearer '+token,
+           'content-type':file.type},body:file,cache:'no-store'});
+       if(!response.ok)throw new Error('evidence_failed');
+     }
+     if(sessionId!==activeSession)return;
+     status.textContent='รับภาพหัวจ่ายและใบเสร็จแล้ว · รอ OCR และผู้จัดการตรวจสอบก่อนปิดยอด';
+   }catch{
+     status.textContent='ส่งหลักฐานไม่ครบ กรุณาตรวจสอบรูปภาพและลองส่งใหม่';
    }finally{button.disabled=false;}
  });
  $('stop-camera').addEventListener('click',stop);

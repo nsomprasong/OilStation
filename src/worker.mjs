@@ -1,4 +1,5 @@
 import { createApi } from './api/router.mjs';
+import { createFuelPhotoApi } from './api/fuel-photo.mjs';
 import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
@@ -30,6 +31,9 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if (url.pathname === '/api/evidence/fuel') {
+          return createFuelPhotoApi(deps)(request);
+        }
         if (url.pathname === '/api/fuel/start') {
           return createFuelStartApi(deps)(request);
         }

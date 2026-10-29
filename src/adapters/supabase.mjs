@@ -84,6 +84,28 @@ export function createSupabaseAdapter(env) {
         body:JSON.stringify({p_event_id:d.eventId,p_event_type:d.eventType,
           p_payload_hash:d.hash,p_livemode:d.livemode}),
       }),
+      authorizeFuelPhoto: async d=>serviceRequest(env,
+        '/rest/v1/rpc/authorize_fuel_photo_upload',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_session_id:d.sessionId,p_kind:d.kind}),
+        }),
+      uploadFuelPhoto: async d=>{
+        const ext=d.contentType==='image/jpeg'?'jpg':'png';
+        const path='stations/'+d.stationId+'/sessions/'+d.sessionId+'/'+d.kind+'/'+crypto.randomUUID()+'.'+ext;
+        const response=await fetch(normalizeUrl(env,'/storage/v1/object/oilstation-evidence/'+path),{
+          method:'POST',headers:headers(env.SUPABASE_SERVICE_ROLE_KEY,{
+           'content-type':d.contentType,'x-upsert':'false','cache-control':'max-age=0',
+          }),body:d.bytes,signal:AbortSignal.timeout(15_000),
+        });
+        if(!response.ok)throw new Error('private_storage_failed');
+        return path;
+      },
+      recordFuelPhoto: async d=>serviceRequest(env,
+        '/rest/v1/rpc/record_fuel_photo_upload',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_session_id:d.sessionId,
+            p_kind:d.kind,p_photo_path:d.path}),
+        }),
       beginVerifiedFueling: async d=>serviceRequest(env,
         '/rest/v1/rpc/begin_verified_fuel_session',{
           method:'POST',headers:{'content-type':'application/json'},
