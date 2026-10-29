@@ -209,6 +209,16 @@ export function createSupabaseAdapter(env) {
            p_coupon_id:d.couponId,p_photo_path:d.path,
          }),
         }),
+      stationPlateReviewInbox: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_plate_review_inbox',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+        }),
+      platePhotoAccess: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_plate_photo_access',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
+        }),
       plateOcrContext: async d=>serviceRequest(env,
         '/rest/v1/rpc/station_plate_ocr_context',{
           method:'POST',headers:{'content-type':'application/json'},
