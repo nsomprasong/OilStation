@@ -1,5 +1,6 @@
 import { createApi } from './api/router.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
+import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 
 export default {
@@ -22,6 +23,9 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if (url.pathname === '/api/evidence/topup' || url.pathname === '/api/evidence/topup-slip') {
+          return createTopupEvidenceApi(deps)(request);
+        }
         if (url.pathname === '/api/evidence/plate') {
           return createEvidenceApi(deps)(request);
         }
