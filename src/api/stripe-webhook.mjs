@@ -69,6 +69,10 @@ export function createStripeWebhookApi({db,secret,processTestPayments=false,nowS
   try{
    const result=await db.recordStripeEvent({eventId:event.id,eventType:event.type,
       hash,livemode:event.livemode});
+   // Never ACK successful Stripe payment without a reconciler: an ACK prevents
+   // automatic Stripe retries and could leave a paid invoice marked unpaid.
+   if(event.type==='payment_intent.succeeded'&&!processTestPayments)
+     return json(503,{error:'reconciliation_disabled'});
    if(processTestPayments&&event.type==='payment_intent.succeeded'){
      let proof;
      try{proof=paidStripeEvidence(event);}catch{

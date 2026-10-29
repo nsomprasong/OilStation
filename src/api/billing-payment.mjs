@@ -36,7 +36,8 @@ export function createBillingPaymentApi({authenticate,db,payments,enabled=false}
    // No amount from client. On retry the persisted Stripe ID is retrieved,
    // not recreated after the provider's idempotency cache expiry.
    const intent=prepared.paymentIntentId?
-    await payments.retrieve({...trusted,paymentIntentId:prepared.paymentIntentId}):
+    await payments.retrieve({...trusted,attemptId:prepared.attemptId,
+      paymentIntentId:prepared.paymentIntentId}):
     await payments.create({...trusted,attemptId:prepared.attemptId,
      idempotencyKey:prepared.idempotencyKey,paymentMethod:data.paymentMethod});
    const result=await db.attachSaasPaymentIntent({

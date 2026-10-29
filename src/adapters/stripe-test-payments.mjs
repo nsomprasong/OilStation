@@ -41,12 +41,14 @@ export function createStripeTestPaymentIntents(secret,{fetchImpl=fetch}={}){
     throw new Error('stripe_payment_mismatch');
    return {id:result.id,clientSecret:result.client_secret,status:result.status};
   },
-  async retrieve({paymentIntentId,invoiceId,amountSatang}){
-   if(!PI.test(paymentIntentId)||!UUID.test(invoiceId)||
+  async retrieve({paymentIntentId,invoiceId,attemptId,amountSatang}){
+   if(!PI.test(paymentIntentId)||!UUID.test(invoiceId)||!UUID.test(attemptId)||
       !Number.isSafeInteger(amountSatang))throw new TypeError('invalid_payment_retrieval');
    const result=await send('payment_intents/'+encodeURIComponent(paymentIntentId));
    if(result.amount!==amountSatang||result.currency!=='thb'||
-     result.metadata?.saas_invoice_id!==invoiceId)throw new Error('stripe_payment_mismatch');
+     result.metadata?.saas_invoice_id!==invoiceId||
+     result.metadata?.saas_payment_attempt_id!==attemptId)
+     throw new Error('stripe_payment_mismatch');
    return {id:result.id,clientSecret:result.client_secret,status:result.status};
   },
  };

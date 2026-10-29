@@ -77,3 +77,18 @@ test('on retry, existing intent is retrieved instead of a second charge',async()
  const r=await a.handler(req({invoiceId:I,paymentMethod:'card'}));
  assert.equal(r.status,200);assert.deepEqual(a.calls.map(x=>x[0]),['retrieve']);
 });
+
+
+test('existing PaymentIntent retrieval is bound to the same invoice AND attempt',async()=>{
+ const calls=[];const s=createStripeTestPaymentIntents(SECRET,{fetchImpl:async (url,init)=>{
+   calls.push(url);return new Response(JSON.stringify(mockStripe),{status:200});
+ }});
+ const result=await s.retrieve({invoiceId:I,attemptId:A,amountSatang:27500,
+   paymentIntentId:PI});
+ assert.equal(result.id,PI);
+ assert.match(calls[0],/payment_intents\/pi_/);
+ const invalid=createStripeTestPaymentIntents(SECRET,{fetchImpl:async()=>new Response(
+  JSON.stringify({...mockStripe,metadata:{saas_invoice_id:I,saas_payment_attempt_id:U}}),{status:200})});
+ await assert.rejects(invalid.retrieve({invoiceId:I,attemptId:A,amountSatang:27500,
+  paymentIntentId:PI}),/mismatch/);
+});
