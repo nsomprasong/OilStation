@@ -5,6 +5,7 @@ import { createFuelPhotoApi } from './api/fuel-photo.mjs';
 import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
+import { createCommissionPreviewApi } from './api/commission-preview.mjs';
 import { createPlatformBillingApi } from './api/platform-billing.mjs';
 import { createBillingInvoiceApi } from './api/billing-invoices.mjs';
 import { createBillingPaymentApi } from './api/billing-payment.mjs';
@@ -54,6 +55,9 @@ export default {
         }
         if (url.pathname === '/api/fuel/start') {
           return createFuelStartApi(deps)(request);
+        }
+        if (url.pathname === '/api/platform/billing/commission-preview') {
+          return createCommissionPreviewApi(deps)(request);
         }
         if (url.pathname.startsWith('/api/platform/billing/')) {
           return createPlatformBillingApi(deps)(request);

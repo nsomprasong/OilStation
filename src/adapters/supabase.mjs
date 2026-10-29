@@ -80,6 +80,12 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_notification_id:id,p_decision:decision}),
         }),
+      platformPaidSaasCommissionContext: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_paid_saas_commission_context',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,
+            p_invoice_line_id:d.invoiceLineId}),
+        }),
       platformSaasBillingOverview: async d=>serviceRequest(env,
         '/rest/v1/rpc/platform_saas_billing_overview',{
           method:'POST',headers:{'content-type':'application/json'},
