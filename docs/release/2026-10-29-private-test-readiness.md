@@ -31,6 +31,18 @@ Do not publish this code until the **minimum invite-only onboarding, authorizati
 - Core financial DB routines for cancellation, replacement, fueling start price lock and discounted settlement.
 - Pure commission/payroll calculations only (no production payroll approvals, statutory tax rules or bank payouts yet).
 
+
+### Additional guarded backend delivered (2026-10-29)
+
+- A reviewed Cloudflare Worker Cron handler runs a service-role-only batch to expire unstarted coupons and release the reservation precisely once. SQL rollback tests passed; scheduling starts only when a reviewed Worker is actually deployed.
+- Station employees can inspect a signed active QR after station membership checks; cancelled QR versions are rejected. The web UI supports native camera scanning where supported, or QR input fallback.
+- A **private** Supabase Storage bucket (`oilstation-evidence`, JPEG/PNG, 5 MiB limit) receives station-authorized plate photos; browser requests cannot directly see other tenants' photos.
+- The fuel start SQL now **requires a private photo object with a separately trusted OCR/supervisor attestation**. Uploaded files default to `pending_ocr`; even if an employee enters the correct plate text, fueling is refused until verified. This is a deliberate safety gate, not a complete OCR integration.
+- HR planned/retrospective OT request records, partial minute approval and anti-self-approval checks are implemented and tested. Legal OT pay multipliers are **not automatically inferred or paid**.
+- All public tables continue to use forced RLS; 65 public tables presently, with no customer test rows remaining.
+
+**Unresolved:** Actual OCR provider and supervised image review, live camera edge cases, image retention/PDPA, protected pump/receipt images, full billing/payroll and externally configured OAuth/payment secrets. This is not ready for real fueling, real payroll or customer UAT.
+
 ## Security and UAT blockers
 
 - The UI has no complete station-owner onboarding wizard or corporate company creation/top-up approval yet.
@@ -38,7 +50,7 @@ Do not publish this code until the **minimum invite-only onboarding, authorizati
 - No automatic email sending and different-email Facebook invitation verification are live.
 - Full HR/Payroll and Stripe/PromptPay/LINE modules require additional implementation and Thailand compliance review.
 - Run negative tests for cross-station member access, token replay, QR cancellation, concurrent coupon issuance, duplicate settlement and all staff/admin roles.
-- All 63 public tables intentionally have RLS enabled with no `anon`/`authenticated` table access; privilege is through service-role-only RPCs with server validation.
+- All 65 public tables intentionally have RLS enabled with no `anon`/`authenticated` table access; privilege is through service-role-only RPCs with server validation.
 - Test automation is a **dry run**; validate Cloudflare Worker Secrets, OAuth, real login and private test data on staging before first deploy.
 - Finance and real customer data must remain disabled until acceptance tests and explicit production release approval.
 
