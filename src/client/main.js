@@ -60,7 +60,165 @@ async function getApi(path, token, init = {}) {
   const data = await res.json().catch(() => ({}));
   return { ok: res.ok, status: res.status, data };
 }
-function dashboard(data) {
+
+function bahtText(value) {
+  if (!/^[0-9]{1,16}$/.test(String(value))) return '—';
+  const number = BigInt(value);
+  const integer = (number / 100n).toLocaleString('th-TH');
+  return '฿' + integer + '.' + (number % 100n).toString().padStart(2, '0');
+}
+function bahtToSatang(text) {
+  if (typeof text !== 'string' || !/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/.test(text)) return null;
+  const [integer, decimal = ''] = text.split('.');
+  const amount = BigInt(integer) * 100n + BigInt(decimal.padEnd(2, '0'));
+  if (amount <= 0n || amount > 999_999_999_999_999n) return null;
+  return amount.toString();
+}
+async function corporateWorkspace(accessToken) {
+  const target = document.getElementById('corporate-workspace');
+  if (!target) return;
+  target.innerHTML = \`
+    <div class="section-title">บัญชีเติมน้ำมันของบริษัท</div>
+    <p class="lead" id="corp-help">กำลังโหลดบัญชี…</p>
+    <div class="account-overview" id="account-overview"></div>
+    <form id="coupon-form" class="coupon-form" hidden>
+      <label class="field">เลือกปั๊มน้ำมัน <select required id="account-select"></select></label>
+      <label class="field">ประเภทน้ำมัน <select required id="fuel-select"></select></label>
+      <label class="field">วงเงินคูปอง (บาท) <input id="amount-input" inputmode="decimal" autocomplete="off" required placeholder="เช่น 1500.00"></label>
+      <label class="field">ทะเบียนรถ (ไม่บังคับ) <input id="plate-input" maxlength="40" autocomplete="off" placeholder="เช่น กข 1234"></label>
+      <label class="field">อายุคูปอง <select required id="expiry-select">
+        <option value="24">24 ชั่วโมง</option>
+        <option value="6">6 ชั่วโมง</option>
+        <option value="48">48 ชั่วโมง</option>
+        <option value="72">72 ชั่วโมง</option>
+      </select></label>
+      <p class="hint">ระบบกันวงเงินทันทีเมื่อออกคูปองสำเร็จ หากยอดพร้อมใช้ไม่พอจะออกคูปองไม่ได้</p>
+      <button id="coupon-submit" class="button primary" type="submit">ออกคูปองและกันวงเงิน</button>
+      <p id="coupon-notice" class="notice" role="status" hidden></p>
+    </form>
+    <section class="issue-result" id="issue-result" hidden aria-live="polite">
+      <h2>คูปองออกสำเร็จ</h2>
+      <p>ส่งลิงก์นี้ให้ผู้ขับรถผ่าน LINE หรือ SMS ได้</p>
+      <input id="share-link" readonly aria-label="ลิงก์คูปองสำหรับคนขับ">
+      <button type="button" id="copy-link" class="button secondary">คัดลอกลิงก์</button>
+      <div id="issued-qr" class="qr-wrapper"></div>
+    </section>
+  \`;
+  const $ = id => document.getElementById(id);
+  const setNotice = (text, isError = false) => {
+    $('coupon-notice').hidden = false;
+    $('coupon-notice').textContent = text;
+    $('coupon-notice').dataset.tone = isError ? 'error' : 'neutral';
+  };
+  let accounts = [];
+  let pendingIdempotencyKey = null;
+  let pendingPayload = null;
+  const accountSelect = $('account-select');
+  const fuelSelect = $('fuel-select');
+  async function reloadAccounts() {
+    const res = await getApi('/api/my-accounts', accessToken);
+    if (!res.ok) throw new Error('อ่านบัญชีบริษัทไม่สำเร็จ');
+    accounts = res.data.accounts || [];
+    $('corp-help').textContent = accounts.length
+      ? 'เลือกบัญชีของปั๊มที่ต้องการออกคูปอง'
+      : 'ยังไม่มีบัญชีเติมน้ำมันที่ผูกกับบริษัทของคุณ';
+    const prior = accountSelect.value;
+    accountSelect.replaceChildren();
+    const overview = $('account-overview');
+    overview.replaceChildren();
+    accounts.forEach(account => {
+      const opt = document.createElement('option');
+      opt.value = account.id;
+      opt.textContent = account.stationName + ' · ' + account.companyName;
+      accountSelect.appendChild(opt);
+      const el = document.createElement('div');
+      el.className = 'balance-card';
+      const station = document.createElement('strong');
+      station.textContent = account.stationName;
+      const value = document.createElement('div');
+      value.className = 'money';
+      value.textContent = bahtText(account.availableSatang);
+      const label = document.createElement('span');
+      label.textContent = 'วงเงินพร้อมใช้ (หักเงินที่กันคูปองแล้ว)';
+      el.append(station, value, label);
+      overview.appendChild(el);
+    });
+    if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
+    $('coupon-form').hidden = !accounts.some(a => a.couponModuleEnabled);
+    if (accounts.length) await reloadFuels();
+  }
+  async function reloadFuels() {
+    fuelSelect.replaceChildren();
+    const selected = accounts.find(a => a.id === accountSelect.value);
+    if (!selected) return;
+    if (!selected.couponModuleEnabled) {
+      const opt=document.createElement('option');opt.textContent='ปั๊มนี้ยังไม่เปิดใช้โมดูลคูปอง';
+      opt.value=''; fuelSelect.appendChild(opt);
+      $('coupon-submit').disabled=true;
+      return;
+    }
+    const res = await getApi('/api/my-accounts/' + encodeURIComponent(selected.id) + '/fuels', accessToken);
+    if (!res.ok) { setNotice('ไม่สามารถโหลดรายการน้ำมัน',true);return; }
+    (res.data.fuels || []).forEach(fuel => {
+      const opt=document.createElement('option');
+      opt.value=fuel.id;
+      opt.textContent=fuel.name + ' · ' + fuel.corporatePrice + ' บาท/ลิตร';
+      fuelSelect.appendChild(opt);
+    });
+    $('coupon-submit').disabled = fuelSelect.options.length===0;
+  }
+  accountSelect.addEventListener('change',() => { pendingIdempotencyKey=null;reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true)); });
+  $('coupon-form').addEventListener('input',()=>{ pendingIdempotencyKey=null; pendingPayload=null; });
+  $('coupon-form').addEventListener('submit',async event => {
+    event.preventDefault();
+    const amountSatang=bahtToSatang($('amount-input').value.trim());
+    if (!amountSatang) return setNotice('ระบุจำนวนเงินเป็นบาท เช่น 1500 หรือ 1500.50',true);
+    const accountId=accountSelect.value, stationFuelId=fuelSelect.value;
+    if (!accountId || !stationFuelId) return setNotice('กรุณาเลือกปั๊มและชนิดน้ำมัน',true);
+    const payload={
+      accountId, stationFuelId, amountSatang,
+      plate:$('plate-input').value.trim(),
+      expiresAt:new Date(Date.now()+Number($('expiry-select').value)*3600_000).toISOString(),
+    };
+    const json=JSON.stringify(payload);
+    if (pendingPayload!==json || !pendingIdempotencyKey) {
+      pendingPayload=json;
+      pendingIdempotencyKey=crypto.randomUUID().replace(/-/g,'');
+    }
+    const btn=$('coupon-submit');
+    btn.disabled=true;
+    setNotice('กำลังตรวจสอบและกันวงเงิน…');
+    try {
+      const res=await getApi('/api/coupons',accessToken,{method:'POST',
+        headers:{'idempotency-key':pendingIdempotencyKey},
+        body:JSON.stringify(payload)});
+      if (!res.ok) return setNotice(res.data.error==='insufficient_funds'
+        ? 'วงเงินพร้อมใช้ไม่เพียงพอ ไม่สามารถออกคูปองได้'
+        : 'ออกคูปองไม่สำเร็จ (' + responseError(res.data) + ')',true);
+      const coupon=res.data.coupon;
+      pendingPayload=null;
+      pendingIdempotencyKey=null;
+      $('issue-result').hidden=false;
+      $('share-link').value=coupon.shareUrl;
+      $('issued-qr').replaceChildren();
+      const canvas=document.createElement('canvas');
+      $('issued-qr').appendChild(canvas);
+      await QRCode.toCanvas(canvas,coupon.qrPayload,{width:240,margin:3});
+      setNotice('กันวงเงินและออกคูปองเรียบร้อย');
+      await reloadAccounts();
+    } catch {
+      setNotice('เชื่อมต่อไม่สำเร็จ ลองกดซ้ำได้โดยระบบจะตรวจรายการซ้ำให้',true);
+    } finally { btn.disabled=false; }
+  });
+  $('copy-link').addEventListener('click',async() => {
+    try { await navigator.clipboard.writeText($('share-link').value); $('copy-link').textContent='คัดลอกแล้ว'; }
+    catch { $('share-link').select(); }
+  });
+  try { await reloadAccounts(); }
+  catch { $('corp-help').textContent='โหลดบัญชีไม่ได้ กรุณาลองใหม่'; }
+}
+
+function dashboard(data, session) {
   const memberships = data.memberships || [];
   const scopes = {
     platform: { title: 'แพลตฟอร์ม', modules: ['ปั๊มที่ให้บริการ', 'พนักงานขาย', 'การเรียกเก็บเงิน'] },
@@ -75,6 +233,7 @@ function dashboard(data) {
    <section class="panel"><div class="section-title"><span class="status-dot"></span>สิทธิ์ของคุณ</div>
      <div class="scope-list" id="scopes"></div><div class="divider"></div>
      <div class="module-list" id="modules"></div>
+     <div id="corporate-workspace"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout">ออกจากระบบ</button>
    </section>`);
@@ -93,6 +252,9 @@ function dashboard(data) {
     e.textContent = name;
     modules.appendChild(e);
   });
+  if (memberships.some(m => m.scopeType==='corporate_company')) {
+    corporateWorkspace(session.access_token).catch(() => {});
+  }
   document.getElementById('logout').addEventListener('click', async () => {
     await authClient.auth.signOut();
     location.replace('/');
@@ -168,7 +330,7 @@ async function boot() {
     history.replaceState(null,'','/');
   }
   const result = await getApi('/api/me',session.access_token);
-  if (result.ok) return dashboard(result.data);
+  if (result.ok) return dashboard(result.data,session);
   if (result.status===403) {
     await authClient.auth.signOut();
     return guestView(false);
