@@ -41,4 +41,10 @@ export default {
     }
     return env.ASSETS.fetch(request);
   },
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(
+      createSupabaseAdapter(env).db.expireCoupons(200)
+        .catch(() => { console.error('oilstation_coupon_expiry_failed'); })
+    );
+  },
 };
