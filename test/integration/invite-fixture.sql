@@ -45,3 +45,8 @@ INSERT INTO public.invitations(id,email,token_hash,role_code,scope_type,station_
  'attendant','station','aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',
  clock_timestamp()+interval '2 hours'
  );
+
+INSERT INTO public.invitations(id,email,token_hash,role_code,scope_type,station_id,expires_at)
+ VALUES('dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+ 'limited-mailbox@example.com',repeat('d',64),'attendant','station',
+ 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',clock_timestamp()+interval '2 hours');

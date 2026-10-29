@@ -42,6 +42,11 @@ BEGIN
  IF v_auth_email IS NOT NULL AND v_confirmed IS NOT NULL
     AND lower(btrim(v_auth_email))=lower(btrim(v_inv.email))
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ -- The invitation-level cap also blocks multiple OAuth accounts from
+ -- spamming the same invited mailbox via one leaked invitation link.
+ SELECT count(*) INTO v_count FROM public.invited_email_otp
+ WHERE invitation_id=v_inv.id AND created_at>v_now-interval '1 hour';
+ IF v_count>=6 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='RATE_LIMITED';END IF;
  SELECT count(*) INTO v_count FROM public.invited_email_otp
  WHERE invitation_id=v_inv.id AND actor_id=p_actor_id
  AND created_at>v_now-interval '1 hour';

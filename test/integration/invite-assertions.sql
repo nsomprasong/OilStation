@@ -72,5 +72,22 @@ BEGIN
  THEN RAISE EXCEPTION 'facebook_missing_email_proof_broken';END IF;
  IF (SELECT count(*) FROM public.memberships)<>3
  THEN RAISE EXCEPTION 'unexpected_number_of_memberships';END IF;
+ -- Combined rate limit for one mailbox applies ACROSS distinct OAuth users,
+ -- not just three attempts per each separate social account.
+ FOR i IN 1..3 LOOP
+  PERFORM public.begin_invited_email_otp(actor,repeat('d',64),
+   repeat('a',64),clock_timestamp()+interval '10 minutes');
+  PERFORM public.begin_invited_email_otp(other_actor,repeat('d',64),
+   repeat('b',64),clock_timestamp()+interval '10 minutes');
+ END LOOP;
+ failed:=false;
+ BEGIN
+  PERFORM public.begin_invited_email_otp(other_actor,repeat('d',64),
+   repeat('f',64),clock_timestamp()+interval '10 minutes');
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='RATE_LIMITED';END;
+ IF NOT failed THEN RAISE EXCEPTION 'shared_invitation_mailbox_rate_limit_missing';END IF;
+ IF (SELECT count(*) FROM public.invited_email_otp WHERE invitation_id=
+   'dddddddd-dddd-4ddd-8ddd-dddddddddddd')<>6
+ THEN RAISE EXCEPTION 'blocked_otp_request_wrote_record';END IF;
 END $check$;
 ROLLBACK;
