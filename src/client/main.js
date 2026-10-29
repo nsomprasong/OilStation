@@ -570,6 +570,54 @@ async function hrWorkspace(token,stationId,target) {
  await refresh();
 }
 
+async function stationFinanceWorkspace(token,stationId,target) {
+  if(!target)return;
+  target.innerHTML = `
+    <div class="divider"></div>
+    <div class="finance-heading">
+      <h2>รายการเติมเงินรอตรวจสอบ</h2>
+      <button id="finance-refresh" class="button secondary" type="button">
+        <i data-ui-icon="receipt"></i>โหลดรายการใหม่
+      </button>
+    </div>
+    <p class="hint">ตรวจสอบเงินเข้าบัญชีธนาคารของปั๊มจริงก่อนอนุมัติ ไม่เพิ่มวงเงินจากการแนบสลิปเพียงอย่างเดียว</p>
+    <div id="pending-topup-list" class="module-list" aria-live="polite"></div>
+    <p id="finance-error" class="notice" role="status" hidden></p>
+  `;
+  const list=target.querySelector('#pending-topup-list');
+  const error=target.querySelector('#finance-error');
+  const refresh=target.querySelector('#finance-refresh');
+  async function load(){
+    refresh.disabled=true;
+    list.replaceChildren();
+    try{
+      const res=await getApi('/api/topup/pending?stationId='+encodeURIComponent(stationId),token);
+      if(!res.ok)throw new Error('not_available');
+      error.hidden=true;
+      if(!res.data.requests?.length){
+        const empty=document.createElement('p');empty.textContent='ไม่มีรายการเติมเงินที่รอตรวจสอบ';
+        list.appendChild(empty);return;
+      }
+      for(const record of res.data.requests){
+        const item=document.createElement('section');item.className='module-item finance-item';
+        const name=document.createElement('strong');name.textContent=record.companyName;
+        const amount=document.createElement('div');amount.className='money';
+        amount.textContent=bahtText(record.amountSatang);
+        const meta=document.createElement('p');
+        meta.textContent='ธนาคาร '+record.bankCode+' · '+new Date(record.requestedAt).toLocaleString('th-TH');
+        const state=document.createElement('p');state.className='finance-status';
+        state.textContent='รอตรวจสอบเงินเข้าจริง — ยังไม่เพิ่มวงเงิน';
+        item.append(name,amount,meta,state);list.appendChild(item);
+      }
+    }catch{
+      error.textContent='โหลดรายการเติมเงินไม่สำเร็จ กรุณาลองอีกครั้ง';
+      error.dataset.tone='error';error.hidden=false;
+    }finally{refresh.disabled=false;}
+  }
+  refresh.addEventListener('click',()=>load());
+  await load();
+}
+
 async function stationCorporateWorkspace(accessToken,stationId,target) {
   if (!target) return;
   target.innerHTML = `
@@ -946,6 +994,7 @@ function dashboard(data, session) {
      <div id="station-fuel-workspace"></div>
      <div id="station-pump-workspace"></div>
      <div id="station-customers-workspace"></div>
+     <div id="station-finance-workspace"></div>
      <div id="hr-workspace"></div>
      <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
@@ -987,6 +1036,8 @@ function dashboard(data, session) {
     fuelPriceEditor(session.access_token,stationMember.stationId,
       document.getElementById('station-fuel-workspace')).catch(()=>{});
     if (['station_owner','owner','manager'].includes(stationMember.role)) {
+      stationFinanceWorkspace(session.access_token,stationMember.stationId,
+        document.getElementById('station-finance-workspace')).catch(()=>{});
       stationCorporateWorkspace(session.access_token,stationMember.stationId,
         document.getElementById('station-customers-workspace')).catch(()=>{});
     }
