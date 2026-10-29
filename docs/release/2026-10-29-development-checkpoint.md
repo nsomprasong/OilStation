@@ -270,3 +270,26 @@ review plus integration against a full isolated schema before launch.
 
 **Still:** No merge; no Cloudflare deploy; no changes to live Supabase;
 feature flags remain off, no money moved and no client UAT yet.
+
+
+## Continuation — HR attendance PostgreSQL review, replay and payroll preview
+
+**Development only; no Supabase migration, production deploy, or customer UAT.**
+
+New work on the same Draft PR:
+- GPS idempotency-key replay reports latest persisted attendance review status and geofence, not forever pending; faceVerified remains false.
+- Manual supervisor attendance audit is append-only with database trigger guarding UPDATE/DELETE; PostgreSQL regression tests cover both.
+- Reviewed work minutes accept real GPS seconds and milliseconds, subtract exact breaks, then floor total worked minutes conservatively.
+- New read-only HR reviewed-attendance RPC requires EVERY punch in period to have a matching independent accepted supervisor_manual audit. Pending, rejected, and legacy accepted-without-audit punches fail closed.
+- Local-calendar RPC uses station IANA timezone for startDate/endDate windows, including Bangkok midnight shifts crossing UTC dates.
+- GET /api/hr/attendance/payroll-preview and Thai manager selector show independently reviewed time as a draft, never an actual salary approval or payout.
+- GitHub Actions Attendance SQL Integration uses disposable PostgreSQL 16, schema fixtures, 2 stations and staff, GPS geofences, nonce replays, cross-station roles, self-review, append-only audit, no-payroll-without-review and midnight date-window checks.
+
+**Verified at commit 341a70d0:** 189/189 Node unit tests PASS, Vite build PASS, Wrangler deploy dry-run PASS, and BOTH PostgreSQL Billing and Attendance Integration PASS.
+The PostgreSQL fixture is isolated, not a full Supabase schema clone; the production release is NOT cleared.
+
+**Unapplied development migrations:** 20, including the new 20261029207000_hr_reviewed_time_preview.sql.
+Previously staged HR migrations 20261029181000 and 20261029193000 were corrected but still have NOT been applied to Supabase.
+
+**Outstanding:** true face/consent/liveness workflow or reviewed non-biometric fallback; complete statutory payroll/OT/advances and paid-period locking; bank export/reconciliation; isolated full-schema migration+security UAT for other modules; Stripe sandbox/refund/dunning; LINE and OAuth; backups, rollback and customer UAT.
+Draft PR #1 remains unmerged, not deployed; Stripe test flags remain off; no funds moved.
