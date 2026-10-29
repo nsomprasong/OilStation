@@ -1,5 +1,7 @@
 import { createApi } from './api/router.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
+import { createPlateVerificationApi } from './api/plate-verification.mjs';
+import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 
@@ -25,6 +27,11 @@ export default {
         const deps = createSupabaseAdapter(env);
         if (url.pathname === '/api/evidence/topup' || url.pathname === '/api/evidence/topup-slip') {
           return createTopupEvidenceApi(deps)(request);
+        }
+        if (url.pathname === '/api/evidence/plate/ocr' || url.pathname === '/api/evidence/plate/review') {
+          return createPlateVerificationApi({ ...deps,
+            recognize: createGoogleVisionRecognizer(env.GOOGLE_VISION_API_KEY),
+          })(request);
         }
         if (url.pathname === '/api/evidence/plate') {
           return createEvidenceApi(deps)(request);

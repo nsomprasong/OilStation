@@ -63,7 +63,7 @@ export function createEvidenceApi({authenticate,db}) {
    const record=await db.recordPlate({
     actorId:user.id,stationId,couponId,path,
    });
-   return json(201,{evidence:{path,status:record.status,verified:false}});
+   return json(201,{evidence:{photoId:record.photoId,path,status:record.status,verified:false}});
   }catch(e){
    if(e?.code==='FORBIDDEN')return json(403,{error:'permission_denied'});
    if(e?.code==='INVALID_REQUEST')return json(400,{error:'invalid_evidence'});

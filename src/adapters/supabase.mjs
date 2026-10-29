@@ -187,6 +187,36 @@ export function createSupabaseAdapter(env) {
            p_coupon_id:d.couponId,p_photo_path:d.path,
          }),
         }),
+      plateOcrContext: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_plate_ocr_context',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
+        }),
+      readPlate: async path=>{
+        if(typeof path!=='string'||!/^stations\/[0-9a-f-]{36}\/plate\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png)$/i.test(path))
+          throw new Error('invalid_private_path');
+        const response=await fetch(normalizeUrl(env,'/storage/v1/object/oilstation-evidence/'+path),{
+          headers:headers(env.SUPABASE_SERVICE_ROLE_KEY),signal:AbortSignal.timeout(15_000),
+        });
+        if(!response.ok || Number(response.headers.get('content-length'))>5*1024*1024)
+          throw new Error('private_photo_unavailable');
+        const bytes=new Uint8Array(await response.arrayBuffer());
+        if(bytes.byteLength<64||bytes.byteLength>5*1024*1024)
+          throw new Error('private_photo_unavailable');
+        return {bytes,contentType:path.endsWith('.png')?'image/png':'image/jpeg'};
+      },
+      completePlateOcr: async d=>serviceRequest(env,
+        '/rest/v1/rpc/complete_station_plate_ocr',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId,
+            p_observed_plate:d.observedPlate,p_accepted:d.accepted}),
+        }),
+      reviewPlate: async d=>serviceRequest(env,
+        '/rest/v1/rpc/review_station_plate_photo',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId,
+            p_observed_plate:d.observedPlate,p_approved:d.approved}),
+        }),
       expireCoupons: async (limit=200) => serviceRequest(env,
         '/rest/v1/rpc/expire_reserved_coupons',{
           method:'POST',headers:{'content-type':'application/json'},
