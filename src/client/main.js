@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountPlateReviewInbox } from './plate-review.js';
+import { mountFuelReviewInbox } from './fuel-review.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -943,17 +944,21 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
          <button id="fuel-proof-submit" class="button primary" type="submit">ส่งหลักฐานการเติมน้ำมัน</button>
        </form>
        <p id="fuel-proof-status" role="status"></p>
+       <button type="button" class="button secondary" id="finish-verified-fueling" hidden>ตรวจหลักฐานและปิดยอดเมื่อผู้จัดการอนุมัติแล้ว</button>
      </section>
    </div>
    <section id="plate-review-manager" class="plate-verification" hidden></section>
+   <section id="fuel-review-manager" class="plate-verification" hidden></section>
  `;
  const $=id=>document.getElementById(id);
  if(canReview)mountPlateReviewInbox({target:$('plate-review-manager'),token,stationId});
+ if(canReview)mountFuelReviewInbox({target:$('fuel-review-manager'),token,stationId});
  const report=(text,error=false)=>{
    const out=$('pump-notice');out.textContent=text;out.hidden=false;
    out.dataset.tone=error?'error':'neutral';
  };
  let current=null,stream=null,scanTimer=null,reading=false,photoId=null,sessionId=null;
+ let fuelProofIds={};
  const photoPanel=$('plate-verification');
  const photoStatus=$('plate-verification-status');
  const photoRetry=$('plate-ocr-retry');
@@ -986,7 +991,8 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      current=null;$('coupon-inspection').hidden=true;
      return report('คูปองนี้ใช้กับปั๊มอื่น ไม่สามารถรับเติมได้',true);
    }
-   current=coupon;photoId=null;sessionId=null;photoPanel.hidden=true;
+   current=coupon;photoId=null;sessionId=null;fuelProofIds={};photoPanel.hidden=true;
+   $('finish-verified-fueling').hidden=true;
    $('fuel-start-panel').hidden=true;$('fuel-proof-panel').hidden=true;
    $('start-verified-fueling').hidden=false;$('coupon-inspection').hidden=false;
    $('pump-station-name').textContent=coupon.stationName;
@@ -1112,6 +1118,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
        const saved=await response.json().catch(()=>({}));
        const evidenceId=saved.evidence?.evidenceId;
        if(evidenceId){
+         fuelProofIds[kind]=evidenceId;
          const ocr=await getApi('/api/evidence/fuel/ocr',token,{
            method:'POST',body:JSON.stringify({evidenceId}),
          }).catch(()=>null);
@@ -1121,8 +1128,31 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      }
      if(sessionId!==activeSession)return;
      status.textContent='รับภาพแล้ว · '+preview.join(' / ')+' · ยังไม่ปิดยอด ไม่ตัดวงเงิน';
+     $('finish-verified-fueling').hidden=!(fuelProofIds.pump_display&&fuelProofIds.receipt);
    }catch{
      status.textContent='ส่งหลักฐานไม่ครบ กรุณาตรวจสอบรูปภาพและลองส่งใหม่';
+   }finally{button.disabled=false;}
+ });
+
+ $('finish-verified-fueling').addEventListener('click',async()=>{
+   if(!sessionId||!fuelProofIds.pump_display||!fuelProofIds.receipt)return;
+   const button=$('finish-verified-fueling');button.disabled=true;
+   const status=$('fuel-proof-status');
+   status.textContent='กำลังตรวจการอนุมัติภาพและยืนยันยอดก่อนปิดรายการ…';
+   try{
+     const result=await getApi('/api/fuel/finish',token,{
+       method:'POST',body:JSON.stringify({
+         sessionId,pumpEvidenceId:fuelProofIds.pump_display,
+         receiptEvidenceId:fuelProofIds.receipt,
+       }),
+     });
+     if(!result.ok||result.data.session?.status!=='completed')
+       throw new Error('not_reviewed');
+     status.textContent='ปิดรายการสำเร็จ · บันทึกยอดตามราคาที่ล็อกไว้แล้ว';
+     button.hidden=true;$('fuel-proof-form').hidden=true;
+     report('รายการเติมน้ำมันเสร็จสมบูรณ์');
+   }catch{
+     status.textContent='ยังปิดยอดไม่ได้ — ต้องให้ผู้จัดการตรวจทั้งสองภาพ และยอดหัวจ่ายกับใบเสร็จต้องตรงกัน';
    }finally{button.disabled=false;}
  });
  $('stop-camera').addEventListener('click',stop);

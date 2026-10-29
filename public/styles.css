@@ -135,3 +135,14 @@
 .plate-review-actions .button{min-width:0}
 @media(max-width:460px){.plate-review-actions{grid-template-columns:1fr}}
 @media(prefers-color-scheme:dark){.plate-review-card{background:#152b3d;border-color:#305369}.plate-review-card input{background:#203a50;color:#eef8ff;border-color:#537183}}
+
+/* Evidence review: original photo remains the primary information source. */
+.fuel-review-list{display:grid;gap:14px;margin-top:14px}
+.fuel-review-card{display:grid;gap:11px;border:1px solid #d3e3ec;padding:14px;border-radius:12px;background:#fbfdfe}
+.fuel-review-card img{max-width:100%;width:100%;max-height:290px;object-fit:contain;background:#e7eef2;border-radius:9px}
+.fuel-review-ocr{font-size:12px;color:#6b7b86;margin:0}
+.fuel-review-card input{font:inherit;color:#173148;background:white;width:100%;border:1px solid #c6dbe5;border-radius:9px;min-height:44px;padding:10px}
+.fuel-review-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.fuel-review-actions .button{min-width:0}
+@media(max-width:460px){.fuel-review-actions{grid-template-columns:1fr}}
+@media(prefers-color-scheme:dark){.fuel-review-card{background:#182e40;border-color:#37566a}.fuel-review-card input{color:#ecf8ff;background:#213a50}.fuel-review-ocr{color:#b9cad5}}
