@@ -15,7 +15,8 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/hr/request-substitute': 'POST', '/api/hr/review-substitute': 'POST',
   '/api/hr/pending-substitutes': 'GET', '/api/station/scan-qr': 'POST',
   '/api/hr/request-ot':'POST', '/api/hr/review-ot':'POST',
-  '/api/hr/pending-ot':'GET' };
+  '/api/hr/pending-ot':'GET', '/api/topup/banks':'GET',
+  '/api/topup/pending':'GET' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -406,6 +407,24 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
         return json(200, { fuel: await db.configureFuel({
           actorId:user.id, stationId, stationFuelId:fuelId, enabled, publicPrice,
         }) });
+      }
+      if (path === '/api/topup/banks') {
+        const accountId=url.searchParams.get('accountId');
+        if (!UUID.test(accountId??'')) return fail(400,'invalid_account');
+        if (!active.some(m=>m.scope_type==='corporate_company' &&
+           ['corporate_admin','accountant','finance_manager'].includes(m.role_code))) {
+           return fail(403,'permission_denied');
+        }
+        return json(200,{banks:await db.corporateTopupBanks(user.id,accountId)});
+      }
+      if (path === '/api/topup/pending') {
+        const stationId=url.searchParams.get('stationId');
+        if (!UUID.test(stationId??'')) return fail(400,'invalid_station');
+        if (!active.some(m=>m.scope_type==='station' && m.station_id===stationId &&
+          ['station_owner','owner','manager','cashier','finance_manager'].includes(m.role_code))) {
+          return fail(403,'permission_denied');
+        }
+        return json(200,{requests:await db.stationPendingTopups(user.id,stationId)});
       }
       if (path === '/api/my-accounts') {
         return json(200, { accounts: await db.corporateAccounts(user.id) });
