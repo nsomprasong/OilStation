@@ -143,3 +143,65 @@ Payroll cannot rely on unreviewed punches.
 **Draft PR stays open and unmerged. No live Worker deployment, no real
 payments/fueling/payroll, no incremental user testing.** Integrated UAT
 is permitted only after release gates and explicit authorization.
+
+
+## Continuation — guarded SaaS Stripe Test Billing (2026-10-29)
+
+**Current status**: test-mode implementation, not released.
+- `3a49af96`: test-only Stripe PaymentIntents created server-side from issued
+  SaaS invoices only, with persistent idempotency and authorized billing scope.
+- `39b599a7`: signed payment_intent.succeeded event reconciles the exact
+  database-bound Stripe intent, invoice, amount received, currency and
+  payment-attempt identity inside one transaction. No station wallet credit.
+- `0adde290`: scoped Thai invoice inbox and embedded Stripe Payment Element,
+  only enabled when public key and explicit test flags are configured.
+- `308509e8`: immutable invoice price/discount/VAT/lines and bound payment
+  intent references once issued, with DB indexes.
+- `54ec7261` / `ca8a01d4`: successful Stripe events are NOT ACKed unless
+  reconciliation is enabled and succeeds; retry lookup GET bug fixed.
+- `124a9108`: pure monthly/annual renewal preview with invoice price-change
+  lead-time requirements, no automatic live renewal.
+- `b13de50c`: invoice line billing-group scope, VAT snapshot arithmetic and
+  stale Stripe idempotency protection.
+
+**Verified quality at b13de50c**: both GitHub CI runs passed. 164/164
+Node tests, Vite production build and Wrangler deploy dry-run passed.
+Actual Stripe sandbox card/PromptPay payment and webhook retries, refunds,
+chargebacks, product activation and production secrets are NOT tested.
+
+### New unapplied migrations, in order
+- 20261029195000_saas_test_payment_intent.sql
+- 20261029200000_reconcile_test_saas_payment.sql
+- 20261029201000_saas_billing_invoice_inbox.sql
+- 20261029202000_saas_invoice_immutability.sql
+
+Together with the 11 earlier unapplied migrations, **15 migrations in this
+development series remain unapplied to the live Supabase project**.
+Do not apply these to the current database without an isolated
+PostgreSQL integration run, transaction concurrency/rollback tests,
+billing group station-history test and explicit release approval.
+
+### Stripe feature toggles, never committed secrets
+- STRIPE_TEST_PAYMENTS_ENABLED=true
+- STRIPE_TEST_RECONCILIATION_ENABLED=true
+- STRIPE_SECRET_KEY=sk_test_... (encrypted Worker secret)
+- STRIPE_WEBHOOK_SECRET=whsec_... (test endpoint secret)
+- STRIPE_PUBLISHABLE_KEY=pk_test_... (public, only if test enabled)
+
+These remain **OFF/UNSET**; this checkpoint does not configure or deploy them.
+Real sk_live credentials are rejected by the test adapter.
+Actual SaaS invoice issuance and statutory VAT/tax configuration are still
+incomplete: this test-only checkout requires an already-issued invoice
+with correctly reviewed pricing_snapshot, locked line items and
+confirmed group station scope. It cannot be used to create arbitrary
+invoice prices. PromptPay discount must already be represented on the
+issued invoice; it is not automatically recomputed by Stripe.
+
+**Outstanding accounting:** invoice generation, automated renewals
+and notices, failure/dunning, refunds/chargebacks and paid adjustment,
+Sales commission earned/payout journal, tax documents and legal review
+are NOT completed. No automatic invoice/credit or customer notification
+is done on a Payment Element browser success. Only the signed webhook
+may mark a SaaS invoice paid.
+
+Draft PR #1 stays open and unmerged; no production deployment or UAT.

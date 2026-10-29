@@ -29,8 +29,7 @@ BEGIN
    (i.pricing_snapshot->>'currency') IS DISTINCT FROM 'thb'
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  -- Verify issued invoice arithmetic against a reviewed VAT snapshot.
- IF i.discount_satang>i.subtotal_satang OR i.pricing_snapshot->>'vatMode'
-   NOT IN ('inclusive','exclusive')
+ IF i.discount_satang>i.subtotal_satang OR coalesce(i.pricing_snapshot->>'vatMode','') NOT IN ('inclusive','exclusive')
    OR (i.pricing_snapshot->>'vatMode'='inclusive'
       AND i.total_satang<>i.subtotal_satang-i.discount_satang)
    OR (i.pricing_snapshot->>'vatMode'='exclusive'
