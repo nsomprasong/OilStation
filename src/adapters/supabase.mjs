@@ -20,12 +20,16 @@ async function fetchJson(url, init) {
     const detail = await response.json().catch(() => ({}));
     const allowed = new Set(['INSUFFICIENT_FUNDS', 'FORBIDDEN', 'INVALID_REQUEST',
       'PRODUCT_NOT_AVAILABLE', 'IDEMPOTENCY_CONFLICT', 'ACCOUNT_NOT_FOUND',
-      'NOT_CANCELLABLE', 'INVALID_RESERVATION']);
+      'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
+      'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
-      err.code = ['INSUFFICIENT_FUNDS', 'FORBIDDEN'].includes(detail.message) ?
-        detail.message : 'INVALID_REQUEST';
+      err.code = detail.message === 'INSUFFICIENT_FUNDS' ? 'INSUFFICIENT_FUNDS' :
+        detail.message === 'FORBIDDEN' ? 'FORBIDDEN' :
+        ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
+        ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
+        'INVALID_REQUEST';
     }
     throw err;
   }
@@ -62,6 +66,13 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      acceptInvitation: async ({ actorId, token }) => {
+        const tokenHash = await digest(token);
+        return serviceRequest(env, '/rest/v1/rpc/accept_member_invitation', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ p_actor_id: actorId, p_token_hash: tokenHash }),
+        });
+      },
       memberships: async (userId) => {
         const params = new URLSearchParams({
           select: 'user_id,role_code,scope_type,organization_id,station_id,corporate_company_id,active,extra_permissions',
