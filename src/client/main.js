@@ -673,7 +673,53 @@ async function stationFinanceWorkspace(token,stationId,target) {
           }catch{slipStatus.textContent='ไม่สามารถดูสลิปได้ กรุณาลองใหม่';}
           finally{slipButton.disabled=false;}
         });
-        item.append(name,amount,meta,state,slipButton,slipStatus);list.appendChild(item);
+        const refLabel=document.createElement('label');refLabel.className='field';
+        refLabel.textContent='เลขอ้างอิงจากรายการเงินเข้าธนาคาร';
+        const reference=document.createElement('input');
+        reference.placeholder='ตรวจสอบจากรายการธนาคาร';reference.maxLength=120;
+        reference.autocomplete='off';reference.setAttribute('aria-label','เลขอ้างอิงรายการโอนที่ตรวจสอบแล้ว');
+        refLabel.appendChild(reference);
+        const confirmLabel=document.createElement('label');confirmLabel.className='finance-confirm';
+        const check=document.createElement('input');check.type='checkbox';
+        confirmLabel.append(check,document.createTextNode('ตรวจยอดเงิน ชื่อบัญชีปลายทาง และเลขอ้างอิงกับรายการเงินเข้าจริงแล้ว'));
+        const buttons=document.createElement('div');buttons.className='finance-actions';
+        const approve=document.createElement('button');approve.type='button';approve.className='button primary';
+        approve.textContent='อนุมัติเมื่อเงินเข้าแล้ว';
+        const reject=document.createElement('button');reject.type='button';reject.className='button secondary';
+        reject.textContent='ปฏิเสธรายการ';
+        const reviewStatus=document.createElement('small');reviewStatus.setAttribute('role','status');
+        async function review(approved){
+          const ref=reference.value.trim();
+          if(approved&&(!check.checked||ref.length<6)){
+            reviewStatus.textContent='ต้องตรวจเงินเข้าธนาคารจริง และกรอกเลขอ้างอิงอย่างน้อย 6 ตัวก่อนอนุมัติ';
+            return;
+          }
+          const question=approved
+            ? 'ยืนยันว่าเงินเข้าธนาคารจริงตรงกับรายการนี้ และอนุมัติเพิ่มวงเงินหลังตัดหนี้ค้าง?'
+            : 'ปฏิเสธรายการเติมเงินนี้?';
+          if(!window.confirm(question))return;
+          approve.disabled=true;reject.disabled=true;reviewStatus.textContent='กำลังบันทึกการตรวจสอบ…';
+          try{
+            const r=await getApi('/api/topup/review',token,{method:'POST',body:JSON.stringify({
+              requestId:record.requestId,approved,
+              bankReceived:approved&&check.checked,
+              bankReference:approved?ref:null,
+            })});
+            if(!r.ok){
+              reviewStatus.textContent='อนุมัติไม่สำเร็จ ('+responseError(r.data)+')';
+              approve.disabled=false;reject.disabled=false;return;
+            }
+            await load();
+          }catch{
+            reviewStatus.textContent='ไม่สามารถยืนยันผลการอนุมัติได้ กรุณาโหลดคิวใหม่ก่อนทำซ้ำ';
+          }
+          finally{approve.disabled=false;reject.disabled=false;}
+        }
+        approve.addEventListener('click',()=>review(true));
+        reject.addEventListener('click',()=>review(false));
+        buttons.append(approve,reject);
+        item.append(name,amount,meta,state,slipButton,slipStatus,refLabel,
+          confirmLabel,buttons,reviewStatus);list.appendChild(item);
       }
     }catch{
       error.textContent='โหลดรายการเติมเงินไม่สำเร็จ กรุณาลองอีกครั้ง';
