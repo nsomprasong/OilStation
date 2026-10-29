@@ -105,6 +105,18 @@ export function createSupabaseAdapter(env) {
         });
         return serviceRequest(env, '/rest/v1/memberships?' + params);
       },
+      corporateAccounts: async (userId) => {
+        return serviceRequest(env, '/rest/v1/rpc/corporate_account_summaries', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ p_actor_id: userId }),
+        });
+      },
+      accountFuels: async (userId, accountId) => {
+        return serviceRequest(env, '/rest/v1/rpc/corporate_account_fuel_offers', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ p_actor_id: userId, p_account_id: accountId }),
+        });
+      },
       account: async (accountId) => {
         const params = new URLSearchParams({
           select: 'id,company_id,station_id', id: 'eq.' + accountId, limit: '1',
