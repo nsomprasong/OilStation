@@ -2,7 +2,8 @@
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDKEY = /^[a-zA-Z0-9_-]{16,128}$/;
 const LIMIT_BYTES = 16_384;
-const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST' };
+const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
+  '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -89,6 +90,36 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path === '/api/fuel-brands') {
+        return json(200, { brands: await db.fuelBrands() });
+      }
+      if (path === '/api/platform/stations' || path === '/api/platform/create-station') {
+        const platformAdmin = active.some(m => m.scope_type === 'platform'
+          && m.role_code === 'platform_superadmin');
+        if (!platformAdmin) return fail(403, 'permission_denied');
+        if (path === '/api/platform/stations') {
+          return json(200, { stations: await db.platformStations(user.id) });
+        }
+        if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
+          return fail(415, 'unsupported_media_type');
+        }
+        const body = await readBody(request);
+        if (!body || typeof body.organizationName !== 'string'
+          || body.organizationName.trim().length < 2 || body.organizationName.trim().length > 160
+          || typeof body.stationName !== 'string'
+          || body.stationName.trim().length < 2 || body.stationName.trim().length > 160
+          || !/^[A-Z0-9_]{2,40}$/.test(body.brandCode ?? '')
+          || typeof body.modules?.qrCoupon !== 'boolean'
+          || typeof body.modules?.hrPayroll !== 'boolean'
+          || (!body.modules.qrCoupon && !body.modules.hrPayroll)) {
+          return fail(400, 'invalid_station');
+        }
+        return json(201, { station: await db.createStation({
+          actorId: user.id, organizationName: body.organizationName.trim(),
+          stationName: body.stationName.trim(), brandCode: body.brandCode,
+          qrCoupon: body.modules.qrCoupon, hrPayroll: body.modules.hrPayroll,
+        }) });
       }
       if (path === '/api/my-accounts') {
         return json(200, { accounts: await db.corporateAccounts(user.id) });
