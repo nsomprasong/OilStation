@@ -422,7 +422,9 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
       });
       if(!r.ok){status.textContent='สร้างคำเชิญไม่สำเร็จ ('+responseError(r.data)+')';return;}
       link.value=r.data.invitation.inviteUrl;link.hidden=false;copy.hidden=false;
-      status.textContent='สร้างลิงก์แล้ว คัดลอกและส่งให้ผู้รับผ่านอีเมล (ยังไม่ส่งอัตโนมัติ)';
+      status.textContent=r.data.invitation.delivery==='email_accepted'?
+        'ผู้ให้บริการรับคำขอส่งอีเมลแล้ว (ยังไม่ยืนยันการส่งถึงผู้รับ) สามารถคัดลอกลิงก์ได้':
+        'สร้างลิงก์แล้ว การส่งอีเมลอัตโนมัติยังไม่ยืนยัน กรุณาคัดลอกและส่งให้ผู้รับ';
     }catch{status.textContent='เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ';}
     finally{submit.disabled=false;}
   });
@@ -843,7 +845,9 @@ async function stationCorporateWorkspace(accessToken,stationId,target) {
       $('customer-invite-link').value=r.data.invitation.inviteUrl;
       $('customer-invite-link').hidden=false;
       $('customer-invite-copy').hidden=false;
-      note('customer-notice','สร้างลิงก์เชิญแล้ว กรุณาส่งให้ผู้รับทางอีเมล');
+      note('customer-notice',r.data.invitation.delivery==='email_accepted'?
+        'ผู้ให้บริการรับคำขอส่งอีเมลแล้ว แต่ยังไม่ยืนยันการส่งถึงผู้รับ':
+        'สร้างลิงก์เชิญแล้ว ยังไม่ได้ยืนยันการส่งอีเมล กรุณาส่งลิงก์ให้ผู้รับ');
     }catch{note('customer-notice','สร้างคำเชิญไม่สำเร็จ',true);}
     finally{btn.disabled=false;}
   });

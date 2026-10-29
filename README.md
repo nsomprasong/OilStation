@@ -58,3 +58,22 @@ All 63 `public` tables have forced RLS and no public/authenticated table privile
 ## Superpowers workflow
 
 Use specification → plan → failing tests → implementation → verification → code review. Open PRs without merging automatically. Production deploy requires separate explicit approval.
+
+
+### Optional automatic invitation email (disabled by default)
+
+Scoped invites and first corporate-admin invites now support provider-accepted
+email requests, but **do not claim delivery**. After verifying your sending
+domain, configure these **Cloudflare Worker encrypted secrets** (not browser
+environment variables or GitHub source): INVITATION_EMAIL_ENABLED=true,
+INVITATION_FROM_EMAIL=invite@YOUR_VERIFIED_DOMAIN, and RESEND_API_KEY.
+
+The trusted Worker calls Resend's email API using an invitation-ID idempotency
+key. Any provider failure or ambiguous response shows the existing manual
+invitation link; **database invitation creation is not rolled back**. A
+successful 2xx response means *accepted for sending*, not inbox delivery.
+Real sender authentication (SPF/DKIM), bounce monitoring and OAuth invitation
+redemption tests are mandatory before enabling the feature. The current
+database requires exact, confirmed ownership of the invited email; different
+Facebook/Google email identities still require an independently approved
+verification flow before production release.
