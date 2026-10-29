@@ -52,6 +52,7 @@ CREATE OR REPLACE FUNCTION public.hr_record_gps_attendance(
 AS $fn$
 DECLARE e public.employees%ROWTYPE;s public.stations%ROWTYPE;
  v_radius numeric; v_max numeric; v_dist double precision;v_status text:='unconfigured';
+ v_saved_status text;v_saved_geofence text;
  v_event uuid:=gen_random_uuid();v_hash text;v_inserted integer;
  v_old public.attendance_request_keys%ROWTYPE;
 BEGIN
@@ -77,7 +78,17 @@ BEGIN
    WHERE employee_id=e.id AND idempotency_key=p_idempotency_key;
    IF v_old.event_type IS DISTINCT FROM p_event_type OR v_old.payload_hash IS DISTINCT FROM v_hash
    THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='IDEMPOTENCY_CONFLICT';END IF;
-   RETURN jsonb_build_object('id',v_old.event_id,'status','pending','replayed',true);
+   -- A retry must report the committed event's CURRENT review status:
+   -- the same nonce can be retried after a supervisor approved or rejected.
+   SELECT a.review_status,a.geofence_status
+     INTO v_saved_status,v_saved_geofence
+     FROM public.attendance_events a WHERE a.id=v_old.event_id;
+   IF NOT FOUND THEN
+     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';
+   END IF;
+   RETURN jsonb_build_object('id',v_old.event_id,
+     'status',v_saved_status,'geofence',v_saved_geofence,
+     'replayed',true,'faceVerified',false);
  END IF;
  IF s.latitude IS NOT NULL AND s.longitude IS NOT NULL THEN
    v_dist:=6371000.0*2*asin(sqrt(least(1.0,
