@@ -80,6 +80,48 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_notification_id:id,p_decision:decision}),
         }),
+      platformSaasBillingOverview: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_saas_billing_overview',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId}),
+        }),
+      platformSaasDefinePlan: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_define_saas_flat_plan',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_code:d.code,p_name:d.name,
+            p_frequency:d.frequency,p_coupon_price_satang:d.couponPriceSatang,
+            p_hr_price_satang:d.hrPriceSatang,p_effective_on:d.effectiveOn}),
+        }),
+      platformSaasTaxPolicy: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_review_saas_tax_policy',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_vat_mode:d.vatMode,
+            p_rate_basis_points:d.rateBasisPoints,p_effective_on:d.effectiveOn}),
+        }),
+      platformSaasGroup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_create_saas_billing_group',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_organization_id:d.organizationId,
+           p_name:d.name,p_station_ids:d.stationIds}),
+        }),
+      platformSaasSubscription: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_subscribe_saas_station',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+           p_plan_id:d.planId,p_starts_at:d.startsAt,p_period_end:d.periodEnd}),
+        }),
+      platformSaasDraftInvoice: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_draft_saas_flat_invoice',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_billing_group_id:d.billingGroupId,
+           p_payment_method:d.paymentMethod,p_period_start:d.periodStart,
+           p_period_end:d.periodEnd}),
+        }),
+      platformSaasIssueInvoice: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_issue_saas_invoice',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_invoice_id:d.invoiceId}),
+        }),
       listSaasInvoices: async d=>serviceRequest(env,
         '/rest/v1/rpc/list_issued_saas_invoices',{
           method:'POST',headers:{'content-type':'application/json'},
