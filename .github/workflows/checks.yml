@@ -14,5 +14,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - name: Domain unit tests
+      - name: Worker syntax check
+        run: npm run check
+      - name: Domain and API unit tests
         run: npm test
+      - name: Validate Cloudflare Worker bundle without deployment
+        run: npx --yes wrangler@4 deploy --dry-run --outdir .wrangler-dry-run
