@@ -5,7 +5,9 @@ const LIMIT_BYTES = 16_384;
 const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
   '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST',
   '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST',
-  '/api/invitations/create': 'POST' };
+  '/api/invitations/create': 'POST',
+  '/api/station/customers': 'POST', '/api/station/link-company': 'POST',
+  '/api/corporate/approve-link': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -92,6 +94,56 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path === '/api/station/customers' || path === '/api/station/link-company'
+        || path === '/api/corporate/approve-link') {
+        if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
+          return fail(415, 'unsupported_media_type');
+        }
+        const body = await readBody(request);
+        if (path === '/api/corporate/approve-link') {
+          if (!UUID.test(body?.requestId ?? '') || typeof body?.approved !== 'boolean') {
+            return fail(400, 'invalid_link_request');
+          }
+          return json(200, { result: await db.approveCorporateLink({
+            actorId:user.id,requestId:body.requestId,approved:body.approved,
+          }) });
+        }
+        if (!UUID.test(body?.stationId ?? '')) return fail(400, 'invalid_station');
+        const canManage = active.some(m=>
+          (m.scope_type==='platform' && m.role_code==='platform_superadmin')
+          || (m.scope_type==='station' && m.station_id===body.stationId
+            && (['station_owner','owner','manager'].includes(m.role_code)
+              || m.extra_permissions?.manage_corporate_customers===true))
+          || (m.scope_type==='organization' && ['organization_owner','owner'].includes(m.role_code)));
+        if (!canManage) return fail(403, 'permission_denied');
+        if (path === '/api/station/link-company') {
+          if (!UUID.test(body?.companyId ?? '')) return fail(400, 'invalid_company');
+          return json(201, { result: await db.requestCorporateLink({
+            actorId:user.id,stationId:body.stationId,companyId:body.companyId,
+          }) });
+        }
+        const name = body?.name;
+        const taxId = body?.taxId || null;
+        const contactEmail = body?.contactEmail || null;
+        const terms = body?.paymentTermsDays;
+        const mode = body?.dueMode;
+        const closeDay = body?.statementCloseDay ?? null;
+        if (typeof name!=='string' || name.trim().length<2 || name.length>200
+          || (taxId!==null && (typeof taxId!=='string' || !/^\d{13}$/.test(taxId)))
+          || (contactEmail!==null && (typeof contactEmail!=='string'
+             || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail)
+             || contactEmail.length>320))
+          || !Number.isInteger(terms) || terms<0 || terms>365
+          || !['per_fill','statement'].includes(mode)
+          || (mode==='statement' && (!Number.isInteger(closeDay) || closeDay<1 || closeDay>31))) {
+          return fail(400, 'invalid_customer');
+        }
+        return json(201,{ customer: await db.createCorporateCustomer({
+          actorId:user.id,stationId:body.stationId,name:name.trim(),
+          taxId,contactEmail,paymentTermsDays:terms,dueMode:mode,
+          statementCloseDay:closeDay,
+        }) });
       }
       if (path === '/api/invitations/create') {
         if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
