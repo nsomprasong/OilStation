@@ -83,3 +83,11 @@
  .menu-module>.app-icon,.step>.app-icon{color:#86cedf}
 }
 @media (prefers-reduced-motion:reduce){.button{transition:none}.button:active{transform:none}}
+
+.finance-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.finance-heading h2{font-size:18px;margin:0}
+.finance-item{display:grid;gap:6px}
+.finance-item>.money{font-size:20px}
+.finance-item p{margin:0;font-size:12px;line-height:1.55}
+.finance-status{color:#80672d;font-weight:650}
+@media(prefers-color-scheme:dark){.finance-status{color:#e8c881}}
