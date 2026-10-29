@@ -11,7 +11,9 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/corporate/pending-links': 'GET',
   '/api/station/invite-first-admin': 'POST',
   '/api/hr/roster': 'GET', '/api/hr/employees': 'POST',
-  '/api/hr/seed-shifts': 'POST', '/api/hr/assign-shift': 'POST' };
+  '/api/hr/seed-shifts': 'POST', '/api/hr/assign-shift': 'POST',
+  '/api/hr/request-substitute': 'POST', '/api/hr/review-substitute': 'POST',
+  '/api/hr/pending-substitutes': 'GET' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -98,6 +100,39 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path === '/api/hr/request-substitute' || path === '/api/hr/review-substitute'
+        || path === '/api/hr/pending-substitutes') {
+        if (path === '/api/hr/pending-substitutes') {
+          const stationId = url.searchParams.get('stationId');
+          if (!UUID.test(stationId??'')) return fail(400,'invalid_station');
+          const manager=active.some(m=>
+            (m.scope_type==='platform' && m.role_code==='platform_superadmin')
+            || (m.scope_type==='station' && m.station_id===stationId
+              && ['station_owner','owner','manager','hr_manager'].includes(m.role_code)));
+          if (!manager) return fail(403,'permission_denied');
+          return json(200,{requests:await db.hrPendingShiftChanges({actorId:user.id,stationId})});
+        }
+        if (!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json')) {
+          return fail(415,'unsupported_media_type');
+        }
+        const body=await readBody(request);
+        if (path==='/api/hr/request-substitute') {
+          if (!UUID.test(body?.originalAssignmentId??'')
+            || !UUID.test(body?.newTemplateId??'')
+            || typeof body.reason!=='string'
+            || body.reason.trim().length<4 || body.reason.length>500)
+            return fail(400,'invalid_shift_change');
+          return json(201,{request:await db.hrRequestShiftOverride({
+            actorId:user.id,originalAssignmentId:body.originalAssignmentId,
+            newTemplateId:body.newTemplateId,reason:body.reason.trim(),
+          })});
+        }
+        if (!UUID.test(body?.requestId??'') || typeof body?.approved!=='boolean')
+          return fail(400,'invalid_shift_review');
+        return json(200,{result:await db.hrReviewShiftOverride({
+          actorId:user.id,requestId:body.requestId,approved:body.approved,
+        })});
       }
       if (path.startsWith('/api/hr/')) {
         const body = path === '/api/hr/roster' ? null : await readBody(request);
