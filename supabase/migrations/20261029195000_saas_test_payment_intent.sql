@@ -28,11 +28,34 @@ BEGIN
  IF i.pricing_snapshot->>'paymentMethod' IS DISTINCT FROM p_method OR
    (i.pricing_snapshot->>'currency') IS DISTINCT FROM 'thb'
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ -- Verify issued invoice arithmetic against a reviewed VAT snapshot.
+ IF i.discount_satang>i.subtotal_satang OR i.pricing_snapshot->>'vatMode'
+   NOT IN ('inclusive','exclusive')
+   OR (i.pricing_snapshot->>'vatMode'='inclusive'
+      AND i.total_satang<>i.subtotal_satang-i.discount_satang)
+   OR (i.pricing_snapshot->>'vatMode'='exclusive'
+      AND i.total_satang<>i.subtotal_satang-i.discount_satang+i.tax_satang)
+ THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ -- Every line must be attached to this billing group; never let an admin
+ -- accidentally settle another station or an empty/forged invoice.
+ IF NOT EXISTS(SELECT 1 FROM public.saas_invoice_lines l WHERE l.invoice_id=i.id)
+  OR EXISTS(
+   SELECT 1 FROM public.saas_invoice_lines l
+   LEFT JOIN public.billing_group_stations bgs
+    ON bgs.station_id=l.station_id AND bgs.billing_group_id=i.billing_group_id
+   WHERE l.invoice_id=i.id AND bgs.station_id IS NULL
+  )
+ THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  SELECT * INTO a FROM public.saas_payment_attempts
   WHERE invoice_id=i.id AND status IN
    ('created','requires_action','processing','succeeded')
   ORDER BY created_at ASC FOR UPDATE LIMIT 1;
  IF FOUND THEN
+  -- Stripe idempotency retention is not perpetual; after a long outage,
+  -- fail closed and require reconciliation rather than create a second PI.
+  IF a.stripe_payment_intent_id IS NULL AND
+     a.created_at<clock_timestamp()-interval '20 hours'
+  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
   IF a.payment_method<>p_method OR a.amount_satang<>i.total_satang
      OR a.status='succeeded'
   THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
