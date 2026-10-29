@@ -66,6 +66,31 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      couponView: async (token) => {
+        const match = /^([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\\.([a-f0-9]{64})$/i.exec(token || '');
+        if (!match) return null;
+        const signingKey = await crypto.subtle.importKey('raw',
+          new TextEncoder().encode(env.COUPON_SIGNING_KEY),
+          { name: 'HMAC', hash: 'SHA-256' },false,['verify']);
+        const signature = Uint8Array.from(match[2].match(/../g), x => parseInt(x,16));
+        const valid = await crypto.subtle.verify('HMAC',signingKey,signature,
+          new TextEncoder().encode(match[1] + ':link'));
+        if (!valid) return null;
+        try {
+          const details = await serviceRequest(env, '/rest/v1/rpc/resolve_coupon_link', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ p_coupon_id: match[1], p_secret_hash: await digest(token) }),
+          });
+          const showQR = ['reserved','verified'].includes(details.status);
+          return {
+            id: details.id, status: details.status, stationName: details.station_name,
+            fuelName: details.fuel_name, amountSatang: details.max_amount_satang,
+            expiresAt: details.expires_at, replaced: details.replaced,
+            qrPayload: showQR ? details.id + '.' +
+              await hmac(env.COUPON_SIGNING_KEY, details.id + ':qr') : null,
+          };
+        } catch { return null; }
+      },
       acceptInvitation: async ({ actorId, token }) => {
         const tokenHash = await digest(token);
         return serviceRequest(env, '/rest/v1/rpc/accept_member_invitation', {
