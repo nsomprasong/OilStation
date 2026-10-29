@@ -17,6 +17,7 @@ import { createAttendanceReviewApi } from './api/attendance-review.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
 import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
+import { createWalletIntegrityApi } from './api/wallet-integrity.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 
@@ -84,6 +85,9 @@ export default {
         }
         if (url.pathname === '/api/hr/attendance/gps') {
           return createGpsAttendanceApi(deps)(request);
+        }
+        if (url.pathname === '/api/corporate/wallet-integrity') {
+          return createWalletIntegrityApi(deps)(request);
         }
         if (url.pathname === '/api/evidence/topup' || url.pathname === '/api/evidence/topup-slip') {
           return createTopupEvidenceApi(deps)(request);

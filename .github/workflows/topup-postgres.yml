@@ -36,7 +36,8 @@ jobs:
                 20261029170500_topup_inbox_and_bank_options.sql \
                 20261029173500_private_topup_slips.sql \
                 20261029174500_verified_topup_review.sql \
-                20261029209000_private_topup_finance_gate.sql
+                20261029209000_private_topup_finance_gate.sql \
+                20261029210000_wallet_financial_integrity.sql
               do
                 psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
               done

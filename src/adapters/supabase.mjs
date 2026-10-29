@@ -579,6 +579,11 @@ export function createSupabaseAdapter(env) {
           }),
         });
       },
+      walletIntegrity: async d=>serviceRequest(env,
+        '/rest/v1/rpc/corporate_wallet_integrity_snapshot',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_account_id:d.accountId}),
+        }),
       reviewTopup: async d=>serviceRequest(env,
         '/rest/v1/rpc/review_verified_corporate_topup',{
           method:'POST',headers:{'content-type':'application/json'},

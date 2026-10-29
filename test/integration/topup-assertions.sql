@@ -142,6 +142,26 @@ BEGIN
    WHERE id=account_a)<>17500
  THEN RAISE EXCEPTION 'failed_duplicate_bank_reference_mutated_wallet';END IF;
 
+ -- Cross-company snapshot attempts must never expose wallet balances.
+ v_failed:=false;
+ BEGIN
+  PERFORM public.corporate_wallet_integrity_snapshot(outsider,account_a);
+ EXCEPTION WHEN OTHERS THEN v_failed:=SQLERRM='FORBIDDEN';END;
+ IF NOT v_failed THEN RAISE EXCEPTION 'foreign_company_wallet_audit_leaked';END IF;
+ response:=public.corporate_wallet_integrity_snapshot(issuer,account_a);
+ IF response->>'healthy'<>'true' OR response->>'bankReconciled'<>'false'
+   OR response->>'openingLedgerAudited'<>'false'
+ THEN RAISE EXCEPTION 'reconciled_wallet_snapshot_failed %',response;END IF;
+ -- Artificially corrupt the receivable reconciliation inside this rollback
+ -- transaction; the RPC must surface the mismatch, never repair silently.
+ UPDATE public.accounts_receivable SET outstanding_satang=300
+ WHERE account_id=account_a;
+ response:=public.corporate_wallet_integrity_snapshot(reviewer,account_a);
+ IF response->>'status'<>'attention_required' OR
+   response->>'healthy'<>'false'
+ THEN RAISE EXCEPTION 'debt_ar_divergence_went_unnoticed';END IF;
+ UPDATE public.accounts_receivable SET outstanding_satang=0
+ WHERE account_id=account_a;
  -- Denial creates no credit; it cannot be upgraded through repeated reviews.
  response:=public.review_verified_corporate_topup(
   reviewer,second_id,false,false,NULL);
