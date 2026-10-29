@@ -68,6 +68,30 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      createCorporateCustomer: async (d) => serviceRequest(env,
+        '/rest/v1/rpc/station_create_corporate_customer',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_name:d.name,p_tax_id:d.taxId,p_contact_email:d.contactEmail,
+            p_payment_terms_days:d.paymentTermsDays,
+            p_due_mode:d.dueMode,p_statement_close_day:d.statementCloseDay,
+          }),
+        }),
+      requestCorporateLink: async (d) => serviceRequest(env,
+        '/rest/v1/rpc/request_corporate_station_link',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_station_id:d.stationId,p_company_id:d.companyId,
+          }),
+        }),
+      approveCorporateLink: async (d) => serviceRequest(env,
+        '/rest/v1/rpc/approve_corporate_station_link',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_request_id:d.requestId,p_approved:d.approved,
+          }),
+        }),
       createInvitation: async (input) => {
         const bytes = new Uint8Array(32);
         crypto.getRandomValues(bytes);
