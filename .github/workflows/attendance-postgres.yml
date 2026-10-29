@@ -33,5 +33,6 @@ jobs:
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/attendance-fixture.sql
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261029181000_gps_attendance_pending.sql
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261029193000_attendance_supervisor_fallback.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261029207000_hr_reviewed_time_preview.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/attendance-assertions.sql
             '

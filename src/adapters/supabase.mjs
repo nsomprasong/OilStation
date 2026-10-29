@@ -243,6 +243,12 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
         }),
+      hrReviewedAttendancePunches: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_reviewed_attendance_punches',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
+           p_from:d.from,p_until:d.until}),
+        }),
       hrAttendancePending: async d=>serviceRequest(env,
         '/rest/v1/rpc/hr_attendance_pending_inbox',{
           method:'POST',headers:{'content-type':'application/json'},

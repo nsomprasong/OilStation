@@ -109,8 +109,57 @@ BEGIN
  other_event:=(d->>'id')::uuid;
  IF d->>'status'<>'pending' OR d->>'geofence'<>'unconfigured'
  THEN RAISE EXCEPTION 'unconfigured_station_accepted_gps %',d;END IF;
+ -- A separate employee with a complete, independently reviewed shift
+ -- may generate a conservative preview but never a paid payroll entry.
+ INSERT INTO public.employees(id,station_id,user_id,display_name,employment_status)
+ VALUES('aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa',station_a,NULL,'Employee C','active');
+ INSERT INTO public.attendance_events(id,employee_id,event_type,occurred_at,review_status)
+ VALUES('aaaaaaaa-aaaa-4aaa-8aaa-111111111111',
+   'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa','clock_in',
+   '2026-10-01T08:00:59+07:00','pending'),
+   ('aaaaaaaa-aaaa-4aaa-8aaa-222222222222',
+   'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa','clock_out',
+   '2026-10-01T09:00:58+07:00','pending');
+ bad:=false;
+ BEGIN
+  PERFORM public.hr_reviewed_attendance_punches(manager_a,
+   'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa',
+   '2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
+ EXCEPTION WHEN OTHERS THEN bad:=SQLERRM='PUNCH_REVIEW_REQUIRED';END;
+ IF NOT bad THEN RAISE EXCEPTION 'pending_punches_in_payroll_preview';END IF;
+ PERFORM public.hr_review_attendance_manual(manager_a,
+   'aaaaaaaa-aaaa-4aaa-8aaa-111111111111',true,
+   'Supervisor independently reviewed clock in evidence');
+ PERFORM public.hr_review_attendance_manual(manager_a,
+   'aaaaaaaa-aaaa-4aaa-8aaa-222222222222',true,
+   'Supervisor independently reviewed clock out evidence');
+ d:=public.hr_reviewed_attendance_punches(manager_a,
+   'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa',
+   '2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
+ IF jsonb_array_length(d->'events')<>2 OR d->>'payable'<>'false'
+    OR d->>'faceVerified'<>'false'
+ THEN RAISE EXCEPTION 'unsafe_payroll_preview %',d;END IF;
+ bad:=false;
+ BEGIN
+  PERFORM public.hr_reviewed_attendance_punches(manager_b,
+   'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa',
+   '2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
+ EXCEPTION WHEN OTHERS THEN bad:=SQLERRM='FORBIDDEN';END;
+ IF NOT bad THEN RAISE EXCEPTION 'foreign_manager_reads_payroll_preview';END IF;
+ -- A third "accepted by default" punch without an audit must block payroll.
+ INSERT INTO public.attendance_events(id,employee_id,event_type,occurred_at)
+ VALUES('aaaaaaaa-aaaa-4aaa-8aaa-333333333333',
+   'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa','break_start',
+   '2026-10-01T08:30:00+07:00');
+ bad:=false;
+ BEGIN
+  PERFORM public.hr_reviewed_attendance_punches(manager_a,
+   'aaaaaaaa-3333-4333-8333-aaaaaaaaaaaa',
+   '2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
+ EXCEPTION WHEN OTHERS THEN bad:=SQLERRM='PUNCH_REVIEW_REQUIRED';END;
+ IF NOT bad THEN RAISE EXCEPTION 'default_accepted_punch_exposed_without_audit';END IF;
  -- Audit trail remains one row per manually reviewed event.
- IF (SELECT count(*) FROM public.attendance_review_audit)<>2
+ IF (SELECT count(*) FROM public.attendance_review_audit)<>4
  THEN RAISE EXCEPTION 'audit_trail_missing_or_duplicated';END IF;
  bad:=false;
  BEGIN

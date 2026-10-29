@@ -12,6 +12,7 @@ import { createBillingPaymentApi } from './api/billing-payment.mjs';
 import { createStripeTestPaymentIntents } from './adapters/stripe-test-payments.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
 import { createPlateReviewInboxApi } from './api/plate-review-inbox.mjs';
+import { createAttendancePayrollPreviewApi } from './api/attendance-payroll-preview.mjs';
 import { createAttendanceReviewApi } from './api/attendance-review.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
@@ -74,6 +75,9 @@ export default {
           return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET,
             processTestPayments:env.STRIPE_TEST_RECONCILIATION_ENABLED==='true' &&
               env.STRIPE_TEST_PAYMENTS_ENABLED==='true'})(request);
+        }
+        if (url.pathname === '/api/hr/attendance/payroll-preview') {
+          return createAttendancePayrollPreviewApi(deps)(request);
         }
         if (url.pathname === '/api/hr/attendance/pending' || url.pathname === '/api/hr/attendance/review') {
           return createAttendanceReviewApi(deps)(request);
