@@ -47,3 +47,30 @@ export async function sendInvitationEmail({
   return {delivery:'manual',deliveryStatus:'provider_unconfirmed'};
  }
 }
+
+
+/** No manual disclosure of OTPs; only a verified outbound provider may send. */
+export async function sendInvitedEmailOtp({env,email,code,id,fetchImpl=fetch}){
+ if(env?.INVITATION_EMAIL_ENABLED!=='true'||!EMAIL.test(email??'')||
+  !UUID.test(id??'')||!/^[0-9]{8}$/.test(code??'')||
+  !EMAIL.test(env?.INVITATION_FROM_EMAIL??'')||
+  !/^re_[A-Za-z0-9_]{12,}$/.test(env?.RESEND_API_KEY??''))
+  return false;
+ try{
+  const response=await fetchImpl('https://api.resend.com/emails',{
+   method:'POST',headers:{
+    authorization:'Bearer '+env.RESEND_API_KEY,'content-type':'application/json',
+    'idempotency-key':'oilstation-invite-otp-'+id.toLowerCase()
+   },body:JSON.stringify({
+    from:env.INVITATION_FROM_EMAIL,to:[email],
+    subject:'รหัสยืนยันอีเมลคำเชิญ OilStation',
+    text:'รหัสยืนยันอีเมลคำเชิญ OilStation: '+code+
+     '\nรหัสมีอายุ 10 นาที ใช้ได้กับบัญชีที่ร้องขอเท่านั้น'+
+     '\nหากคุณไม่ได้ร้องขอ กรุณาไม่แชร์รหัสนี้',
+   }),signal:AbortSignal.timeout(8000),
+  });
+  if(!response?.ok)return false;
+  const receipt=await response.json().catch(()=>null);
+  return typeof receipt?.id==='string'&&receipt.id.length<=128;
+ }catch{return false;}
+}

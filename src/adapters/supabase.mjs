@@ -1,4 +1,4 @@
-import { sendInvitationEmail } from '../notifications/invitation-email.mjs';
+import { sendInvitationEmail,sendInvitedEmailOtp } from '../notifications/invitation-email.mjs';
 /**
  * All privileged PostgREST operations run on the trusted Worker only.
  * SUPABASE_SERVICE_ROLE_KEY must be configured as an encrypted Worker secret.
@@ -526,6 +526,50 @@ export function createSupabaseAdapter(env) {
               await hmac(env.COUPON_SIGNING_KEY, details.id + ':qr') : null,
           };
         } catch { return null; }
+      },
+      beginInvitedEmailOtp: async ({actorId,token})=>{
+        // No database challenge and no OTP disclosure when sending is off.
+        if(env.INVITATION_EMAIL_ENABLED!=='true'||
+          !/^re_[A-Za-z0-9_]{12,}$/.test(env.RESEND_API_KEY||'')||
+          !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(env.INVITATION_FROM_EMAIL||'')){
+          const e=new Error('invited_email_provider_unconfigured');
+          e.code='EMAIL_PROVIDER_UNAVAILABLE';throw e;
+        }
+        const tokenHash=await digest(token);
+        const bound=0x100000000;
+        const limit=Math.floor(bound/100000000)*100000000;
+        const bytes=new Uint32Array(1);
+        do{crypto.getRandomValues(bytes);}while(bytes[0]>=limit);
+        const code=String(bytes[0]%100000000).padStart(8,'0');
+        const proofHash=await hmac(env.COUPON_SIGNING_KEY,
+          'invited-email-otp:'+actorId+':'+tokenHash+':'+code);
+        const expiry=new Date(Date.now()+10*60*1000).toISOString();
+        const pending=await serviceRequest(env,'/rest/v1/rpc/begin_invited_email_otp',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:actorId,p_token_hash:tokenHash,
+            p_proof_hash:proofHash,p_expires_at:expiry,
+          }),
+        });
+        const accepted=await sendInvitedEmailOtp({
+          env,email:pending.email,code,id:pending.id,
+        });
+        if(!accepted){
+          const e=new Error('email_delivery_unconfirmed');
+          e.code='EMAIL_PROVIDER_UNAVAILABLE';throw e;
+        }
+        return {sent:true,expiresInMinutes:10};
+      },
+      confirmInvitedEmailOtp: async ({actorId,token,code})=>{
+        const tokenHash=await digest(token);
+        const proofHash=await hmac(env.COUPON_SIGNING_KEY,
+          'invited-email-otp:'+actorId+':'+tokenHash+':'+code);
+        return serviceRequest(env,'/rest/v1/rpc/confirm_invited_email_otp',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:actorId,p_token_hash:tokenHash,p_proof_hash:proofHash,
+          }),
+        });
       },
       acceptInvitation: async ({ actorId, token }) => {
         const tokenHash = await digest(token);
