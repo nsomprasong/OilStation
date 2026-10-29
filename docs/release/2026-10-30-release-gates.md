@@ -5,7 +5,7 @@ oilstation.goldensoft.cloud runs a separate maintenance placeholder.
 
 | Gate | Verified evidence | Still required |
 | --- | --- | --- |
-| Internal Node tests | 221/221 PASS at 1944ef4d | Real browser/device UAT |
+| Internal Node tests | 225/225 PASS at ebe8cac6 | Real browser/device UAT |
 | Isolated PostgreSQL | Fuel, Billing, HR Attendance, Topup, Cross Finance, OAuth OTP and 65-table migration parity PASS | Real isolated Supabase Auth/Storage, tenant data and DDL migrations |
 | Frontend/Worker build | Vite and Wrangler dry-run PASS | Authorized, verified Worker deployment and rollback |
 | Invitations | Token scope, OTP proof, optional outbound mail code tested | Verified sending domain/Resend secret; Google/Facebook OAuth live end-to-end; bounced mail |
@@ -32,3 +32,21 @@ oilstation.goldensoft.cloud runs a separate maintenance placeholder.
 
 No production merge, migrations, Worker deploy, bank payment or real mail has
 occurred in this continuation. The developer has not claimed a finished release.
+
+
+## Further gates added — refund safety and organization HR
+
+- The Stripe Worker does not acknowledge unsupported signed
+  refunds/disputes/cancellations as reconciled. Such events remain in the
+  signed test inbox and receive HTTP 503 until an audited financial recovery
+  handler is added. **No real refund/chargeback reconciliation yet.**
+- Organization owners can manage their own station shift creation and
+  scheduling through role-checked database RPCs, with regression coverage
+  proving another organization's staff and templates remain inaccessible.
+  Work remains to expose a complete owner-facing multi-station HR selector.
+- Full-schema sequential migration count is now 27 unapplied developer SQL
+  files; production applied migration count remains 30.
+- EIGHT isolated GitHub Action workflows, 225 Node tests, frontend build and
+  Wrangler dry run PASS at ebe8cac6. External test accounts and approved
+  Supabase staging are still required before an end-user test.
+

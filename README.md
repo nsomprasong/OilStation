@@ -34,8 +34,8 @@ Google and Facebook OAuth must be configured and tested in the specific Supabase
 Read-only Supabase inspection (Oct 29, 2026) confirmed **30 applied
 production migrations, 65 public tables with forced RLS, and no direct
 anon/authenticated CRUD or public RPC EXECUTE grants**. The Draft PR
-contains **26 newer, unapplied SQL migrations** starting at
-20261029180000 and ending at 20261029213000. Do not reapply the 30
+contains **27 newer, unapplied SQL migrations** starting at
+20261029180000 and ending at 20261029214000. Do not reapply the 30
 historical production migrations, merge the PR, or deploy to
 oilstation.goldensoft.cloud until reviewed and authorized.
 
@@ -88,3 +88,15 @@ redemption tests are mandatory before enabling the feature. The current
 database requires exact, confirmed ownership of the invited email; different
 Facebook/Google email identities still require an independently approved
 verification flow before production release.
+
+
+### Financial reversal and HR owner release notes
+
+Until a separate audited refund/chargeback and sales commission recovery
+workflow is implemented, signed Stripe test-mode refunds and disputes are
+retained for review with a retryable HTTP 503 rather than falsely ACKed.
+Do not use this as a production refund processor. Organization owners have
+database permission to manage only their own stations' shift templates and
+employee shifts after the pending 20261029214000 migration; the multi-station
+owner HR UI and live staging authorization checks are still outstanding.
+

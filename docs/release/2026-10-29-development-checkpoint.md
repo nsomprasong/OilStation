@@ -388,3 +388,40 @@ No production money has been moved by this development run; all test data was di
 **Production state:** 30 applied old migrations. 26 newer migrations in Draft PR remain unapplied; no configured OAuth, verified email domain, Stripe live payment consent, bank reconciliation, HR legal sign-off, staged Supabase Auth/Storage runtime tests, device photo tests or live user UAT. The existing domain continues to serve the separate holding Worker.
 
 **Next controlled release gates:** approve staging branch hourly cost, configure isolated OAuth and verified email sender secrets, apply all 26 migrations ONLY to staging, test real Google/Facebook email ownership, private evidence buckets and service roles, then Stripe test-mode payments and physical station equipment. After privacy/law/release checks and explicit authorized merge/deploy, one coordinated UAT at oilstation.goldensoft.cloud.
+
+
+## Continuation — refund/dispute quarantine and organization-scoped shift assignment
+
+**Scope: development code only. No live Supabase change, production charge,
+Stripe refund, Cloudflare Worker deployment, GitHub merge, or bank movement.**
+
+- Stripe webhook now records signed test-mode refund, canceled payment and
+  dispute events in the test inbox, but fails closed with a retryable 503
+  rather than falsely acknowledging successful financial reconciliation. This
+  ensures future automation cannot silently skip reversal/commission recovery.
+  **This is NOT a refund processor**; a separate audited refund/dispute ledger
+  and provider-to-invoice reconciliation remain mandatory for release.
+- A real PostgreSQL authorization mismatch was corrected via NEW forward-only
+  migration 20261029214000_hr_owner_shift_scope.sql: organization owner can
+  create standard shifts and schedule their employees at stations belonging
+  to their own organization, consistent with HR roster/employee authorization;
+  cross-organization changes remain denied. Earlier applied migrations were
+  not edited or reapplied.
+- Added rollback-only SQL tests on the 65-table production-shaped fixture:
+  own-station template creation and idempotency, assignment idempotency,
+  rejection of another organization's templates or employee scheduling,
+  rejection of cross-station employee/template combinations.
+- Browser/API tests ensure Stripe webhook rejects unsigned refund requests and
+  quarantines signed refunds/disputes/cancellations without crediting money.
+
+**Verified at ebe8cac6:** **225/225 Node tests PASS**, Vite build PASS,
+Wrangler dry-run PASS, all **eight** isolated GitHub Actions workflows PASS,
+including Full Public Schema Migration Parity and OAuth Invitation Proof SQL.
+
+**Live truth unchanged:** 30 previously applied Supabase migrations; now
+**27 pending developer SQL migrations** (the previously pending 26 plus
+20261029214000). Do NOT apply production migrations, merge PR or deploy until
+the separate authorization, staging and UAT gates are passed. Release owner
+must authorize billed Supabase staging, configure external provider accounts,
+review payroll/PDPA, reconcile bank/Stripe test flows, and approve deployment.
+
