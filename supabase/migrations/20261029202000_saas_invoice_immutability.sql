@@ -16,6 +16,8 @@ BEGIN
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='PAID_INVOICE_LOCKED';END IF;
  RETURN NEW;
 END $fn$;
+REVOKE ALL ON FUNCTION public.guard_issued_saas_invoice_snapshot()
+ FROM PUBLIC,anon,authenticated,service_role;
 DROP TRIGGER IF EXISTS guard_issued_saas_invoice_snapshot ON public.saas_invoices;
 CREATE TRIGGER guard_issued_saas_invoice_snapshot
  BEFORE UPDATE ON public.saas_invoices FOR EACH ROW
@@ -36,6 +38,8 @@ BEGIN
  IF TG_OP='DELETE' THEN RETURN OLD;END IF;
  RETURN NEW;
 END $fn$;
+REVOKE ALL ON FUNCTION public.guard_saas_invoice_line_snapshot()
+ FROM PUBLIC,anon,authenticated,service_role;
 DROP TRIGGER IF EXISTS guard_saas_invoice_line_snapshot ON public.saas_invoice_lines;
 CREATE TRIGGER guard_saas_invoice_line_snapshot
  BEFORE INSERT OR UPDATE OR DELETE ON public.saas_invoice_lines FOR EACH ROW
@@ -56,6 +60,8 @@ BEGIN
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='PAID_PAYMENT_ATTEMPT_LOCKED';END IF;
  RETURN NEW;
 END $fn$;
+REVOKE ALL ON FUNCTION public.guard_saas_attempt_payment_reference()
+ FROM PUBLIC,anon,authenticated,service_role;
 DROP TRIGGER IF EXISTS guard_saas_attempt_payment_reference ON public.saas_payment_attempts;
 CREATE TRIGGER guard_saas_attempt_payment_reference
  BEFORE UPDATE ON public.saas_payment_attempts FOR EACH ROW

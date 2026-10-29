@@ -22,6 +22,8 @@ AS $fn$
 BEGIN
  RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='REVIEW_AUDIT_IMMUTABLE';
 END $fn$;
+REVOKE ALL ON FUNCTION public.reject_attendance_audit_rewrite()
+ FROM PUBLIC,anon,authenticated,service_role;
 DROP TRIGGER IF EXISTS reject_attendance_audit_rewrite
  ON public.attendance_review_audit;
 CREATE TRIGGER reject_attendance_audit_rewrite
