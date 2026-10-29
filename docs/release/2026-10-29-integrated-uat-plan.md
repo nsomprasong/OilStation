@@ -26,6 +26,14 @@
 
 **Unresolved:** Actual OCR provider and supervised image review, live camera edge cases, image retention/PDPA, protected pump/receipt images, full billing/payroll and externally configured OAuth/payment secrets. This is not ready for real fueling, real payroll or customer UAT.
 
+## New implementation increment — Icons and finance preparation
+
+- Added pinned `lucide@1.62.0` for action/navigation icons and `simple-icons@16.36.0` for Google/Facebook provider marks, using a safe, allowlisted, tree-shaken SVG helper.
+- Integrated accessible, decorative icons into Thai-first invite-only login, corporate coupon issuance, QR scanning, staff shift controls and station module navigation. The app does not call external icon CDNs.
+- Added station-scoped, masked corporate bank options and an authorized pending top-up review inbox (read-only UI). The SQL RPCs are service-role-only, with explicit company/station authorization and SQL rollback tests for tenant isolation.
+- **Do not confuse this with a complete top-up feature:** private bank slip intake, the bank-confirmation review UI and independent bank settlement checks are not yet live. There is deliberately no button to increase a company's available funds from an uploaded slip.
+- No change to the production placeholder Worker and no customer acceptance testing; the Draft PR remains unmerged.
+
 ## Gate A — Foundations & auth (not passed)
 
 - [ ] Configure Google and Facebook OAuth, provider redirect URLs and Supabase Auth policies.
