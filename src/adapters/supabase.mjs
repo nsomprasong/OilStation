@@ -140,6 +140,11 @@ export function createSupabaseAdapter(env) {
             p_actor_id:d.actorId,p_station_id:d.stationId,p_company_id:d.companyId,
           }),
         }),
+      expireCoupons: async (limit=200) => serviceRequest(env,
+        '/rest/v1/rpc/expire_reserved_coupons',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_limit:limit}),
+        }),
       inspectQr: async (actorId, payload) => {
         const match=/^([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.([0-9a-f]{64})$/i.exec(payload);
         if (!match) { const e=new Error('invalid_qr'); e.code='INVALID_REQUEST'; throw e; }
