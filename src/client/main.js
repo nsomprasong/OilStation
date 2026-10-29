@@ -345,6 +345,19 @@ async function hrWorkspace(token,stationId,target) {
     <label class="field">เหตุผล <input id="hr-replacement-reason" required maxlength="500" placeholder="เช่น ช่วยแทนกะบ่าย"></label>
     <button class="button secondary" type="submit">บันทึกกะทำงานแทน</button>
   </form>
+  <div class="divider"></div>
+  <h3>ขอ OT ล่วงหน้า / ย้อนหลัง</h3>
+  <form class="coupon-form" id="hr-ot-request">
+    <label class="field">กะที่ขอ OT <select id="hr-ot-shift" required></select></label>
+    <label class="field">ประเภท <select id="hr-ot-planned">
+      <option value="planned">ขอล่วงหน้า</option>
+      <option value="retro">ขอย้อนหลัง</option>
+    </select></label>
+    <label class="field">นาทีที่ขอ (สูงสุด 960 นาที) <input id="hr-ot-minutes" type="number" min="1" max="960" required></label>
+    <label class="field">เหตุผล <input id="hr-ot-reason" maxlength="500" minlength="4" required></label>
+    <button class="button secondary" type="submit">ส่งคำขอ OT</button>
+  </form>
+  <h3>OT รอตรวจสอบ</h3><div id="hr-ot-pending" class="module-list"></div>
   <div class="divider"></div><h3>รายการเปลี่ยนกะรออนุมัติ</h3>
   <div id="hr-pending-approvals" class="module-list"></div>
   <p id="hr-notice" class="notice" role="status" hidden></p>
@@ -384,6 +397,15 @@ async function hrWorkspace(token,stationId,target) {
      opt.value=a.id;opt.textContent=a.date+' · '+(emp?.name||'พนักงาน')+' · '+(shift?.name||'กะ');
      original.appendChild(opt);
    }
+   const otShift=$('hr-ot-shift');otShift.replaceChildren();
+   for(const a of roster.assignments){
+     const opt=document.createElement('option');
+     opt.value=a.id;
+     const emp=roster.employees.find(x=>x.id===a.employeeId);
+     opt.textContent=a.date+' · '+(emp?.name||'พนักงาน')+' · '+(roster.shiftTemplates.find(x=>x.id===a.templateId)?.name||'กะ');
+     opt.dataset.employeeId=a.employeeId;
+     otShift.appendChild(opt);
+   }
    const list=$('hr-assignment-list');list.replaceChildren();
    for(const a of roster.assignments){
      const emp=roster.employees.find(x=>x.id===a.employeeId);
@@ -391,6 +413,43 @@ async function hrWorkspace(token,stationId,target) {
      const node=document.createElement('div');node.className='module-item';
      node.textContent=a.date+' · '+(emp?.name??'พนักงาน')+' · '+(shift?.name??'กะ')+' · '+a.status;
      list.appendChild(node);
+   }
+   const ot=await getApi('/api/hr/pending-ot?stationId='+encodeURIComponent(stationId),token);
+   const otList=$('hr-ot-pending');otList.replaceChildren();
+   if(ot.ok){
+     for(const item of ot.data.requests||[]){
+       const row=document.createElement('div');row.className='module-item';
+       const name=document.createElement('strong');
+       name.textContent=item.employeeName+' · '+item.shiftDate;
+       const details=document.createElement('p');
+       details.textContent=(item.planned?'ล่วงหน้า':'ย้อนหลัง')+' '+item.requestedMinutes+' นาที · '+item.reason;
+       const minutes=document.createElement('input');
+       minutes.type='number';minutes.min='0';minutes.max=String(item.requestedMinutes);
+       minutes.value=String(item.requestedMinutes);
+       minutes.setAttribute('aria-label','นาที OT ที่อนุมัติ');
+       const approve=document.createElement('button');approve.type='button';
+       approve.className='button primary';approve.textContent='อนุมัติ';
+       const reject=document.createElement('button');reject.type='button';
+       reject.className='button secondary';reject.textContent='ปฏิเสธ';
+       const status=document.createElement('small');status.setAttribute('role','status');
+       async function review(value){
+         approve.disabled=true;reject.disabled=true;
+         const res=await getApi('/api/hr/review-ot',token,{method:'POST',body:JSON.stringify({
+           requestId:item.id,approvedMinutes:value,
+         })}).catch(()=>null);
+         if(!res?.ok){status.textContent='อนุมัติไม่สำเร็จ';approve.disabled=false;reject.disabled=false;return;}
+         await refresh();
+       }
+       approve.addEventListener('click',()=>{
+         const value=Number(minutes.value);
+         if(!Number.isInteger(value)||value<0||value>item.requestedMinutes){
+           status.textContent='จำนวนนาทีไม่ถูกต้อง';return;
+         }
+         review(value);
+       });
+       reject.addEventListener('click',()=>review(0));
+       row.append(name,details,minutes,approve,reject,status);otList.appendChild(row);
+     }
    }
    const pending=await getApi('/api/hr/pending-substitutes?stationId='+encodeURIComponent(stationId),token);
    const pendingList=$('hr-pending-approvals');pendingList.replaceChildren();
@@ -417,6 +476,20 @@ async function hrWorkspace(token,stationId,target) {
      }
    }
  }
+ $('hr-ot-request').addEventListener('submit',async e=>{
+   e.preventDefault();
+   const select=$('hr-ot-shift');const option=select.selectedOptions[0];
+   if(!option)return note('กรุณาเลือกกะที่ต้องการขอ OT',true);
+   const requestedMinutes=Number($('hr-ot-minutes').value);
+   const response=await getApi('/api/hr/request-ot',token,{method:'POST',body:JSON.stringify({
+     employeeId:option.dataset.employeeId,shiftId:option.value,
+     planned:$('hr-ot-planned').value==='planned',requestedMinutes,
+     reason:$('hr-ot-reason').value.trim(),
+   })}).catch(()=>null);
+   if(!response?.ok)return note('บันทึกคำขอ OT ไม่สำเร็จ',true);
+   note('ส่งคำขอ OT แล้ว รอผู้จัดการอนุมัติก่อนคิดค่าจ้าง');
+   await refresh();
+ });
  $('hr-replacement').addEventListener('submit',async e=>{
    e.preventDefault();
    const r=await getApi('/api/hr/request-substitute',token,{
