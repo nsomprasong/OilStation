@@ -1,4 +1,5 @@
 import { createApi } from './api/router.mjs';
+import { createEvidenceApi } from './api/evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 
 export default {
@@ -21,6 +22,9 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if (url.pathname === '/api/evidence/plate') {
+          return createEvidenceApi(deps)(request);
+        }
         if (url.pathname === '/api/coupon-view') {
           if (request.method !== 'GET') return new Response(null,{status:405});
           const token = url.searchParams.get('token');
