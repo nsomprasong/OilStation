@@ -280,6 +280,110 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
   return wrapper;
 }
 
+async function stationCorporateWorkspace(accessToken,stationId,target) {
+  if (!target) return;
+  target.innerHTML = `
+    <div class="divider"></div><h2>ลูกค้าบริษัท</h2>
+    <p>เปิดบัญชีลูกค้าประจำปั๊ม และส่งคำเชิญผู้ดูแลบริษัทคนแรก</p>
+    <form id="customer-create" class="coupon-form">
+      <label class="field">ชื่อบริษัทลูกค้า <input id="customer-name" maxlength="200" required placeholder="เช่น บริษัท ขนส่ง จำกัด"></label>
+      <label class="field">เลขประจำตัวผู้เสียภาษี (ถ้ามี) <input id="customer-tax" inputmode="numeric" maxlength="13" placeholder="13 หลัก"></label>
+      <label class="field">อีเมลผู้ดูแลคนแรก <input id="customer-email" type="email" required maxlength="320" placeholder="admin@company.com"></label>
+      <label class="field">เครดิตเทอม (วัน) <input id="customer-terms" type="number" min="0" max="365" value="30" required></label>
+      <label class="field">กำหนดวันครบกำหนด <select id="customer-due">
+        <option value="per_fill">นับจากแต่ละรายการเติม</option>
+        <option value="statement">สรุปยอดตามรอบบิล</option>
+      </select></label>
+      <label class="field" id="customer-close-wrap" hidden>วันที่ปิดรอบบิล <input id="customer-close" type="number" min="1" max="31" value="15"></label>
+      <button class="button primary" id="customer-create-btn" type="submit">เปิดบัญชีบริษัท</button>
+    </form>
+    <div id="customer-invite-area" hidden>
+      <p class="hint" id="customer-invite-status"></p>
+      <button class="button primary" type="button" id="customer-invite-btn">สร้างคำเชิญ Admin คนแรก</button>
+      <input readonly hidden id="customer-invite-link" aria-label="ลิงก์คำเชิญบริษัท">
+      <button class="button secondary" hidden type="button" id="customer-invite-copy">คัดลอกลิงก์เชิญ</button>
+    </div>
+    <p id="customer-notice" class="notice" role="status" hidden></p>
+    <div class="divider"></div>
+    <h3>เชื่อมบริษัทเดิมกับปั๊มนี้</h3>
+    <p>บริษัทที่มีหลายปั๊มจะต้องให้ Corporate Admin อนุมัติการเชื่อมบัญชีใหม่</p>
+    <form id="customer-link-form" class="coupon-form">
+      <label class="field">Company ID <input id="existing-company" required placeholder="รหัสบริษัท (UUID)"></label>
+      <button class="button secondary" type="submit">ส่งคำขอเชื่อมบัญชี</button>
+    </form>
+    <p id="link-notice" class="notice" role="status" hidden></p>
+  `;
+  const $=id=>document.getElementById(id);
+  const note=(id,text,error=false)=>{
+    $(id).textContent=text;$(id).hidden=false;$(id).dataset.tone=error?'error':'neutral';
+  };
+  let createdCompanyId=null;
+  $('customer-due').addEventListener('change',()=>{
+    $('customer-close-wrap').hidden=$('customer-due').value!=='statement';
+  });
+  $('customer-create').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const name=$('customer-name').value.trim();
+    const contactEmail=$('customer-email').value.trim();
+    const taxId=$('customer-tax').value.trim();
+    if(taxId&&!/^\d{13}$/.test(taxId)) return note('customer-notice','เลขภาษีต้องมี 13 หลัก',true);
+    const data={
+      stationId,name,taxId:taxId||null,contactEmail,
+      paymentTermsDays:Number($('customer-terms').value),
+      dueMode:$('customer-due').value,
+      statementCloseDay:$('customer-due').value==='statement'?Number($('customer-close').value):null,
+    };
+    const btn=$('customer-create-btn');btn.disabled=true;
+    note('customer-notice','กำลังเปิดบัญชี…');
+    try {
+      const response=await getApi('/api/station/customers',accessToken,{
+        method:'POST',body:JSON.stringify(data),
+      });
+      if(!response.ok) return note('customer-notice',
+        'เปิดบัญชีไม่สำเร็จ ('+responseError(response.data)+')',true);
+      createdCompanyId=response.data.customer.companyId;
+      $('customer-invite-area').hidden=false;
+      $('customer-invite-status').textContent='สร้างบริษัทแล้ว: '+response.data.customer.name+
+        ' (ยอดเงินเริ่มต้น 0 บาท) กรุณาเชิญ Admin คนแรก';
+      note('customer-notice','เปิดบัญชีบริษัทเรียบร้อย');
+    }catch{
+      note('customer-notice','ไม่สามารถยืนยันผลการเปิดบัญชีได้ กรุณาตรวจสอบก่อนลองใหม่',true);
+    }finally{btn.disabled=false;}
+  });
+  $('customer-invite-btn').addEventListener('click',async()=>{
+    if(!createdCompanyId) return;
+    const btn=$('customer-invite-btn');btn.disabled=true;
+    try{
+      const r=await getApi('/api/station/invite-first-admin',accessToken,{
+        method:'POST',body:JSON.stringify({
+          stationId,companyId:createdCompanyId,email:$('customer-email').value.trim(),
+        }),
+      });
+      if(!r.ok) return note('customer-notice','เชิญ Admin ไม่สำเร็จ ('+responseError(r.data)+')',true);
+      $('customer-invite-link').value=r.data.invitation.inviteUrl;
+      $('customer-invite-link').hidden=false;
+      $('customer-invite-copy').hidden=false;
+      note('customer-notice','สร้างลิงก์เชิญแล้ว กรุณาส่งให้ผู้รับทางอีเมล');
+    }catch{note('customer-notice','สร้างคำเชิญไม่สำเร็จ',true);}
+    finally{btn.disabled=false;}
+  });
+  $('customer-invite-copy').addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText($('customer-invite-link').value);
+      $('customer-invite-copy').textContent='คัดลอกแล้ว';
+    }catch{$('customer-invite-link').select();}
+  });
+  $('customer-link-form').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const companyId=$('existing-company').value.trim();
+    const r=await getApi('/api/station/link-company',accessToken,{
+      method:'POST',body:JSON.stringify({stationId,companyId}),
+    }).catch(()=>null);
+    note('link-notice',r?.ok
+      ? 'ส่งคำขอแล้ว ต้องให้ Admin บริษัทอนุมัติในบัญชีของเขา'
+      : 'ส่งคำขอไม่สำเร็จ กรุณาตรวจสอบ Company ID',!r?.ok);
+  });
+}
+
 async function fuelPriceEditor(accessToken,stationId,target) {
   if (!target) return;
   target.replaceChildren();
@@ -433,6 +537,7 @@ function dashboard(data, session) {
      <div id="corporate-workspace"></div>
      <div id="platform-workspace"></div>
      <div id="station-fuel-workspace"></div>
+     <div id="station-customers-workspace"></div>
      <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout">ออกจากระบบ</button>
@@ -460,6 +565,10 @@ function dashboard(data, session) {
   if(stationMember?.stationId) {
     fuelPriceEditor(session.access_token,stationMember.stationId,
       document.getElementById('station-fuel-workspace')).catch(()=>{});
+    if (['station_owner','owner','manager'].includes(stationMember.role)) {
+      stationCorporateWorkspace(session.access_token,stationMember.stationId,
+        document.getElementById('station-customers-workspace')).catch(()=>{});
+    }
   }
   const invites=document.getElementById('member-invites');
   if (stationMember?.stationId) {
