@@ -7,7 +7,9 @@ const TYPES=['clock_in','clock_out','break_start','break_end'];
 function timestamp(value){
  if(typeof value!=='string'||!/[zZ]|[+-]\d\d:\d\d$/.test(value))throw new TypeError('timestamp requires offset');
  const ms=Date.parse(value);
- if(!Number.isFinite(ms)||ms%60000!==0)throw new RangeError('timestamps must be minute-aligned');
+ // GPS events are recorded at exact server timestamps, including seconds.
+ // Never round clock-in down or clock-out up (which could overpay wages).
+ if(!Number.isFinite(ms))throw new RangeError('invalid timestamp');
  return ms;
 }
 export function reviewedWorkMinutes(events){
@@ -21,7 +23,7 @@ export function reviewedWorkMinutes(events){
   seen.add(e.id);
   return {kind:e.eventType,when:timestamp(e.occurredAt)};
  }).sort((a,b)=>a.when-b.when);
- let active=false,rest=false,start=0,restStart=0,minutes=0,breakMinutes=0,shifts=0;
+ let active=false,rest=false,start=0,restStart=0,workMilliseconds=0,breakMilliseconds=0,shifts=0;
  let last=-Infinity;
  for(const e of series){
   if(e.when<=last)throw new Error('simultaneous or replayed timestamps');
@@ -33,18 +35,21 @@ export function reviewedWorkMinutes(events){
    if(!active||rest)throw new Error('unclosed shift or break');
    const elapsed=(e.when-start)/60000;
    if(elapsed>24*60)throw new RangeError('shift over 24 hours requires review');
-   minutes+=elapsed;active=false;
+   workMilliseconds+=e.when-start;active=false;
   }else if(e.kind==='break_start'){
    if(!active||rest)throw new Error('invalid break start');
    rest=true;restStart=e.when;
   }else{
    if(!active||!rest)throw new Error('invalid break end');
    const elapsed=(e.when-restStart)/60000;
-   breakMinutes+=elapsed;minutes-=elapsed;
+   breakMilliseconds+=e.when-restStart;
    rest=false;
   }
  }
  if(active||rest)throw new Error('unclosed shift');
- if(minutes<0)throw new Error('invalid work minutes');
- return {workedMinutes:minutes,breakMinutes,shifts};
+ if(workMilliseconds<breakMilliseconds)throw new Error('invalid work minutes');
+ // Floor payable minutes only AFTER summing exact recorded durations.
+ // Display break minutes rounded UP so an incomplete minute is not hidden.
+ return {workedMinutes:Math.floor((workMilliseconds-breakMilliseconds)/60000),
+  breakMinutes:Math.ceil(breakMilliseconds/60000),shifts};
 }
