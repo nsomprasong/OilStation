@@ -61,7 +61,7 @@ test('coupon RPC uses deterministic signed links on idempotent replay',async()=>
     assert.equal(calls[0].url,URL+'/rest/v1/rpc/issue_reserved_coupon');
     assert.match(calls[0].body.p_secret_hash,/^[a-f0-9]{64}$/);
     assert.equal(calls[0].body.p_amount_satang,'250000');
-  }));
+  });
 });
 
 test('known SQL insufficient-funds error becomes safe error code',async()=>{
