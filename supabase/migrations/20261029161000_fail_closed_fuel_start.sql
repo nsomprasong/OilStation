@@ -117,6 +117,14 @@ BEGIN
  SELECT * INTO s FROM public.fuel_sessions WHERE id=p_session_id FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='NOT_FOUND'; END IF;
  SELECT * INTO c FROM public.coupons WHERE id=s.coupon_id FOR UPDATE;
+ -- Authorize BEFORE the completed-session replay branch. Replays must not
+ -- expose financial amounts to an actor from another station.
+ IF NOT EXISTS (
+  SELECT 1 FROM public.memberships m WHERE m.user_id=p_actor_id AND m.active
+  AND m.scope_type='station' AND m.station_id=s.station_id
+  AND (m.role_code IN ('station_owner','owner','manager','cashier','attendant','pump_staff')
+    OR m.extra_permissions->>'finish_fueling'='true')
+ ) THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
  IF c.status='completed' AND s.status='completed' THEN
   RETURN jsonb_build_object('id',s.id,'status','completed','replayed',true,
     'net_amount_satang',s.net_amount_satang,'gross_amount_satang',s.pump_gross_satang);
@@ -124,12 +132,7 @@ BEGIN
  IF c.status<>'fueling' OR s.status<>'fueling' THEN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='SESSION_NOT_FUELING';
  END IF;
- IF NOT EXISTS (
-  SELECT 1 FROM public.memberships m WHERE m.user_id=p_actor_id AND m.active
-  AND m.scope_type='station' AND m.station_id=s.station_id
-  AND (m.role_code IN ('station_owner','owner','manager','cashier','attendant','pump_staff')
-   OR m.extra_permissions->>'finish_fueling'='true')
- ) THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN'; END IF;
+ -- Station privilege was already checked before the replay branch.
  IF p_liters IS NULL OR p_liters<=0 OR p_liters>9999999
   OR p_liters<>trunc(p_liters,3) OR p_pump_gross_satang IS NULL OR p_pump_gross_satang<0
   OR p_pump_photo_path IS NULL OR char_length(p_pump_photo_path) NOT BETWEEN 8 AND 500
