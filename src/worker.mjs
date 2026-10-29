@@ -31,6 +31,31 @@ export default {
           headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
         });
       }
+      if (url.pathname === '/api/ready') {
+        if (request.method !== 'GET') return new Response(null,{status:405});
+        // A healthy process is not a ready release. Validate the deployed
+        // DB migration marker, private buckets and server-only secrets.
+        let ready=false;
+        try {
+          const result=await createSupabaseAdapter(env).db.releaseStatus();
+          ready=result?.ready===true &&
+            result?.schemaVersion==='20261029215000' &&
+            env.OILSTATION_API_ENABLED==='true';
+        } catch { /* fail closed; never return key names, SQL or host details */ }
+        return new Response(JSON.stringify({service:'oilstation',ready}),{
+          status:ready?200:503,
+          headers:{'content-type':'application/json; charset=utf-8',
+            'cache-control':'no-store','x-content-type-options':'nosniff'},
+        });
+      }
+      // Safe default: uploading a Worker must NEVER enable money writes,
+      // private evidence, invitations or scheduled tasks before explicit UAT.
+      if (env.OILSTATION_API_ENABLED!=='true') {
+        return new Response(JSON.stringify({error:'release_not_enabled'}),{
+          status:503,headers:{'content-type':'application/json',
+            'cache-control':'no-store','x-content-type-options':'nosniff'},
+        });
+      }
       if (url.pathname === '/api/public-config') {
         if (request.method !== 'GET') return new Response(null,{status:405});
         if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return new Response(null,{status:503});
@@ -124,6 +149,7 @@ export default {
     return env.ASSETS.fetch(request);
   },
   scheduled(_controller, env, ctx) {
+    if(env.OILSTATION_API_ENABLED!=='true')return;
     ctx.waitUntil(
       createSupabaseAdapter(env).db.expireCoupons(200)
         .catch(() => { console.error('oilstation_coupon_expiry_failed'); })
