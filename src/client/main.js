@@ -315,6 +315,88 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
   return wrapper;
 }
 
+async function hrWorkspace(token,stationId,target) {
+ if(!target)return;
+ target.innerHTML = `
+  <div class="divider"></div><h2>พนักงานและตารางกะ</h2>
+  <p>สร้างพนักงาน และกำหนดกะเช้า กะบ่าย กะดึก รวมถึงควบกะได้</p>
+  <button class="button secondary" type="button" id="hr-seed">เตรียมกะมาตรฐาน</button>
+  <form class="coupon-form" id="hr-add-employee">
+    <label class="field">รหัสพนักงาน <input id="hr-employee-code" required maxlength="40"></label>
+    <label class="field">ชื่อพนักงาน <input id="hr-employee-name" required maxlength="200"></label>
+    <label class="field">ประเภทค่าจ้าง <select id="hr-wage-type"><option value="monthly">รายเดือน</option><option value="daily">รายวัน</option><option value="hourly">รายชั่วโมง</option></select></label>
+    <label class="field">ค่าจ้าง (บาท) <input id="hr-wage" required inputmode="decimal" placeholder="15000.00"></label>
+    <label class="field">รอบจ่ายเงิน <select id="hr-frequency"><option value="monthly">รายเดือน</option><option value="semi_monthly">เดือนละ 2 ครั้ง</option><option value="weekly">รายสัปดาห์</option></select></label>
+    <button type="submit" class="button primary">เพิ่มพนักงาน</button>
+  </form>
+  <div class="divider"></div>
+  <form class="coupon-form" id="hr-schedule">
+    <label class="field">พนักงาน <select id="hr-select-employee" required></select></label>
+    <label class="field">กะ <select id="hr-select-template" required></select></label>
+    <label class="field">วันที่ทำงาน <input id="hr-shift-date" type="date" required></label>
+    <button type="submit" class="button primary">จัดกะให้พนักงาน</button>
+  </form>
+  <p class="hint">การจัดสองกะในวันเดียวกันทำได้ โดยเลือกพนักงานคนเดิมแล้วเพิ่มอีกกะ</p>
+  <p id="hr-notice" class="notice" role="status" hidden></p>
+  <div id="hr-assignment-list" class="module-list"></div>
+ `;
+ const $=id=>document.getElementById(id);
+ const note=(value,err=false)=>{const n=$('hr-notice');n.textContent=value;n.hidden=false;n.dataset.tone=err?'error':'neutral';};
+ let roster={employees:[],shiftTemplates:[],assignments:[]};
+ async function refresh(){
+   const r=await getApi('/api/hr/roster?stationId='+encodeURIComponent(stationId),token);
+   if(!r.ok)return note('ไม่สามารถโหลดตารางกะได้',true);
+   roster=r.data.roster;
+   const e=$('hr-select-employee'),t=$('hr-select-template');
+   const selected=e.value,selShift=t.value;
+   e.replaceChildren();t.replaceChildren();
+   roster.employees.forEach(x=>{
+     const opt=document.createElement('option');opt.value=x.id;opt.textContent=x.name+' ('+x.code+')';e.appendChild(opt);
+   });
+   roster.shiftTemplates.forEach(x=>{
+     const opt=document.createElement('option');opt.value=x.id;opt.textContent=x.name+' ('+x.startsAt.slice(0,5)+'–'+x.endsAt.slice(0,5)+')';
+     t.appendChild(opt);
+   });
+   if(roster.employees.some(x=>x.id===selected))e.value=selected;
+   if(roster.shiftTemplates.some(x=>x.id===selShift))t.value=selShift;
+   const list=$('hr-assignment-list');list.replaceChildren();
+   for(const a of roster.assignments){
+     const emp=roster.employees.find(x=>x.id===a.employeeId);
+     const shift=roster.shiftTemplates.find(x=>x.id===a.templateId);
+     const node=document.createElement('div');node.className='module-item';
+     node.textContent=a.date+' · '+(emp?.name??'พนักงาน')+' · '+(shift?.name??'กะ')+' · '+a.status;
+     list.appendChild(node);
+   }
+ }
+ $('hr-seed').addEventListener('click',async()=>{
+   const r=await getApi('/api/hr/seed-shifts',token,{method:'POST',body:JSON.stringify({stationId})});
+   if(!r.ok)return note('ตั้งกะมาตรฐานไม่สำเร็จ',true);
+   note('เตรียมกะเช้า–บ่าย–ดึกแล้ว');await refresh();
+ });
+ $('hr-add-employee').addEventListener('submit',async e=>{
+   e.preventDefault();
+   const wageSatang=bahtToSatang($('hr-wage').value.trim());
+   if(!wageSatang)return note('ค่าจ้างไม่ถูกต้อง',true);
+   const r=await getApi('/api/hr/employees',token,{method:'POST',body:JSON.stringify({
+     stationId,employeeCode:$('hr-employee-code').value.trim(),
+     name:$('hr-employee-name').value.trim(),wageType:$('hr-wage-type').value,
+     wageSatang,payrollFrequency:$('hr-frequency').value,
+   })}).catch(()=>null);
+   if(!r?.ok)return note('เพิ่มพนักงานไม่สำเร็จ ตรวจสอบว่ารหัสซ้ำหรือไม่',true);
+   note('เพิ่มพนักงานแล้ว');await refresh();
+ });
+ $('hr-schedule').addEventListener('submit',async e=>{
+   e.preventDefault();
+   const r=await getApi('/api/hr/assign-shift',token,{method:'POST',body:JSON.stringify({
+     stationId,employeeId:$('hr-select-employee').value,
+     templateId:$('hr-select-template').value,date:$('hr-shift-date').value,
+   })}).catch(()=>null);
+   if(!r?.ok)return note('จัดกะไม่สำเร็จ',true);
+   note('บันทึกตารางกะแล้ว');await refresh();
+ });
+ await refresh();
+}
+
 async function stationCorporateWorkspace(accessToken,stationId,target) {
   if (!target) return;
   target.innerHTML = `
@@ -573,6 +655,7 @@ function dashboard(data, session) {
      <div id="platform-workspace"></div>
      <div id="station-fuel-workspace"></div>
      <div id="station-customers-workspace"></div>
+     <div id="hr-workspace"></div>
      <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout">ออกจากระบบ</button>
@@ -598,6 +681,8 @@ function dashboard(data, session) {
   const stationMember=memberships.find(m=>m.scopeType==='station'
     && ['station_owner','owner','manager'].includes(m.role));
   if(stationMember?.stationId) {
+    hrWorkspace(session.access_token,stationMember.stationId,
+      document.getElementById('hr-workspace')).catch(()=>{});
     fuelPriceEditor(session.access_token,stationMember.stationId,
       document.getElementById('station-fuel-workspace')).catch(()=>{});
     if (['station_owner','owner','manager'].includes(stationMember.role)) {
