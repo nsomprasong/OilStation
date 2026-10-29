@@ -101,6 +101,19 @@ async function corporateWorkspace(accessToken) {
     <div class="account-overview" id="account-overview"></div>
     <div id="company-link-inbox" class="module-list"></div>
     <div id="company-bank-options" class="module-list" aria-live="polite"></div>
+    <form id="topup-upload-form" class="coupon-form" hidden>
+      <h3>แจ้งเติมเงินผ่านการโอน</h3>
+      <label class="field">บัญชีธนาคารของปั๊ม <select id="topup-bank" required></select></label>
+      <label class="field">จำนวนเงินที่โอน (บาท) <input id="topup-amount" inputmode="decimal" placeholder="เช่น 1200.00" required></label>
+      <label class="field">ภาพสลิปโอนเงิน (JPEG/PNG สูงสุด 5 MB)
+        <input id="topup-slip" type="file" accept="image/jpeg,image/png" required>
+      </label>
+      <button class="button primary" id="topup-upload-btn" type="submit">
+        <i data-ui-icon="receipt"></i>ส่งสลิปให้ปั๊มตรวจสอบ
+      </button>
+      <p id="topup-notice" class="notice" hidden role="status"></p>
+      <p class="hint">การส่งสลิปไม่ใช่การเติมเงินสำเร็จ ยอดพร้อมใช้จะเพิ่มหลังจากปั๊มตรวจเงินเข้าจริงและอนุมัติเท่านั้น</p>
+    </form>
     <form id="coupon-form" class="coupon-form" hidden>
       <label class="field">เลือกปั๊มน้ำมัน <select required id="account-select"></select></label>
       <label class="field">ประเภทน้ำมัน <select required id="fuel-select"></select></label>
@@ -190,6 +203,9 @@ async function corporateWorkspace(accessToken) {
   async function reloadBankOptions() {
     const view=$('company-bank-options');
     view.replaceChildren();
+    const topupForm=$('topup-upload-form');
+    const bankSelect=$('topup-bank');
+    topupForm.hidden=true;bankSelect.replaceChildren();
     const id=accountSelect.value;
     if(!id)return;
     const res=await getApi('/api/topup/banks?accountId='+encodeURIComponent(id),accessToken);
@@ -210,12 +226,44 @@ async function corporateWorkspace(accessToken) {
       const detail=document.createElement('p');detail.className='module-subtitle';
       detail.textContent='บัญชี '+(bank.accountNumberMasked||'โปรดติดต่อปั๊มเพื่อขอเลขบัญชี');
       item.append(line,detail);view.appendChild(item);
+      const opt=document.createElement('option');opt.value=bank.id;
+      opt.textContent=bank.bankCode+' · '+bank.accountName+' · '+(bank.accountNumberMasked||'');
+      bankSelect.appendChild(opt);
     }
     const note=document.createElement('p');
     note.className='hint';
-    note.textContent='การโอนเงินและตรวจสลิปยังไม่เปิดใช้งาน: ยอดเงินจะไม่เพิ่มจนกว่าปั๊มยืนยันเงินเข้าธนาคาร';
+    note.textContent='ส่งสลิปได้หลังโอนเงินจริง ยอดเงินจะยังไม่เปลี่ยนจนกว่าปั๊มจะตรวจสอบรายการจากธนาคาร';
     view.appendChild(note);
+    topupForm.hidden=false;
   }
+  $('topup-upload-form').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const accountId=accountSelect.value,bankId=$('topup-bank').value;
+    const satang=bahtToSatang($('topup-amount').value.trim());
+    const file=$('topup-slip').files?.[0];
+    const notice=$('topup-notice'),button=$('topup-upload-btn');
+    const status=(text,error=false)=>{
+      notice.textContent=text;notice.dataset.tone=error?'error':'neutral';notice.hidden=false;
+    };
+    if(!accountId||!bankId||!satang||BigInt(satang)<100n||BigInt(satang)>100000000000n)
+      return status('กรุณาตรวจสอบบัญชีและจำนวนเงินที่โอน',true);
+    if(!file||!['image/jpeg','image/png'].includes(file.type)||file.size<64||file.size>5*1024*1024)
+      return status('กรุณาแนบภาพ JPEG/PNG ขนาดไม่เกิน 5 MB',true);
+    button.disabled=true;accountSelect.disabled=true;
+    status('กำลังรับสลิปแบบส่วนตัว…');
+    try{
+      const uri='/api/evidence/topup?accountId='+encodeURIComponent(accountId)
+        +'&bankId='+encodeURIComponent(bankId)+'&amountSatang='+encodeURIComponent(satang);
+      const res=await fetch(uri,{method:'POST',headers:{
+        authorization:'Bearer '+accessToken,'content-type':file.type,
+      },body:file,cache:'no-store'});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)return status('ส่งสลิปไม่สำเร็จ ('+(data.error||'service_unavailable')+')',true);
+      status('ส่งสลิปสำเร็จ รายการอยู่ระหว่างรอปั๊มตรวจเงินเข้าธนาคาร (ยังไม่เพิ่มวงเงิน)');
+      $('topup-upload-form').reset();
+    }catch{status('ไม่สามารถยืนยันการรับสลิปได้ โปรดตรวจสอบกับปั๊มก่อนส่งซ้ำ',true);}
+    finally{button.disabled=false;accountSelect.disabled=false;}
+  });
   accountSelect.addEventListener('change',() => {
     pendingIdempotencyKey=null;
     reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true));
@@ -607,7 +655,25 @@ async function stationFinanceWorkspace(token,stationId,target) {
         meta.textContent='ธนาคาร '+record.bankCode+' · '+new Date(record.requestedAt).toLocaleString('th-TH');
         const state=document.createElement('p');state.className='finance-status';
         state.textContent='รอตรวจสอบเงินเข้าจริง — ยังไม่เพิ่มวงเงิน';
-        item.append(name,amount,meta,state);list.appendChild(item);
+        const slipButton=document.createElement('button');
+        slipButton.className='button secondary';slipButton.type='button';slipButton.textContent='ดูหลักฐานโอนเงิน';
+        const slipStatus=document.createElement('small');slipStatus.setAttribute('role','status');
+        slipButton.addEventListener('click',async()=>{
+          slipButton.disabled=true;slipStatus.textContent='กำลังโหลดสลิป…';
+          try{
+            const r=await fetch('/api/evidence/topup-slip?requestId='+encodeURIComponent(record.requestId),{
+              headers:{authorization:'Bearer '+token},cache:'no-store'});
+            if(!r.ok)throw new Error('unavailable');
+            const blob=await r.blob();if(blob.size>5*1024*1024)throw new Error('too_large');
+            const objectUrl=URL.createObjectURL(blob);
+            const a=document.createElement('a');a.href=objectUrl;a.download='oilstation-slip-'+record.requestId+'.jpg';
+            a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+            setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
+            slipStatus.textContent='ดาวน์โหลดสลิปแล้ว โปรดเทียบกับรายการเงินเข้าธนาคารก่อนอนุมัติ';
+          }catch{slipStatus.textContent='ไม่สามารถดูสลิปได้ กรุณาลองใหม่';}
+          finally{slipButton.disabled=false;}
+        });
+        item.append(name,amount,meta,state,slipButton,slipStatus);list.appendChild(item);
       }
     }catch{
       error.textContent='โหลดรายการเติมเงินไม่สำเร็จ กรุณาลองอีกครั้ง';
