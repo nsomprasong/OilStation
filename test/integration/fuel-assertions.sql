@@ -96,6 +96,14 @@ BEGIN
  IF r->>'replayed'<>'true' OR (r->>'id')::uuid<>session_id
     OR (SELECT count(*) FROM public.fuel_sessions WHERE coupon_id=coupon_a)<>1
  THEN RAISE EXCEPTION 'duplicate_photo_created_second_fuel_session';END IF;
+ -- A price schedule/corporate discount edit after pumping STARTS must
+ -- NEVER change this session's locked consumer or corporate settlement.
+ UPDATE public.station_fuel_products SET current_public_price=44.0000 WHERE id=product_a;
+ UPDATE public.corporate_price_rules SET value_per_liter=3.0000
+ WHERE account_id=account_a AND station_fuel_id=product_a;
+ IF (SELECT locked_public_price FROM public.fuel_sessions WHERE id=session_id)<>40.0000
+    OR (SELECT locked_net_price FROM public.fuel_sessions WHERE id=session_id)<>35.0000
+ THEN RAISE EXCEPTION 'fuel_session_price_repriced_midfill';END IF;
 
  pump_path:='stations/'||station_a::text||'/sessions/'||session_id::text||
    '/pump_display/aaaaaaaa-aaaa-4aaa-8aaa-111111111111.jpg';
