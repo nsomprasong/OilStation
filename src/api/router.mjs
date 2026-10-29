@@ -2,7 +2,7 @@
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDKEY = /^[a-zA-Z0-9_-]{16,128}$/;
 const LIMIT_BYTES = 16_384;
-const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET' };
+const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -71,6 +71,9 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
     try {
       const user = await authenticate(match[1]);
       if (!user?.id || !UUID.test(user.id)) return fail(401, 'unauthenticated');
+      if (path === '/api/bootstrap') {
+        return json(200, await db.bootstrapAdmin(user.id));
+      }
       if (path === '/api/invitations/accept') {
         if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) return fail(415, 'unsupported_media_type');
         const data = await readBody(request);
@@ -122,6 +125,8 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       if (error && typeof error === 'object' && error.code === 'INVALID_REQUEST') return fail(400, 'invalid_coupon_request');
       if (error && typeof error === 'object' && error.code === 'INVITE_INVALID') return fail(400, 'invalid_or_expired_invitation');
       if (error && typeof error === 'object' && error.code === 'EMAIL_MISMATCH') return fail(403, 'invited_email_verification_required');
+      if (error && typeof error === 'object' && error.code === 'BOOTSTRAP_FORBIDDEN') return fail(403, 'bootstrap_not_allowed');
+      if (error && typeof error === 'object' && error.code === 'ALREADY_BOOTSTRAPPED') return fail(409, 'already_bootstrapped');
       return fail(503, 'service_unavailable');
     }
   };
