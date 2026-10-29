@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
+import { mountPlatformSaasBilling } from './platform-saas-billing.js';
 import { mountBillingWorkspace } from './billing.js';
 import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
@@ -1289,6 +1290,7 @@ function dashboard(data, session, publicConfig={}) {
      <div class="module-list" id="modules"></div>
      <div id="corporate-workspace"></div>
      <div id="platform-workspace"></div>
+     <div id="platform-saas-billing"></div>
      <div id="saas-billing-workspace"></div>
      <div id="station-fuel-workspace"></div>
      <div id="station-pump-workspace"></div>
@@ -1322,6 +1324,8 @@ function dashboard(data, session, publicConfig={}) {
   });
   if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
     platformWorkspace(session.access_token).catch(() => {});
+    mountPlatformSaasBilling({target:document.getElementById('platform-saas-billing'),
+      token:session.access_token});
   }
   const billingMember=memberships.find(m=>m.scopeType==='organization'&&
     ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);

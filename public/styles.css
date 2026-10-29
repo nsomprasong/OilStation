@@ -159,3 +159,19 @@
 .attendance-review-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(max-width:470px){.attendance-review-actions{grid-template-columns:1fr}}
 @media(prefers-color-scheme:dark){.attendance-review-card{background:#152b3c;border-color:#355366}.attendance-review-card textarea{background:#203b50;color:#f1f8ff;border-color:#587288}.attendance-geofence[data-status="outside"]{color:#ffb6a9}.attendance-geofence[data-status="uncertain"],.attendance-geofence[data-status="unconfigured"]{color:#f2c78c}}
+
+.platform-saas-config{display:grid;gap:14px;margin-top:24px}
+.platform-saas-config h3{margin:0;font-size:16px}
+.billing-settings-layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px}
+.billing-settings-layout .coupon-form{border:1px solid #d4e3ea;background:#fbfdfe;
+ padding:15px;border-radius:13px;align-content:start}
+.saas-station-fieldset{border:1px solid #c6d7df;border-radius:9px;max-width:100%;padding:8px}
+.saas-station-pick{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:13px}
+.saas-station-pick input,.saas-review-check input{width:18px;height:18px;flex:none}
+.saas-review-check{display:flex;align-items:center;gap:8px;font-size:13px}
+.platform-saas-config .billing-invoice-card{display:grid;gap:10px;margin-top:9px;
+ padding:14px;border:1px solid #d4e3ea;border-radius:11px}
+@media(prefers-color-scheme:dark){
+ .billing-settings-layout .coupon-form{background:#162e40;border-color:#375566}
+ .platform-saas-config .billing-invoice-card{border-color:#375566}
+}
