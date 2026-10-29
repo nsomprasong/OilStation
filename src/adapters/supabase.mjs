@@ -68,6 +68,25 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      hrRequestOt: async d => serviceRequest(env,'/rest/v1/rpc/hr_request_overtime',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          p_actor_id:d.actorId,p_employee_id:d.employeeId,
+          p_shift_id:d.shiftId,p_planned:d.planned,
+          p_requested_minutes:d.requestedMinutes,p_reason:d.reason,
+        }),
+      }),
+      hrReviewOt: async d => serviceRequest(env,'/rest/v1/rpc/hr_approve_overtime',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          p_actor_id:d.actorId,p_request_id:d.requestId,
+          p_approved_minutes:d.approvedMinutes,
+        }),
+      }),
+      hrPendingOt: async d => serviceRequest(env,'/rest/v1/rpc/hr_pending_overtime',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+      }),
       hrPendingShiftChanges: async d => serviceRequest(env,
         '/rest/v1/rpc/hr_station_pending_shift_changes',{
           method:'POST',headers:{'content-type':'application/json'},
