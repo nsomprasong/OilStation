@@ -4,6 +4,7 @@ import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountPlatformSaasBilling } from './platform-saas-billing.js';
 import { mountBillingWorkspace } from './billing.js';
+import { mountAttendancePayrollPreview } from './attendance-payroll-preview.js';
 import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
@@ -1299,6 +1300,7 @@ function dashboard(data, session, publicConfig={}) {
      <div id="hr-workspace"></div>
      <div id="attendance-workspace"></div>
      <div id="attendance-review-workspace"></div>
+     <div id="attendance-payroll-preview-workspace"></div>
      <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout"><i data-ui-icon="logout"></i>ออกจากระบบ</button>
@@ -1343,6 +1345,8 @@ function dashboard(data, session, publicConfig={}) {
     ['station_owner','owner','manager','hr_manager'].includes(m.role)&&m.stationId);
   if(attendanceSupervisor){
     mountAttendanceReview({target:document.getElementById('attendance-review-workspace'),
+      token:session.access_token,stationId:attendanceSupervisor.stationId});
+    mountAttendancePayrollPreview({target:document.getElementById('attendance-payroll-preview-workspace'),
       token:session.access_token,stationId:attendanceSupervisor.stationId});
   }
   const pumpMember=memberships.find(m=>m.scopeType==='station'

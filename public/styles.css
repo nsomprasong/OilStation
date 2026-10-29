@@ -175,3 +175,8 @@
  .billing-settings-layout .coupon-form{background:#162e40;border-color:#375566}
  .platform-saas-config .billing-invoice-card{border-color:#375566}
 }
+
+.attendance-payroll-preview{margin-top:22px;padding:16px;border:1px solid var(--line,#d9e2e9);border-radius:14px}
+.attendance-payroll-preview h3{font-size:16px;margin:0 0 8px}
+.attendance-payroll-preview form{display:grid;gap:12px}
+.attendance-payroll-preview [role=status]{margin-top:10px;line-height:1.5}
