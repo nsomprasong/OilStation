@@ -1,0 +1,111 @@
+name: OilStation Controlled Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deploy isolated UAT or customer-facing production Worker
+        required: true
+        type: choice
+        options: [uat, production]
+      production_approval:
+        description: For production only, type APPROVED_OILSTATION_PRODUCTION_RELEASE
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-release-${{ inputs.target }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build
+      - run: npm test
+      - run: npx --yes wrangler@4 deploy --dry-run --outdir .wrangler-dry-run
+      - name: Enforce release marker and production approval from main
+        run: |
+          test -f supabase/migrations/20261029215000_release_readiness.sql
+          test -f docs/release/2026-10-30-controlled-deploy.md
+          if [ "${{ inputs.target }}" = production ]; then
+            test "${{ github.ref }}" = refs/heads/main
+            test "${{ inputs.production_approval }}" = APPROVED_OILSTATION_PRODUCTION_RELEASE
+          fi
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target == 'production' && 'production' || 'oilstation-uat' }}
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      RELEASE_SUPABASE_URL: ${{ secrets.OILSTATION_RELEASE_SUPABASE_URL }}
+      RELEASE_SERVICE_ROLE_KEY: ${{ secrets.OILSTATION_RELEASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - name: Fail closed without Cloudflare authentication
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || {
+            echo "::error::CLOUDFLARE_API_TOKEN is missing from the GitHub environment"
+            exit 1
+          }
+      - name: Check production database release marker before changing domain Worker
+        if: inputs.target == 'production'
+        run: |
+          set -eu
+          test -n "$RELEASE_SUPABASE_URL" && test -n "$RELEASE_SERVICE_ROLE_KEY" || {
+            echo "::error::Production DB preflight credentials are missing"
+            exit 1
+          }
+          case "$RELEASE_SUPABASE_URL" in https://*.supabase.co) ;; *)
+            echo "::error::Invalid Supabase project URL"; exit 1;; esac
+          tmp="$(mktemp)"
+          trap 'rm -f "$tmp"' EXIT
+          curl --fail --silent --show-error --max-time 12 \
+            -H "apikey: $RELEASE_SERVICE_ROLE_KEY" \
+            -H "authorization: Bearer $RELEASE_SERVICE_ROLE_KEY" \
+            -H "content-type: application/json" \
+            --data '{}' \
+            "$RELEASE_SUPABASE_URL/rest/v1/rpc/oilstation_release_status" > "$tmp"
+          jq -e '.ready == true and .schemaVersion == "20261029215000"' "$tmp" >/dev/null || {
+            echo "::error::Production Supabase readiness failed"; exit 1; }
+      - name: Check required encrypted Cloudflare bindings before production replacement
+        if: inputs.target == 'production'
+        run: |
+          npx --yes wrangler@4 secret list > /tmp/oilstation-bindings.json
+          for key in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY COUPON_SIGNING_KEY OILSTATION_API_ENABLED; do
+            jq -e --arg k "$key" 'any(.[]; .name == $k)' /tmp/oilstation-bindings.json >/dev/null || {
+              echo "::error::Missing required Cloudflare Worker binding: $key"; exit 1; }
+          done
+          rm -f /tmp/oilstation-bindings.json
+      - name: Deploy safe isolated UAT Worker (no production route or cron)
+        if: inputs.target == 'uat'
+        run: npx --yes wrangler@4 deploy --env uat
+      - name: Deploy production only after preflight
+        if: inputs.target == 'production'
+        run: npx --yes wrangler@4 deploy
+      - name: Verify isolated UAT liveness
+        if: inputs.target == 'uat'
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            https://oilstation-uat.nsomprasong.workers.dev/api/health |
+            jq -e '.service == "oilstation" and .status == "ok"'
+      - name: Verify customer-facing readiness
+        if: inputs.target == 'production'
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            https://oilstation.goldensoft.cloud/api/health |
+            jq -e '.service == "oilstation" and .status == "ok"'
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            https://oilstation.goldensoft.cloud/api/ready |
+            jq -e '.ready == true'

@@ -3,16 +3,37 @@
   "name": "oilstation",
   "main": "./src/worker.mjs",
   "compatibility_date": "2026-10-29",
-  "compatibility_flags": ["nodejs_compat"],
-  "triggers": { "crons": ["*/2 * * * *"] },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "triggers": {
+    "crons": [
+      "*/2 * * * *"
+    ]
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*"
+    ]
   },
-  // Secrets must be configured separately via Cloudflare, never in git:
-  // SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
-  // COUPON_SIGNING_KEY
-  // This file is for future reviewed deployment; production unchanged.
+  "env": {
+    "uat": {
+      "name": "oilstation-uat",
+      "workers_dev": true,
+      "triggers": {
+        "crons": []
+      },
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application",
+        "run_worker_first": [
+          "/api/*"
+        ]
+      }
+    }
+  }
 }
