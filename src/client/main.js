@@ -77,7 +77,7 @@ function bahtToSatang(text) {
 async function corporateWorkspace(accessToken) {
   const target = document.getElementById('corporate-workspace');
   if (!target) return;
-  target.innerHTML = \`
+  target.innerHTML = `
     <div class="section-title">บัญชีเติมน้ำมันของบริษัท</div>
     <p class="lead" id="corp-help">กำลังโหลดบัญชี…</p>
     <div class="account-overview" id="account-overview"></div>
@@ -103,7 +103,7 @@ async function corporateWorkspace(accessToken) {
       <button type="button" id="copy-link" class="button secondary">คัดลอกลิงก์</button>
       <div id="issued-qr" class="qr-wrapper"></div>
     </section>
-  \`;
+  `;
   const $ = id => document.getElementById(id);
   const setNotice = (text, isError = false) => {
     $('coupon-notice').hidden = false;
