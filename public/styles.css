@@ -113,3 +113,14 @@
 .plate-verification .hint{text-align:left}
 .plate-verification .button{width:100%}
 @media(prefers-color-scheme:dark){.plate-verification{background:#152b3c;border-color:#2b4e63}.plate-verification[data-verified="true"] #plate-verification-status{color:#7cddbc}}
+
+/* GPS punches: working UI, no decorative metrics or misleading verification states. */
+.attendance-workspace{border:1px solid #dce9ed;border-radius:14px;padding:18px;background:#fbfdfe;margin:12px 0 18px}
+.attendance-workspace h2{font-size:19px;margin:0 0 8px}
+.attendance-explainer{font-size:14px;color:#557185;line-height:1.65}
+.attendance-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin:16px 0}
+.attendance-actions .button{min-width:0}
+#attendance-message{min-height:26px;font-size:13px;line-height:1.5;color:#286174}
+#attendance-message[data-tone="error"]{color:#a43f38}
+@media(max-width:480px){.attendance-workspace{padding:13px}.attendance-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-color-scheme:dark){.attendance-workspace{background:#142b3c;border-color:#2c4d61}.attendance-explainer{color:#b4c4d3}#attendance-message{color:#9ad7e3}#attendance-message[data-tone="error"]{color:#ffb5b5}}

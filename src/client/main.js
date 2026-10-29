@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
+import { mountAttendanceWorkspace } from './attendance.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -1181,6 +1182,7 @@ function dashboard(data, session) {
      <div id="station-customers-workspace"></div>
      <div id="station-finance-workspace"></div>
      <div id="hr-workspace"></div>
+     <div id="attendance-workspace"></div>
      <div id="member-invites"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout"><i data-ui-icon="logout"></i>ออกจากระบบ</button>
@@ -1206,6 +1208,11 @@ function dashboard(data, session) {
   });
   if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
     platformWorkspace(session.access_token).catch(() => {});
+  }
+  const attendanceMember=memberships.find(m=>m.scopeType==='station'&&m.stationId);
+  if(attendanceMember?.stationId){
+    mountAttendanceWorkspace({target:document.getElementById('attendance-workspace'),
+      token:session.access_token,stationId:attendanceMember.stationId});
   }
   const pumpMember=memberships.find(m=>m.scopeType==='station'
     && ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
