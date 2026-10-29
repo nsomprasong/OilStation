@@ -69,6 +69,14 @@ export function createStripeWebhookApi({db,secret,processTestPayments=false,nowS
   try{
    const result=await db.recordStripeEvent({eventId:event.id,eventType:event.type,
       hash,livemode:event.livemode});
+   // Payment reversal events are not yet journalled into SaaS invoice and
+   // commission recovery. Never 2xx-ACK a refund/dispute without a reviewed
+   // reconciliation handler: retain the signed event and request Stripe retry.
+   // This is deliberate test-mode quarantine, NOT completed refund support.
+   if (['charge.refunded','refund.created','refund.updated','refund.failed',
+      'charge.dispute.created','charge.dispute.updated','charge.dispute.closed',
+      'payment_intent.canceled'].includes(event.type))
+     return json(503,{error:'financial_reversal_reconciliation_required'});
    // Never ACK successful Stripe payment without a reconciler: an ACK prevents
    // automatic Stripe retries and could leave a paid invoice marked unpaid.
    if(event.type==='payment_intent.succeeded'&&!processTestPayments)

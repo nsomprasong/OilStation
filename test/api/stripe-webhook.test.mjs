@@ -88,3 +88,28 @@ test('database failure remains retriable instead of confirming payment to Stripe
   }}});
  assert.equal((await app(await make(valid))).status,503);
 });
+
+test('signed refund/dispute events remain in inbox but never falsely ACK as fully reconciled',async()=>{
+ const calls=[];
+ const app=createStripeWebhookApi({secret,nowSeconds:()=>now,processTestPayments:true,
+  db:{recordStripeEvent:async d=>{calls.push(d);return {replayed:false}},
+   reconcileSaasPaid:async()=>{throw new Error('refund must never post paid')}}});
+ for(const type of ['charge.refunded','refund.created','refund.updated','refund.failed',
+  'charge.dispute.created','charge.dispute.updated','charge.dispute.closed',
+  'payment_intent.canceled']) {
+  const res=await app(await make({...event,id:'evt_RefundTest123456',type}));
+  assert.equal(res.status,503,type);
+  assert.equal((await res.json()).error,'financial_reversal_reconciliation_required');
+ }
+ assert.equal(calls.length,8);
+ assert.ok(calls.every(x=>typeof x.hash==='string'&&x.hash.length===64));
+});
+test('unsigned refund event still fails signature before inbox',async()=>{
+ let called=0;
+ const app=createStripeWebhookApi({secret,nowSeconds:()=>now,
+  db:{recordStripeEvent:async()=>{called++}}});
+ const res=await app(new Request(endpoint,{method:'POST',
+  headers:{'content-type':'application/json'},
+  body:JSON.stringify({...event,type:'charge.refunded'})}));
+ assert.equal(res.status,400);assert.equal(called,0);
+});
