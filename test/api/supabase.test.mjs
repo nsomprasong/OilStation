@@ -68,3 +68,26 @@ test('known SQL insufficient-funds error becomes safe error code',async()=>{
   await withFetch(async()=>response(400,{message:'INSUFFICIENT_FUNDS',details:'bank account private'}),
     async()=>await assert.rejects(createSupabaseAdapter(env).db.account(UUID),{code:'INSUFFICIENT_FUNDS'}));
 });
+
+test('modern sb_secret key authenticates service RPC via apikey only (never JWT bearer)',async()=>{
+ const modern={...env,
+  SUPABASE_ANON_KEY:'sb_publishable_oilstation_unit_test_123456',
+  SUPABASE_SERVICE_ROLE_KEY:'sb_secret_oilstation_unit_test_123456'};
+ await withFetch(async(url,init)=>{
+  assert.ok(String(url).includes('/rest/v1/memberships?'));
+  assert.equal(init.headers.apikey,modern.SUPABASE_SERVICE_ROLE_KEY);
+  assert.equal('authorization' in init.headers,false);
+  return response(200,[]);
+ },async()=>assert.deepEqual(await createSupabaseAdapter(modern).db.memberships(UUID),[]));
+});
+test('modern publishable key authenticates user with their Supabase session JWT',async()=>{
+ const modern={...env,SUPABASE_ANON_KEY:'sb_publishable_oilstation_unit_test_123456'};
+ await withFetch(async(url,init)=>{
+  assert.equal(String(url),URL+'/auth/v1/user');
+  assert.equal(init.headers.apikey,modern.SUPABASE_ANON_KEY);
+  assert.equal(init.headers.authorization,'Bearer signed-user-jwt');
+  return response(200,{id:UUID});
+ },async()=>{
+  assert.deepEqual(await createSupabaseAdapter(modern).authenticate('signed-user-jwt'),{id:UUID});
+ });
+});

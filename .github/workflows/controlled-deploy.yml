@@ -71,9 +71,14 @@ jobs:
             echo "::error::Invalid Supabase project URL"; exit 1;; esac
           tmp="$(mktemp)"
           trap 'rm -f "$tmp"' EXIT
+          # New sb_secret keys are not JWTs; legacy service_role JWTs
+          # continue to use the authorization header for compatibility.
+          auth_headers=(-H "apikey: $RELEASE_SERVICE_ROLE_KEY")
+          if [[ "$RELEASE_SERVICE_ROLE_KEY" != sb_secret_* ]]; then
+            auth_headers+=(-H "authorization: Bearer $RELEASE_SERVICE_ROLE_KEY")
+          fi
           curl --fail --silent --show-error --max-time 12 \
-            -H "apikey: $RELEASE_SERVICE_ROLE_KEY" \
-            -H "authorization: Bearer $RELEASE_SERVICE_ROLE_KEY" \
+            "${auth_headers[@]}" \
             -H "content-type: application/json" \
             --data '{}' \
             "$RELEASE_SUPABASE_URL/rest/v1/rpc/oilstation_release_status" > "$tmp"

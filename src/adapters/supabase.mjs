@@ -4,9 +4,12 @@ import { sendInvitationEmail,sendInvitedEmailOtp } from '../notifications/invita
  * SUPABASE_SERVICE_ROLE_KEY must be configured as an encrypted Worker secret.
  * Browser clients NEVER receive this key; no direct table grants are needed.
  */
+// Modern sb_secret_* keys are API keys, NOT JWTs: send them only in
+// apikey. Legacy service_role JWTs still need Authorization: Bearer.
+// Never forward either privileged key to the browser.
 const headers = (key, extra = {}) => ({
   apikey: key,
-  authorization: `Bearer ${key}`,
+  ...(!key.startsWith('sb_secret_') ? { authorization: `Bearer ${key}` } : {}),
   ...extra,
 });
 function requireEnv(env) {

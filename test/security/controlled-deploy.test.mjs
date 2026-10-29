@@ -25,3 +25,10 @@ test('workflow is manual with pre-deployment production SQL and bindings gates',
  assert.match(wf,/wrangler@4 deploy\s*$/m);
  assert.match(wf,/oilstation\.goldensoft\.cloud\/api\/ready/);
 });
+
+test('production release preflight supports new Supabase sb_secret key without JWT bearer',()=>{
+ assert.match(wf,/auth_headers=\(-H "apikey: \$RELEASE_SERVICE_ROLE_KEY"\)/);
+ assert.match(wf,/\[\[ "\$RELEASE_SERVICE_ROLE_KEY" != sb_secret_\* \]\]/);
+ assert.match(wf,/auth_headers\+=\(-H "authorization: Bearer \$RELEASE_SERVICE_ROLE_KEY"\)/);
+ assert.match(wf,/"\$\{auth_headers\[@\]\}"/);
+});
