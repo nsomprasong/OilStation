@@ -334,3 +334,20 @@ Draft PR remains unmerged; Cloudflare domain has not received this code; service
 **Remaining release gates:** full schema and migration dependency simulation against isolated Supabase parity (not just each module fixture), complete RLS/service role security review and concurrent financial stress; real private photo OCR/anti-replay/liveness and camera UAT; bank statement/transfer reconciliation and audited opening ledger; verified Thai payroll compliance and bank payroll processes; OAuth/LINE production integrations; real Stripe test-mode charge and refund; backups/restore, monitoring, and full integrated customer UAT at the custom domain.
 
 No production money has been moved by this development run; all test data was disposable and transaction rollback enforced.
+
+
+## Continuation — Stripe lock order, yearly renewal and cross-module finance transactions
+
+**No production mutation:** All changes in unmerged Draft PR #1; the service-role SQL, Stripe test tools, Cloudflare Worker and Supabase live database were not modified.
+
+- Fixed `attach_saas_test_intent` in the still-unapplied 20261029195000 migration to acquire locks in the same order as `prepare_saas_test_payment` and signed-event reconciliation: immutable invoice row first, payment attempt row second. It validates invoice/attempt consistency after both locks and rejects already-paid invoices or changed amounts.
+- Added real TWO-SESSION PostgreSQL concurrency SQL tests: session A locks an invoice then attempts the Payment Attempt lock; session B concurrently attaches the Stripe PaymentIntent. The former attempt-first path deadlocked. With invoice-first ordering, both sessions finish and the single payment attempt retains one intent; attaching to a paid invoice is rejected.
+- Fixed `nextSubscriptionWindow` to use PostgreSQL enum `monthly`/`yearly`, not the stale `annual`. Added regression checks for yearly anchored renewals including leap dates.
+- Added `Cross-Module Finance SQL (isolated)` GitHub Actions workflow with one PostgreSQL 16 database and the fuel + reviewed top-up migrations installed together, rather than only separate fixtures. The rollback-only test covers QR issuance and hold, private plate review, verified pump and receipt, settled gross/net amounts, wallet prepaid consumption, new AR debt, private transfer slip intake, independent bank confirmation, debt-first repayment, next coupon financed by the corrected available balance, and duplicate finish/top-up idempotency.
+- The cross-module test validates read-only corporate_wallet_integrity_snapshot before and after repayment. No actual bank or Stripe provider is called.
+
+**Verified at commit 0a45f164:** 205/205 Node tests PASS; browser bundle PASS; Wrangler deployment dry run PASS. Six workflows all PASS: Checks, Billing SQL, Fuel SQL, Attendance SQL, Topup SQL and Cross-Module Finance SQL, all run on isolated test environments.
+
+**Database migration truth:** 30 prior migrations already applied to live Supabase; the 24 NEW development migrations (from 20261029180000 onward) remain unapplied. The altered 20261029195000 payment-intent migration is among the unapplied set. No new migration file was introduced in this continuation.
+
+**Still needed before UAT / release:** exhaustive full-schema Supabase migration-parity test and RLS review, real Stripe sandbox and refund scenarios, verified bank-statement reconciliation, authentic hardware/photo capture and OCR checks, payroll legal review, line OAuth and notification credentials, release backup/rollback exercise, and integrated user testing at oilstation.goldensoft.cloud.
