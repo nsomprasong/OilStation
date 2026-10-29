@@ -351,3 +351,21 @@ No production money has been moved by this development run; all test data was di
 **Database migration truth:** 30 prior migrations already applied to live Supabase; the 24 NEW development migrations (from 20261029180000 onward) remain unapplied. The altered 20261029195000 payment-intent migration is among the unapplied set. No new migration file was introduced in this continuation.
 
 **Still needed before UAT / release:** exhaustive full-schema Supabase migration-parity test and RLS review, real Stripe sandbox and refund scenarios, verified bank-statement reconciliation, authentic hardware/photo capture and OCR checks, payroll legal review, line OAuth and notification credentials, release backup/rollback exercise, and integrated user testing at oilstation.goldensoft.cloud.
+
+
+## Continuation — production-shaped public schema migration and RLS/ACL parity
+
+**Development-only verification. Nothing applied to real Supabase, Cloudflare or production domains.**
+
+- Read-only metadata from the connected OilStation production Supabase was used to reconstruct a **65-table public schema** (552 columns, 340 constraints, 22 non-constraint indexes, actual defaults and forced RLS flags). SQL fixture contains **NO user/customer row data**.
+- A separate metadata-only SQL fixture restores **41 existing public function definitions** and their actual role-level EXECUTE grants. No API keys, sessions or secrets are included. Both snapshots are dated 2026-10-29; they are NOT a backup, and may drift after later production schema changes.
+- Observed live: all 65 public tables have ENABLE and FORCE RLS, with zero public row policies; anon and authenticated have no direct SELECT/INSERT/UPDATE/DELETE privileges on public tables; service_role has table SELECT on only brand_fuel_products, corporate_station_accounts, fuel_brands, memberships, and EXECUTE on the existing 41 public RPCs.
+- New GitHub Actions **Full Public Schema Migration Parity (isolated)** workflow boots PostgreSQL 16, loads the live-shaped schema, historical routines and table role grants, then successfully executes all **24 staged, unapplied developer migrations** (20261029180000 through 20261029211000), lexicographically. It asserts all public tables after migrations still have forced RLS, no browser-role table CRUD or RPC EXECUTE, and direct raw financial start/finish/top-up handlers are inaccessible to service_role.
+- This catches cross-module column, constraint, function, permission and migration-order compatibility risks that prior per-module fixtures could not cover. However, it is NOT a complete Supabase clone: Storage/Auth have minimal stubs; live schema hooks, row policies, grants outside public, provider callbacks, load and actual tenant data are not reproduced.
+- Migration snapshot quality test guards 65 public tables, forced RLS count, 552 columns, 340 constraints and the absence of customer records.
+
+**Verified at 88797a3c:** **206/206** Node tests PASS, Vite build PASS, Wrangler deploy dry-run PASS; all **seven** GitHub Actions workflows PASS: Checks, Fuel, Billing, Attendance, Topup, Cross-Module Finance and Full Public Schema Migration Parity.
+
+**Production truth unchanged:** the connected Supabase project still has the original 30 applied migrations; the 24 newer developer SQL files remain unapplied. No historical finance permissions were changed in production. Draft PR #1 remains unmerged and undeployed.
+
+**Required before production:** full Auth/Storage and RLS runtime testing using disposable Supabase branch or staging project, realistic tenant/customer E2E, signed Stripe sandbox payment+refund, bank ledger reconciliation, biometric consent and camera/liveness workflows, payroll legal controls, backups and restore rehearsal, release checklist and user acceptance testing at oilstation.goldensoft.cloud.
