@@ -316,3 +316,21 @@ Security fixes and testing added:
 Outstanding before production: full-schema Supabase staging parity tests, migration transaction order and stored evidence/RLS audit, real private photo review and anti-replay/liveness UAT, connected station device testing, live price schedules, refunds/reversals, offline conflict handling, concurrency/lock stress tests, OAuth, LINE, signed Stripe sandbox, legal payroll review, bank reconciliation and production rollback exercises.
 
 Draft PR remains unmerged; Cloudflare domain has not received this code; service flags off; no real customer financial transaction.
+
+
+## Continuation — topup privilege gate, wallet integrity and forward-migration safety
+
+**Development state: no production changes, no merge, no deployment, and no actual transfer of money.**
+
+- Discovered and fixed (in the pending change set) a privilege bypass: direct `review_corporate_topup` could be invoked by the Worker service role even though the newer `review_verified_corporate_topup` wrapper checks private slip Storage provenance, bank confirmation and no self-review. New forward gate `20261029209000_private_topup_finance_gate.sql` removes direct service-role EXECUTE; reviewed wrapper remains callable.
+- Added an independent Topup PostgreSQL 16 integration workflow, with fake bank/organization and corporate account records and real SQL transactions. It tests: foreign corporate and station-role denial; bank options isolation; missing Storage slip rejection; no wallet credit on pending slip; dual-role self-approval forbidden; bank confirmation required; debt-first receivable settlement; idempotent approved replay; duplicate bank reference rejection; rejection/replay without credit.
+- Added a read-only, role-scoped `corporate_wallet_integrity_snapshot` RPC and `/api/corporate/wallet-integrity` API and Thai account-card button. It compares held coupon reservations to wallet reserved amount and receivables to recorded debt, detects orphaned active coupons and malformed reservation transitions. It explicitly does NOT certify bank settlement or historical opening-ledger balances; it cannot transfer or correct funds.
+- A full migration-file security unit test now gates every generated public function to require an explicit revoke and checks SECURITY DEFINER search_path hardening, plus verifies direct finance RPCs are not exposed. Four trigger helper functions received tighter permissions.
+- Read-only live Supabase migration inventory shows 30 migrations already applied through `verified_topup_review_20261029` at version `20261029140437`. The GitHub tree contains 52 developer migration files: the first 28 correspond to those already applied and **24 later files from `20261029180000` onward remain to be integrated**. Historical applied-file edits are not sufficient for live changes.
+- Live read-only inspection confirmed `finish_reserved_fuel_session` originally checks financial replay BEFORE station authorization and still grants EXECUTE to service_role. Added `20261029211000_forward_fuel_finance_replay_auth.sql` to re-deploy the corrected function in migration order, re-revoke direct service access and prevent authorization-bypass in a live migration rollout. No patch has yet been applied to live Supabase.
+
+**Quality gate at c1b8c8dd:** 202/202 Node tests PASS, browser Vite build PASS, Cloudflare Wrangler deployment dry run PASS; FOUR isolated PostgreSQL integration workflows (Billing, Attendance, Fuel, Topup) all PASS.
+
+**Remaining release gates:** full schema and migration dependency simulation against isolated Supabase parity (not just each module fixture), complete RLS/service role security review and concurrent financial stress; real private photo OCR/anti-replay/liveness and camera UAT; bank statement/transfer reconciliation and audited opening ledger; verified Thai payroll compliance and bank payroll processes; OAuth/LINE production integrations; real Stripe test-mode charge and refund; backups/restore, monitoring, and full integrated customer UAT at the custom domain.
+
+No production money has been moved by this development run; all test data was disposable and transaction rollback enforced.
