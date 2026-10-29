@@ -234,6 +234,53 @@ async function corporateWorkspace(accessToken) {
 }
 
 
+async function fuelPriceEditor(accessToken,stationId,target) {
+  if (!target) return;
+  target.replaceChildren();
+  const title=document.createElement('h2');
+  title.textContent='ตั้งราคาน้ำมันและเปิดใช้งาน';
+  target.appendChild(title);
+  const hint=document.createElement('p');
+  hint.textContent='เลือกเฉพาะชนิดน้ำมันที่สาขาจำหน่ายจริง แล้วระบุราคาต่อลิตร';
+  target.appendChild(hint);
+  const res=await getApi('/api/station-fuels?stationId='+encodeURIComponent(stationId),accessToken);
+  if (!res.ok) {
+    const error=document.createElement('p');error.textContent='ไม่สามารถโหลดรายการน้ำมัน';target.appendChild(error);
+    return;
+  }
+  for (const fuel of res.data.fuels||[]) {
+    const row=document.createElement('div');row.className='fuel-row';
+    const name=document.createElement('strong');name.textContent=fuel.name;
+    const controls=document.createElement('div');controls.className='fuel-row-controls';
+    const toggle=document.createElement('label');
+    const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=fuel.enabled;
+    toggle.append(checkbox,document.createTextNode(' เปิดขาย'));
+    const price=document.createElement('input');
+    price.inputMode='decimal';price.value=fuel.publicPrice??'';
+    price.placeholder='ราคา/ลิตร';price.setAttribute('aria-label','ราคาต่อลิตรสำหรับ '+fuel.name);
+    const save=document.createElement('button');save.type='button';save.className='button secondary';
+    save.textContent='บันทึก';
+    const status=document.createElement('small');status.setAttribute('role','status');
+    save.addEventListener('click',async()=>{
+      if (!/^[0-9]{1,8}(?:\.[0-9]{1,4})?$/.test(price.value) || Number(price.value)<=0) {
+        status.textContent='กรุณาระบุราคาที่ถูกต้อง';return;
+      }
+      save.disabled=true;status.textContent='กำลังบันทึก…';
+      try {
+        const res=await getApi('/api/station-fuel-config',accessToken,{
+          method:'POST',body:JSON.stringify({
+            stationId,stationFuelId:fuel.id,publicPrice:price.value,enabled:checkbox.checked,
+          }),
+        });
+        status.textContent=res.ok?'บันทึกราคาสำเร็จ':'ไม่สำเร็จ ('+responseError(res.data)+')';
+      } catch {status.textContent='เชื่อมต่อไม่สำเร็จ';}
+      finally {save.disabled=false;}
+    });
+    controls.append(toggle,price,save);
+    row.append(name,controls,status);target.appendChild(row);
+  }
+}
+
 async function platformWorkspace(accessToken) {
   const target=document.getElementById('platform-workspace');
   if (!target) return;
@@ -258,6 +305,7 @@ async function platformWorkspace(accessToken) {
     <div class="divider"></div>
     <div class="section-title">ปั๊มในแพลตฟอร์ม</div>
     <div id="station-list" class="module-list"><p>กำลังโหลด…</p></div>
+    <div id="fuel-editor"></div>
   `;
   const el=id=>document.getElementById(id);
   const notice=(text,error=false)=>{
@@ -280,7 +328,12 @@ async function platformWorkspace(accessToken) {
       const detail=document.createElement('div');detail.className='module-subtitle';
       detail.textContent=s.organizationName+' · '+s.brandName+' · '+Object.entries(s.modules||{})
         .filter(([,status])=>status==='enabled').map(([module])=>module==='qr_coupon'?'QR Coupon':'HR').join(' + ');
-      node.append(name,detail);list.appendChild(node);
+      const manage=document.createElement('button');
+      manage.type='button';manage.className='button secondary';
+      manage.textContent='จัดการน้ำมัน';
+      manage.addEventListener('click',()=>fuelPriceEditor(accessToken,s.id,el('fuel-editor'))
+        .catch(()=>notice('เปิดจัดการน้ำมันไม่ได้',true)));
+      node.append(name,detail,manage);list.appendChild(node);
     }
   }
   try {
@@ -331,6 +384,7 @@ function dashboard(data, session) {
      <div class="module-list" id="modules"></div>
      <div id="corporate-workspace"></div>
      <div id="platform-workspace"></div>
+     <div id="station-fuel-workspace"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout">ออกจากระบบ</button>
    </section>`);
@@ -351,6 +405,12 @@ function dashboard(data, session) {
   });
   if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
     platformWorkspace(session.access_token).catch(() => {});
+  }
+  const stationMember=memberships.find(m=>m.scopeType==='station'
+    && ['station_owner','owner','manager'].includes(m.role));
+  if(stationMember?.stationId) {
+    fuelPriceEditor(session.access_token,stationMember.stationId,
+      document.getElementById('station-fuel-workspace')).catch(()=>{});
   }
   if (memberships.some(m => m.scopeType==='corporate_company')) {
     corporateWorkspace(session.access_token).catch(() => {});
