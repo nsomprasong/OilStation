@@ -5,6 +5,8 @@ import { createFuelPhotoApi } from './api/fuel-photo.mjs';
 import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
+import { createBillingPaymentApi } from './api/billing-payment.mjs';
+import { createStripeTestPaymentIntents } from './adapters/stripe-test-payments.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
 import { createPlateReviewInboxApi } from './api/plate-review-inbox.mjs';
 import { createAttendanceReviewApi } from './api/attendance-review.mjs';
@@ -47,6 +49,11 @@ export default {
         }
         if (url.pathname === '/api/fuel/start') {
           return createFuelStartApi(deps)(request);
+        }
+        if (url.pathname === '/api/billing/payment-intent') {
+          const enabled=env.STRIPE_TEST_PAYMENTS_ENABLED==='true';
+          const payments=enabled?createStripeTestPaymentIntents(env.STRIPE_SECRET_KEY):null;
+          return createBillingPaymentApi({...deps,payments,enabled})(request);
         }
         if (url.pathname === '/api/webhooks/stripe') {
           return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET})(request);

@@ -80,6 +80,18 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_notification_id:id,p_decision:decision}),
         }),
+      prepareSaasPayment: async d=>serviceRequest(env,
+        '/rest/v1/rpc/prepare_saas_test_payment',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_invoice_id:d.invoiceId,
+            p_method:d.paymentMethod}),
+        }),
+      attachSaasPaymentIntent: async d=>serviceRequest(env,
+        '/rest/v1/rpc/attach_saas_test_intent',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_attempt_id:d.attemptId,
+            p_payment_intent_id:d.paymentIntentId}),
+        }),
       recordStripeEvent: async d=>serviceRequest(env,
         '/rest/v1/rpc/record_stripe_signed_event',{
         method:'POST',headers:{'content-type':'application/json'},
