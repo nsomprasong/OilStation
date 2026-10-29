@@ -67,7 +67,7 @@ export function createSupabaseAdapter(env) {
     },
     db: {
       couponView: async (token) => {
-        const match = /^([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\\.([a-f0-9]{64})$/i.exec(token || '');
+        const match = /^([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\.([a-f0-9]{64})$/i.exec(token || '');
         if (!match) return null;
         const signingKey = await crypto.subtle.importKey('raw',
           new TextEncoder().encode(env.COUPON_SIGNING_KEY),
