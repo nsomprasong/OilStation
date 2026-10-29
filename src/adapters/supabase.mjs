@@ -101,6 +101,11 @@ export function createSupabaseAdapter(env) {
             p_actor_id:d.actorId,p_station_id:d.stationId,p_company_id:d.companyId,
           }),
         }),
+      pendingCorporateLinks: async (actorId) => serviceRequest(env,
+        '/rest/v1/rpc/pending_corporate_station_links',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId}),
+        }),
       approveCorporateLink: async (d) => serviceRequest(env,
         '/rest/v1/rpc/approve_corporate_station_link',{
           method:'POST',headers:{'content-type':'application/json'},
