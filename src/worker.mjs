@@ -21,6 +21,19 @@ import { createWalletIntegrityApi } from './api/wallet-integrity.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 
+const RELEASE_SCHEMA_VERSION = '20261029215000';
+
+// An activation flag alone must never unlock business or scheduled writes.
+async function isReleaseReady(env) {
+  if (env?.OILSTATION_API_ENABLED !== 'true') return false;
+  try {
+    const status = await createSupabaseAdapter(env).db.releaseStatus();
+    return status?.ready === true && status?.schemaVersion === RELEASE_SCHEMA_VERSION;
+  } catch {
+    return false;
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -35,13 +48,7 @@ export default {
         if (request.method !== 'GET') return new Response(null,{status:405});
         // A healthy process is not a ready release. Validate the deployed
         // DB migration marker, private buckets and server-only secrets.
-        let ready=false;
-        try {
-          const result=await createSupabaseAdapter(env).db.releaseStatus();
-          ready=result?.ready===true &&
-            result?.schemaVersion==='20261029215000' &&
-            env.OILSTATION_API_ENABLED==='true';
-        } catch { /* fail closed; never return key names, SQL or host details */ }
+        const ready = await isReleaseReady(env);
         return new Response(JSON.stringify({service:'oilstation',ready}),{
           status:ready?200:503,
           headers:{'content-type':'application/json; charset=utf-8',
@@ -52,6 +59,15 @@ export default {
       // private evidence, invitations or scheduled tasks before explicit UAT.
       if (env.OILSTATION_API_ENABLED!=='true') {
         return new Response(JSON.stringify({error:'release_not_enabled'}),{
+          status:503,headers:{'content-type':'application/json',
+            'cache-control':'no-store','x-content-type-options':'nosniff'},
+        });
+      }
+      // Even if an operator accidentally enables the feature flag, refuse
+      // every business endpoint until SQL ACLs, private buckets and version
+      // have been independently attested by the server-side readiness RPC.
+      if (!(await isReleaseReady(env))) {
+        return new Response(JSON.stringify({error:'release_not_ready'}),{
           status:503,headers:{'content-type':'application/json',
             'cache-control':'no-store','x-content-type-options':'nosniff'},
         });
@@ -149,15 +165,23 @@ export default {
     return env.ASSETS.fetch(request);
   },
   scheduled(_controller, env, ctx) {
-    if(env.OILSTATION_API_ENABLED!=='true')return;
-    ctx.waitUntil(
-      createSupabaseAdapter(env).db.expireCoupons(200)
-        .catch(() => { console.error('oilstation_coupon_expiry_failed'); })
-    );
-    if (env.LINE_NOTIFICATIONS_ENABLED === 'true' && env.LINE_CHANNEL_ACCESS_TOKEN) {
-      ctx.waitUntil(drainLineNotifications({ db:createSupabaseAdapter(env).db,
-        accessToken:env.LINE_CHANNEL_ACCESS_TOKEN,limit:10 })
-        .catch(()=>console.error('oilstation_line_delivery_failed')));
-    }
+    if (env.OILSTATION_API_ENABLED !== 'true') return;
+    // Cron can mutate balances or send messages: require the exact same
+    // verified release state as the interactive business API.
+    ctx.waitUntil((async () => {
+      if (!(await isReleaseReady(env))) return;
+      const db = createSupabaseAdapter(env).db;
+      const tasks = [
+        db.expireCoupons(200).catch(() => {
+          console.error('oilstation_coupon_expiry_failed');
+        }),
+      ];
+      if (env.LINE_NOTIFICATIONS_ENABLED === 'true' && env.LINE_CHANNEL_ACCESS_TOKEN) {
+        tasks.push(drainLineNotifications({
+          db, accessToken:env.LINE_CHANNEL_ACCESS_TOKEN,limit:10,
+        }).catch(() => console.error('oilstation_line_delivery_failed')));
+      }
+      await Promise.all(tasks);
+    })());
   },
 };

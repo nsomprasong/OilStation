@@ -30,7 +30,7 @@ test('enabled but missing required secrets still fails release readiness',async(
  assert.equal((await ready.json()).ready,false);
  const r=await worker.fetch(request('/api/me'),{ASSETS:assets,OILSTATION_API_ENABLED:'true'});
  assert.equal(r.status,503);
- assert.equal((await r.json()).error,'service_not_configured');
+ assert.equal((await r.json()).error,'release_not_ready');
 });
 test('readiness requires exact SQL migration marker and real backend RPC answer',async()=>{
  const original=globalThis.fetch;
@@ -54,5 +54,53 @@ test('readiness requires exact SQL migration marker and real backend RPC answer'
   assert.equal(yes.status,200);
   assert.deepEqual(await yes.json(),{service:'oilstation',ready:true});
   assert.deepEqual(requested,['https://test-project.supabase.co/rest/v1/rpc/oilstation_release_status']);
+ }finally{globalThis.fetch=original;}
+});
+
+test('enabled business endpoints refuse stale database release state before any finance RPC',async()=>{
+ const original=globalThis.fetch;
+ const queries=[];
+ const env={
+  ASSETS:assets,OILSTATION_API_ENABLED:'true',
+  SUPABASE_URL:'https://test-project.supabase.co',
+  SUPABASE_ANON_KEY:'public_test_key',
+  SUPABASE_SERVICE_ROLE_KEY:'test_private_key_not_real',
+  COUPON_SIGNING_KEY:'A'.repeat(48),
+ };
+ globalThis.fetch=async(url,init)=>{
+  queries.push(String(url));
+  assert.equal(init.method,'POST');
+  return new Response(JSON.stringify({ready:true,schemaVersion:'20261029214000'}),{status:200});
+ };
+ try{
+  for(const path of ['/api/public-config','/api/me','/api/coupons','/api/webhooks/stripe']){
+    const response=await worker.fetch(request(path),env);
+    assert.equal(response.status,503,path);
+    assert.equal((await response.json()).error,'release_not_ready');
+  }
+  assert.equal(queries.length,4);
+  assert.ok(queries.every(q=>q.endsWith('/rpc/oilstation_release_status')));
+ }finally{globalThis.fetch=original;}
+});
+
+test('verified SQL release allows public configuration but never exposes service key',async()=>{
+ const original=globalThis.fetch;
+ const env={
+  ASSETS:assets,OILSTATION_API_ENABLED:'true',
+  SUPABASE_URL:'https://test-project.supabase.co',
+  SUPABASE_ANON_KEY:'public_test_key',
+  SUPABASE_SERVICE_ROLE_KEY:'test_private_key_not_real',
+  COUPON_SIGNING_KEY:'A'.repeat(48),
+ };
+ globalThis.fetch=async()=>new Response(JSON.stringify({
+  ready:true,schemaVersion:'20261029215000',
+ }),{status:200});
+ try{
+  const response=await worker.fetch(request('/api/public-config'),env);
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.supabaseUrl,env.SUPABASE_URL);
+  assert.equal(data.supabaseAnonKey,env.SUPABASE_ANON_KEY);
+  assert.ok(!JSON.stringify(data).includes(env.SUPABASE_SERVICE_ROLE_KEY));
  }finally{globalThis.fetch=original;}
 });
