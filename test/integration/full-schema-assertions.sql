@@ -6,6 +6,20 @@ BEGIN
  JOIN pg_namespace n ON n.oid=c.relnamespace
  WHERE n.nspname='public' AND c.relkind IN ('r','p');
  IF n_tables<65 THEN RAISE EXCEPTION 'snapshot_incomplete:%',n_tables;END IF;
+ -- Real read-only Supabase introspection found NO direct browser-table grants.
+ -- Security-definer RPCs, not table privileges, mediate all app data access.
+ IF EXISTS (
+  SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+  WHERE n.nspname='public' AND c.relkind IN ('r','p') AND
+    (has_table_privilege('anon',c.oid,'SELECT') OR
+     has_table_privilege('anon',c.oid,'INSERT') OR
+     has_table_privilege('anon',c.oid,'UPDATE') OR
+     has_table_privilege('anon',c.oid,'DELETE') OR
+     has_table_privilege('authenticated',c.oid,'SELECT') OR
+     has_table_privilege('authenticated',c.oid,'INSERT') OR
+     has_table_privilege('authenticated',c.oid,'UPDATE') OR
+     has_table_privilege('authenticated',c.oid,'DELETE'))
+ ) THEN RAISE EXCEPTION 'public_tables_accessible_from_browser_roles';END IF;
  SELECT count(*) INTO missing_rls FROM pg_class c
  JOIN pg_namespace n ON n.oid=c.relnamespace
  WHERE n.nspname='public' AND c.relkind IN ('r','p')
