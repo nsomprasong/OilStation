@@ -21,7 +21,7 @@ BEGIN
    OR (m.scope_type='platform' AND m.role_code='platform_superadmin')))
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
 
- SELECT coalesce(sum(r.amount_satang),0)::bigint,
+ SELECT coalesce(sum(r.amount_satang) FILTER(WHERE r.status='held'),0)::bigint,
   count(*) FILTER(WHERE c.id IS NULL OR c.account_id<>a.id
    OR c.station_id<>a.station_id
    OR (r.status='held' AND (
@@ -36,11 +36,6 @@ BEGIN
  INTO v_held,v_invalid
  FROM public.credit_reservations r LEFT JOIN public.coupons c ON c.id=r.coupon_id
  WHERE r.account_id=a.id AND r.status IN ('held','settled','released');
- -- v_held must count HELD reservations only: the validity scan includes
- -- settled/released records but they are no longer a hold against credit.
- SELECT coalesce(sum(r.amount_satang),0)::bigint INTO v_held
- FROM public.credit_reservations r WHERE r.account_id=a.id AND r.status='held';
-
  SELECT count(*) INTO v_unheld FROM public.coupons c
  WHERE c.account_id=a.id AND c.status IN ('reserved','verified','fueling')
    AND NOT EXISTS(SELECT 1 FROM public.credit_reservations r

@@ -181,6 +181,29 @@ async function corporateWorkspace(accessToken) {
       const label = document.createElement('span');
       label.textContent = 'วงเงินพร้อมใช้ (หักเงินที่กันคูปองแล้ว)';
       el.append(station, value, label);
+       const check=document.createElement('button');
+       check.type='button';check.className='button secondary wallet-check-button';
+       check.textContent='ตรวจยอดจองคูปองและลูกหนี้';
+       const report=document.createElement('p');
+       report.className='hint';report.setAttribute('role','status');
+       check.addEventListener('click',async()=>{
+         check.disabled=true;report.textContent='กำลังตรวจยอดบัญชีที่เกี่ยวข้อง…';
+         try{
+           const res=await getApi('/api/corporate/wallet-integrity?accountId='+
+             encodeURIComponent(account.id),accessToken);
+           const x=res.data?.integrity;
+           if(!res.ok||x?.readOnly!==true||x?.bankReconciled!==false)
+             throw new Error('not_allowed_or_unavailable');
+           report.textContent=x.healthy===true?
+             'ยอดจองคูปองและยอดลูกหนี้ตรงกับยอดบัญชี (ยังไม่ใช่การกระทบยอดธนาคาร)':
+             'พบยอดจองคูปองหรือยอดลูกหนี้ไม่ตรงกัน โปรดติดต่อผู้ดูแลเพื่อตรวจสอบก่อนใช้งาน';
+           report.dataset.tone=x.healthy===true?'neutral':'error';
+         }catch{
+           report.textContent='ตรวจยอดไม่ได้ กรุณาตรวจสิทธิ์การเงินหรือการเชื่อมต่อ';
+           report.dataset.tone='error';
+         }finally{check.disabled=false;}
+       });
+       el.append(check,report);
       overview.appendChild(el);
     });
     if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
