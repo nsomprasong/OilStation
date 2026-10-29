@@ -31,6 +31,7 @@ jobs:
             sh -eu -c '
               export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_schema_parity
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-functions-fixture.sql
               for migration in /work/supabase/migrations/2026102918*.sql \
                 /work/supabase/migrations/2026102919*.sql \
                 /work/supabase/migrations/202610292*.sql
