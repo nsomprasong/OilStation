@@ -71,6 +71,10 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      releaseStatus: async ()=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_release_status',{
+          method:'POST',headers:{'content-type':'application/json'},body:'{}',
+        }),
       claimLineNotifications: async limit=>serviceRequest(env,
         '/rest/v1/rpc/claim_verified_line_notifications',{
           method:'POST',headers:{'content-type':'application/json'},

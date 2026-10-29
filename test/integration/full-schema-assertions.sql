@@ -56,3 +56,27 @@ BEGIN
  THEN RAISE EXCEPTION 'core_financial_and_hr_indexes_missing';END IF;
  RAISE NOTICE 'public schema parity PASS (tables %, forced RLS, browser RPC grants, private finance)',n_tables;
 END $$;
+
+-- Readiness probe synthetic Storage rows on a disposable database.
+-- Real Supabase already has private evidence/slip buckets; the metadata-only
+-- schema fixture deliberately contains no customer or storage data.
+BEGIN;
+INSERT INTO storage.buckets(id,name,public,file_size_limit)
+VALUES ('oilstation-evidence','oilstation-evidence',false,5242880),
+       ('oilstation-slips','oilstation-slips',false,5242880);
+DO $$
+DECLARE s jsonb;
+BEGIN
+ IF pg_catalog.has_function_privilege('anon',
+   'public.oilstation_release_status()','EXECUTE')
+ OR pg_catalog.has_function_privilege('authenticated',
+   'public.oilstation_release_status()','EXECUTE')
+ THEN RAISE EXCEPTION 'release_status_publicly_accessible';END IF;
+ s:=public.oilstation_release_status();
+ IF s->>'ready'<>'true' OR s->>'schemaVersion'<>'20261029215000'
+ THEN RAISE EXCEPTION 'release_status_not_ready_after_migrations:%',s;END IF;
+ UPDATE storage.buckets SET public=true WHERE id='oilstation-slips';
+ s:=public.oilstation_release_status();
+ IF s->>'ready'<>'false' THEN RAISE EXCEPTION 'public_slip_bucket_did_not_block_release';END IF;
+END $$;
+ROLLBACK;
