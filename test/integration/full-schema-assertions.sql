@@ -43,5 +43,16 @@ BEGIN
     to_regprocedure(expected.schema_name||'.'||expected.signature),'EXECUTE');
  IF missing_critical<>0 THEN
   RAISE EXCEPTION 'unverified_finance_rpc_exposed:%',missing_critical;END IF;
+ -- Validate core query indexes are present after a complete upgrade.
+ IF (SELECT count(*) FROM pg_indexes WHERE schemaname='public'
+   AND indexname=ANY(ARRAY[
+    'oilstation_ar_account_due_idx','oilstation_ar_fuel_session_idx',
+    'oilstation_wallet_company_station_idx','oilstation_coupon_account_status_idx',
+    'oilstation_coupon_fuel_station_idx','oilstation_fuel_evidence_session_kind_idx',
+    'oilstation_fuel_sessions_station_created_idx','oilstation_topup_account_review_idx',
+    'oilstation_billing_attempt_invoice_created_idx','oilstation_memberships_station_active_idx',
+    'oilstation_memberships_company_active_idx','oilstation_attendance_shift_idx',
+    'oilstation_shift_template_date_idx']))<>13
+ THEN RAISE EXCEPTION 'core_financial_and_hr_indexes_missing';END IF;
  RAISE NOTICE 'public schema parity PASS (tables %, forced RLS, browser RPC grants, private finance)',n_tables;
 END $$;
