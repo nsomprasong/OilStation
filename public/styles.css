@@ -60,3 +60,11 @@
 .fuel-row-controls .button{min-height:40px;padding:8px 13px}
 @media(max-width:500px){.fuel-row-controls{grid-template-columns:1fr 1fr}.fuel-row-controls .button{grid-column:1/-1}}
 @media(prefers-color-scheme:dark){.fuel-row{border-color:#345269}.fuel-row-controls input:not([type=checkbox]){background:#173347;color:#ecf7ff;border-color:#345b70}}
+
+.invite-control{margin-top:12px}
+.invite-form{display:grid;gap:9px;padding:12px 0}
+.invite-form[hidden]{display:none!important}
+.invite-form input,.invite-form select{min-height:42px;border:1px solid #cddde8;border-radius:10px;padding:9px 12px;background:#fff;color:#173148;font:inherit;width:100%;min-width:0}
+.invite-form small{font-size:12px;line-height:1.5;color:#6d8798}
+.invite-form button{min-height:40px}
+@media(prefers-color-scheme:dark){.invite-form input,.invite-form select{background:#173347;color:#ecf7ff;border-color:#345b70}}
