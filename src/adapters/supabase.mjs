@@ -341,6 +341,15 @@ export function createSupabaseAdapter(env) {
           }),
         });
       },
+      reviewTopup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/review_verified_corporate_topup',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:d.actorId,p_request_id:d.requestId,
+            p_approved:d.approved,p_bank_received:d.bankReceived,
+            p_verified_bank_reference:d.bankReference,
+          }),
+        }),
       canUploadTopup: async d=>serviceRequest(env,
         '/rest/v1/rpc/authorize_corporate_topup_upload',{
           method:'POST',headers:{'content-type':'application/json'},
