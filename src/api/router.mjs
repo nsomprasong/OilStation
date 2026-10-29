@@ -2,7 +2,8 @@
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDKEY = /^[a-zA-Z0-9_-]{16,128}$/;
 const LIMIT_BYTES = 16_384;
-const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
+const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST',
+  '/api/invitations/email-challenge':'POST', '/api/invitations/email-confirm':'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
   '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST',
   '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST',
   '/api/invitations/create': 'POST',
@@ -93,6 +94,27 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
         const data = await readBody(request);
         if (typeof data?.token !== 'string' || !/^[A-Za-z0-9_-]{32,128}$/.test(data.token)) return fail(400, 'invalid_invitation');
         return json(200, await db.acceptInvitation({ actorId: user.id, token: data.token }));
+      }
+      if(path==='/api/invitations/email-challenge' ||
+         path==='/api/invitations/email-confirm'){
+        if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
+          return fail(415,'unsupported_media_type');
+        const data=await readBody(request);
+        if(typeof data?.token!=='string'||
+           !/^[A-Za-z0-9_-]{32,128}$/.test(data.token))
+          return fail(400,'invalid_invitation');
+        if(path==='/api/invitations/email-challenge'){
+          const result=await db.beginInvitedEmailOtp({actorId:user.id,token:data.token});
+          return json(202,{providerAccepted:result?.providerAccepted===true,
+            expiresInMinutes:10});
+        }
+        if(typeof data.code!=='string'||!/^[0-9]{8}$/.test(data.code))
+          return fail(400,'invalid_code');
+        const result=await db.confirmInvitedEmailOtp({
+          actorId:user.id,token:data.token,code:data.code,
+        });
+        if(result?.accepted!==true)return fail(400,'invalid_or_expired_code');
+        return json(200,{accepted:true,scopeType:result.scope_type,role:result.role_code});
       }
       const memberships = (await db.memberships(user.id)) || [];
       const active = memberships.filter(permittedMember);
@@ -479,6 +501,8 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       if (error && typeof error === 'object' && error.code === 'FORBIDDEN') return fail(403, 'permission_denied');
       if (error && typeof error === 'object' && error.code === 'INVALID_REQUEST') return fail(400, 'invalid_coupon_request');
       if (error && typeof error === 'object' && error.code === 'INVITE_INVALID') return fail(400, 'invalid_or_expired_invitation');
+      if (error && typeof error === 'object' && error.code === 'EMAIL_PROVIDER_UNAVAILABLE') return fail(503, 'email_provider_unavailable');
+      if (error && typeof error === 'object' && error.code === 'RATE_LIMITED') return fail(429, 'too_many_email_challenges');
       if (error && typeof error === 'object' && error.code === 'EMAIL_MISMATCH') return fail(403, 'invited_email_verification_required');
       if (error && typeof error === 'object' && error.code === 'BOOTSTRAP_FORBIDDEN') return fail(403, 'bootstrap_not_allowed');
       if (error && typeof error === 'object' && error.code === 'ALREADY_BOOTSTRAPPED') return fail(409, 'already_bootstrapped');

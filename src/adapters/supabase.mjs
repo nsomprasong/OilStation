@@ -24,7 +24,7 @@ async function fetchJson(url, init) {
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
       'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH',
-      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED']);
+      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
@@ -33,7 +33,7 @@ async function fetchJson(url, init) {
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
-         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED'].includes(detail.message) ? detail.message :
+         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED'].includes(detail.message) ? detail.message :
         'INVALID_REQUEST';
     }
     throw err;
@@ -558,7 +558,7 @@ export function createSupabaseAdapter(env) {
           const e=new Error('email_delivery_unconfirmed');
           e.code='EMAIL_PROVIDER_UNAVAILABLE';throw e;
         }
-        return {sent:true,expiresInMinutes:10};
+        return {providerAccepted:true,expiresInMinutes:10};
       },
       confirmInvitedEmailOtp: async ({actorId,token,code})=>{
         const tokenHash=await digest(token);
