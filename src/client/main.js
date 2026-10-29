@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
+import { mountPlateReviewInbox } from './plate-review.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -882,7 +883,7 @@ async function fuelPriceEditor(accessToken,stationId,target) {
   }
 }
 
-async function stationPumpWorkspace(token,stationId,target) {
+async function stationPumpWorkspace(token,stationId,target,canReview=false) {
  if(!target)return;
  target.innerHTML=`
    <div class="divider"></div><h2>รับคูปองเติมน้ำมัน</h2>
@@ -926,8 +927,10 @@ async function stationPumpWorkspace(token,stationId,target) {
        </form>
      </section>
    </div>
+   <section id="plate-review-manager" class="plate-verification" hidden></section>
  `;
  const $=id=>document.getElementById(id);
+ if(canReview)mountPlateReviewInbox({target:$('plate-review-manager'),token,stationId});
  const report=(text,error=false)=>{
    const out=$('pump-notice');out.textContent=text;out.hidden=false;
    out.dataset.tone=error?'error':'neutral';
@@ -1218,7 +1221,8 @@ function dashboard(data, session) {
     && ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
   if(pumpMember?.stationId) {
     stationPumpWorkspace(session.access_token,pumpMember.stationId,
-      document.getElementById('station-pump-workspace')).catch(()=>{});
+      document.getElementById('station-pump-workspace'),
+      ['station_owner','owner','manager','cashier'].includes(pumpMember.role)).catch(()=>{});
   }
   const stationMember=memberships.find(m=>m.scopeType==='station'
     && ['station_owner','owner','manager'].includes(m.role));

@@ -124,3 +124,14 @@
 #attendance-message[data-tone="error"]{color:#a43f38}
 @media(max-width:480px){.attendance-workspace{padding:13px}.attendance-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-color-scheme:dark){.attendance-workspace{background:#142b3c;border-color:#2c4d61}.attendance-explainer{color:#b4c4d3}#attendance-message{color:#9ad7e3}#attendance-message[data-tone="error"]{color:#ffb5b5}}
+
+/* Private image-first plate supervisor review */
+.plate-review-cards{display:grid;gap:14px}
+.plate-review-card{display:grid;gap:11px;padding:14px;border:1px solid #d6e3eb;border-radius:12px;background:#f9fcfd}
+.plate-review-card p{font-size:13px;margin:0}
+.plate-review-card img{width:100%;max-height:265px;object-fit:contain;background:#e6edf0;border-radius:8px}
+.plate-review-card input{min-height:44px;width:100%;padding:10px;border:1px solid #b3cbd5;border-radius:8px;font:inherit;background:#fff;color:#172b40}
+.plate-review-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.plate-review-actions .button{min-width:0}
+@media(max-width:460px){.plate-review-actions{grid-template-columns:1fr}}
+@media(prefers-color-scheme:dark){.plate-review-card{background:#152b3d;border-color:#305369}.plate-review-card input{background:#203a50;color:#eef8ff;border-color:#537183}}
