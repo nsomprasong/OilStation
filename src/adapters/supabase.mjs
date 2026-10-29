@@ -21,7 +21,8 @@ async function fetchJson(url, init) {
     const allowed = new Set(['INSUFFICIENT_FUNDS', 'FORBIDDEN', 'INVALID_REQUEST',
       'PRODUCT_NOT_AVAILABLE', 'IDEMPOTENCY_CONFLICT', 'ACCOUNT_NOT_FOUND',
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
-      'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED']);
+      'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
+      'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
@@ -29,6 +30,7 @@ async function fetchJson(url, init) {
         detail.message === 'FORBIDDEN' ? 'FORBIDDEN' :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
+        ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED'].includes(detail.message) ? detail.message :
         'INVALID_REQUEST';
     }
     throw err;
@@ -66,6 +68,20 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      bootstrapAdmin: async (actorId) => {
+        if (!env.BOOTSTRAP_ADMIN_EMAIL || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(env.BOOTSTRAP_ADMIN_EMAIL)) {
+          const e = new Error('bootstrap_not_configured');
+          e.code = 'BOOTSTRAP_FORBIDDEN';
+          throw e;
+        }
+        return serviceRequest(env, '/rest/v1/rpc/bootstrap_first_platform_admin', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            p_actor_id: actorId,
+            p_expected_email: env.BOOTSTRAP_ADMIN_EMAIL,
+          }),
+        });
+      },
       couponView: async (token) => {
         const match = /^([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\.([a-f0-9]{64})$/i.exec(token || '');
         if (!match) return null;
