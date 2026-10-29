@@ -7,6 +7,7 @@ import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
 import { createPlateReviewInboxApi } from './api/plate-review-inbox.mjs';
+import { createAttendanceReviewApi } from './api/attendance-review.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
 import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
@@ -49,6 +50,9 @@ export default {
         }
         if (url.pathname === '/api/webhooks/stripe') {
           return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET})(request);
+        }
+        if (url.pathname === '/api/hr/attendance/pending' || url.pathname === '/api/hr/attendance/review') {
+          return createAttendanceReviewApi(deps)(request);
         }
         if (url.pathname === '/api/hr/attendance/gps') {
           return createGpsAttendanceApi(deps)(request);
