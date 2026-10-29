@@ -1452,6 +1452,64 @@ async function couponViewer(token) {
   // Automatic refresh while open; no protected company balance is sent.
   setInterval(() => { if (!document.hidden) refresh().catch(() => {}); },15_000);
 }
+async function invitedEmailVerification(accessToken,invite) {
+  show('<div class="mark" aria-hidden="true">O</div>'+
+   '<h1>ยืนยันอีเมลผู้รับคำเชิญ</h1>'+
+   '<p class="lead">อีเมลบัญชีที่เข้าสู่ระบบไม่ตรงกับอีเมลในคำเชิญ</p>'+
+   '<section class="panel"><p>คุณสามารถขอรหัส 8 หลักไปยังอีเมลที่ได้รับคำเชิญ '+
+   'รหัสมีอายุ 10 นาที และใช้ได้เฉพาะกับบัญชีที่เข้าสู่ระบบนี้</p>'+
+   '<button class="button secondary" id="invite-send-code" type="button">ส่งรหัสยืนยันทางอีเมล</button>'+
+   '<form class="coupon-form" id="invite-code-form" hidden>'+
+   '<label class="field">รหัสยืนยัน 8 หลัก<input id="invite-code" '+
+   'inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]{8}" required></label>'+
+   '<button class="button primary" type="submit">ยืนยันอีเมลและรับคำเชิญ</button></form>'+
+   '<button class="button secondary" id="invite-switch-account" type="button">สลับบัญชีผู้เข้าสู่ระบบ</button>'+
+   '<p role="status" id="invite-verify-notice" class="notice" hidden></p></section>');
+  const $=id=>document.getElementById(id);
+  const notify=(message,error=false)=>{
+   const target=$('invite-verify-notice');
+   target.hidden=false;target.dataset.tone=error?'error':'neutral';
+   target.textContent=message;
+  };
+  $('invite-send-code').addEventListener('click',async()=>{
+   const btn=$('invite-send-code');btn.disabled=true;
+   notify('กำลังส่งรหัสไปยังอีเมลที่ได้รับคำเชิญ…');
+   try{
+    const res=await getApi('/api/invitations/email-challenge',accessToken,{
+     method:'POST',body:JSON.stringify({token:invite}),
+    });
+    if(!res.ok||res.data.providerAccepted!==true)
+     return notify(res.status===429?'ส่งรหัสถี่เกินไป กรุณาลองอีกครั้งภายหลัง':
+      'ยังส่งรหัสไม่ได้ โปรดใช้บัญชีที่มีอีเมลตรงกับคำเชิญ หรือแจ้งผู้ดูแล',true);
+    $('invite-code-form').hidden=false;
+    notify('ผู้ให้บริการรับคำขอส่งรหัสแล้ว โปรดตรวจอีเมลที่ได้รับคำเชิญ');
+   }catch{notify('ไม่สามารถยืนยันสถานะการส่งรหัสได้ กรุณาตรวจสอบกับผู้ดูแล',true);}
+   finally{btn.disabled=false;}
+  });
+  $('invite-code-form').addEventListener('submit',async event=>{
+   event.preventDefault();
+   const code=$('invite-code').value.trim();
+   if(!/^[0-9]{8}$/.test(code))return notify('กรุณากรอกรหัส 8 หลัก',true);
+   const btn=event.currentTarget.querySelector('button[type="submit"]');
+   btn.disabled=true;
+   try{
+    const res=await getApi('/api/invitations/email-confirm',accessToken,{
+     method:'POST',body:JSON.stringify({token:invite,code}),
+    });
+    if(!res.ok||res.data.accepted!==true)
+     return notify('รหัสไม่ถูกต้อง หมดอายุ หรือคำเชิญถูกใช้แล้ว',true);
+    sessionStorage.removeItem(INVITE_KEY);
+    history.replaceState(null,'','/');
+    location.replace('/');
+   }catch{notify('เชื่อมต่อไม่ได้ กรุณาลองใหม่ก่อนรหัสหมดอายุ',true);}
+   finally{btn.disabled=false;}
+  });
+  $('invite-switch-account').addEventListener('click',async()=>{
+   await authClient.auth.signOut();
+   location.reload();
+  });
+}
+
 async function boot() {
   if (location.pathname.startsWith('/c/')) return couponViewer(decodeURIComponent(location.pathname.slice(3)));
   if (location.pathname === '/setup') sessionStorage.setItem(BOOTSTRAP_KEY,'1');
@@ -1490,10 +1548,10 @@ async function boot() {
       method:'POST',body:JSON.stringify({token:invite}),
     });
     if (!accepted.ok) {
+      if (accepted.data.error === 'invited_email_verification_required')
+        return invitedEmailVerification(session.access_token,invite);
       guestView(true);
-      return message(accepted.data.error === 'invited_email_verification_required' ?
-        'อีเมลบัญชีนี้ไม่ตรงกับคำเชิญ กรุณายืนยันอีเมลที่ได้รับคำเชิญ' :
-        responseError(accepted.data),'error');
+      return message(responseError(accepted.data),'error');
     }
     sessionStorage.removeItem(INVITE_KEY);
     history.replaceState(null,'','/');
