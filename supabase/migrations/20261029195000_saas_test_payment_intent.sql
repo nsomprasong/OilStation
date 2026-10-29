@@ -14,14 +14,14 @@ BEGIN
   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  SELECT * INTO i FROM public.saas_invoices WHERE id=p_invoice_id FOR UPDATE;
  IF NOT FOUND OR i.status NOT IN ('issued','pending','overdue')
-  OR i.total_satang NOT BETWEEN 100 AND 99999999
+  OR i.total_satang NOT BETWEEN 1000 AND 99999999
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  SELECT * INTO g FROM public.billing_groups WHERE id=i.billing_group_id;
  IF NOT FOUND OR NOT EXISTS(SELECT 1 FROM public.memberships m
     WHERE m.user_id=p_actor_id AND m.active
     AND ((m.scope_type='organization' AND m.organization_id=g.organization_id
       AND m.role_code IN ('organization_owner','owner','manager','billing_manager'))
-       OR (m.scope_type='platform' AND m.role_code IN ('super_admin','platform_admin'))))
+       OR (m.scope_type='platform' AND m.role_code IN ('platform_superadmin'))))
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
  -- Issued invoice pricing is the authority, including tax and PromptPay discount.
  -- Never allow users to change method after invoice issue without a reissue.
@@ -62,7 +62,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.memberships m WHERE m.user_id=p_actor_id
    AND m.active AND ((m.scope_type='organization' AND m.organization_id=g.organization_id
       AND m.role_code IN ('organization_owner','owner','manager','billing_manager'))
-   OR (m.scope_type='platform' AND m.role_code IN ('super_admin','platform_admin'))))
+   OR (m.scope_type='platform' AND m.role_code IN ('platform_superadmin'))))
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
  IF a.status NOT IN ('created','requires_action','processing')
    OR a.stripe_payment_intent_id IS NOT NULL AND

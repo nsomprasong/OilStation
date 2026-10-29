@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
+import { mountBillingWorkspace } from './billing.js';
 import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
@@ -1271,7 +1272,7 @@ async function platformWorkspace(accessToken) {
   });
 }
 
-function dashboard(data, session) {
+function dashboard(data, session, publicConfig={}) {
   const memberships = data.memberships || [];
   const scopes = {
     platform: { title: 'แพลตฟอร์ม', modules: ['ปั๊มที่ให้บริการ', 'พนักงานขาย', 'การเรียกเก็บเงิน'] },
@@ -1288,6 +1289,7 @@ function dashboard(data, session) {
      <div class="module-list" id="modules"></div>
      <div id="corporate-workspace"></div>
      <div id="platform-workspace"></div>
+     <div id="saas-billing-workspace"></div>
      <div id="station-fuel-workspace"></div>
      <div id="station-pump-workspace"></div>
      <div id="station-customers-workspace"></div>
@@ -1320,6 +1322,13 @@ function dashboard(data, session) {
   });
   if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
     platformWorkspace(session.access_token).catch(() => {});
+  }
+  const billingMember=memberships.find(m=>m.scopeType==='organization'&&
+    ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
+  if(billingMember){
+    mountBillingWorkspace({target:document.getElementById('saas-billing-workspace'),
+      token:session.access_token,organizationId:billingMember.organizationId,
+      publishableKey:publicConfig.stripePublishableKey});
   }
   const attendanceMember=memberships.find(m=>m.scopeType==='station'&&m.stationId);
   if(attendanceMember?.stationId){
@@ -1455,7 +1464,7 @@ async function boot() {
     history.replaceState(null,'','/');
   }
   const result = await getApi('/api/me',session.access_token);
-  if (result.ok) return dashboard(result.data,session);
+  if (result.ok) return dashboard(result.data,session,cfg);
   if (result.status===403) {
     await authClient.auth.signOut();
     return guestView(false);

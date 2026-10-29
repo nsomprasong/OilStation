@@ -5,6 +5,7 @@ import { createFuelPhotoApi } from './api/fuel-photo.mjs';
 import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
+import { createBillingInvoiceApi } from './api/billing-invoices.mjs';
 import { createBillingPaymentApi } from './api/billing-payment.mjs';
 import { createStripeTestPaymentIntents } from './adapters/stripe-test-payments.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
@@ -31,6 +32,9 @@ export default {
         if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return new Response(null,{status:503});
         return new Response(JSON.stringify({
           supabaseUrl: env.SUPABASE_URL, supabaseAnonKey: env.SUPABASE_ANON_KEY,
+          stripePublishableKey:env.STRIPE_TEST_PAYMENTS_ENABLED==='true' &&
+           /^pk_test_[A-Za-z0-9_]{12,}$/.test(env.STRIPE_PUBLISHABLE_KEY||'')?
+           env.STRIPE_PUBLISHABLE_KEY:null,
         }), { status:200, headers: { 'content-type':'application/json',
             'cache-control':'no-store', 'x-content-type-options':'nosniff' }});
       }
@@ -50,6 +54,9 @@ export default {
         if (url.pathname === '/api/fuel/start') {
           return createFuelStartApi(deps)(request);
         }
+        if (url.pathname === '/api/billing/invoices') {
+          return createBillingInvoiceApi(deps)(request);
+        }
         if (url.pathname === '/api/billing/payment-intent') {
           const enabled=env.STRIPE_TEST_PAYMENTS_ENABLED==='true';
           const payments=enabled?createStripeTestPaymentIntents(env.STRIPE_SECRET_KEY):null;
@@ -57,7 +64,8 @@ export default {
         }
         if (url.pathname === '/api/webhooks/stripe') {
           return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET,
-            processTestPayments:env.STRIPE_TEST_RECONCILIATION_ENABLED==='true'})(request);
+            processTestPayments:env.STRIPE_TEST_RECONCILIATION_ENABLED==='true' &&
+              env.STRIPE_TEST_PAYMENTS_ENABLED==='true'})(request);
         }
         if (url.pathname === '/api/hr/attendance/pending' || url.pathname === '/api/hr/attendance/review') {
           return createAttendanceReviewApi(deps)(request);

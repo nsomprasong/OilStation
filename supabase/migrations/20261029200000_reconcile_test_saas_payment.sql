@@ -18,7 +18,7 @@ BEGIN
   OR p_payment_intent_id !~ '^pi_[A-Za-z0-9]{6,100}$'
   OR p_currency<>'thb' OR p_payment_status<>'succeeded'
   OR p_amount_satang IS NULL OR p_received_satang IS NULL
-  OR p_amount_satang NOT BETWEEN 100 AND 99999999
+  OR p_amount_satang NOT BETWEEN 1000 AND 99999999
   OR p_amount_satang<>p_received_satang
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  SELECT * INTO v_event FROM public.stripe_events WHERE id=p_event_id FOR UPDATE;

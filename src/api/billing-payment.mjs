@@ -31,7 +31,7 @@ export function createBillingPaymentApi({authenticate,db,payments,enabled=false}
    });
    const amount=Number(prepared.amountSatang);
    const trusted={invoiceId:data.invoiceId,amountSatang:amount};
-   if(!Number.isSafeInteger(amount)||amount<100||amount>99_999_999)
+   if(!Number.isSafeInteger(amount)||amount<1000||amount>99_999_999)
     throw new Error('unusable_invoice');
    // No amount from client. On retry the persisted Stripe ID is retrieved,
    // not recreated after the provider's idempotency cache expiry.

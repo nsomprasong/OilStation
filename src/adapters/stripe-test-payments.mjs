@@ -20,7 +20,7 @@ export function createStripeTestPaymentIntents(secret,{fetchImpl=fetch}={}){
  return {
   async create({invoiceId,attemptId,amountSatang,paymentMethod,idempotencyKey}){
    if(!UUID.test(invoiceId)||!UUID.test(attemptId)||
-      !Number.isSafeInteger(amountSatang)||amountSatang<100||amountSatang>99_999_999||
+      !Number.isSafeInteger(amountSatang)||amountSatang<1000||amountSatang>99_999_999||
       !['card','promptpay'].includes(paymentMethod)||
       typeof idempotencyKey!=='string'||!/^oilstation-pi-[0-9a-f-]{36}$/.test(idempotencyKey))
     throw new TypeError('invalid_invoice_payment');

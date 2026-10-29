@@ -13,7 +13,7 @@ export function paidStripeEvidence(event){
     !UUID.test(p.metadata?.saas_payment_attempt_id??'')||
     p.currency!=='thb'||p.status!=='succeeded'||
     !Number.isSafeInteger(p.amount)||!Number.isSafeInteger(p.amount_received)||
-    p.amount<100||p.amount>99_999_999||p.amount_received!==p.amount)
+    p.amount<1000||p.amount>99_999_999||p.amount_received!==p.amount)
   throw new TypeError('invalid_test_payment_evidence');
  return {eventId:event.id,paymentIntentId:p.id,
   invoiceId:p.metadata.saas_invoice_id,
