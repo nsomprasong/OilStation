@@ -9,7 +9,9 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/station/customers': 'POST', '/api/station/link-company': 'POST',
   '/api/corporate/approve-link': 'POST',
   '/api/corporate/pending-links': 'GET',
-  '/api/station/invite-first-admin': 'POST' };
+  '/api/station/invite-first-admin': 'POST',
+  '/api/hr/roster': 'GET', '/api/hr/employees': 'POST',
+  '/api/hr/seed-shifts': 'POST', '/api/hr/assign-shift': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -96,6 +98,54 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path.startsWith('/api/hr/')) {
+        const body = path === '/api/hr/roster' ? null : await readBody(request);
+        const stationId = path === '/api/hr/roster'
+          ? url.searchParams.get('stationId') : body?.stationId;
+        if (!UUID.test(stationId??'')) return fail(400,'invalid_station');
+        const canManage = active.some(m=>
+          (m.scope_type==='platform' && m.role_code==='platform_superadmin')
+          || (m.scope_type==='station' && m.station_id===stationId
+            && ['station_owner','owner','manager','hr_manager'].includes(m.role_code))
+          || (m.scope_type==='organization'
+            && ['organization_owner','owner'].includes(m.role_code)));
+        if (!canManage) return fail(403,'permission_denied');
+        if (path==='/api/hr/roster') {
+          return json(200,{roster:await db.hrRoster({actorId:user.id,stationId})});
+        }
+        if (!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json')) {
+          return fail(415,'unsupported_media_type');
+        }
+        if (path==='/api/hr/seed-shifts') {
+          return json(200,{result:await db.hrSeedTemplates({actorId:user.id,stationId})});
+        }
+        if (path==='/api/hr/employees') {
+          if(typeof body.employeeCode!=='string' || !/^[a-z0-9_-]{1,40}$/i.test(body.employeeCode)
+            || typeof body.name!=='string' || body.name.trim().length<2 || body.name.length>200
+            || !['monthly','daily','hourly'].includes(body.wageType)
+            || typeof body.wageSatang!=='string'
+            || !/^(0|[1-9][0-9]{0,14})$/.test(body.wageSatang)
+            || !['weekly','semi_monthly','monthly'].includes(body.payrollFrequency)) {
+            return fail(400,'invalid_employee');
+          }
+          return json(201,{employee:await db.hrAddEmployee({
+            actorId:user.id,stationId,employeeCode:body.employeeCode,
+            name:body.name.trim(),wageType:body.wageType,wageSatang:body.wageSatang,
+            payrollFrequency:body.payrollFrequency,
+          })});
+        }
+        if(path==='/api/hr/assign-shift') {
+          if (!UUID.test(body?.employeeId??'') || !UUID.test(body?.templateId??'')
+           || typeof body.date!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.date)
+           || !Number.isFinite(Date.parse(body.date+'T00:00:00Z'))) {
+           return fail(400,'invalid_shift');
+          }
+          return json(201,{assignment:await db.hrAssignShift({
+            actorId:user.id,stationId,employeeId:body.employeeId,
+            templateId:body.templateId,date:body.date,
+          })});
+        }
       }
       if (path === '/api/corporate/pending-links') {
         if (!active.some(m => m.scope_type==='corporate_company' && m.role_code==='corporate_admin')) {
