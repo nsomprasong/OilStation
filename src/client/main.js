@@ -233,6 +233,87 @@ async function corporateWorkspace(accessToken) {
   catch { $('corp-help').textContent='โหลดบัญชีไม่ได้ กรุณาลองใหม่'; }
 }
 
+
+async function platformWorkspace(accessToken) {
+  const target=document.getElementById('platform-workspace');
+  if (!target) return;
+  target.innerHTML = `
+    <div class="section-title">สร้างปั๊มน้ำมัน</div>
+    <p>เลือกแบรนด์และโมดูลที่ลูกค้าต้องการเปิดใช้งาน</p>
+    <form class="coupon-form" id="new-station-form">
+      <label class="field">ชื่อองค์กร / เจ้าของกิจการ
+        <input id="org-name" autocomplete="organization" maxlength="160" required placeholder="เช่น บริษัท ตัวอย่าง จำกัด"></label>
+      <label class="field">ชื่อปั๊มน้ำมัน / สาขา
+        <input id="station-name" maxlength="160" required placeholder="เช่น สถานี A"></label>
+      <label class="field">แบรนด์ปั๊มน้ำมัน
+        <select id="brand-select" required></select></label>
+      <div class="module-choices">
+        <label><input type="checkbox" id="module-qr" checked> QR Coupon</label>
+        <label><input type="checkbox" id="module-hr"> HR & Payroll</label>
+      </div>
+      <p class="hint">รายชื่อน้ำมันจะเตรียมไว้ตามแบรนด์ โดยยังปิดการขายทั้งหมดจนกว่าจะเลือกชนิดและตั้งราคา</p>
+      <button class="button primary" id="new-station-submit" type="submit">สร้างปั๊ม</button>
+      <p id="platform-notice" class="notice" hidden role="status"></p>
+    </form>
+    <div class="divider"></div>
+    <div class="section-title">ปั๊มในแพลตฟอร์ม</div>
+    <div id="station-list" class="module-list"><p>กำลังโหลด…</p></div>
+  `;
+  const el=id=>document.getElementById(id);
+  const notice=(text,error=false)=>{
+    el('platform-notice').hidden=false;
+    el('platform-notice').textContent=text;
+    el('platform-notice').dataset.tone=error?'error':'neutral';
+  };
+  async function loadStations(){
+    const r=await getApi('/api/platform/stations',accessToken);
+    if (!r.ok) throw new Error('station_list_failed');
+    const list=el('station-list');
+    list.replaceChildren();
+    if (!r.data.stations?.length) {
+      const msg=document.createElement('p');msg.textContent='ยังไม่มีปั๊มน้ำมันในระบบ';list.appendChild(msg);
+    }
+    for (const s of (r.data.stations||[])) {
+      const node=document.createElement('div');
+      node.className='module-item';
+      const name=document.createElement('strong');name.textContent=s.stationName;
+      const detail=document.createElement('div');detail.className='module-subtitle';
+      detail.textContent=s.organizationName+' · '+s.brandName+' · '+Object.entries(s.modules||{})
+        .filter(([,status])=>status==='enabled').map(([module])=>module==='qr_coupon'?'QR Coupon':'HR').join(' + ');
+      node.append(name,detail);list.appendChild(node);
+    }
+  }
+  try {
+    const r=await getApi('/api/fuel-brands',accessToken);
+    if (!r.ok) throw new Error('brands');
+    (r.data.brands||[]).forEach(brand=>{
+      const option=document.createElement('option');
+      option.value=brand.code;
+      option.textContent=brand.name_th+' ('+brand.code+')';
+      el('brand-select').appendChild(option);
+    });
+    await loadStations();
+  } catch { notice('เชื่อมต่อข้อมูลปั๊มไม่สำเร็จ',true); }
+  el('new-station-form').addEventListener('submit',async(e)=>{
+    e.preventDefault();
+    const data={organizationName:el('org-name').value.trim(),
+      stationName:el('station-name').value.trim(),
+      brandCode:el('brand-select').value,
+      modules:{qrCoupon:el('module-qr').checked,hrPayroll:el('module-hr').checked}};
+    if (!data.modules.qrCoupon&&!data.modules.hrPayroll) return notice('เลือกเปิดใช้งานอย่างน้อยหนึ่งโมดูล',true);
+    const btn=el('new-station-submit');btn.disabled=true;notice('กำลังสร้างปั๊ม…');
+    try{
+      const r=await getApi('/api/platform/create-station',accessToken,
+        {method:'POST',body:JSON.stringify(data)});
+      if(!r.ok) return notice('ไม่สามารถสร้างปั๊มได้ ('+responseError(r.data)+')',true);
+      notice('สร้างปั๊มเรียบร้อย เตรียมรายการน้ำมัน '+r.data.station.fuelProductsStaged+' รายการ (ยังไม่เปิดขาย)');
+      el('new-station-form').reset();
+      await loadStations();
+    }catch{notice('ขัดข้องระหว่างสร้างปั๊ม กรุณาตรวจสอบรายการก่อนกดซ้ำ',true);}
+    finally{btn.disabled=false;}
+  });
+}
+
 function dashboard(data, session) {
   const memberships = data.memberships || [];
   const scopes = {
@@ -249,6 +330,7 @@ function dashboard(data, session) {
      <div class="scope-list" id="scopes"></div><div class="divider"></div>
      <div class="module-list" id="modules"></div>
      <div id="corporate-workspace"></div>
+     <div id="platform-workspace"></div>
      <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
      <button class="button secondary" id="logout">ออกจากระบบ</button>
    </section>`);
@@ -267,6 +349,9 @@ function dashboard(data, session) {
     e.textContent = name;
     modules.appendChild(e);
   });
+  if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
+    platformWorkspace(session.access_token).catch(() => {});
+  }
   if (memberships.some(m => m.scopeType==='corporate_company')) {
     corporateWorkspace(session.access_token).catch(() => {});
   }
