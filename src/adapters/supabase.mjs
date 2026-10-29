@@ -10,15 +10,23 @@ const headers = (key, extra = {}) => ({
 });
 function requireEnv(env) {
   if (!env?.SUPABASE_URL || !/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(env.SUPABASE_URL)) throw new Error('invalid_supabase_url');
-  if (!env.SUPABASE_SERVICE_ROLE_KEY || !env.SUPABASE_ANON_KEY || !env.COUPON_SIGNING_KEY) throw new Error('missing_secrets');
+  if (!env.SUPABASE_SERVICE_ROLE_KEY || !env.SUPABASE_ANON_KEY || !env.COUPON_SIGNING_KEY || env.COUPON_SIGNING_KEY.length < 32) throw new Error('missing_or_weak_secrets');
 }
 function normalizeUrl(env, path) { return env.SUPABASE_URL.replace(/\/$/, '') + path; }
 async function fetchJson(url, init) {
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(8_000) });
   if (!response.ok) {
-    const err = new Error('supabase_unavailable');
+    // Map only a small set of database error identifiers, never return raw SQL.
+    const detail = await response.json().catch(() => ({}));
+    const allowed = new Set(['INSUFFICIENT_FUNDS', 'FORBIDDEN', 'INVALID_REQUEST',
+      'PRODUCT_NOT_AVAILABLE', 'IDEMPOTENCY_CONFLICT', 'ACCOUNT_NOT_FOUND',
+      'NOT_CANCELLABLE', 'INVALID_RESERVATION']);
+    const err = new Error('supabase_request_failed');
     err.status = response.status;
-    if (response.status === 409) err.code = 'INVALID_REQUEST';
+    if (allowed.has(detail?.message)) {
+      err.code = ['INSUFFICIENT_FUNDS', 'FORBIDDEN'].includes(detail.message) ?
+        detail.message : 'INVALID_REQUEST';
+    }
     throw err;
   }
   return response.status === 204 ? null : response.json();
