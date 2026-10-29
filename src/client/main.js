@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
+const BOOTSTRAP_KEY = 'oilstation_first_admin_setup';
 const INVITE_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
 const COUPON_PATTERN = /^[0-9a-f-]{36}\.[a-f0-9]{64}$/i;
 let authClient;
@@ -20,6 +21,19 @@ function showError(msg) {
   document.getElementById('reason').textContent = msg;
 }
 function responseError(res) { return res?.error || 'ไม่สามารถดำเนินการได้'; }
+function platformSetupView() {
+  show(`<div class="mark" aria-hidden="true">O</div>
+    <h1>เริ่มต้นผู้ดูแล OilStation</h1>
+    <p class="lead">สำหรับผู้ดูแลแพลตฟอร์มคนแรกที่ได้รับอนุญาตเท่านั้น</p>
+    <section class="panel"><div class="section-title">ยืนยันตัวตน</div>
+    <p>ต้องใช้อีเมลที่ผู้ดูแลระบบกำหนดไว้บนเซิร์ฟเวอร์ และบัญชีอีเมลต้องผ่านการยืนยัน</p>
+    <div class="auth-buttons">
+    <button class="button primary" id="google">ดำเนินการด้วย Google</button>
+    <button class="button secondary" id="facebook">ดำเนินการด้วย Facebook</button>
+    </div><p id="notice" class="notice" hidden role="status"></p></section>`);
+  document.getElementById('google').addEventListener('click',()=>login('google'));
+  document.getElementById('facebook').addEventListener('click',()=>login('facebook'));
+}
 function guestView(invited) {
   show(`
     <div class="mark" aria-hidden="true">O</div>
@@ -298,6 +312,8 @@ async function couponViewer(token) {
 }
 async function boot() {
   if (location.pathname.startsWith('/c/')) return couponViewer(decodeURIComponent(location.pathname.slice(3)));
+  if (location.pathname === '/setup') sessionStorage.setItem(BOOTSTRAP_KEY,'1');
+  const setup = sessionStorage.getItem(BOOTSTRAP_KEY)==='1';
   const pathInvite = location.pathname.startsWith('/invite/') ?
     decodeURIComponent(location.pathname.slice('/invite/'.length)) : null;
   if (pathInvite) {
@@ -316,7 +332,17 @@ async function boot() {
   } catch { return guestView(false); }
   const { data: {session}, error } = await authClient.auth.getSession();
   if (error) return showError('เข้าสู่ระบบไม่สำเร็จ');
-  if (!session) return guestView(Boolean(invite));
+  if (!session) return setup ? platformSetupView() : guestView(Boolean(invite));
+  if (setup) {
+    const bootResult = await getApi('/api/bootstrap',session.access_token,{method:'POST'});
+    if (!bootResult.ok) {
+      await authClient.auth.signOut();
+      sessionStorage.removeItem(BOOTSTRAP_KEY);
+      return showError('บัญชีนี้ไม่ได้รับอนุญาตให้เริ่มต้นผู้ดูแล หรือมีผู้ดูแลคนแรกอยู่แล้ว');
+    }
+    sessionStorage.removeItem(BOOTSTRAP_KEY);
+    history.replaceState(null,'','/');
+  }
   if (invite) {
     const accepted = await getApi('/api/invitations/accept',session.access_token,{
       method:'POST',body:JSON.stringify({token:invite}),
