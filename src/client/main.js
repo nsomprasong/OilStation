@@ -337,6 +337,16 @@ async function hrWorkspace(token,stationId,target) {
     <button type="submit" class="button primary">จัดกะให้พนักงาน</button>
   </form>
   <p class="hint">การจัดสองกะในวันเดียวกันทำได้ โดยเลือกพนักงานคนเดิมแล้วเพิ่มอีกกะ</p>
+  <div class="divider"></div>
+  <h3>ทำงานแทนกะ (ขออนุมัติย้อนหลัง)</h3>
+  <form class="coupon-form" id="hr-replacement">
+    <label class="field">กะที่ต้องการเปลี่ยน <select id="hr-original-assignment" required></select></label>
+    <label class="field">กะที่ไปทำแทน <select id="hr-replacement-template" required></select></label>
+    <label class="field">เหตุผล <input id="hr-replacement-reason" required maxlength="500" placeholder="เช่น ช่วยแทนกะบ่าย"></label>
+    <button class="button secondary" type="submit">บันทึกกะทำงานแทน</button>
+  </form>
+  <div class="divider"></div><h3>รายการเปลี่ยนกะรออนุมัติ</h3>
+  <div id="hr-pending-approvals" class="module-list"></div>
   <p id="hr-notice" class="notice" role="status" hidden></p>
   <div id="hr-assignment-list" class="module-list"></div>
  `;
@@ -359,6 +369,21 @@ async function hrWorkspace(token,stationId,target) {
    });
    if(roster.employees.some(x=>x.id===selected))e.value=selected;
    if(roster.shiftTemplates.some(x=>x.id===selShift))t.value=selShift;
+   const original=$('hr-original-assignment');
+   const replacement=$('hr-replacement-template');
+   original.replaceChildren();replacement.replaceChildren();
+   for (const x of roster.shiftTemplates){
+     const opt=document.createElement('option');opt.value=x.id;opt.textContent=x.name;
+     replacement.appendChild(opt);
+   }
+   for (const a of roster.assignments){
+     if(!['scheduled','absence_review'].includes(a.status))continue;
+     const emp=roster.employees.find(x=>x.id===a.employeeId);
+     const shift=roster.shiftTemplates.find(x=>x.id===a.templateId);
+     const opt=document.createElement('option');
+     opt.value=a.id;opt.textContent=a.date+' · '+(emp?.name||'พนักงาน')+' · '+(shift?.name||'กะ');
+     original.appendChild(opt);
+   }
    const list=$('hr-assignment-list');list.replaceChildren();
    for(const a of roster.assignments){
      const emp=roster.employees.find(x=>x.id===a.employeeId);
@@ -367,7 +392,44 @@ async function hrWorkspace(token,stationId,target) {
      node.textContent=a.date+' · '+(emp?.name??'พนักงาน')+' · '+(shift?.name??'กะ')+' · '+a.status;
      list.appendChild(node);
    }
+   const pending=await getApi('/api/hr/pending-substitutes?stationId='+encodeURIComponent(stationId),token);
+   const pendingList=$('hr-pending-approvals');pendingList.replaceChildren();
+   if(pending.ok){
+     for(const r of pending.data.requests||[]){
+       const box=document.createElement('div');box.className='module-item';
+       const title=document.createElement('strong');title.textContent=r.employeeName+' · '+r.date;
+       const description=document.createElement('div');
+       description.textContent=r.originalShift+' → '+r.replacementShift+' · '+r.reason;
+       const approve=document.createElement('button');approve.className='button primary';approve.type='button';approve.textContent='อนุมัติ';
+       const reject=document.createElement('button');reject.className='button secondary';reject.type='button';reject.textContent='ปฏิเสธ';
+       const notice=document.createElement('small');notice.setAttribute('role','status');
+       async function review(approved){
+         approve.disabled=true;reject.disabled=true;
+         const result=await getApi('/api/hr/review-substitute',token,{
+           method:'POST',body:JSON.stringify({requestId:r.requestId,approved}),
+         }).catch(()=>null);
+         if(!result?.ok){notice.textContent='อนุมัติไม่ได้ โปรดให้ผู้จัดการอีกคนตรวจสอบ';approve.disabled=false;reject.disabled=false;return;}
+         await refresh();
+       }
+       approve.addEventListener('click',()=>review(true));
+       reject.addEventListener('click',()=>review(false));
+       box.append(title,description,approve,reject,notice);pendingList.appendChild(box);
+     }
+   }
  }
+ $('hr-replacement').addEventListener('submit',async e=>{
+   e.preventDefault();
+   const r=await getApi('/api/hr/request-substitute',token,{
+     method:'POST',body:JSON.stringify({
+       originalAssignmentId:$('hr-original-assignment').value,
+       newTemplateId:$('hr-replacement-template').value,
+       reason:$('hr-replacement-reason').value.trim(),
+     }),
+   }).catch(()=>null);
+   if(!r?.ok)return note('บันทึกกะทำงานแทนไม่สำเร็จ (อาจมีคำขอค้างอยู่)',true);
+   note('บันทึกแล้ว กะเดิมยังไม่ถูกนับว่าขาดงานจนกว่าผู้จัดการจะตรวจสอบ');
+   await refresh();
+ });
  $('hr-seed').addEventListener('click',async()=>{
    const r=await getApi('/api/hr/seed-shifts',token,{method:'POST',body:JSON.stringify({stationId})});
    if(!r.ok)return note('ตั้งกะมาตรฐานไม่สำเร็จ',true);
