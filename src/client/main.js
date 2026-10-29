@@ -95,6 +95,7 @@ async function corporateWorkspace(accessToken) {
     <div class="section-title">บัญชีเติมน้ำมันของบริษัท</div>
     <p class="lead" id="corp-help">กำลังโหลดบัญชี…</p>
     <div class="account-overview" id="account-overview"></div>
+    <div id="company-link-inbox" class="module-list"></div>
     <form id="coupon-form" class="coupon-form" hidden>
       <label class="field">เลือกปั๊มน้ำมัน <select required id="account-select"></select></label>
       <label class="field">ประเภทน้ำมัน <select required id="fuel-select"></select></label>
@@ -229,7 +230,41 @@ async function corporateWorkspace(accessToken) {
     try { await navigator.clipboard.writeText($('share-link').value); $('copy-link').textContent='คัดลอกแล้ว'; }
     catch { $('share-link').select(); }
   });
-  try { await reloadAccounts(); }
+  async function reloadLinkRequests(){
+    const inbox=$('company-link-inbox');inbox.replaceChildren();
+    const r=await getApi('/api/corporate/pending-links',accessToken);
+    if (!r.ok||!r.data.requests?.length) return;
+    const title=document.createElement('h3');
+    title.textContent='คำขอเชื่อมปั๊มใหม่';inbox.appendChild(title);
+    for (const request of r.data.requests){
+      const item=document.createElement('div');item.className='module-item';
+      const heading=document.createElement('strong');heading.textContent=request.stationName;
+      const details=document.createElement('p');
+      details.textContent='ขอเชื่อมกับบริษัท '+request.companyName;
+      const approve=document.createElement('button');approve.type='button';
+      approve.className='button primary';approve.textContent='อนุมัติ';
+      const reject=document.createElement('button');reject.type='button';
+      reject.className='button secondary';reject.textContent='ปฏิเสธ';
+      const status=document.createElement('small');status.setAttribute('role','status');
+      async function review(approved){
+        approve.disabled=true;reject.disabled=true;status.textContent='กำลังบันทึก…';
+        const result=await getApi('/api/corporate/approve-link',accessToken,{
+          method:'POST',body:JSON.stringify({requestId:request.requestId,approved}),
+        }).catch(()=>null);
+        if(!result?.ok){
+          status.textContent='บันทึกไม่สำเร็จ';
+          approve.disabled=false;reject.disabled=false;return;
+        }
+        await reloadLinkRequests();
+        await reloadAccounts();
+      }
+      approve.addEventListener('click',()=>review(true));
+      reject.addEventListener('click',()=>review(false));
+      item.append(heading,details,approve,reject,status);
+      inbox.appendChild(item);
+    }
+  }
+  try { await reloadAccounts(); await reloadLinkRequests(); }
   catch { $('corp-help').textContent='โหลดบัญชีไม่ได้ กรุณาลองใหม่'; }
 }
 
