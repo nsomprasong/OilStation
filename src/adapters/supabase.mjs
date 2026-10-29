@@ -68,6 +68,30 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      createInvitation: async (input) => {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        const token = btoa(String.fromCharCode(...bytes))
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        const hash = await digest(token);
+        const scoped = {
+          p_actor_id: input.actorId,
+          p_email: input.email,
+          p_role_code: input.roleCode,
+          p_scope_type: input.scopeType,
+          p_organization_id: input.scopeType==='organization' ? input.scopeId : null,
+          p_station_id: input.scopeType==='station' ? input.scopeId : null,
+          p_company_id: input.scopeType==='corporate_company' ? input.scopeId : null,
+          p_token_hash: hash,
+          p_expires_at: input.expiresAt,
+        };
+        const result = await serviceRequest(env, '/rest/v1/rpc/create_scoped_invitation', {
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify(scoped),
+        });
+        return { ...result, delivery:'manual',
+          inviteUrl: 'https://oilstation.goldensoft.cloud/invite/' + token };
+      },
       bootstrapAdmin: async (actorId) => {
         if (!env.BOOTSTRAP_ADMIN_EMAIL || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(env.BOOTSTRAP_ADMIN_EMAIL)) {
           const e = new Error('bootstrap_not_configured');
