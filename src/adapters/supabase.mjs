@@ -121,6 +121,35 @@ export function createSupabaseAdapter(env) {
         });
         return serviceRequest(env, '/rest/v1/memberships?' + params);
       },
+      fuelBrands: async () => {
+        const params = new URLSearchParams({
+          select: 'code,display_name_th,display_name_en',
+          active: 'eq.true', order: 'display_name_th.asc',
+        });
+        const rows = await serviceRequest(env, '/rest/v1/fuel_brands?' + params);
+        return rows.map(({ code, display_name_th, display_name_en }) => ({
+          code, name_th: display_name_th, name_en: display_name_en,
+        }));
+      },
+      platformStations: async (actorId) => {
+        return serviceRequest(env, '/rest/v1/rpc/platform_station_overview', {
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId}),
+        });
+      },
+      createStation: async (data) => {
+        return serviceRequest(env, '/rest/v1/rpc/platform_create_station', {
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:data.actorId,
+            p_organization_name:data.organizationName,
+            p_station_name:data.stationName,
+            p_brand_code:data.brandCode,
+            p_enable_coupon:data.qrCoupon,
+            p_enable_hr:data.hrPayroll,
+          }),
+        });
+      },
       corporateAccounts: async (userId) => {
         return serviceRequest(env, '/rest/v1/rpc/corporate_account_summaries', {
           method: 'POST', headers: { 'content-type': 'application/json' },
