@@ -4,7 +4,8 @@ const IDKEY = /^[a-zA-Z0-9_-]{16,128}$/;
 const LIMIT_BYTES = 16_384;
 const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
   '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST',
-  '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST' };
+  '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST',
+  '/api/invitations/create': 'POST' };
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -91,6 +92,28 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
         })) });
+      }
+      if (path === '/api/invitations/create') {
+        if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
+          return fail(415, 'unsupported_media_type');
+        }
+        const body = await readBody(request);
+        const email = body?.email?.trim().toLowerCase();
+        if (typeof email !== 'string' || email.length > 320
+          || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)
+          || typeof body.roleCode !== 'string'
+          || !/^[a-z_]{3,40}$/.test(body.roleCode)
+          || !['platform','organization','station','corporate_company'].includes(body.scopeType)
+          || (body.scopeType !== 'platform' && !UUID.test(body.scopeId ?? ''))
+          || (body.scopeType === 'platform' && body.scopeId)) {
+          return fail(400, 'invalid_invitation');
+        }
+        const expiresAt = new Date(now().getTime() + 7 * 24 * 60 * 60_000).toISOString();
+        const invitation = await db.createInvitation({
+          actorId:user.id,email,roleCode:body.roleCode,scopeType:body.scopeType,
+          scopeId:body.scopeType==='platform'?null:body.scopeId,expiresAt,
+        });
+        return json(201,{invitation});
       }
       if (path === '/api/fuel-brands') {
         return json(200, { brands: await db.fuelBrands() });
