@@ -293,3 +293,26 @@ Previously staged HR migrations 20261029181000 and 20261029193000 were corrected
 
 **Outstanding:** true face/consent/liveness workflow or reviewed non-biometric fallback; complete statutory payroll/OT/advances and paid-period locking; bank export/reconciliation; isolated full-schema migration+security UAT for other modules; Stripe sandbox/refund/dunning; LINE and OAuth; backups, rollback and customer UAT.
 Draft PR #1 remains unmerged, not deployed; Stripe test flags remain off; no funds moved.
+
+
+## Continuation — isolated fuel finance integration and bypass prevention
+
+**Development only; no Supabase migrations or Cloudflare deployment performed.**
+
+Security fixes and testing added:
+- Discovered and closed a real trust-boundary flaw: after all trusted wrappers are installed, the service_role cannot execute raw start_reserved_fuel_session or finish_reserved_fuel_session directly to bypass plate, pump, or receipt review. New migration: 20261029208000_fuel_private_finance_gate.sql. Audited wrappers retain EXECUTE as required.
+- Raw finance settlement now checks station staff authorization BEFORE returning the completed-session replay result. An actor from another station must not read previously settled financial values.
+- New disposable PostgreSQL 16 GitHub Actions workflow, .github/workflows/fuel-postgres.yml. Its test fixtures mirror key live schema columns and financial constraints and apply selected real migration SQL, never customer data.
+- Executable SQL tests cover cross-corporate issuance rejection, cross-station fuel product rejection, coupon nonce and amount replay, over-reservation rollback, checked private plate object, forbidden foreign station start and settlement, single fuel session per coupon, manual independent pump+receipt photo review, no settling with pending photos, reviewed settlement and financial ledger atomicity.
+- The fake financial scenario verifies 20,000 satang pump gross, 17,500 satang net, prepaid consumption 10,000 satang, 7,500 satang debt, and 2,500 satang released hold; the same photo/replay cannot post wallet or accounts-receivable ledger twice.
+- Cancellation and expiry each release the hold exactly once, without touching already completed/fueling coupons.
+- Cross-station coupon replacement within the SAME corporate company is atomic. An insufficient destination wallet rolls back old cancellation and new hold; unrelated companies cannot switch it. An original shared link follows its valid successor; duplicate replacement does not create extra ledger entries.
+- Test changes the station public price and corporate price rule after the session started to prove the original locked price remains authoritative at settlement.
+
+**Verified at 683c1312:** 191/191 Node tests pass; Vite build and Wrangler dry run pass. All three independent PostgreSQL integration workflows Billing, Attendance, Fuel passed. They use purpose-built fixtures and do NOT constitute full production schema migration or photo-liveness UAT.
+
+**Unapplied development SQL migrations:** 21, including new 20261029208000 gate. Existing edited coupon/fuel migrations are also NOT applied live.
+
+Outstanding before production: full-schema Supabase staging parity tests, migration transaction order and stored evidence/RLS audit, real private photo review and anti-replay/liveness UAT, connected station device testing, live price schedules, refunds/reversals, offline conflict handling, concurrency/lock stress tests, OAuth, LINE, signed Stripe sandbox, legal payroll review, bank reconciliation and production rollback exercises.
+
+Draft PR remains unmerged; Cloudflare domain has not received this code; service flags off; no real customer financial transaction.
