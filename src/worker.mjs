@@ -56,7 +56,8 @@ export default {
           return createBillingPaymentApi({...deps,payments,enabled})(request);
         }
         if (url.pathname === '/api/webhooks/stripe') {
-          return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET})(request);
+          return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET,
+            processTestPayments:env.STRIPE_TEST_RECONCILIATION_ENABLED==='true'})(request);
         }
         if (url.pathname === '/api/hr/attendance/pending' || url.pathname === '/api/hr/attendance/review') {
           return createAttendanceReviewApi(deps)(request);

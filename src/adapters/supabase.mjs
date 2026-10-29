@@ -80,6 +80,17 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_notification_id:id,p_decision:decision}),
         }),
+      reconcileSaasPaid: async d=>serviceRequest(env,
+        '/rest/v1/rpc/reconcile_saas_test_paid_event',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+           p_event_id:d.eventId,p_payment_intent_id:d.paymentIntentId,
+           p_invoice_id:d.invoiceId,p_attempt_id:d.attemptId,
+           p_amount_satang:d.amountSatang,
+           p_received_satang:d.amountReceivedSatang,
+           p_currency:d.currency,p_payment_status:d.status,p_livemode:d.livemode,
+          }),
+        }),
       prepareSaasPayment: async d=>serviceRequest(env,
         '/rest/v1/rpc/prepare_saas_test_payment',{
           method:'POST',headers:{'content-type':'application/json'},

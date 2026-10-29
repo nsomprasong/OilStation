@@ -1,3 +1,4 @@
+import { paidStripeEvidence } from '../domain/stripe-reconciliation.mjs';
 /** Stripe raw-byte webhook inbox. No event here credits wallets or invoices. */
 const json=(status,body)=>new Response(JSON.stringify(body),{status,headers:{
  'content-type':'application/json; charset=utf-8','cache-control':'no-store',
@@ -45,7 +46,7 @@ export async function verifyStripeSignature(raw,header,secret,nowSeconds=Math.fl
  }
  return false;
 }
-export function createStripeWebhookApi({db,secret,nowSeconds=()=>Math.floor(Date.now()/1000)}){
+export function createStripeWebhookApi({db,secret,processTestPayments=false,nowSeconds=()=>Math.floor(Date.now()/1000)}){
  return async request=>{
   if(new URL(request.url).pathname!=='/api/webhooks/stripe')return json(404,{error:'not_found'});
   if(request.method!=='POST')return json(405,{error:'method_not_allowed'});
@@ -68,6 +69,18 @@ export function createStripeWebhookApi({db,secret,nowSeconds=()=>Math.floor(Date
   try{
    const result=await db.recordStripeEvent({eventId:event.id,eventType:event.type,
       hash,livemode:event.livemode});
+   if(processTestPayments&&event.type==='payment_intent.succeeded'){
+     let proof;
+     try{proof=paidStripeEvidence(event);}catch{
+      return json(422,{error:'payment_evidence_invalid'});
+     }
+     if(!proof)return json(422,{error:'payment_evidence_invalid'});
+     // The DB requires the exact pre-bound PaymentIntent and amounts.
+     // No browser success redirect, spoofed metadata or wallet credit is trusted.
+     const paid=await db.reconcileSaasPaid(proof);
+     return json(200,{received:true,replayed:paid?.replayed===true,
+       invoiceStatus:paid?.status});
+   }
    return json(200,{received:true,replayed:result?.replayed===true});
   }catch(e){
    if(e?.code==='IDEMPOTENCY_CONFLICT')return json(409,{error:'event_conflict'});
