@@ -40,4 +40,5 @@ jobs:
                 psql -v ON_ERROR_STOP=1 -f "$migration"
               done
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/full-schema-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-organization-scope-assertions.sql
             '
