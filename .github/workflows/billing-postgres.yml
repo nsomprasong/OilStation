@@ -45,4 +45,22 @@ jobs:
                 psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
               done
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-seed.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-invoice-first.sql \
+                > /tmp/billing-lock-invoice.log 2>&1 &
+              hold_pid=$!
+              sleep 0.4
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-attach.sql \
+                > /tmp/billing-lock-attach.log 2>&1 &
+              attach_pid=$!
+              if ! wait "$hold_pid"; then
+                cat /tmp/billing-lock-invoice.log /tmp/billing-lock-attach.log
+                exit 1
+              fi
+              if ! wait "$attach_pid"; then
+                cat /tmp/billing-lock-invoice.log /tmp/billing-lock-attach.log
+                exit 1
+              fi
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-verify.sql
+
             '
