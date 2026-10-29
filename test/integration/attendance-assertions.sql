@@ -172,6 +172,35 @@ BEGIN
   DELETE FROM public.attendance_review_audit WHERE attendance_event_id=event_id;
  EXCEPTION WHEN OTHERS THEN bad:=SQLERRM='REVIEW_AUDIT_IMMUTABLE';END;
  IF NOT bad THEN RAISE EXCEPTION 'review_audit_was_deletable';END IF;
+ -- Bangkok 00:02-00:59 on Oct 1 is Sep 30 UTC; station-local date
+ -- boundaries MUST count it, not assume UTC-midnight equals a workday.
+ INSERT INTO public.employees(id,station_id,user_id,display_name,employment_status)
+ VALUES('aaaaaaaa-4444-4444-8444-aaaaaaaaaaaa',
+        station_a,NULL,'Employee Midnight','active');
+ INSERT INTO public.attendance_events(id,employee_id,event_type,occurred_at,review_status)
+ VALUES('aaaaaaaa-aaaa-4aaa-8aaa-444444444444',
+       'aaaaaaaa-4444-4444-8444-aaaaaaaaaaaa','clock_in',
+       '2026-10-01T00:02:15+07:00','pending'),
+       ('aaaaaaaa-aaaa-4aaa-8aaa-555555555555',
+       'aaaaaaaa-4444-4444-8444-aaaaaaaaaaaa','clock_out',
+       '2026-10-01T00:59:55+07:00','pending');
+ PERFORM public.hr_review_attendance_manual(manager_a,
+   'aaaaaaaa-aaaa-4aaa-8aaa-444444444444',true,
+   'Verified local midnight shift clock in');
+ PERFORM public.hr_review_attendance_manual(manager_a,
+   'aaaaaaaa-aaaa-4aaa-8aaa-555555555555',true,
+   'Verified local midnight shift clock out');
+ d:=public.hr_reviewed_attendance_punches_local(manager_a,
+   'aaaaaaaa-4444-4444-8444-aaaaaaaaaaaa','2026-10-01','2026-10-02');
+ IF jsonb_array_length(d->'events')<>2
+ THEN RAISE EXCEPTION 'bangkok_midnight_clock_events_missing %',d;END IF;
+ bad:=false;
+ BEGIN
+  PERFORM public.hr_reviewed_attendance_punches(manager_a,
+   'aaaaaaaa-4444-4444-8444-aaaaaaaaaaaa',
+   '2026-10-01T00:00:00Z','2026-10-02T00:00:00Z');
+ EXCEPTION WHEN OTHERS THEN bad:=SQLERRM='PUNCH_REVIEW_REQUIRED';END;
+ IF NOT bad THEN RAISE EXCEPTION 'naive_utc_period_wrongly_accepted';END IF;
 
 END $test$;
 ROLLBACK;
