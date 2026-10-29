@@ -131,6 +131,22 @@ export function createSupabaseAdapter(env) {
           code, name_th: display_name_th, name_en: display_name_en,
         }));
       },
+      stationFuels: async (actorId, stationId) => {
+        return serviceRequest(env, '/rest/v1/rpc/station_fuel_inventory', {
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_station_id:stationId}),
+        });
+      },
+      configureFuel: async (data) => {
+        return serviceRequest(env, '/rest/v1/rpc/configure_station_fuel', {
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_actor_id:data.actorId,p_station_id:data.stationId,
+            p_station_fuel_id:data.stationFuelId,p_enabled:data.enabled,
+            p_public_price:data.publicPrice,
+          }),
+        });
+      },
       platformStations: async (actorId) => {
         return serviceRequest(env, '/rest/v1/rpc/platform_station_overview', {
           method:'POST',headers:{'content-type':'application/json'},
