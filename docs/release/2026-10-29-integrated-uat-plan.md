@@ -12,7 +12,19 @@
 - Signed public coupon links, immediate wallet reservation at issue, unique cancellation/replacement, start-time pricing, one-time final settlement; no bank funds are moved by the SaaS backend.
 - Manual top-up *database functions* with verified bank-reference requirement, duplicate reference defense, debt-first oldest-AR settlement and a single ledger entry, test transactions rolled back. **API/photo storage and bank verification UI are not completed; feature is NOT customer-accessible.**
 - HR employee roster, morning/afternoon/night templates, multi-shift scheduling, substitute shift request with provisional non-absence and separate supervisor approval. **GPS/photo/face recognition and payroll end-to-end remain unfinished.**
-- All DB privileged routines are service_role-only; direct browser access to 64 public tables stays denied by default.
+- All DB privileged routines are service_role-only; direct browser access to 65 public tables stays denied by default.
+
+
+### Additional guarded backend delivered (2026-10-29)
+
+- A reviewed Cloudflare Worker Cron handler runs a service-role-only batch to expire unstarted coupons and release the reservation precisely once. SQL rollback tests passed; scheduling starts only when a reviewed Worker is actually deployed.
+- Station employees can inspect a signed active QR after station membership checks; cancelled QR versions are rejected. The web UI supports native camera scanning where supported, or QR input fallback.
+- A **private** Supabase Storage bucket (`oilstation-evidence`, JPEG/PNG, 5 MiB limit) receives station-authorized plate photos; browser requests cannot directly see other tenants' photos.
+- The fuel start SQL now **requires a private photo object with a separately trusted OCR/supervisor attestation**. Uploaded files default to `pending_ocr`; even if an employee enters the correct plate text, fueling is refused until verified. This is a deliberate safety gate, not a complete OCR integration.
+- HR planned/retrospective OT request records, partial minute approval and anti-self-approval checks are implemented and tested. Legal OT pay multipliers are **not automatically inferred or paid**.
+- All public tables continue to use forced RLS; 65 public tables presently, with no customer test rows remaining.
+
+**Unresolved:** Actual OCR provider and supervised image review, live camera edge cases, image retention/PDPA, protected pump/receipt images, full billing/payroll and externally configured OAuth/payment secrets. This is not ready for real fueling, real payroll or customer UAT.
 
 ## Gate A — Foundations & auth (not passed)
 
