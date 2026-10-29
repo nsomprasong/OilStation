@@ -22,3 +22,22 @@
 .qr-wrapper canvas{max-width:100%;height:auto!important}
 .money{font-weight:800;font-size:25px;letter-spacing:-.025em}
 @media(prefers-color-scheme:dark){.button.secondary{color:#d2e3eb;background:#204054;border-color:#3a596b}.scope-chip{color:#bce0e9;background:#1f4051}.module-item{background:#182f42;color:#c3dee5;border-color:#2c5160}.notice[data-tone="error"]{background:#522e31;color:#ffcbca}}
+
+/* Corporate account and issuing workflow */
+.account-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:18px 0}
+.balance-card{display:flex;flex-direction:column;text-align:left;gap:6px;border-radius:14px;background:#eef7f9;padding:17px;border:1px solid #dcecf1}
+.balance-card strong{font-size:14px;color:#29566a}
+.balance-card .money{font-size:25px;color:#116e81;font-variant-numeric:tabular-nums}
+.balance-card span{font-size:11px;color:#5d8194}
+.coupon-form{display:grid;gap:15px;text-align:left;padding-top:8px}
+.coupon-form[hidden],.issue-result[hidden]{display:none!important}
+.field{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:700;color:#425d72}
+.field input,.field select,.issue-result input{width:100%;border:1px solid #cddde8;border-radius:11px;padding:12px;background:#fff;color:#173148;font:inherit;min-height:44px}
+.field input:focus,.field select:focus,.issue-result input:focus{outline:2px solid #1a9eb1;outline-offset:1px}
+.coupon-form .button{width:100%}
+.coupon-form .button:disabled{opacity:.55;cursor:not-allowed}
+.issue-result{margin-top:22px;background:#f7fafc;border:1px dashed #aacbd8;border-radius:16px;padding:18px;display:grid;gap:12px;text-align:center}
+.issue-result h2{font-size:18px;margin:0}
+.issue-result p{margin:0}
+.issue-result .qr-wrapper{margin:0}
+@media(prefers-color-scheme:dark){.balance-card{background:#203a49;border-color:#315262}.balance-card strong,.balance-card span{color:#c0d6e4}.balance-card .money{color:#7bd9e1}.field{color:#d3e2ee}.field input,.field select,.issue-result input{background:#12283a;border-color:#37596b;color:#eaf3fb}.issue-result{background:#182c3d;border-color:#345a6b}}
