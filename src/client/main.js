@@ -610,6 +610,123 @@ async function fuelPriceEditor(accessToken,stationId,target) {
   }
 }
 
+async function stationPumpWorkspace(token,stationId,target) {
+ if(!target)return;
+ target.innerHTML=`
+   <div class="divider"></div><h2>รับคูปองเติมน้ำมัน</h2>
+   <p>สแกน QR ของคนขับ แล้วถ่ายรูปทะเบียนเพื่อเข้าสู่การตรวจสอบ</p>
+   <form id="scan-form" class="coupon-form">
+     <label class="field">รหัส QR คูปอง <input id="scan-payload" required autocomplete="off" placeholder="สแกน QR หรือวางข้อมูลคูปอง"></label>
+     <button class="button primary" type="submit">ตรวจสอบคูปอง</button>
+   </form>
+   <div class="camera-area">
+     <button id="start-camera" type="button" class="button secondary">เปิดกล้องสแกน QR</button>
+     <button id="stop-camera" type="button" class="button secondary" hidden>ปิดกล้อง</button>
+     <video id="scan-video" playsinline muted autoplay hidden></video>
+   </div>
+   <p id="pump-notice" class="notice" role="status" hidden></p>
+   <div id="coupon-inspection" hidden>
+     <div class="module-item">
+       <h3 id="pump-station-name"></h3>
+       <p id="pump-fuel"></p>
+       <p id="pump-plate"></p>
+       <strong id="pump-limit"></strong>
+       <p id="pump-expiry"></p>
+     </div>
+     <form id="plate-photo-form" class="coupon-form">
+       <label class="field">ถ่ายภาพทะเบียนรถ (จำเป็นทุกคูปอง)
+         <input type="file" id="pump-plate-photo" required accept="image/jpeg,image/png" capture="environment">
+       </label>
+       <button type="submit" class="button primary">ส่งรูปตรวจทะเบียน</button>
+     </form>
+     <p class="hint">ต้องให้ระบบตรวจภาพทะเบียนและยืนยันความถูกต้องก่อนเริ่มเติมน้ำมัน พนักงานไม่สามารถข้ามขั้นตอนนี้ได้</p>
+   </div>
+ `;
+ const $=id=>document.getElementById(id);
+ const report=(text,error=false)=>{
+   const out=$('pump-notice');out.textContent=text;out.hidden=false;
+   out.dataset.tone=error?'error':'neutral';
+ };
+ let current=null,stream=null,scanTimer=null,reading=false;
+ const stop=()=>{
+   if(scanTimer)clearInterval(scanTimer);scanTimer=null;
+   if(stream){for(const track of stream.getTracks())track.stop();}
+   stream=null;
+   $('scan-video').srcObject=null;$('scan-video').hidden=true;
+   $('stop-camera').hidden=true;$('start-camera').hidden=false;
+ };
+ async function inspect(){
+   const payload=$('scan-payload').value.trim();
+   const res=await getApi('/api/station/scan-qr',token,{
+     method:'POST',body:JSON.stringify({qrPayload:payload}),
+   }).catch(()=>null);
+   if(!res?.ok){
+     current=null;$('coupon-inspection').hidden=true;
+     report('ไม่สามารถใช้ QR นี้ได้ กรุณาตรวจสิทธิ์ สถานะ และวันหมดอายุ',true);
+     return;
+   }
+   const coupon=res.data.coupon;
+   if(coupon.stationId!==stationId){
+     current=null;$('coupon-inspection').hidden=true;
+     return report('คูปองนี้ใช้กับปั๊มอื่น ไม่สามารถรับเติมได้',true);
+   }
+   current=coupon;$('coupon-inspection').hidden=false;
+   $('pump-station-name').textContent=coupon.stationName;
+   $('pump-fuel').textContent='น้ำมัน: '+coupon.fuelName;
+   $('pump-plate').textContent='ทะเบียน: '+(coupon.plate||'ไม่ผูกทะเบียน (ยังต้องถ่ายภาพ)');
+   $('pump-limit').textContent='วงเงินสูงสุด '+bahtText(coupon.maxAmountSatang);
+   $('pump-expiry').textContent='หมดอายุ: '+new Date(coupon.expiresAt).toLocaleString('th-TH');
+   report('ตรวจ QR แล้ว กรุณาถ่ายภาพทะเบียน');
+ }
+ $('scan-form').addEventListener('submit',async e=>{e.preventDefault();stop();await inspect();});
+ $('plate-photo-form').addEventListener('submit',async e=>{
+   e.preventDefault();
+   if(!current)return;
+   const file=$('pump-plate-photo').files?.[0];
+   if(!file || !['image/jpeg','image/png'].includes(file.type) || file.size>5*1024*1024 || file.size<64)
+     return report('ภาพต้องเป็น JPEG/PNG และขนาดไม่เกิน 5 MB',true);
+   const button=$('plate-photo-form').querySelector('button');
+   button.disabled=true;report('กำลังอัปโหลดภาพทะเบียนแบบส่วนตัว…');
+   try{
+     const endpoint='/api/evidence/plate?stationId='+encodeURIComponent(stationId)
+       +'&couponId='+encodeURIComponent(current.couponId);
+     const res=await fetch(endpoint,{
+       method:'POST',headers:{authorization:'Bearer '+token,'content-type':file.type},
+       body:file,cache:'no-store',
+     });
+     const data=await res.json().catch(()=>({}));
+     report(res.ok?'รับภาพแล้ว รอผลตรวจ OCR ก่อนเริ่มเติมน้ำมัน':
+       'ส่งภาพไม่สำเร็จ ('+(data.error||'service_unavailable')+')',!res.ok);
+   }catch{report('การอัปโหลดล้มเหลว',true);}
+   finally{button.disabled=false;}
+ });
+ $('stop-camera').addEventListener('click',stop);
+ $('start-camera').addEventListener('click',async()=>{
+   if(!('BarcodeDetector' in window)||!navigator.mediaDevices?.getUserMedia)
+     return report('อุปกรณ์นี้ยังไม่รองรับการสแกนจากหน้าเว็บ กรุณาใช้เครื่องสแกน QR หรือวางข้อมูลคูปอง',true);
+   try{
+     const supported=await BarcodeDetector.getSupportedFormats();
+     if(!supported.includes('qr_code'))throw new Error('no_qr');
+     const detector=new BarcodeDetector({formats:['qr_code']});
+     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+     $('scan-video').srcObject=stream;$('scan-video').hidden=false;
+     $('stop-camera').hidden=false;$('start-camera').hidden=true;
+     scanTimer=setInterval(async()=>{
+       if(reading || !stream || document.hidden)return;
+       reading=true;
+       try{
+         const found=await detector.detect($('scan-video'));
+         if(found.length){
+           $('scan-payload').value=found[0].rawValue;
+           stop();await inspect();
+         }
+       }catch{}
+       finally{reading=false;}
+     },650);
+   }catch{stop();report('ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบสิทธิ์กล้องหรือวางข้อมูล QR',true);}
+ });
+}
+
 async function platformWorkspace(accessToken) {
   const target=document.getElementById('platform-workspace');
   if (!target) return;
@@ -716,6 +833,7 @@ function dashboard(data, session) {
      <div id="corporate-workspace"></div>
      <div id="platform-workspace"></div>
      <div id="station-fuel-workspace"></div>
+     <div id="station-pump-workspace"></div>
      <div id="station-customers-workspace"></div>
      <div id="hr-workspace"></div>
      <div id="member-invites"></div>
@@ -739,6 +857,12 @@ function dashboard(data, session) {
   });
   if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
     platformWorkspace(session.access_token).catch(() => {});
+  }
+  const pumpMember=memberships.find(m=>m.scopeType==='station'
+    && ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
+  if(pumpMember?.stationId) {
+    stationPumpWorkspace(session.access_token,pumpMember.stationId,
+      document.getElementById('station-pump-workspace')).catch(()=>{});
   }
   const stationMember=memberships.find(m=>m.scopeType==='station'
     && ['station_owner','owner','manager'].includes(m.role));
