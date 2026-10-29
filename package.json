@@ -20,5 +20,8 @@
   },
   "devDependencies": {
     "vite": "8.3.5"
+  },
+  "overrides": {
+    "rolldown": "1.2.15"
   }
 }
