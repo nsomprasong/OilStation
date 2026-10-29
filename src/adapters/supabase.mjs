@@ -68,6 +68,12 @@ export function createSupabaseAdapter(env) {
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
     db: {
+      recordStripeEvent: async d=>serviceRequest(env,
+        '/rest/v1/rpc/record_stripe_signed_event',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_event_id:d.eventId,p_event_type:d.eventType,
+          p_payload_hash:d.hash,p_livemode:d.livemode}),
+      }),
       hrRecordGps: async d=>serviceRequest(env,'/rest/v1/rpc/hr_record_gps_attendance',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,

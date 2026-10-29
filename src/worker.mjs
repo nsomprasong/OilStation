@@ -1,5 +1,6 @@
 import { createApi } from './api/router.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
+import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
 import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
@@ -26,6 +27,9 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if (url.pathname === '/api/webhooks/stripe') {
+          return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET})(request);
+        }
         if (url.pathname === '/api/hr/attendance/gps') {
           return createGpsAttendanceApi(deps)(request);
         }
