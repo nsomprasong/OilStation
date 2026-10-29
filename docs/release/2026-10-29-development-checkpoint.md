@@ -369,3 +369,22 @@ No production money has been moved by this development run; all test data was di
 **Production truth unchanged:** the connected Supabase project still has the original 30 applied migrations; the 24 newer developer SQL files remain unapplied. No historical finance permissions were changed in production. Draft PR #1 remains unmerged and undeployed.
 
 **Required before production:** full Auth/Storage and RLS runtime testing using disposable Supabase branch or staging project, realistic tenant/customer E2E, signed Stripe sandbox payment+refund, bank ledger reconciliation, biometric consent and camera/liveness workflows, payroll legal controls, backups and restore rehearsal, release checklist and user acceptance testing at oilstation.goldensoft.cloud.
+
+
+## Continuation — provider-gated invitation email, OAuth mailbox proof and workload indexes
+
+**No production writes, no merge, no Cloudflare deployment, and no real outbound mail.**
+
+- Optional invitation transactional email through the Resend HTTP API for scoped membership invites and first corporate administrator, gated behind three encrypted Worker settings. The invitation is stored/authorized before calling the provider. Stable idempotency key; ambiguous delivery falls back to the manual secure invitation link. A successful API acknowledgement is **not** proof of inbox delivery.
+- Added Thai invitation sender-state UI. All provider credentials and email addresses remain server-only.
+- Added secure **alternate invited-email verification** for a Facebook/other OAuth identity whose email differs from or is missing relative to the invited mailbox. Eight-digit cryptographic OTP is bound to authenticated actor ID and one invitation token via server-only HMAC, delivered exclusively to the invited mailbox, expires after ten minutes, allows five wrong attempts per issued challenge, three challenges per actor per hour and six per invitation (across users) per hour. Only a valid proof calls the original one-time invitation acceptance function in the same database transaction. The ordinary same-confirmed-email flow remains intact.
+- Dedicated PostgreSQL 16 invitation integration tests assert mismatched email cannot claim, wrong or cross-actor OTP cannot claim, attempt counters persist and cap at five, replacing an expired/locked code invalidates the original, consumed invite cannot replay, same-email confirmed invitation works, no-social-email flow works, and shared-invitation email sending is rate-limited.
+- Added an additive, staging-review-required SQL migration with 13 focused indexes on high-traffic finance, coupons, HR and billing joins derived from Supabase performance-advisor findings. Archived legacy tables were deliberately untouched. The full-schema parity CI verifies these index definitions.
+- Read-only Supabase security advisor reports an informational 65 tables with RLS and no policy — intentional under service-role-only RPC and zero browser table grants. Performance advisor reports additional unindexed FKs, including archived legacy tables; do not blanket-index without query plans.
+- Staging creation was attempted via Supabase's cost-gated API but **was refused pending explicit cost confirmation**. Do not create a billed branch without owner authorization; branch does not exist yet.
+
+**Verified:** at 1944ef4d, 221/221 Node tests PASS, frontend build and Wrangler dry run PASS, all EIGHT GitHub CI workflows PASS including OAuth invited-email SQL.
+
+**Production state:** 30 applied old migrations. 26 newer migrations in Draft PR remain unapplied; no configured OAuth, verified email domain, Stripe live payment consent, bank reconciliation, HR legal sign-off, staged Supabase Auth/Storage runtime tests, device photo tests or live user UAT. The existing domain continues to serve the separate holding Worker.
+
+**Next controlled release gates:** approve staging branch hourly cost, configure isolated OAuth and verified email sender secrets, apply all 26 migrations ONLY to staging, test real Google/Facebook email ownership, private evidence buckets and service roles, then Stripe test-mode payments and physical station equipment. After privacy/law/release checks and explicit authorized merge/deploy, one coordinated UAT at oilstation.goldensoft.cloud.

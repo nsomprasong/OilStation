@@ -96,3 +96,22 @@
 ## Single coordinated owner test when all gates pass
 
 Open `oilstation.goldensoft.cloud`, use a platform admin, pump owner, corporate accountant/issuer/driver, attendant, manager, employee and Sales accounts. Run the same complete process across two independent pumps and both modules. Collect an issue log with page, steps, expected/actual behavior and evidence; fix issues one by one and rerun *internal* regression tests. The owner should not need to test each intermediate feature or branch.
+
+
+## Oct 30 incremental gate review (still not live-UAT ready)
+
+The development branch now includes provider-gated invitation emails and secure
+actor-bound alternate-mailbox verification for social login. These flows are
+tested with fake email providers and isolated PostgreSQL, not real Google/
+Facebook accounts or a verified delivery domain. Eight CI workflows, including
+full-schema parity, pass on synthetic fixtures. Migration version tracking:
+30 applied in the live project, 26 newer developer migrations unapplied.
+
+A billed Supabase staging branch requires owner cost confirmation; the attempt
+to create it was blocked and no new branch or production migration occurred.
+Before final customer UAT: authorize staging cost, provision providers/secrets,
+complete real OAuth and Storage tests, real-device photo workflows, bank/Stripe
+sandbox reconciliation, legally reviewed payroll and security/backup runbooks.
+Never label the production domain UAT-ready before verifying a reviewed,
+approved deployment actually serves the application.
+
