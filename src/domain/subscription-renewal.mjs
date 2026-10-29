@@ -20,7 +20,7 @@ function clampDay(year,month,anchor){
 }
 export function nextSubscriptionWindow({previousEnd,billingFrequency,anchorDay}){
  const start=parsedDate(previousEnd);
- if(!['monthly','annual'].includes(billingFrequency))
+ if(!['monthly','yearly'].includes(billingFrequency))
   throw new TypeError('invalid billing frequency');
  if(!Number.isInteger(anchorDay)||anchorDay<1||anchorDay>31)
   throw new RangeError('anchor day must be between 1 and 31');

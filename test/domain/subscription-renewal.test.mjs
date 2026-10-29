@@ -13,12 +13,12 @@ test('monthly 31st anchor recovers after February and handles leap February',()=
    billingFrequency:'monthly',anchorDay:31});
  assert.equal(leap.serviceEnd,'2028-02-29');
 });
-test('annual Feb29 anchor clamps until leap year without losing anchor',()=>{
+test('yearly Feb29 anchor clamps until leap year without losing anchor',()=>{
  const period=nextSubscriptionWindow({previousEnd:'2028-02-29',
-   billingFrequency:'annual',anchorDay:29});
+   billingFrequency:'yearly',anchorDay:29});
  assert.equal(period.serviceEnd,'2029-02-28');
  const leap=nextSubscriptionWindow({previousEnd:'2031-02-28',
-   billingFrequency:'annual',anchorDay:29});
+   billingFrequency:'yearly',anchorDay:29});
  assert.equal(leap.serviceEnd,'2032-02-29');
 });
 test('price change affects a new renewal only after effective date and advance notice',()=>{
@@ -46,4 +46,13 @@ test('invalid dates, anchor and monetary input fail closed',()=>{
  assert.throws(()=>reviewedRenewalPrice({currentPriceSatang:100,
   candidatePriceSatang:9000n,candidateEffectiveDate:'2026-11-01',
   renewalStartDate:'2026-11-01'}),/amount/);
+});
+
+test('renewal frequency matches the strict database enum monthly/yearly, never annual',()=>{
+ const year=nextSubscriptionWindow({previousEnd:'2026-10-31',
+  billingFrequency:'yearly',anchorDay:31});
+ assert.deepEqual(year,{serviceStart:'2026-10-31',serviceEnd:'2027-10-31',
+  billingFrequency:'yearly'});
+ assert.throws(()=>nextSubscriptionWindow({previousEnd:'2026-10-31',
+  billingFrequency:'annual',anchorDay:31}),/frequency/);
 });
