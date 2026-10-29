@@ -1,0 +1,41 @@
+name: Full Public Schema Migration Parity (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  schema-postgresql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_schema_parity
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_schema_parity"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply pending migration sequence to live-shaped metadata-only public schema
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_schema_parity
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              for migration in /work/supabase/migrations/2026102918*.sql \
+                /work/supabase/migrations/2026102919*.sql \
+                /work/supabase/migrations/202610292*.sql
+              do
+                psql -v ON_ERROR_STOP=1 -f "$migration"
+              done
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/full-schema-assertions.sql
+            '
