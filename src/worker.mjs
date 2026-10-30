@@ -23,10 +23,24 @@ import { createSupabaseAdapter } from './adapters/supabase.mjs';
 import { createSupabaseConnectivityProbe } from './api/supabase-connectivity.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
+const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
+
+// UAT must explicitly name a separate Supabase project before ANY business
+// operation can be enabled. Existing UAT bindings may still reference live
+// credentials; a release flag and even a ready production database are not
+// sufficient authorization to use them for tests.
+function isIsolatedUatDatabase(env) {
+  if (env?.OILSTATION_DEPLOY_TARGET !== 'uat') return true;
+  const ref = env?.OILSTATION_UAT_SUPABASE_REF;
+  if (typeof ref !== 'string' || !/^[a-z0-9]{20}$/.test(ref) ||
+      ref === PRODUCTION_SUPABASE_REF) return false;
+  return env?.SUPABASE_URL === 'https://' + ref + '.supabase.co' ||
+    env?.SUPABASE_URL === 'https://' + ref + '.supabase.co/';
+}
 
 // An activation flag alone must never unlock business or scheduled writes.
 async function isReleaseReady(env) {
-  if (env?.OILSTATION_API_ENABLED !== 'true') return false;
+  if (env?.OILSTATION_API_ENABLED !== 'true' || !isIsolatedUatDatabase(env)) return false;
   try {
     const status = await createSupabaseAdapter(env).db.releaseStatus();
     return status?.ready === true && status?.schemaVersion === RELEASE_SCHEMA_VERSION;
