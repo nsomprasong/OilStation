@@ -2,6 +2,10 @@
 
 OilStation is a Thai-first, multi-tenant petrol-station SaaS. Preserve authentication, station/company tenant isolation, financial ledgers, coupon locks, HR permissions, and operational clarity in all changes.
 
+## User-selected frontend authority
+
+Use **Gentelella v4 (Colorlib, MIT)** as the canonical visual style for all OilStation screens: navy sidebar, teal active state, compact light workspace, reusable card/form/table vocabulary, and responsive rail/drawer behavior. The project's existing design-taste and Impeccable guidelines remain for accessibility/UX quality but must not replace the chosen Gentelella v4 identity. Consult `DESIGN.md` and `public/gentelella-v4-selected.css` before changing UI. Keep Thai copy, roles and existing production functionality.
+
 ## Frontend skill
 
 For frontend design, layout, styling, accessibility, redesign, or visual QA, use the project-installed **design-taste-frontend** skill at `.agents/skills/design-taste-frontend/SKILL.md`, copied from `Leonxlnx/taste-skill`.
