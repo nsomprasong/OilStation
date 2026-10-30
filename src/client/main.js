@@ -8,6 +8,7 @@ import { mountAttendancePayrollPreview } from './attendance-payroll-preview.js';
 import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
+import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -16,7 +17,7 @@ const INVITE_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
 const COUPON_PATTERN = /^[0-9a-f-]{36}\.[a-f0-9]{64}$/i;
 let authClient;
 
-function show(html) { root.innerHTML = html; decorateIcons(root); }
+function show(html) { root.classList.remove('workspace-mode');root.innerHTML = html; decorateIcons(root); }
 // Dynamic forms are inserted after async data loads; decorate their placeholders too.
 const iconObserver = new MutationObserver(() => decorateIcons(root));
 iconObserver.observe(root, {subtree:true,childList:true});
@@ -1310,28 +1311,10 @@ function dashboard(data, session, publicConfig={}) {
     corporate_company: { title: 'บัญชีลูกค้าบริษัท', modules: ['คูปองเติมน้ำมัน', 'วงเงินและยอดใช้', 'ประวัติเติมน้ำมัน'] },
   };
   const active = scopes[memberships[0]?.scopeType] || scopes.station;
-  show(`<div class="mark" aria-hidden="true">O</div>
-   <div class="eyebrow">OilStation Workspace</div><h1 id="scope-title"></h1>
-   <p class="lead">เข้าสู่ระบบสำเร็จ</p>
-   <section class="panel"><div class="section-title"><span class="status-dot"></span>สิทธิ์ของคุณ</div>
-     <div class="scope-list" id="scopes"></div><div class="divider"></div>
-     <div class="module-list" id="modules"></div>
-     <div id="corporate-workspace"></div>
-     <div id="platform-workspace"></div>
-     <div id="platform-saas-billing"></div>
-     <div id="saas-billing-workspace"></div>
-     <div id="station-fuel-workspace"></div>
-     <div id="station-pump-workspace"></div>
-     <div id="station-customers-workspace"></div>
-     <div id="station-finance-workspace"></div>
-     <div id="hr-workspace"></div>
-     <div id="attendance-workspace"></div>
-     <div id="attendance-review-workspace"></div>
-     <div id="attendance-payroll-preview-workspace"></div>
-     <div id="member-invites"></div>
-     <p class="hint">เมนูธุรกรรมจะเปิดตามสิทธิ์และโมดูลที่ปั๊มสมัครใช้งาน</p>
-     <button class="button secondary" id="logout"><i data-ui-icon="logout"></i>ออกจากระบบ</button>
-   </section>`);
+  const screens=selectWorkspaceScreens(memberships);
+  show(renderWorkspaceShell(screens));
+  root.classList.add('workspace-mode');
+  wireWorkspaceNavigation(root);
   document.getElementById('scope-title').textContent = active.title;
   const all = document.getElementById('scopes');
   memberships.forEach((m) => {

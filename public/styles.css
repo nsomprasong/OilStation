@@ -180,3 +180,47 @@
 .attendance-payroll-preview h3{font-size:16px;margin:0 0 8px}
 .attendance-payroll-preview form{display:grid;gap:12px}
 .attendance-payroll-preview [role=status]{margin-top:10px;line-height:1.5}
+
+/* Responsive OilStation operations shell. Sign-in pages keep their original 540px width. */
+#app.center.workspace-mode{width:min(100%,1600px);max-width:none;margin:0 auto;padding:28px clamp(14px,3vw,50px) 60px;text-align:left;flex:1 0 auto}
+.ws-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:24px;align-items:start;min-width:0}
+.ws-sidebar{position:sticky;top:20px;display:flex;flex-direction:column;min-width:0;max-height:calc(100vh - 40px);overflow:auto;border:1px solid #e1eaf0;background:#fff;border-radius:14px;padding:16px 10px}
+.ws-side-head{padding:7px 12px 19px;border-bottom:1px solid #e6edf2}
+.ws-side-head strong{display:block;font-size:17px}.ws-side-head small{display:block;margin-top:4px;font-size:10px;font-weight:750;color:#72889a;letter-spacing:.16em}
+.ws-nav-list{display:grid;gap:3px;padding:13px 0}
+.ws-nav,.ws-signout{display:flex;align-items:center;gap:11px;width:100%;min-height:44px;padding:11px 12px;font:inherit;font-size:13px;font-weight:650;text-align:left;color:#526a7d;border:1px solid transparent;background:transparent;border-radius:9px;cursor:pointer}
+.ws-nav svg,.ws-signout svg{width:18px;height:18px;flex:none}
+.ws-nav:hover,.ws-signout:hover{background:#f1f7f8}.ws-nav.active{background:#e8f3f4;color:#075e75}
+.ws-nav:focus-visible,.ws-signout:focus-visible,.ws-quick:focus-visible{outline:2px solid #13a2a9;outline-offset:2px}
+.ws-signout{margin-top:auto;border-top:1px solid #e6edf2;border-radius:0;padding-top:17px}
+.ws-main{min-width:0}.ws-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:4px 0 24px}
+.ws-header h1{font-size:clamp(28px,3vw,36px);margin:0 0 5px}.ws-header .eyebrow{margin:0 0 8px}
+.ws-header p:not(.eyebrow){font-size:13px;color:#8093a2;margin:0}
+.ws-current{font-size:12px;font-weight:700;border:1px solid #d9e6ec;border-radius:100px;padding:9px 14px;white-space:nowrap}
+.ws-screen.panel{border-radius:14px;box-shadow:none;min-height:440px;padding:clamp(18px,2.4vw,32px)}
+.ws-screen[hidden]{display:none!important}
+.ws-screen-head{margin-bottom:24px;padding-bottom:19px;border-bottom:1px solid #e4edf2}
+.ws-screen-head .eyebrow{font-size:10px}.ws-screen-head h2{font-size:23px;letter-spacing:-.02em;line-height:1.4;margin:6px 0}
+.ws-screen-head p{margin:0;font-size:13px;color:#788f9f}
+.ws-widget{min-width:0}.ws-widget:empty{display:none}.ws-widget+.ws-widget:not(:empty){margin-top:28px}
+.ws-screen #new-station-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ws-screen #new-station-form>.field:nth-child(3),.ws-screen #new-station-form>.module-choices,
+.ws-screen #new-station-form>.hint,.ws-screen #new-station-form>.button,.ws-screen #new-station-form>.notice{grid-column:1/-1}
+.ws-screen .module-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.ws-screen #station-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.ws-overview-columns{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,.85fr);gap:28px;margin-top:25px}
+.ws-overview-columns h3{font-size:14px;margin:0 0 13px}
+.ws-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.ws-quick{min-height:105px;border:1px solid #dae7ee;border-radius:11px;background:transparent;display:flex;flex-direction:column;justify-content:center;text-align:left;gap:7px;padding:18px;font:inherit;color:inherit;cursor:pointer}
+.ws-quick:hover{border-color:#60a3b2;background:#f7fafb}.ws-quick strong{font-size:14px}.ws-quick small{font-size:12px;color:#748e9e;line-height:1.6}
+.ws-overview-columns .menu-module{min-height:42px;padding:10px 12px}
+.ws-screen .field input,.ws-screen .field select,.ws-screen .field textarea{max-width:100%}
+@media(max-width:1100px){.ws-layout{grid-template-columns:195px minmax(0,1fr);gap:16px}.ws-quick-grid{grid-template-columns:1fr}}
+@media(max-width:760px){#app.center.workspace-mode{padding:14px 12px 45px}.ws-layout{display:block}.ws-sidebar{position:static;max-height:none;overflow:visible;padding:8px;margin-bottom:19px}
+.ws-side-head{display:none}.ws-nav-list{display:flex;overflow-x:auto;gap:5px;padding:3px;scrollbar-width:thin}.ws-nav{width:auto;min-width:max-content;white-space:nowrap;min-height:40px}
+.ws-signout{margin:3px 4px;border:0;padding:10px;border-radius:9px;width:auto}.ws-header{margin:0 4px 18px}.ws-current{display:none}.ws-screen.panel{min-height:0;padding:18px}
+.ws-overview-columns{grid-template-columns:1fr;gap:20px}.ws-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.ws-screen #new-station-form{grid-template-columns:1fr}.ws-screen #new-station-form>*{grid-column:1/-1}.ws-quick-grid{grid-template-columns:1fr}.ws-screen-head h2{font-size:21px}}
+@media(prefers-color-scheme:dark){.ws-sidebar,.ws-screen.panel{background:#122338;border-color:#2c4558}.ws-side-head,.ws-signout,.ws-screen-head{border-color:#304b5c}
+.ws-nav,.ws-signout{color:#adc3d0}.ws-nav:hover,.ws-signout:hover{background:#1b3447}.ws-nav.active{background:#214254;color:#a9e0e6}
+.ws-current{border-color:#365569}.ws-quick{border-color:#335368}.ws-quick:hover{background:#1a3547}.ws-quick small,.ws-header p:not(.eyebrow),.ws-screen-head p{color:#a8bbc9}}
