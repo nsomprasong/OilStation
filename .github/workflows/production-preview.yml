@@ -53,3 +53,25 @@ jobs:
           code="$(curl --silent --output /tmp/oilstation-business.json --write-out '%{http_code}' --max-time 15 "$base/api/coupons")"
           test "$code" = 503
           jq -e '.error == "release_not_enabled"' /tmp/oilstation-business.json
+          # Invitation/fuel APIs are enabled for authenticated, scoped users,
+          # but an anonymous caller must not reach the database or trigger mail.
+          for route in "/api/station-fuels?stationId=22222222-2222-4222-8222-222222222222"; do
+            code="$(curl --silent --output /tmp/oilstation-fuel-auth.json --write-out '%{http_code}' --max-time 15 "$base$route")"
+            test "$code" = 401
+            jq -e '.error == "unauthenticated"' /tmp/oilstation-fuel-auth.json
+          done
+          code="$(curl --silent --output /tmp/oilstation-fuel-write.json --write-out '%{http_code}' --max-time 15 \
+            -X POST -H "origin: $base" -H "content-type: application/json" \
+            --data '{"stationId":"22222222-2222-4222-8222-222222222222","stationFuelId":"33333333-3333-4333-8333-333333333333","enabled":true,"publicPrice":"32.50"}' \
+            "$base/api/station-fuel-config")"
+          test "$code" = 401
+          jq -e '.error == "unauthenticated"' /tmp/oilstation-fuel-write.json
+          code="$(curl --silent --output /tmp/oilstation-invite-auth.json --write-out '%{http_code}' --max-time 15 \
+            -X POST -H "origin: $base" -H "content-type: application/json" \
+            --data '{"email":"safe@example.com","roleCode":"station_owner","scopeType":"station","scopeId":"22222222-2222-4222-8222-222222222222"}' \
+            "$base/api/invitations/create")"
+          test "$code" = 401
+          jq -e '.error == "unauthenticated"' /tmp/oilstation-invite-auth.json
+          code="$(curl --silent --output /tmp/oilstation-payment-disabled.json --write-out '%{http_code}' --max-time 15 "$base/api/billing/payment-intent")"
+          test "$code" = 503
+          jq -e '.error == "release_not_enabled"' /tmp/oilstation-payment-disabled.json
