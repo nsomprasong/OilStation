@@ -33,7 +33,7 @@ test('desktop rail is keyboard-usable and mobile drawer retains accessibility',(
  assert.match(source,/menu\.inert=Boolean\(mobile\?\.matches&&!active\)/);
  assert.match(source,/event\.key==="Escape"/);
  assert.match(source,/event\.key==="Tab"/);
- assert.match(source,/data-ws-go="stations"/);
+ assert.match(html,/data-ws-go="stations"/);
  assert.doesNotMatch(html,/data-ws-go="fuel"/);
 });
 test('theme selection preserves Thai workflow and does not add demo or finance endpoints',()=>{
