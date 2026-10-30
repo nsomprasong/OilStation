@@ -94,6 +94,17 @@ export function createSupabaseAdapter(env) {
           body:JSON.stringify({p_actor_id:d.actorId,
             p_invoice_line_id:d.invoiceLineId}),
         }),
+      stationSaasPlanOptions: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_saas_plan_options',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+        }),
+      stationSaasSelectPlan: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_select_saas_plan',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_plan_id:d.planId,p_payment_method:d.paymentMethod}),
+        }),
       platformSaasBillingOverview: async d=>serviceRequest(env,
         '/rest/v1/rpc/platform_saas_billing_overview',{
           method:'POST',headers:{'content-type':'application/json'},

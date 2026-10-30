@@ -11,6 +11,9 @@ export function selectWorkspaceScreens(memberships=[]){
  return [
   {key:'overview',label:'ภาพรวม',icon:'layout-dashboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
   {key:'stations',label:'จัดการปั๊มน้ำมัน',icon:'building-2',desc:'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล',ids:['platform-workspace'],yes:p},
+  {key:'plan',label:'แพ็กเกจและชำระเงิน',icon:'credit-card',desc:'เลือกแพ็กเกจและวิธีชำระเงิน',
+    ids:['station-saas-plan-workspace'],
+    yes:memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner'].includes(m.role))},
   {key:'billing',label:'SaaS Billing',icon:'receipt',desc:'ตั้งค่าแพ็กเกจและใบแจ้งหนี้',ids:[...(p?['platform-saas-billing']:[]),...(b?['saas-billing-workspace']:[])],yes:p||b},
   {key:'fuel',label:'ชนิดและราคาน้ำมัน',icon:'fuel',desc:'กำหนดสินค้าและราคาหน้าปั๊ม',ids:['station-fuel-workspace'],yes:s},
   {key:'pump',label:'งานหน้าลาน',icon:'scan-line',desc:'จัดการคูปองและรายการเติมน้ำมัน',ids:['station-pump-workspace'],yes:pump},

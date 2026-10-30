@@ -7,6 +7,7 @@ import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
 import { createCommissionPreviewApi } from './api/commission-preview.mjs';
 import { createPlatformBillingApi } from './api/platform-billing.mjs';
+import { createStationSaasOnboardingApi } from './api/station-saas-onboarding.mjs';
 import { createBillingInvoiceApi } from './api/billing-invoices.mjs';
 import { createBillingPaymentApi } from './api/billing-payment.mjs';
 import { createStripeTestPaymentIntents } from './adapters/stripe-test-payments.mjs';
@@ -91,6 +92,32 @@ export default {
           return new Response(JSON.stringify({error:'service_not_configured'}),{
             status:503,headers:{'content-type':'application/json; charset=utf-8',
               'cache-control':'no-store','x-content-type-options':'nosniff'},
+          });
+        }
+      }
+      // Production-first pilot: expose only explicitly scoped onboarding APIs.
+      // All other financial actions remain gated by the full release marker.
+      if (env.OILSTATION_DEPLOY_TARGET==='production' &&
+          env.OILSTATION_PREVIEW_LOGIN_ENABLED==='true' &&
+          env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true' &&
+          env.OILSTATION_API_ENABLED!=='true') {
+        const billingPages=new Set(['/api/platform/billing/overview',
+          '/api/platform/billing/tax','/api/platform/billing/flat-plan']);
+        const stationPages=new Set(['/api/fuel-brands',
+          '/api/platform/stations','/api/platform/create-station',
+          '/api/invitations/create','/api/invitations/accept',
+          '/api/invitations/email-challenge','/api/invitations/email-confirm']);
+        try {
+          if(billingPages.has(url.pathname))
+            return createPlatformBillingApi(createSupabaseAdapter(env))(request);
+          if(stationPages.has(url.pathname))
+            return createApi(createSupabaseAdapter(env))(request);
+          if(url.pathname==='/api/station/billing/options' ||
+             url.pathname==='/api/station/billing/select')
+            return createStationSaasOnboardingApi(createSupabaseAdapter(env))(request);
+        } catch {
+          return new Response(JSON.stringify({error:'service_not_configured'}),{
+            status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
           });
         }
       }

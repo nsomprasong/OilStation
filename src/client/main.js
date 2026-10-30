@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountPlatformSaasBilling } from './platform-saas-billing.js';
+import {mountStationPlanChoice} from './station-plan-choice.js';
 import { mountBillingWorkspace } from './billing.js';
 import { mountAttendancePayrollPreview } from './attendance-payroll-preview.js';
 import { mountAttendanceReview } from './attendance-review.js';
@@ -1340,6 +1341,12 @@ function dashboard(data, session, publicConfig={}) {
     platformWorkspace(session.access_token).catch(() => {});
     mountPlatformSaasBilling({target:document.getElementById('platform-saas-billing'),
       token:session.access_token});
+  }
+  const invitedOwner=memberships.find(m=>m.scopeType==='station' &&
+    ['station_owner','owner'].includes(m.role) && m.stationId);
+  if(invitedOwner) {
+    mountStationPlanChoice({target:document.getElementById('station-saas-plan-workspace'),
+      token:session.access_token,stationId:invitedOwner.stationId});
   }
   const billingMember=memberships.find(m=>m.scopeType==='organization'&&
     ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
