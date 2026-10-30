@@ -8,7 +8,7 @@ import {renderMobileHome} from '../../src/client/mobile-home.js';
 
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 
-test('user-selected gold logo is a valid real transparent PNG, not placeholder O artwork',()=>{
+test('approved gold fuel nozzle logo is a valid transparent PNG, not placeholder artwork',()=>{
  const svg=read('public/oilstation-gold-logo.svg');
  assert.match(svg,/xmlns="http:\/\/www.w3.org\/2000\/svg"/);
  assert.match(svg,/data:image\/png;base64,/);
@@ -24,7 +24,7 @@ test('favicon, touch icon and title use the gold symbol consistently',()=>{
  assert.match(html,/rel="icon" type="image\/png"[^>]*oilstation-gold-logo\.png/);
  assert.doesNotMatch(html,/rel="icon" type="image\/svg\+xml"/);
  assert.match(html,/rel="apple-touch-icon"[^>]*oilstation-gold-logo\.png/);
- assert.match(html,/class="brand-icon" src="\/oilstation-gold-logo\.png"/);
+ assert.match(html,/class="brand-icon" src="\/oilstation-gold-logo\.png\?v=2"/);
 });
 test('same gold brand asset replaces letter O in mobile, desktop sidebar and login',()=>{
  const auth=authMarkup(),mobile=renderMobileHome(selectWorkspaceScreens([
@@ -33,10 +33,10 @@ test('same gold brand asset replaces letter O in mobile, desktop sidebar and log
  const shell=renderWorkspaceShell(selectWorkspaceScreens([
   {scopeType:'station',role:'station_owner',stationId:'demo'}
  ]));
- assert.match(auth,/class="os-auth-mark" src="\/oilstation-gold-logo\.png"/);
- assert.match(mobile,/class="os-mobile-brandmark" src="\/oilstation-gold-logo\.png"/);
- assert.match(shell,/class="ws-logo" src="\/oilstation-gold-logo\.png"/);
- assert.match(shell,/class="ws-toolbar-brand" src="\/oilstation-gold-logo\.png"/);
+ assert.match(auth,/class="os-auth-mark" src="\/oilstation-gold-logo\.png\?v=2"/);
+ assert.match(mobile,/class="os-mobile-brandmark" src="\/oilstation-gold-logo\.png\?v=2"/);
+ assert.match(shell,/class="ws-logo" src="\/oilstation-gold-logo\.png\?v=2"/);
+ assert.match(shell,/class="ws-toolbar-brand" src="\/oilstation-gold-logo\.png\?v=2"/);
  assert.doesNotMatch(auth,/class="os-auth-mark">O<\/span>/);
  assert.doesNotMatch(shell,/class="ws-logo"[^>]*>O<\/span>/);
  assert.match(mobile,/data-mobile-logout/);
