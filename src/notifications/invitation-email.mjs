@@ -11,6 +11,16 @@ const senderReady=env=>env?.INVITATION_FROM_EMAIL===SENDER &&
  /^re_[A-Za-z0-9_]{12,}$/.test(env?.RESEND_API_KEY??'');
 const displaySender='OilStation <'+SENDER+'>';
 
+// The isolated UAT Worker must never send an invitation or OTP to an
+// arbitrary customer. An explicit exact-match test mailbox is mandatory.
+// This is independent of the release database gate and defaults to deny.
+const canSendToRecipient=(env,email)=>{
+ if(env?.OILSTATION_DEPLOY_TARGET!=='uat') return true;
+ const allowed=env?.OILSTATION_UAT_TEST_EMAIL;
+ return typeof allowed==='string' && EMAIL.test(allowed) &&
+   email.toLowerCase()===allowed.toLowerCase();
+};
+
 // Inline styles and a text alternative are intentional: many mail clients
 // strip stylesheets, remote assets and interactive markup.
 function emailShell(title,body){
@@ -57,6 +67,8 @@ export async function sendInvitationEmail({
   return {delivery:'manual',deliveryStatus:'not_enabled'};
  if(!senderReady(env))
   return {delivery:'manual',deliveryStatus:'not_configured'};
+ if(!canSendToRecipient(env,email))
+  return {delivery:'manual',deliveryStatus:'recipient_not_allowed'};
  const expires=new Date(expiresAt).toLocaleString('th-TH',{
    timeZone:'Asia/Bangkok',dateStyle:'long',timeStyle:'short'
  });
@@ -87,7 +99,8 @@ export async function sendInvitationEmail({
 /** No manual disclosure of OTPs; only a verified outbound provider may send. */
 export async function sendInvitedEmailOtp({env,email,code,id,fetchImpl=fetch}){
  if(env?.INVITATION_EMAIL_ENABLED!=='true'||!EMAIL.test(email??'')||
-  !UUID.test(id??'')||!/^[0-9]{8}$/.test(code??'')||!senderReady(env))
+  !UUID.test(id??'')||!/^[0-9]{8}$/.test(code??'')||!senderReady(env)||
+  !canSendToRecipient(env,email))
   return false;
  try{
   const response=await fetchImpl('https://api.resend.com/emails',{
