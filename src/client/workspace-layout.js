@@ -36,7 +36,7 @@ export function navMarkup(screens){
   if(!items.length)return "";
   return `<div class="ws-nav-group"><div class="ws-nav-heading">${group.title}</div>
    ${items.map(s=>`<button type="button" class="ws-nav${s.key==="overview"?" active":""}"
-    data-ws-go="${s.key}" aria-controls="ws-${s.key}" ${s.key==="overview"?'aria-current="page"':""}>
+    data-ws-go="${s.key}" aria-controls="ws-${s.key}" title="${s.label}" aria-label="${s.label}" ${s.key==="overview"?'aria-current="page"':""}>
     <i data-ui-icon="${NAV_ICONS.has(s.icon)?s.icon:"clipboard"}"></i><span>${s.label}</span>
     </button>`).join("")}</div>`;
  }).join("");
@@ -78,16 +78,24 @@ export function renderWorkspaceShell(screens){
    <aside class="ws-sidebar" id="ws-sidebar" aria-label="เมนูพื้นที่ทำงาน">
      <div class="ws-side-head">
        <span class="ws-logo" aria-hidden="true">O</span>
-       <div><strong>OilStation</strong><small>OPERATIONS</small></div>
+       <div class="ws-brand-copy"><strong>OilStation</strong><small>OPERATIONS</small></div>
        <button type="button" class="ws-mobile-close" data-ws-menu-close aria-label="ปิดเมนู">×</button>
      </div>
      <nav class="ws-nav-list" aria-label="เมนูหลัก">${navMarkup(screens)}</nav>
      <div class="ws-sidebar-bottom">
        <span class="ws-sidebar-caption">ระบบบริหารจัดการสถานีบริการน้ำมัน</span>
-       <button class="ws-signout" id="logout" type="button"><i data-ui-icon="logout"></i>ออกจากระบบ</button>
+       <button class="ws-signout" id="logout" type="button" title="ออกจากระบบ" aria-label="ออกจากระบบ"><i data-ui-icon="logout"></i><span>ออกจากระบบ</span></button>
      </div>
    </aside>
    <div class="ws-main">
+     <div class="ws-toolbar">
+       <button class="ws-rail-toggle" type="button" data-ws-rail-toggle
+         aria-label="ย่อเมนูด้านข้าง" aria-pressed="false" title="ย่อหรือขยายเมนู">
+         <i data-ui-icon="menu"></i>
+       </button>
+       <span class="ws-toolbar-title">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
+       <span class="ws-toolbar-context" aria-hidden="true">WORKSPACE</span>
+     </div>
      <header class="ws-header">
        <button class="ws-mobile-toggle" type="button" aria-label="เปิดเมนู"
          aria-controls="ws-sidebar" aria-expanded="false" data-ws-menu-toggle>
@@ -112,6 +120,21 @@ export function wireWorkspaceNavigation(root){
  const backdrop=root.querySelector(".ws-menu-backdrop");
  const menu=root.querySelector(".ws-sidebar");
  const mobile=typeof matchMedia==="function"?matchMedia("(max-width:850px)"):null;
+ const shell=root.querySelector('[data-workspace-shell]');
+ const railToggle=root.querySelector('[data-ws-rail-toggle]');
+ let rail='expanded';
+ try{rail=sessionStorage.getItem('oilstation_sidebar_rail')==='collapsed'?'collapsed':'expanded';}catch{}
+ const syncRail=()=>{
+  if(shell)shell.dataset.rail=rail;
+  railToggle?.setAttribute('aria-pressed',String(rail==='collapsed'));
+  railToggle?.setAttribute('aria-label',rail==='collapsed'?'ขยายเมนูด้านข้าง':'ย่อเมนูด้านข้าง');
+ };
+ syncRail();
+ railToggle?.addEventListener('click',()=>{
+  rail=rail==='collapsed'?'expanded':'collapsed';
+  try{sessionStorage.setItem('oilstation_sidebar_rail',rail);}catch{}
+  syncRail();
+ });
  let open=false;
  const focusable=()=>[...menu.querySelectorAll("button:not([disabled]),a[href],input:not([disabled]),select:not([disabled])")]
    .filter(node=>!node.hidden&&node.getClientRects().length>0);

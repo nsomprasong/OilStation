@@ -4,18 +4,23 @@
 
 **Mode:** Operate. This is a work surface for station staff, not a promotional dashboard.
 
-## Direction: clear operational ledger
+## Direction: Gentelella v4 — selected, canonical OilStation operational UI
 Preserve OilStation's teal identity; emphasize staff decisions and verified records over decorative metrics. A consistent white and cool-slate canvas with teal only for the main action, selection, and genuine status. One task at a time. A station card should communicate *name, ownership, relevant enabled modules, available next actions* rather than fake KPIs.
 
 ## Tokens
-- Canvas `#F5F7F8` and white `#FFFFFF`; sidebar `#F9FBFB`.
-- Text `#1B3340`; secondary `#526A76`; light borders `#D8E2E7`.
-- Primary `#08737A`; primary hover `#065A60`; light selected `#E5F2F0`.
+- Canvas `#F5F7FB`, white `#FFFFFF`, **dark navy sidebar `#1A2332`**.
+- Text `#1E2633`, secondary `#626D7D`, borders `#E6E7EB`.
+- **Gentelella v4 teal `#1ABB9C`**, hover `#169F85`, active sidebar overlay `rgba(26,187,156,.08)`.
+- Gentelella v4 compact radius 4 / 6 / 8 px, 252 px standard sidebar and 68 px rail mode.
 - Danger `#B33B35`, error tint `#FFF1EF`; success `#13745A`, tint `#E8F5F0`; caution `#8B631A`, tint `#FFF5E1`.
 - System-first Thai-compatible font stack. 15px body on desktop, 16px on phone. Data uses `font-variant-numeric: tabular-nums`.
 - Spacing rhythm 4/8/12/16/24/32, card radius 10–12px, controls 8px.
 - Clear 2–3px focus rings, not color-only state. 44px touch target.
 - Screens are primarily flat surfaces with borders, not decorative glow or gradients.
+
+## Source of visual authority
+
+The user selected **Gentelella v4** as the OilStation UI. This overrides prior generic light-sidebar and Impeccable aesthetic choices. Official upstream: https://github.com/ColorlibHQ/gentelella (MIT License; Colorlib). Reference v4 tokens and shell patterns in `src/scss/v4/_tokens.scss`, `_layout.scss`, `_components.scss`. Our client remains a permission-aware, Thai-first SPA shell, not Gentelella's 58 demo MPA pages. Do not copy demo data into the live app. `public/gentelella-v4-selected.css` is the final canonical visual layer; legacy styles are compatibility until later consolidation. Preserve design accessibility, financial truth, and UX hardening from Impeccable.
 
 ## Building blocks
 `ws-screen` primary task surface; `ws-nav` grouped role-aware navigation; `.field` visible form labels; `.button.primary` one primary action; `.notice` and `[role=status]` inline feedback; `.module-item` real server-backed record; `.hint` help not an alert; `os-state` semantic status.
