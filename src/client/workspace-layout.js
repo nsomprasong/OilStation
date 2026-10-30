@@ -100,7 +100,7 @@ export function renderWorkspaceShell(screens){
        </div>
        <span class="ws-current" id="ws-current">ภาพรวม</span>
      </header>
-     <main class="ws-content" id="ws-content">${panels}</main>
+     <div class="ws-content" id="ws-content">${panels}</div>
    </div>
  </div>`;
 }
