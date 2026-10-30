@@ -1,3 +1,5 @@
+import {renderMobileHome,renderMobileNav} from './mobile-home.js';
+
 export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
  const p=has('platform',['platform_superadmin']);
@@ -57,6 +59,7 @@ export function renderWorkspaceShell(screens){
      <p>${s.key==="overview"?"เลือกงานที่ต้องการจากรายการด้านล่าง ทุกเมนูแสดงตามสิทธิ์ที่ได้รับ":s.desc}</p>
    </div>
    ${s.key==="overview"?`
+     ${renderMobileHome(screens)}
      <div class="ws-overview-columns">
        <div class="ws-overview-primary">
          <div class="ws-section-heading"><h3>เริ่มทำงาน</h3>
@@ -110,13 +113,28 @@ export function renderWorkspaceShell(screens){
      </header>
      <div class="ws-content" id="ws-content">${panels}</div>
    </div>
+   ${renderMobileNav(screens)}
  </div>`;
 }
 
 export function wireWorkspaceNavigation(root){
  const views=[...root.querySelectorAll("[data-ws-screen]")];
  const links=[...root.querySelectorAll("[data-ws-go]")];
+ const mobileSearch=root.querySelector('[data-mobile-search-input]');
+ mobileSearch?.addEventListener('input',()=>{
+  const query=mobileSearch.value.trim().toLocaleLowerCase('th');
+  let matches=0;
+  for(const item of root.querySelectorAll('[data-mobile-feature]')){
+   const match=item.dataset.mobileSearch?.toLocaleLowerCase('th').includes(query);
+   item.hidden=!match;
+   if(match)matches++;
+  }
+  const empty=root.querySelector('[data-mobile-no-results]');
+  if(empty)empty.hidden=matches>0;
+ });
  const menuToggle=root.querySelector("[data-ws-menu-toggle]");
+ const mobileMore=root.querySelector("[data-ws-more]");
+ const scanButton=root.querySelector("[data-ws-scan]");
  const backdrop=root.querySelector(".ws-menu-backdrop");
  const menu=root.querySelector(".ws-sidebar");
  const mobile=typeof matchMedia==="function"?matchMedia("(max-width:850px)"):null;
@@ -135,7 +153,7 @@ export function wireWorkspaceNavigation(root){
   try{sessionStorage.setItem('oilstation_sidebar_rail',rail);}catch{}
   syncRail();
  });
- let open=false;
+ let open=false,opener=null;
  const focusable=()=>[...menu.querySelectorAll("button:not([disabled]),a[href],input:not([disabled]),select:not([disabled])")]
    .filter(node=>!node.hidden&&node.getClientRects().length>0);
  const syncMenu=()=>{
@@ -144,24 +162,31 @@ export function wireWorkspaceNavigation(root){
   if(menu)menu.inert=Boolean(mobile?.matches&&!active);
   if(backdrop)backdrop.hidden=!active;
   menuToggle?.setAttribute("aria-expanded",String(active));
+  mobileMore?.setAttribute("aria-expanded",String(active));
  };
  const closeMenu=()=>{
   open=false;syncMenu();
  };
- const openMenu=()=>{
+ const openMenu=(trigger=menuToggle)=>{
+  opener=trigger;
   open=true;syncMenu();
   focusable()[0]?.focus();
  };
  syncMenu();
  mobile?.addEventListener?.("change",()=>{open=false;syncMenu();});
  menuToggle?.addEventListener("click",()=>{
-  if(open)closeMenu();else openMenu();
+  if(open)closeMenu();else openMenu(menuToggle);
+ });
+ mobileMore?.addEventListener("click",()=>{if(open)closeMenu();else openMenu(mobileMore);});
+ scanButton?.addEventListener("click",()=>{
+  if(scanButton.disabled)return;
+  shell?.dispatchEvent(new CustomEvent('oilstation:scanrequest'));
  });
  root.querySelectorAll("[data-ws-menu-close]").forEach(button=>
-  button.addEventListener("click",()=>{closeMenu();menuToggle?.focus();}));
+  button.addEventListener("click",()=>{closeMenu();(opener||menuToggle)?.focus();}));
  menu?.addEventListener("keydown",event=>{
   if(event.key==="Escape"&&open){
-   event.preventDefault();closeMenu();menuToggle?.focus();return;
+   event.preventDefault();closeMenu();(opener||menuToggle)?.focus();return;
   }
   if(event.key==="Tab"&&open){
    const all=focusable();
@@ -183,16 +208,23 @@ export function wireWorkspaceNavigation(root){
    links.forEach(link=>{
     const active=link.dataset.wsGo===key;
     link.classList.toggle("active",active);
+    link.classList.toggle("is-current",active&&Boolean(link.closest(".os-mobile-bottom")));
     if(active&&link.closest("nav"))link.setAttribute("aria-current","page");
     else link.removeAttribute("aria-current");
    });
+   if(shell)shell.dataset.activeScreen=key;
+   const moreCurrent=!root.querySelector('.os-mobile-bottom [data-ws-go="'+key+'"]');
+   mobileMore?.classList.toggle('is-current',moreCurrent);
    const heading=view.querySelector("h2");
    const current=root.querySelector("#ws-current");
    if(current&&heading)current.textContent=heading.textContent;
    try{sessionStorage.setItem("oilstation_last_workspace",key);}catch{}
    closeMenu();
-   if(mobile?.matches)menuToggle?.focus();
-   else heading?.focus({preventScroll:true});
+   if(mobile?.matches){
+    const tab=root.querySelector('.os-mobile-bottom [data-ws-go="'+key+'"]');
+    if(tab)tab.focus({preventScroll:true});
+    else mobileMore?.focus({preventScroll:true});
+   }else heading?.focus({preventScroll:true});
    root.querySelector('[data-workspace-shell]')?.dispatchEvent(
      new CustomEvent('oilstation:screenchange',{detail:{key}}));
    root.querySelector(".ws-main")?.scrollIntoView({block:"start",behavior:"auto"});
