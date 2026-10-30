@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 test('platform SaaS UI offers only VAT policy and plan management',()=>{
  const src=readFileSync(new URL('../../src/client/platform-saas-billing.js',import.meta.url),'utf8');
  assert.equal(typeof mountPlatformSaasBilling,'function');
- for(const word of ['vatMode','ratePercent','flat-plan','couponPriceSatang','hrPriceSatang','แพ็กเกจที่มีอยู่','นโยบายภาษีมูลค่าเพิ่ม']){
+ for(const word of ['vatMode','ratePercent','bundle-plan','bundlePriceSatang','archive-plan','couponPriceSatang','hrPriceSatang','แพ็กเกจที่มีอยู่','นโยบายภาษีมูลค่าเพิ่ม']){
   assert.ok(src.includes(word),word);
  }
  for(const removed of ["rpc('group'","rpc('subscription'","rpc('draft'","rpc('issue'","billing-group-station-choices","ตรวจร่างและออกใบแจ้งหนี้"]){
@@ -25,4 +25,14 @@ test('owner plan selection is outside SaaS administration and station creation',
  const station=src.slice(a,b);
  assert.match(station,/createInviteControl/);
  assert.doesNotMatch(station,/planId|pricingPlanId|selectedPlanId/);
+});
+
+test('bundle price has independent third form field and delete confirmation',()=>{
+ const src=readFileSync(new URL('../../src/client/platform-saas-billing.js',import.meta.url),'utf8');
+ assert.match(src,/field\('QR Coupon \+ HR & Payroll \(ราคาแพ็กคู่/);
+ assert.match(src,/const bundlePriceSatang=moneyToSatang/);
+ assert.match(src,/submit\('bundle-plan'/);
+ assert.match(src,/window\.confirm/);
+ assert.match(src,/rpc\('archive-plan'/);
+ assert.match(src,/billingMethod==='bundle'/);
 });

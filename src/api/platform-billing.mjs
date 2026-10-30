@@ -17,6 +17,8 @@ const time=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{
 const routes={
  '/api/platform/billing/overview':'GET',
  '/api/platform/billing/flat-plan':'POST',
+ '/api/platform/billing/bundle-plan':'POST',
+ '/api/platform/billing/archive-plan':'POST',
  '/api/platform/billing/tax':'POST',
  '/api/platform/billing/group':'POST',
  '/api/platform/billing/subscription':'POST',
@@ -25,6 +27,15 @@ const routes={
 };
 function valid(path,d){
  switch(path){
+ case '/api/platform/billing/bundle-plan':
+  return exact(d,['code','name','frequency','couponPriceSatang','hrPriceSatang','bundlePriceSatang','effectiveOn'])&&
+    code(d.code)&&name(d.name)&&
+    ['monthly','yearly'].includes(d.frequency)&&MONEY.test(d.couponPriceSatang)&&
+    MONEY.test(d.hrPriceSatang)&&MONEY.test(d.bundlePriceSatang)&&
+    BigInt(d.bundlePriceSatang)>=1000n&&BigInt(d.bundlePriceSatang)<=99999999n&&
+    isDate(d.effectiveOn);
+ case '/api/platform/billing/archive-plan':
+  return exact(d,['planId'])&&UUID.test(d.planId);
  case '/api/platform/billing/flat-plan':
   return exact(d,['code','name','frequency','couponPriceSatang','hrPriceSatang','effectiveOn'])&&
     code(d.code)&&name(d.name)&&
@@ -80,6 +91,10 @@ export function createPlatformBillingApi({authenticate,db}){
      result=await db.platformSaasBillingOverview({actorId:actor.id});break;
     case '/api/platform/billing/flat-plan':
      result=await db.platformSaasDefinePlan({actorId:actor.id,...data});break;
+    case '/api/platform/billing/bundle-plan':
+     result=await db.platformSaasDefineBundlePlan({actorId:actor.id,...data});break;
+    case '/api/platform/billing/archive-plan':
+     result=await db.platformSaasArchivePlan({actorId:actor.id,...data});break;
     case '/api/platform/billing/tax':
      result=await db.platformSaasTaxPolicy({actorId:actor.id,...data});break;
     case '/api/platform/billing/group':
@@ -95,6 +110,7 @@ export function createPlatformBillingApi({authenticate,db}){
    return json(200,{result});
   }catch(e){
    if(e?.code==='FORBIDDEN')return json(403,{error:'permission_denied'});
+   if(e?.code==='PLAN_IN_USE')return json(409,{error:'plan_in_use'});
    if(e?.code==='INVALID_REQUEST')return json(409,{error:'billing_configuration_unavailable'});
    return json(503,{error:'billing_configuration_unavailable'});
   }

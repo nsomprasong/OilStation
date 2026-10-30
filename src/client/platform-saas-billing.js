@@ -51,7 +51,10 @@ export function mountPlatformSaasBilling({target,token}){
   field('รอบชำระเงิน','frequency',{options:[['monthly','รายเดือน'],['yearly','รายปี']]}),
   field('QR Coupon (บาท/ปั๊ม)','couponBaht',{placeholder:'1500.00'}),
   field('HR & Payroll (บาท/ปั๊ม)','hrBaht',{placeholder:'500.00'}),
+  field('QR Coupon + HR & Payroll (ราคาแพ็กคู่ / บาท)','bundleBaht',{placeholder:'เช่น 25000.00'}),
   field('เริ่มมีผลวันที่','effectiveOn',{type:'date'}));
+ const codeInput=plan.querySelector('[name="code"]');
+ codeInput.addEventListener('input',()=>{codeInput.value=codeInput.value.toLowerCase().replace(/\s+/g,'_');});
  const savePlan=el('button','สร้างแพ็กเกจ');savePlan.type='submit';savePlan.className='button primary';
  const planStatus=feedback();plan.append(savePlan,planStatus);
  const current=el('section');current.className='saas-simple-card saas-existing-plans';
@@ -66,8 +69,9 @@ export function mountPlatformSaasBilling({target,token}){
   const init={cache:'no-store',headers:{authorization:'Bearer '+token}};
   if(payload!==undefined){init.method='POST';init.headers['content-type']='application/json';init.body=JSON.stringify(payload);}
   const r=await fetch('/api/platform/billing/'+path,init);
-  if(!r.ok)throw new Error('billing_unavailable');
-  return (await r.json()).result;
+  const result=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(result.error||'billing_unavailable');
+  return result.result;
  }
  function paintPlans(plans){
   planItems.replaceChildren();
@@ -78,9 +82,28 @@ export function mountPlatformSaasBilling({target,token}){
    main.append(el('strong',p.name),el('small',p.code+' · '+(p.frequency==='yearly'?'รายปี':'รายเดือน')));
    const prices=el('div');prices.className='saas-plan-prices';
    const get=(code)=>p.rules?.find(r=>r.moduleCode===code)?.priceSatang;
+   const bundle=p.rules?.find(r=>r.moduleCode===null && r.billingMethod==='bundle')?.priceSatang;
    prices.append(el('span','QR Coupon '+formattedBaht(get('qr_coupon'))),
-    el('span','HR & Payroll '+formattedBaht(get('hr_payroll'))));
-   card.append(main,prices);planItems.append(card);
+    el('span','HR & Payroll '+formattedBaht(get('hr_payroll'))),
+    el('strong','ทั้ง 2 บริการ '+formattedBaht(bundle??(
+       get('qr_coupon')!=null && get('hr_payroll')!=null
+         ?(BigInt(get('qr_coupon'))+BigInt(get('hr_payroll'))).toString():null))));
+   const remove=el('button','ลบแพ็กเกจ');
+   remove.type='button';remove.className='button secondary saas-plan-delete';
+   remove.setAttribute('aria-label','ลบแพ็กเกจ '+p.name);
+   remove.addEventListener('click',async()=>{
+    if(!window.confirm('ลบแพ็กเกจ “'+p.name+'” ออกจากรายการที่ลูกค้าเลือกได้?'))return;
+    remove.disabled=true;summaryStatus.textContent='กำลังลบแพ็กเกจ…';
+    try{
+      await rpc('archive-plan',{planId:p.id});
+      await load();summaryStatus.textContent='ลบแพ็กเกจออกจากรายการเรียบร้อย';
+    }catch(error){
+      summaryStatus.textContent=error.message==='plan_in_use'
+        ?'ลบไม่ได้ เพราะมีลูกค้าใช้แพ็กเกจนี้หรือกำลังรอชำระเงิน'
+        :'ลบแพ็กเกจไม่สำเร็จ กรุณาลองใหม่';
+    }finally{remove.disabled=false;}
+   });
+   card.append(main,prices,remove);planItems.append(card);
   }
  }
  async function load(){
@@ -99,7 +122,9 @@ export function mountPlatformSaasBilling({target,token}){
  async function submit(route,body,button,status){
   button.disabled=true;status.textContent='กำลังบันทึก…';
   try{await rpc(route,body);status.textContent='บันทึกสำเร็จ';await load();}
-  catch{status.textContent='บันทึกไม่สำเร็จ กรุณาตรวจข้อมูลและสิทธิ์ของบัญชี';}
+  catch(error){status.textContent=error.message==='billing_configuration_unavailable'
+    ?'บันทึกไม่ได้ กรุณาตรวจรหัสแพ็กเกจ (ห้ามซ้ำ) ราคา และวันที่'
+    :'บันทึกไม่สำเร็จ กรุณาตรวจข้อมูลและสิทธิ์ของบัญชี';}
   finally{button.disabled=false;}
  }
  tax.addEventListener('submit',e=>{
@@ -117,13 +142,16 @@ export function mountPlatformSaasBilling({target,token}){
   const d=new FormData(plan);
   const couponPriceSatang=moneyToSatang(String(d.get('couponBaht')??'').trim());
   const hrPriceSatang=moneyToSatang(String(d.get('hrBaht')??'').trim());
-  if(couponPriceSatang===null||hrPriceSatang===null||
+  const bundlePriceSatang=moneyToSatang(String(d.get('bundleBaht')??'').trim());
+  if(couponPriceSatang===null||hrPriceSatang===null||bundlePriceSatang===null||
+     BigInt(bundlePriceSatang)<1000n||BigInt(bundlePriceSatang)>99999999n||
      BigInt(couponPriceSatang)+BigInt(hrPriceSatang)<1000n){
    planStatus.textContent='กรุณาระบุราคาให้ถูกต้อง โดยยอดรวมต้องไม่น้อยกว่า 10 บาท';return;
   }
   const body={code:String(d.get('code')??'').trim(),name:String(d.get('name')??'').trim(),
-    frequency:d.get('frequency'),couponPriceSatang,hrPriceSatang,effectiveOn:d.get('effectiveOn')};
-  submit('flat-plan',body,savePlan,planStatus);
+    frequency:d.get('frequency'),couponPriceSatang,hrPriceSatang,bundlePriceSatang,
+    effectiveOn:d.get('effectiveOn')};
+  submit('bundle-plan',body,savePlan,planStatus);
  });
  refresh.addEventListener('click',load);
  load();

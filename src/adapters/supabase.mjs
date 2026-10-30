@@ -110,6 +110,19 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId}),
         }),
+      platformSaasDefineBundlePlan: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_define_saas_bundle_plan',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_code:d.code,p_name:d.name,
+            p_frequency:d.frequency,p_coupon_price_satang:d.couponPriceSatang,
+            p_hr_price_satang:d.hrPriceSatang,
+            p_bundle_price_satang:d.bundlePriceSatang,p_effective_on:d.effectiveOn}),
+        }),
+      platformSaasArchivePlan: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_archive_saas_plan',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_plan_id:d.planId}),
+        }),
       platformSaasDefinePlan: async d=>serviceRequest(env,
         '/rest/v1/rpc/platform_define_saas_flat_plan',{
           method:'POST',headers:{'content-type':'application/json'},

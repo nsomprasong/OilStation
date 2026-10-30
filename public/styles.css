@@ -265,3 +265,10 @@
 .owner-plan-status{font-size:13px;min-height:22px;color:#8cdbcb}
 @media(max-width:520px){.owner-plan-quote{display:grid}.owner-payment-methods{display:grid}}
 @media(prefers-color-scheme:light){.owner-plan-card,.owner-payment-methods{border-color:#d5e4e9}.owner-plan-card:has(input:checked){background:#eaf7f6}.owner-plan-description small{color:#657e8c}.owner-plan-quote{border-color:#dee9ed}}
+
+.saas-plan-delete{width:auto!important;margin:0!important;min-width:92px;white-space:nowrap;align-self:center}
+.saas-plan-delete:hover{color:#ffb6ab;border-color:#ce7777}
+.saas-plan-prices strong{color:#5ed5c7}
+@media(max-width:1000px){.saas-plan-row{flex-wrap:wrap;align-items:start}.saas-plan-delete{margin-left:auto!important}}
+@media(max-width:520px){.saas-plan-delete{justify-self:end}}
+@media(prefers-color-scheme:light){.saas-plan-prices strong{color:#146f6c}}

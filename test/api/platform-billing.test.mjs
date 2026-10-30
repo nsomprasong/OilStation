@@ -59,3 +59,34 @@ test('platform billing overview requires exact sign-in and DB role check',async(
  assert.deepEqual(a.calls[0][0],'overview');
  assert.equal((await a.handler(new Request(base+'/api/platform/billing/overview'))).status,401);
 });
+
+test('bundle price and archived plan pass only validated platform-admin fields',async()=>{
+ const a=mock();
+ const dbFields={code:'standard_year',name:'Standard รายปี',frequency:'yearly',
+  couponPriceSatang:'1600000',hrPriceSatang:'1600000',bundlePriceSatang:'2600000',effectiveOn:'2026-10-30'};
+ const forbidden=[{...dbFields,bundlePriceSatang:'-1'},{...dbFields,bundlePriceSatang:'999999999'},
+  {...dbFields,amountSatang:'5'}];
+ for(const input of forbidden) {
+  assert.equal((await a.handler(req('/api/platform/billing/bundle-plan',input))).status,400);
+ }
+ assert.equal((await a.handler(req('/api/platform/billing/archive-plan',{planId:'bad'}))).status,400);
+ assert.equal(a.calls.length,0);
+ const db=Object.fromEntries([
+  ['platformSaasDefineBundlePlan',async d=>({ok:true,actorId:d.actorId,bundlePriceSatang:d.bundlePriceSatang})],
+  ['platformSaasArchivePlan',async d=>({archived:true,actorId:d.actorId,planId:d.planId})]
+ ]);
+ const handler=createPlatformBillingApi({authenticate:async()=>({id:U}),db});
+ const created=await handler(req('/api/platform/billing/bundle-plan',dbFields));
+ assert.equal(created.status,200);
+ assert.equal((await created.json()).result.bundlePriceSatang,'2600000');
+ const deleted=await handler(req('/api/platform/billing/archive-plan',{planId:ST}));
+ assert.equal(deleted.status,200);
+ assert.equal((await deleted.json()).result.planId,ST);
+});
+test('cannot archive a plan with active subscription or pending checkout',async()=>{
+ const handler=createPlatformBillingApi({authenticate:async()=>({id:U}),
+  db:{platformSaasArchivePlan:async()=>{throw {code:'PLAN_IN_USE'};}}});
+ const r=await handler(req('/api/platform/billing/archive-plan',{planId:ST}));
+ assert.equal(r.status,409);
+ assert.deepEqual(await r.json(),{error:'plan_in_use'});
+});
