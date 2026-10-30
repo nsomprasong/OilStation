@@ -62,6 +62,21 @@ export default {
           headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
         });
       }
+      // Early production preview: the publishable Supabase key and project URL
+      // let testers use OAuth while finance/privileged APIs remain release-gated.
+      if (url.pathname === '/api/public-config' &&
+          env.OILSTATION_PREVIEW_LOGIN_ENABLED === 'true') {
+        if (request.method !== 'GET') return new Response(null,{status:405});
+        if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY)
+          return new Response(JSON.stringify({error:'service_not_configured'}),{
+            status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
+        return new Response(JSON.stringify({
+          supabaseUrl:env.SUPABASE_URL,supabaseAnonKey:env.SUPABASE_ANON_KEY,
+          stripePublishableKey:null,
+        }),{status:200,headers:{'content-type':'application/json; charset=utf-8',
+           'cache-control':'no-store','x-content-type-options':'nosniff'}});
+      }
       if (url.pathname === '/api/ready') {
         if (request.method !== 'GET') return new Response(null,{status:405});
         // A healthy process is not a ready release. Validate the deployed
