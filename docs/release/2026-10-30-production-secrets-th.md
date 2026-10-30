@@ -5,7 +5,7 @@
 ## สถานะจริงก่อนเปิดระบบ
 
 - Production Supabase `cxihsotcpdnalswfoysx`: 65 public tables, 30 migrations ในประวัติ; 28 migrations ใหม่ยังไม่ติดตั้ง
-- Cloudflare Worker `oilstation` และ `oilstation-uat` ยังไม่มี Secret
+- ตรวจ Cloudflare Production Worker `oilstation` ล่าสุด (30 ต.ค.): มี `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `COUPON_SIGNING_KEY`, `BOOTSTRAP_ADMIN_EMAIL` เป็น `secret_text` แล้ว และตั้ง `OILSTATION_API_ENABLED=false` ถูกต้อง; UAT Worker ยังไม่มี Secret
 - `oilstation.goldensoft.cloud` ยังเป็นหน้า Maintenance; UAT Worker ปัจจุบันเป็น Canary
 - ไม่มี Auth user ใน Supabase ณ วันที่ตรวจสอบ; **อย่าเปิดสมัครสาธารณะ**
 - GitHub Actions แยก 8 ชุดตรวจและไม่ Deploy อัตโนมัติ
@@ -108,3 +108,30 @@ GitHub https://github.com/nsomprasong/OilStation/settings/environments
 - https://docs.stripe.com/keys
 
 **ไม่มีข้อมูลลับใดอยู่ในไฟล์นี้**
+
+
+## อัปเดต: ตรวจเชื่อมต่อด้วย Secret แบบอ่านอย่างเดียว (ยังไม่ได้ Deploy)
+
+ใน feature branch มี endpoint **GET** \`/api/internal/supabase-connectivity\`
+ซึ่งเปิดใช้เฉพาะเมื่อผู้ดูแลตั้งค่าสองรายการ **บน Worker ที่ Deploy โค้ดเวอร์ชันนี้**:
+
+- \`OILSTATION_DIAGNOSTICS_ENABLED=true\` (ปิดไว้ก่อน)
+- \`DIAGNOSTICS_BEARER_TOKEN\` เป็นรหัสสุ่มใหม่ 32 ตัวขึ้นไปแบบ Secret
+  และ **ห้ามใช้ค่าของ \`SUPABASE_SERVICE_ROLE_KEY\` แทน**
+
+ต้องส่ง \`Authorization: Bearer <DIAGNOSTICS_BEARER_TOKEN>\` ด้วยเครื่องมือที่
+ส่ง Header ได้ (ไม่ใช่เปิดลิงก์ใส่รหัสใน URL) หากปิด/ไม่มี Token ให้ 404
+ถ้า Header ผิด 401 และหากทดสอบไม่ผ่านให้ 503
+
+ระบบทดสอบด้วยการอ่าน Supabase Auth settings ผ่าน Publishable Key และเรียก
+PostgREST Fuel Catalog \`limit=0\` ด้วย Service Role Key เพื่อพิสูจน์ว่า
+ผ่านการยืนยันตัวตนจริง **ไม่มีการอ่านแถวข้อมูลลูกค้า/พนักงาน ไม่มีการเขียน**
+และไม่คืนค่าคีย์ใน Response
+
+ตัวนี้ไม่ได้เปิด API ธุรกิจ (ให้ \`OILSTATION_API_ENABLED=false\` ต่อไป)
+และไม่ทำให้ Migration/Release readiness ที่ค้างอยู่ผ่านโดยอัตโนมัติ
+ควรปิดฟีเจอร์และลบโทเค็นตรวจหลังใช้งานสำเร็จ
+
+*ผ่านการทดสอบตัวจำลองใน GitHub Actions เท่านั้น ยังไม่มีผลยืนยัน End-to-End
+จาก Worker ที่ Deploy จริง*
+

@@ -447,3 +447,30 @@ review payroll/PDPA, reconcile bank/Stripe test flows, and approve deployment.
 - External HTTP smoke checks from the current web tooling were not accessible; do **not** claim end-user reachability based solely on Cloudflare API state. The owner or a connected runner must verify that endpoint.
 - The manual GitHub Actions `uat` deployment will replace the canary with the real built application only after the code is reviewed/merged and a scoped GitHub Cloudflare token has been configured. Staging database secrets and approval are required before enabling business APIs.
 - Latest isolated CI at dc52b4a8: **234/234 Node tests PASS**, frontend build and both Wrangler Worker dry-runs PASS, **all eight workflows PASS**.
+
+
+## Continuation — encrypted production bindings verified, read-only connectivity probe
+
+- Cloudflare worker \`oilstation\` has five runtime encrypted Secret bindings
+  (\`SUPABASE_URL\`, \`SUPABASE_ANON_KEY\`, \`SUPABASE_SERVICE_ROLE_KEY\`,
+  \`COUPON_SIGNING_KEY\`, \`BOOTSTRAP_ADMIN_EMAIL\`) and
+  \`OILSTATION_API_ENABLED=false\`, verified via Cloudflare API read-only
+  metadata on Oct 30 Bangkok date. The UAT canary is separate, has no
+  Secrets, and must not be confused with Production.
+- Supabase project \`cxihsotcpdnalswfoysx\` remains ACTIVE_HEALTHY, with 30
+  applied historical migrations. The production readiness SQL RPC is absent.
+- Added a gated, independent read-only operator probe to test both publishable
+  Auth and privileged PostgREST key access; it is disabled by default and
+  never reads or returns customer rows, secrets, or financial state.
+- The probe requires dedicated randomly generated diagnostic token and
+  diagnostic opt-in flag, neither of which is set on Production. It is
+  unavailable until the code is deployed under a reviewed release. Production
+  business API remains disabled even if this diagnostic succeeds.
+- At commit \`30333673\`: **245/245 Node tests PASS**, both Wrangler dry
+  runs PASS, Vite build PASS, eight GitHub CI workflows PASS.
+- No merge, migration, production Worker replacement, new paid staging
+  branch, or actual external authenticated connection test occurred.
+
+**Release gate stays blocked** until production migrations, back-up verification,
+external Auth/OAuth/storage integration tests, and required authorizations.
+

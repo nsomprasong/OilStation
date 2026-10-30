@@ -73,3 +73,17 @@ occurred in this continuation. The developer has not claimed a finished release.
 - External HTTP smoke checks from the current web tooling were not accessible; do **not** claim end-user reachability based solely on Cloudflare API state. The owner or a connected runner must verify that endpoint.
 - The manual GitHub Actions `uat` deployment will replace the canary with the real built application only after the code is reviewed/merged and a scoped GitHub Cloudflare token has been configured. Staging database secrets and approval are required before enabling business APIs.
 - Latest isolated CI at dc52b4a8: **234/234 Node tests PASS**, frontend build and both Wrangler Worker dry-runs PASS, **all eight workflows PASS**.
+
+
+## Connectivity preflight Oct 30
+
+Production Cloudflare encrypted bindings are now installed (five Secret names
+confirmed; \`OILSTATION_API_ENABLED=false\`). Supabase remains healthy but
+the \`oilstation_release_status()\` migration is missing. An opt-in
+read-only authenticated diagnostic endpoint is implemented on the development
+branch, not deployed. It needs a separate diagnostic token/flag to prove
+publishable and service API key network connectivity from the Worker;
+simple existence of secret bindings is not proof.
+The latest test suite passed 245 Node tests and all eight CI workflows
+at commit \`30333673\`. This does NOT mark Production release-ready.
+
