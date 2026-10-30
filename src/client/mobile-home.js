@@ -29,7 +29,7 @@ export function renderMobileHome(screens){
  return `<div class="os-mobile-home" data-mobile-home>
    <section class="os-mobile-hero" aria-label="พื้นที่ทำงาน OilStation">
      <div class="os-mobile-hero-title">
-       <div><div class="os-mobile-brandline"><img class="os-mobile-brandmark" src="/oilstation-gold-logo.svg" width="40" height="40" alt="" aria-hidden="true"><span class="os-mobile-eyebrow">OILSTATION</span></div>
+       <div><div class="os-mobile-brandline"><img class="os-mobile-brandmark" src="/oilstation-gold-logo.png" width="40" height="40" alt="" aria-hidden="true"><span class="os-mobile-eyebrow">OILSTATION</span></div>
          <h3>พร้อมเริ่มงานวันนี้</h3><p>เลือกบริการหรือสแกน QR คูปองได้จากหน้าแรก</p></div>
        <button class="os-mobile-power" type="button" data-mobile-logout
          aria-label="ออกจากระบบ" title="ออกจากระบบ">

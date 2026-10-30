@@ -22,9 +22,9 @@ test('favicon, touch icon and title use the gold symbol consistently',()=>{
  const html=read('index.html');
  assert.match(html,/<title>OilStation \| ระบบบริหารปั๊มน้ำมัน<\/title>/);
  assert.match(html,/rel="icon" type="image\/png"[^>]*oilstation-gold-logo\.png/);
- assert.match(html,/rel="icon" type="image\/svg\+xml"[^>]*oilstation-gold-logo\.svg/);
+ assert.doesNotMatch(html,/rel="icon" type="image\/svg\+xml"/);
  assert.match(html,/rel="apple-touch-icon"[^>]*oilstation-gold-logo\.png/);
- assert.match(html,/class="brand-icon" src="\/oilstation-gold-logo\.svg"/);
+ assert.match(html,/class="brand-icon" src="\/oilstation-gold-logo\.png"/);
 });
 test('same gold brand asset replaces letter O in mobile, desktop sidebar and login',()=>{
  const auth=authMarkup(),mobile=renderMobileHome(selectWorkspaceScreens([
@@ -33,10 +33,10 @@ test('same gold brand asset replaces letter O in mobile, desktop sidebar and log
  const shell=renderWorkspaceShell(selectWorkspaceScreens([
   {scopeType:'station',role:'station_owner',stationId:'demo'}
  ]));
- assert.match(auth,/class="os-auth-mark" src="\/oilstation-gold-logo\.svg"/);
- assert.match(mobile,/class="os-mobile-brandmark" src="\/oilstation-gold-logo\.svg"/);
- assert.match(shell,/class="ws-logo" src="\/oilstation-gold-logo\.svg"/);
- assert.match(shell,/class="ws-toolbar-brand" src="\/oilstation-gold-logo\.svg"/);
+ assert.match(auth,/class="os-auth-mark" src="\/oilstation-gold-logo\.png"/);
+ assert.match(mobile,/class="os-mobile-brandmark" src="\/oilstation-gold-logo\.png"/);
+ assert.match(shell,/class="ws-logo" src="\/oilstation-gold-logo\.png"/);
+ assert.match(shell,/class="ws-toolbar-brand" src="\/oilstation-gold-logo\.png"/);
  assert.doesNotMatch(auth,/class="os-auth-mark">O<\/span>/);
  assert.doesNotMatch(shell,/class="ws-logo"[^>]*>O<\/span>/);
  assert.match(mobile,/data-mobile-logout/);
