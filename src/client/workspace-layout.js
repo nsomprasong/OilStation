@@ -1,4 +1,5 @@
 import {renderMobileHome,renderMobileNav,renderMobileScreenHero} from './mobile-home.js';
+import {renderLogoutDialog,wireLogoutDialog} from './logout-dialog.js';
 
 export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
@@ -114,6 +115,7 @@ export function renderWorkspaceShell(screens){
      <div class="ws-content" id="ws-content">${panels}</div>
    </div>
    ${renderMobileNav(screens)}
+   ${renderLogoutDialog()}
  </div>`;
 }
 
@@ -135,12 +137,7 @@ export function wireWorkspaceNavigation(root){
  const menuToggle=root.querySelector("[data-ws-menu-toggle]");
  const mobileMore=root.querySelector("[data-ws-more]");
  const scanButton=root.querySelector("[data-ws-scan]");
- const mobileLogout=root.querySelector('[data-mobile-logout]');
- mobileLogout?.addEventListener('click',()=>{
-  if(!window.confirm('ต้องการออกจากระบบ OilStation หรือไม่?'))return;
-  root.querySelector('[data-workspace-shell]')?.dispatchEvent(
-   new CustomEvent('oilstation:logoutrequested'));
- });
+ wireLogoutDialog(root);
  const backdrop=root.querySelector(".ws-menu-backdrop");
  const menu=root.querySelector(".ws-sidebar");
  const mobile=typeof matchMedia==="function"?matchMedia("(max-width:850px)"):null;
