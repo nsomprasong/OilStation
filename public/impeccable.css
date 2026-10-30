@@ -1,0 +1,241 @@
+/* OilStation × Impeccable — system-level Operate pass.
+   Intentional overrides after existing legacy and Gentelella-reference styles.
+   Do not alter API, permissions or money semantics in presentation CSS. */
+:root{
+  --oil-canvas:#f5f7f8;--oil-paper:#fff;--oil-side:#f9fbfb;
+  --oil-ink:#1b3340;--oil-muted:#526a76;--oil-subtle:#687e8a;
+  --oil-line:#d8e2e7;--oil-accent:#08737a;--oil-accent-hover:#065a60;
+  --oil-accent-wash:#e5f2f0;--oil-danger:#b33b35;
+  --oil-danger-wash:#fff1ef;--oil-success:#13745a;
+  --oil-success-wash:#e8f5f0;--oil-warn:#8b631a;
+  --oil-warn-wash:#fff5e1;--oil-radius:10px;
+  color-scheme:light;
+}
+/* Stable light public surface even when the OS requests a dark palette.
+   Previous CSS contains an unrelated dark-mode block; override its contrast. */
+body{background:var(--oil-canvas);color:var(--oil-ink)}
+body>.shell>.topbar{background:#fff;border-color:var(--oil-line)}
+body>.shell>.topbar .tag{background:#eaf5f4;color:#165f65}
+body>.shell>footer{color:#637d8a}
+#app.center:not(.workspace-mode) .panel{background:#fff;color:var(--oil-ink)}
+#app.center:not(.workspace-mode) :where(.step,.field,.module-item){color:#355363}
+#app.center:not(.workspace-mode) :where(.hint,.number){background:#eff5f6;color:#486977}
+#app.center:not(.workspace-mode) :where(.divider){background:#e4eaee}
+#app.center:not(.workspace-mode) .field :is(input,select,textarea){
+  background:#fff;color:var(--oil-ink);border-color:#bbced5;
+}
+body:has(#app.workspace-mode .ws-sidebar.is-open){overflow:hidden}
+html{scroll-behavior:auto;scroll-padding-top:12px}
+body{min-width:0;overflow-wrap:break-word}
+::selection{background:#b9e7e0;color:#122d37}
+:focus-visible{outline:3px solid #218c94;outline-offset:2px}
+a{text-underline-offset:3px}
+input,select,textarea,button{font-family:inherit}
+input,select,textarea{accent-color:var(--oil-accent)}
+input:disabled,select:disabled,textarea:disabled{opacity:.64}
+input::placeholder,textarea::placeholder{color:#70848f;opacity:1}
+:where(input,select,textarea):user-invalid{border-color:var(--oil-danger)!important}
+:where(.button,button):disabled{cursor:not-allowed;opacity:.55}
+:where(.button,button)[aria-busy="true"]{cursor:progress}
+:where([hidden]){display:none!important}
+.skip-workspace{
+  position:fixed;top:8px;left:8px;z-index:200;
+  transform:translateY(-150%);background:#fff;color:#064d53;
+  border:2px solid var(--oil-accent);border-radius:8px;padding:10px 16px;
+  font-size:14px;font-weight:700;
+}
+.skip-workspace:focus{transform:translateY(0)}
+/* Public auth, invitation and QR pages are visually consistent but stay narrow. */
+#app.center:not(.workspace-mode){
+  font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,system-ui,sans-serif;
+  color:var(--oil-ink);line-height:1.62;
+}
+#app.center:not(.workspace-mode) .panel{
+  border:1px solid var(--oil-line);box-shadow:0 9px 32px -24px #193e4b61;
+  border-radius:14px;
+}
+#app.center:not(.workspace-mode) h1{letter-spacing:-.025em}
+#app.center:not(.workspace-mode) .lead{color:var(--oil-muted)}
+#app.center:not(.workspace-mode) .button{
+  border-radius:9px;min-height:46px;box-shadow:none;
+}
+#app.center:not(.workspace-mode) .button.primary{
+  background:var(--oil-accent);color:#fff;
+}
+#app.center:not(.workspace-mode) .button.primary:hover{background:var(--oil-accent-hover)}
+#app.center:not(.workspace-mode) .button.secondary{
+  border:1px solid #c9dce2;background:#f3f8f9;color:#174a57;
+}
+#app.center:not(.workspace-mode) .field :is(input,select,textarea),
+#app.center:not(.workspace-mode) .invite-form :is(input,select,textarea){
+  border-radius:8px;min-height:44px;background:#fff;color:var(--oil-ink);
+}
+#app.center:not(.workspace-mode) .hint{text-align:left;color:var(--oil-muted)}
+#app.center:not(.workspace-mode) .notice{border:1px solid #c9e4e2;background:#ecf7f5;color:#1a5959}
+#app.center:not(.workspace-mode) .notice[data-tone="error"]{
+  border-color:#ebc5bf;background:var(--oil-danger-wash);color:var(--oil-danger);
+}
+/* All authenticated modules inherit one UI grammar regardless of original author. */
+#app.workspace-mode{
+  font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,system-ui,sans-serif!important;
+  font-size:15px;color:var(--oil-ink);
+  --os-ink:var(--oil-ink);--os-muted:var(--oil-muted);
+  --os-border:var(--oil-line);--os-accent:var(--oil-accent);
+  --os-accent-soft:var(--oil-accent-wash);--os-paper:var(--oil-paper);
+  --os-canvas:var(--oil-canvas);
+}
+#app.workspace-mode .ws-main{min-width:0;max-width:100%;padding-inline:clamp(16px,2.7vw,44px)}
+#app.workspace-mode .ws-content{min-width:0}
+#app.workspace-mode .ws-sidebar{background:var(--oil-side);border-color:var(--oil-line)}
+#app.workspace-mode .ws-nav-heading{color:#5d7682;letter-spacing:.025em;font-size:11px}
+#app.workspace-mode .ws-nav{color:#3f5865;font-size:14px;min-height:44px}
+#app.workspace-mode .ws-nav.active{background:var(--oil-accent-wash);color:#075a60}
+#app.workspace-mode .ws-nav.active::after{
+  content:"";width:5px;height:5px;background:currentColor;border-radius:50%;margin-inline-start:auto;
+}
+#app.workspace-mode .ws-nav svg{color:#506d7b}
+#app.workspace-mode .ws-overline,#app.workspace-mode .ws-breadcrumb{color:#587584}
+#app.workspace-mode .ws-header-copy>p:last-child{color:var(--oil-muted)}
+#app.workspace-mode .ws-screen.panel{border-color:var(--oil-line);background:var(--oil-paper);border-radius:12px;min-width:0}
+#app.workspace-mode .ws-screen-head{border-color:#e3eaee}
+#app.workspace-mode .ws-screen-head h2{font-size:24px;letter-spacing:-.02em}
+#app.workspace-mode .ws-screen-head p{color:var(--oil-muted);font-size:14px}
+#app.workspace-mode .ws-quick{border-color:var(--oil-line);border-radius:10px}
+#app.workspace-mode .ws-quick:hover{border-color:#90bebc;background:#f5fbf9}
+#app.workspace-mode .ws-quick small{color:var(--oil-muted)}
+#app.workspace-mode .ws-overview-side{background:#f9fbfb;border-color:var(--oil-line)}
+#app.workspace-mode .scope-chip{border-color:#b5d6d0;background:var(--oil-accent-wash);color:#145951}
+#app.workspace-mode :where(.field,.coupon-form label){font-size:14px;line-height:1.5}
+#app.workspace-mode :where(.field,input,select,textarea){min-width:0}
+#app.workspace-mode :where(.field input,.field select,.field textarea,.invite-form input,.invite-form select){
+  color:var(--oil-ink);background:var(--oil-paper);border:1px solid #b7cbd4;
+  min-height:46px;border-radius:8px;font-size:15px;
+}
+#app.workspace-mode :where(.field textarea,textarea){min-height:100px;resize:vertical}
+#app.workspace-mode :where(.field input,.field select,.field textarea):focus-visible{
+  border-color:var(--oil-accent);outline:3px solid #89c5c5;outline-offset:1px;
+}
+#app.workspace-mode .button{min-height:44px;max-width:100%;font-size:14px;font-weight:700}
+#app.workspace-mode .button.primary{background:var(--oil-accent);border-color:var(--oil-accent);color:#fff}
+#app.workspace-mode .button.primary:hover:not(:disabled){background:var(--oil-accent-hover);border-color:var(--oil-accent-hover)}
+#app.workspace-mode .button.secondary{color:#1a5260;border:1px solid #b8d2db;background:#f1f7f8}
+#app.workspace-mode .button.secondary:hover:not(:disabled){background:#e3eff1}
+#app.workspace-mode .button:focus-visible,#app.workspace-mode .ws-nav:focus-visible{
+  outline:3px solid #33979a;outline-offset:2px;
+}
+#app.workspace-mode .module-item,#app.workspace-mode .os-station-card{background:#fff;border-color:var(--oil-line)}
+#app.workspace-mode .os-station-card-meta{color:var(--oil-muted)}
+#app.workspace-mode .os-directory-count{font-variant-numeric:tabular-nums;color:var(--oil-muted)}
+#app.workspace-mode .os-station-actions{align-items:stretch}
+#app.workspace-mode .os-station-actions>.invite-control{min-width:0}
+#app.workspace-mode .os-station-actions .invite-form{width:min(100%,420px)}
+#app.workspace-mode .os-create-station,#app.workspace-mode .os-station-directory,
+#app.workspace-mode .saas-simple-card,#app.workspace-mode .attendance-workspace,
+#app.workspace-mode .attendance-review,#app.workspace-mode .attendance-payroll-preview,
+#app.workspace-mode .billing-panel,#app.workspace-mode .owner-plan-onboarding,
+#app.workspace-mode .plate-verification{
+  min-width:0;border-radius:10px;
+}
+#app.workspace-mode .saas-plan-row{gap:16px;flex-wrap:wrap}
+#app.workspace-mode .saas-plan-prices{font-variant-numeric:tabular-nums;line-height:1.65}
+#app.workspace-mode .saas-plan-prices strong{color:#096a65}
+#app.workspace-mode .saas-plan-delete{margin-inline-start:auto!important}
+#app.workspace-mode .finance-item .money,#app.workspace-mode .balance-card .money,
+#app.workspace-mode .owner-plan-quote strong{
+  font-variant-numeric:tabular-nums;
+}
+#app.workspace-mode .finance-item,#app.workspace-mode .balance-card,
+#app.workspace-mode .fuel-row,#app.workspace-mode .attendance-workspace,
+#app.workspace-mode .plate-review-card,#app.workspace-mode .fuel-review-card{
+  border-radius:10px;max-width:100%;min-width:0;
+}
+#app.workspace-mode .hint{color:var(--oil-muted);background:#eff5f6;border-radius:8px}
+#app.workspace-mode .notice,
+#app.workspace-mode [role="alert"]{
+  color:#174f58;background:#eaf5f5;border:1px solid #c4e0df;border-radius:8px;
+}
+#app.workspace-mode .notice[data-tone="error"],
+#app.workspace-mode [role="alert"][data-tone="error"]{
+  background:var(--oil-danger-wash);border-color:#ebc2be;color:var(--oil-danger);
+}
+#app.workspace-mode :where(.notice,[role="status"])[data-tone="success"]{color:var(--oil-success)}
+#app.workspace-mode :where(.notice,[role="status"])[data-tone="warning"]{color:var(--oil-warn)}
+#app.workspace-mode :where(.notice,[role="status"])[data-tone="error"]{color:var(--oil-danger)}
+#app.workspace-mode :where(table){width:100%;border-collapse:collapse}
+#app.workspace-mode :where(table th,table td){
+  padding:11px 13px;border-bottom:1px solid #e1e8ed;text-align:start;
+  vertical-align:middle;overflow-wrap:anywhere;
+}
+#app.workspace-mode :where(table th){
+  font-size:12px;color:#486474;font-weight:750;background:#f8fafb;
+}
+#app.workspace-mode :where(table td){font-size:14px;color:var(--oil-ink)}
+#app.workspace-mode :where(table [data-money],table .money,table .amount){
+  text-align:end;font-variant-numeric:tabular-nums;
+}
+#app.workspace-mode :where(table){display:block;max-width:100%;overflow-x:auto}
+#app.workspace-mode :where(.owner-plan-card,.owner-payment-methods){border-color:#c5d9df}
+#app.workspace-mode .owner-plan-card:has(input:checked){background:var(--oil-accent-wash);border-color:var(--oil-accent)}
+#app.workspace-mode .owner-plan-quote{gap:16px;flex-wrap:wrap}
+#app.workspace-mode .owner-plan-status{color:#136c5d}
+#app.workspace-mode :where(.ws-screen .divider,.ws-screen-head){border-color:#e4ebef}
+#app.workspace-mode :where(.os-section-copy,.attendance-explainer,.module-subtitle){color:var(--oil-muted)}
+#app.workspace-mode .ws-mobile-toggle{min-height:44px}
+#app.workspace-mode .ws-mobile-close{min-height:44px;min-width:44px}
+#app.workspace-mode .ws-menu-backdrop:not([hidden]){background:#102d397e}
+/* Stable long text and focus when switching station or plan. */
+#app.workspace-mode :where(.ws-nav,.ws-quick,.module-item,.os-station-card,
+  .os-station-card-name,.os-station-card-meta,.field,.ws-screen-head,
+  .saas-plan-meta,.finance-item){overflow-wrap:anywhere}
+#app.workspace-mode :where(.ws-overview-columns,.ws-station-layout,.saas-simple-layout){min-width:0}
+@media(max-width:900px){
+ #app.workspace-mode .ws-main{padding-inline:18px}
+ #app.workspace-mode .os-station-layout{grid-template-columns:1fr}
+ #app.workspace-mode .ws-overview-columns{grid-template-columns:1fr}
+ #app.workspace-mode .saas-simple-layout{grid-template-columns:1fr}
+ #app.workspace-mode .saas-simple-intro,#app.workspace-mode .saas-existing-plans{grid-column:1}
+}
+@media(max-width:620px){
+ #app.workspace-mode{font-size:16px}
+ #app.workspace-mode .ws-main{padding-inline:max(12px,env(safe-area-inset-left));padding-bottom:max(40px,env(safe-area-inset-bottom))}
+ #app.workspace-mode .ws-screen.panel{padding:16px}
+ #app.workspace-mode :where(.field input,.field select,.field textarea,.invite-form input,.invite-form select){
+  font-size:16px;min-height:48px;
+ }
+ #app.workspace-mode .button{min-height:46px}
+ #app.workspace-mode .os-plan-basics,#app.workspace-mode .os-price-grid{grid-template-columns:1fr}
+ #app.workspace-mode .os-station-actions{display:grid;grid-template-columns:1fr;gap:9px}
+ #app.workspace-mode .saas-plan-row{display:grid}
+ #app.workspace-mode .saas-plan-prices{text-align:start}
+ #app.workspace-mode .fuel-row-controls{grid-template-columns:1fr}
+ #app.workspace-mode .fuel-row-controls .button{grid-column:1}
+ #app.workspace-mode .owner-plan-quote{display:grid;grid-template-columns:1fr}
+ #app.workspace-mode .ws-quick{min-height:74px}
+}
+@media (pointer:coarse){
+ #app.workspace-mode :where(button,.button,.ws-nav,.ws-quick,input[type="checkbox"],input[type="radio"]){min-height:44px}
+}
+@media (forced-colors:active){
+ #app.workspace-mode .ws-nav.active{outline:2px solid Highlight;outline-offset:-2px}
+ #app.workspace-mode .button:focus-visible{outline:2px solid Highlight}
+}
+@media (prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ #app.workspace-mode *,#app.center:not(.workspace-mode) *{
+  scroll-behavior:auto;animation-duration:.01ms!important;transition-duration:.01ms!important;
+ }
+}
+@media print{
+ #app.workspace-mode .ws-sidebar,#app.workspace-mode .ws-header,
+ #app.workspace-mode .ws-mobile-toggle,#app.workspace-mode button{display:none!important}
+ #app.workspace-mode .ws-layout{display:block}
+ #app.workspace-mode .ws-main{padding:0}
+ #app.workspace-mode .ws-screen.panel{border:0;padding:0}
+}
+
+@media(max-width:620px){
+ #app.center:not(.workspace-mode) :where(input,select,textarea){
+   font-size:16px!important;
+ }
+ #app.center:not(.workspace-mode){padding-inline:16px}
+}

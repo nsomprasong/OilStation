@@ -10,6 +10,7 @@ import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
+import {humanizeApiError,setUiStatus} from './ui-status.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -25,15 +26,13 @@ iconObserver.observe(root, {subtree:true,childList:true});
 function message(text, tone = 'neutral') {
   const node = document.getElementById('notice');
   if (!node) return;
-  node.textContent = text;
-  node.dataset.tone = tone;
-  node.hidden = !text;
+  setUiStatus(node,text,tone);
 }
 function showError(msg) {
   show('<div class="mark">!</div><h1>ไม่สามารถเปิดหน้านี้ได้</h1><p class="lead" id="reason"></p><a href="/" class="button primary">กลับหน้าแรก</a>');
   document.getElementById('reason').textContent = msg;
 }
-function responseError(res) { return res?.error || 'ไม่สามารถดำเนินการได้'; }
+function responseError(res) { return humanizeApiError(res?.error); }
 function platformSetupView() {
   show(`<div class="mark" aria-hidden="true">O</div>
     <h1>เริ่มต้นผู้ดูแล OilStation</h1>
@@ -409,7 +408,13 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
   link.setAttribute('aria-label','ลิงก์คำเชิญ');
   const copy=document.createElement('button');
   copy.className='button secondary';copy.type='button';copy.textContent='คัดลอกลิงก์';copy.hidden=true;
-  toggle.addEventListener('click',()=>{box.hidden=!box.hidden;});
+  toggle.setAttribute('aria-expanded','false');
+  email.autocomplete='email';
+  toggle.addEventListener('click',()=>{
+    box.hidden=!box.hidden;
+    toggle.setAttribute('aria-expanded',String(!box.hidden));
+    if(!box.hidden)email.focus();
+  });
   copy.addEventListener('click',async()=>{
     try {await navigator.clipboard.writeText(link.value);copy.textContent='คัดลอกแล้ว';}
     catch {link.select();}
@@ -422,12 +427,14 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
           email:email.value.trim(),roleCode:roles.value,scopeType,scopeId,
         }),
       });
-      if(!r.ok){status.textContent='สร้างคำเชิญไม่สำเร็จ ('+responseError(r.data)+')';return;}
+      if(!r.ok){setUiStatus(status,'สร้างคำเชิญไม่สำเร็จ: '+responseError(r.data),'error');return;}
       link.value=r.data.invitation.inviteUrl;link.hidden=false;copy.hidden=false;
-      status.textContent=r.data.invitation.delivery==='email_accepted'?
+      const accepted=r.data.invitation.delivery==='email_accepted';
+      setUiStatus(status,accepted?
         'ผู้ให้บริการรับคำขอส่งอีเมลแล้ว (ยังไม่ยืนยันการส่งถึงผู้รับ) สามารถคัดลอกลิงก์ได้':
-        'สร้างลิงก์แล้ว การส่งอีเมลอัตโนมัติยังไม่ยืนยัน กรุณาคัดลอกและส่งให้ผู้รับ';
-    }catch{status.textContent='เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ';}
+        'สร้างลิงก์แล้ว การส่งอีเมลอัตโนมัติยังไม่ยืนยัน กรุณาคัดลอกและส่งให้ผู้รับ',
+        accepted?'success':'warning');
+    }catch{setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ','error');}
     finally{submit.disabled=false;}
   });
   box.append(email,roles,submit,status,link,copy);
@@ -881,8 +888,15 @@ async function fuelPriceEditor(accessToken,stationId,target) {
   target.appendChild(hint);
   const res=await getApi('/api/station-fuels?stationId='+encodeURIComponent(stationId),accessToken);
   if (!res.ok) {
-    const error=document.createElement('p');error.textContent='ไม่สามารถโหลดรายการน้ำมัน';target.appendChild(error);
+    const error=document.createElement('p');error.setAttribute('role','alert');
+    error.textContent='โหลดรายการน้ำมันไม่ได้: '+responseError(res.data);
+    error.dataset.tone='error';target.appendChild(error);
     return;
+  }
+  if(!res.data.fuels?.length){
+    const empty=document.createElement('p');empty.className='ws-empty';
+    empty.textContent='ยังไม่มีชนิดน้ำมันสำหรับปั๊มนี้ กรุณาตรวจแบรนด์ของปั๊มหรือติดต่อผู้ดูแล';
+    target.appendChild(empty);return;
   }
   for (const fuel of res.data.fuels||[]) {
     const row=document.createElement('div');row.className='fuel-row';
@@ -890,26 +904,30 @@ async function fuelPriceEditor(accessToken,stationId,target) {
     const controls=document.createElement('div');controls.className='fuel-row-controls';
     const toggle=document.createElement('label');
     const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=fuel.enabled;
+    checkbox.setAttribute('aria-label','เปิดขาย '+fuel.name);
     toggle.append(checkbox,document.createTextNode(' เปิดขาย'));
     const price=document.createElement('input');
     price.inputMode='decimal';price.value=fuel.publicPrice??'';
-    price.placeholder='ราคา/ลิตร';price.setAttribute('aria-label','ราคาต่อลิตรสำหรับ '+fuel.name);
+    price.placeholder='บาทต่อลิตร';price.autocomplete='off';price.setAttribute('aria-label','ราคาบาทต่อลิตรสำหรับ '+fuel.name);
     const save=document.createElement('button');save.type='button';save.className='button secondary';
     save.textContent='บันทึก';
     const status=document.createElement('small');status.setAttribute('role','status');
+    status.setAttribute('aria-live','polite');
     save.addEventListener('click',async()=>{
       if (!/^[0-9]{1,8}(?:\.[0-9]{1,4})?$/.test(price.value) || Number(price.value)<=0) {
-        status.textContent='กรุณาระบุราคาที่ถูกต้อง';return;
+        setUiStatus(status,'กรุณาใส่ราคาบาทต่อลิตรเป็นตัวเลขมากกว่า 0','error');price.focus();return;
       }
-      save.disabled=true;status.textContent='กำลังบันทึก…';
+      save.disabled=true;setUiStatus(status,'กำลังบันทึกราคาน้ำมัน…','neutral');
       try {
         const res=await getApi('/api/station-fuel-config',accessToken,{
           method:'POST',body:JSON.stringify({
             stationId,stationFuelId:fuel.id,publicPrice:price.value,enabled:checkbox.checked,
           }),
         });
-        status.textContent=res.ok?'บันทึกราคาสำเร็จ':'ไม่สำเร็จ ('+responseError(res.data)+')';
-      } catch {status.textContent='เชื่อมต่อไม่สำเร็จ';}
+        setUiStatus(status,res.ok?
+          (checkbox.checked?'บันทึกราคาและเปิดขายแล้ว':'บันทึกราคาแล้ว สถานะปิดขาย'):
+          'บันทึกไม่ได้: '+responseError(res.data),res.ok?'success':'error');
+      } catch {setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาลองบันทึกอีกครั้ง','error');}
       finally {save.disabled=false;}
     });
     controls.append(toggle,price,save);
@@ -1325,112 +1343,116 @@ async function platformWorkspace(accessToken) {
 }
 
 function dashboard(data, session, publicConfig={}) {
-  const memberships = data.memberships || [];
-  const scopes = {
-    platform: { title: 'แพลตฟอร์ม', modules: ['ปั๊มที่ให้บริการ', 'พนักงานขาย', 'การเรียกเก็บเงิน'] },
-    organization: { title: 'เจ้าของกิจการ', modules: ['บริหารปั๊ม', 'สมาชิกและสิทธิ์', 'การเงิน'] },
-    station: { title: 'จัดการปั๊มน้ำมัน', modules: ['คูปองเติมน้ำมัน', 'พนักงานและกะ', 'อนุมัติรายการ'] },
-    corporate_company: { title: 'บัญชีลูกค้าบริษัท', modules: ['คูปองเติมน้ำมัน', 'วงเงินและยอดใช้', 'ประวัติเติมน้ำมัน'] },
-  };
-  const active = scopes[memberships[0]?.scopeType] || scopes.station;
-  const screens=selectWorkspaceScreens(memberships);
-  show(renderWorkspaceShell(screens));
-  root.classList.add('workspace-mode');
-  wireWorkspaceNavigation(root);
-  if(sessionStorage.getItem('oilstation_open_plan_after_invite')==='1'){
-    sessionStorage.removeItem('oilstation_open_plan_after_invite');
-    root.querySelector('[data-ws-go="plan"]')?.click();
+ const memberships=data.memberships||[];
+ const scopes={
+  platform:{title:'แพลตฟอร์ม',modules:['ปั๊มที่ให้บริการ','พนักงานขาย','การเรียกเก็บเงิน']},
+  organization:{title:'เจ้าของกิจการ',modules:['บริหารปั๊ม','สมาชิกและสิทธิ์','การเงิน']},
+  station:{title:'จัดการปั๊มน้ำมัน',modules:['คูปองเติมน้ำมัน','พนักงานและกะ','อนุมัติรายการ']},
+  corporate_company:{title:'บัญชีลูกค้าบริษัท',modules:['คูปองเติมน้ำมัน','วงเงินและยอดใช้','ประวัติเติมน้ำมัน']},
+ };
+ const active=scopes[memberships[0]?.scopeType]||scopes.station;
+ const screens=selectWorkspaceScreens(memberships);
+ show(renderWorkspaceShell(screens));root.classList.add('workspace-mode');
+ document.getElementById('scope-title').textContent=active.title;
+ const scopesNode=document.getElementById('scopes');
+ for(const m of memberships){
+  const chip=document.createElement('div');chip.className='scope-chip';
+  chip.textContent=m.role+' · '+(scopes[m.scopeType]?.title||m.scopeType);
+  scopesNode.appendChild(chip);
+ }
+ const modules=document.getElementById('modules');
+ const icons={
+  platform:['building','users','receipt'],organization:['fuel','users','wallet'],
+  station:['ticket','calendar','clipboard'],corporate_company:['qr','wallet','receipt'],
+ }[memberships[0]?.scopeType]||['fuel','users','wallet'];
+ active.modules.forEach((name,i)=>{
+  const item=document.createElement('div');item.className='module-item menu-module';
+  item.append(makeIcon(icons[i]),document.createTextNode(name));modules.appendChild(item);
+ });
+ // Mount a module on first visit only, keeping form inputs and scroll state intact.
+ const mounts=new Map(),opened=new Set();
+ const register=(key,fn)=>{
+  if(!mounts.has(key))mounts.set(key,[]);
+  mounts.get(key).push(fn);
+ };
+ const mountScreen=key=>{
+  if(opened.has(key))return;
+  opened.add(key);
+  for(const fn of mounts.get(key)||[]){
+   Promise.resolve().then(fn).catch(()=>{
+    const panel=root.querySelector('[data-ws-screen="'+key+'"]');
+    if(!panel)return;
+    const error=document.createElement('p');error.className='notice';
+    error.dataset.tone='error';error.setAttribute('role','alert');
+    error.textContent='โหลดข้อมูลส่วนนี้ไม่ได้ กรุณาเปิดหน้าใหม่หรือตรวจสอบสิทธิ์กับผู้ดูแล';
+    panel.appendChild(error);
+   });
   }
-  document.getElementById('scope-title').textContent = active.title;
-  const all = document.getElementById('scopes');
-  memberships.forEach((m) => {
-    const e = document.createElement('div');
-    e.className = 'scope-chip';
-    e.textContent = m.role + ' · ' + (scopes[m.scopeType]?.title || m.scopeType);
-    all.appendChild(e);
-  });
-  const modules = document.getElementById('modules');
-  active.modules.forEach((name) => {
-    const e = document.createElement('div');
-    e.className = 'module-item menu-module';
-    const iconNames = {
-      platform:['building','users','receipt'], organization:['fuel','users','wallet'],
-      station:['ticket','calendar','clipboard'], corporate_company:['qr','wallet','receipt'],
-    }[memberships[0]?.scopeType] || ['fuel','users','wallet'];
-    e.append(makeIcon(iconNames[modules.children.length]), document.createTextNode(name));
-    modules.appendChild(e);
-  });
-  if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
-    platformWorkspace(session.access_token).catch(() => {});
-    mountPlatformSaasBilling({target:document.getElementById('platform-saas-billing'),
-      token:session.access_token});
-  }
-  const invitedOwner=memberships.find(m=>m.scopeType==='station' &&
-    ['station_owner','owner'].includes(m.role) && m.stationId);
-  if(invitedOwner) {
-    mountStationPlanChoice({target:document.getElementById('station-saas-plan-workspace'),
-      token:session.access_token,stationId:invitedOwner.stationId});
-  }
-  const billingMember=memberships.find(m=>m.scopeType==='organization'&&
-    ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
-  if(billingMember){
-    mountBillingWorkspace({target:document.getElementById('saas-billing-workspace'),
-      token:session.access_token,organizationId:billingMember.organizationId,
-      publishableKey:publicConfig.stripePublishableKey});
-  }
-  const attendanceMember=memberships.find(m=>m.scopeType==='station'&&m.stationId);
-  if(attendanceMember?.stationId){
-    mountAttendanceWorkspace({target:document.getElementById('attendance-workspace'),
-      token:session.access_token,stationId:attendanceMember.stationId});
-  }
-  const attendanceSupervisor=memberships.find(m=>m.scopeType==='station'&&
-    ['station_owner','owner','manager','hr_manager'].includes(m.role)&&m.stationId);
-  if(attendanceSupervisor){
-    mountAttendanceReview({target:document.getElementById('attendance-review-workspace'),
-      token:session.access_token,stationId:attendanceSupervisor.stationId});
-    mountAttendancePayrollPreview({target:document.getElementById('attendance-payroll-preview-workspace'),
-      token:session.access_token,stationId:attendanceSupervisor.stationId});
-  }
-  const pumpMember=memberships.find(m=>m.scopeType==='station'
-    && ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
-  if(pumpMember?.stationId) {
-    stationPumpWorkspace(session.access_token,pumpMember.stationId,
-      document.getElementById('station-pump-workspace'),
-      ['station_owner','owner','manager','cashier'].includes(pumpMember.role)).catch(()=>{});
-  }
-  const stationMember=memberships.find(m=>m.scopeType==='station'
-    && ['station_owner','owner','manager'].includes(m.role));
-  if(stationMember?.stationId) {
-    hrWorkspace(session.access_token,stationMember.stationId,
-      document.getElementById('hr-workspace')).catch(()=>{});
-    fuelPriceEditor(session.access_token,stationMember.stationId,
-      document.getElementById('station-fuel-workspace')).catch(()=>{});
-    if (['station_owner','owner','manager'].includes(stationMember.role)) {
-      stationFinanceWorkspace(session.access_token,stationMember.stationId,
-        document.getElementById('station-finance-workspace')).catch(()=>{});
-      stationCorporateWorkspace(session.access_token,stationMember.stationId,
-        document.getElementById('station-customers-workspace')).catch(()=>{});
-    }
-  }
-  const invites=document.getElementById('member-invites');
-  if (stationMember?.stationId) {
-    invites.appendChild(createInviteControl(session.access_token,'station',
-      stationMember.stationId,
-      [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม']]));
-  }
-  const corporateAdmin=memberships.find(m=>m.scopeType==='corporate_company' && m.role==='corporate_admin');
-  if (corporateAdmin?.corporateCompanyId) {
-    invites.appendChild(createInviteControl(session.access_token,'corporate_company',
-      corporateAdmin.corporateCompanyId,
-      [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']]));
-  }
-  if (memberships.some(m => m.scopeType==='corporate_company')) {
-    corporateWorkspace(session.access_token).catch(() => {});
-  }
-  document.getElementById('logout').addEventListener('click', async () => {
-    await authClient.auth.signOut();
-    location.replace('/');
-  });
+ };
+ if(memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')){
+  register('stations',()=>platformWorkspace(session.access_token));
+  register('billing',()=>mountPlatformSaasBilling({
+   target:document.getElementById('platform-saas-billing'),token:session.access_token}));
+ }
+ const owner=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner'].includes(m.role)&&m.stationId);
+ if(owner)register('plan',()=>mountStationPlanChoice({
+  target:document.getElementById('station-saas-plan-workspace'),
+  token:session.access_token,stationId:owner.stationId}));
+ const bill=memberships.find(m=>m.scopeType==='organization'&&
+  ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
+ if(bill)register('billing',()=>mountBillingWorkspace({
+  target:document.getElementById('saas-billing-workspace'),token:session.access_token,
+  organizationId:bill.organizationId,publishableKey:publicConfig.stripePublishableKey}));
+ const attendance=memberships.find(m=>m.scopeType==='station'&&m.stationId);
+ if(attendance)register('attendance',()=>mountAttendanceWorkspace({
+  target:document.getElementById('attendance-workspace'),
+  token:session.access_token,stationId:attendance.stationId}));
+ const supervisor=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner','manager','hr_manager'].includes(m.role)&&m.stationId);
+ if(supervisor){
+  register('reviews',()=>mountAttendanceReview({
+   target:document.getElementById('attendance-review-workspace'),
+   token:session.access_token,stationId:supervisor.stationId}));
+  register('payroll',()=>mountAttendancePayrollPreview({
+   target:document.getElementById('attendance-payroll-preview-workspace'),
+   token:session.access_token,stationId:supervisor.stationId}));
+ }
+ const pump=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role)&&m.stationId);
+ if(pump)register('pump',()=>stationPumpWorkspace(session.access_token,pump.stationId,
+  document.getElementById('station-pump-workspace'),
+  ['station_owner','owner','manager','cashier'].includes(pump.role)));
+ const station=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner','manager'].includes(m.role)&&m.stationId);
+ if(station){
+  register('hr',()=>hrWorkspace(session.access_token,station.stationId,document.getElementById('hr-workspace')));
+  register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,document.getElementById('station-fuel-workspace')));
+  register('finance',()=>stationFinanceWorkspace(session.access_token,station.stationId,document.getElementById('station-finance-workspace')));
+  register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace')));
+  register('invitations',()=>document.getElementById('member-invites')?.appendChild(
+   createInviteControl(session.access_token,'station',station.stationId,
+    [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม']])));
+ }
+ const corpAdmin=memberships.find(m=>m.scopeType==='corporate_company'&&m.role==='corporate_admin'&&m.corporateCompanyId);
+ if(corpAdmin)register('invitations',()=>document.getElementById('member-invites')?.appendChild(
+  createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
+   [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']])));
+ if(memberships.some(m=>m.scopeType==='corporate_company'))
+  register('corporate',()=>corporateWorkspace(session.access_token));
+ const shell=root.querySelector('[data-workspace-shell]');
+ shell?.addEventListener('oilstation:screenchange',event=>mountScreen(event.detail.key));
+ wireWorkspaceNavigation(root);
+ const newOwner=sessionStorage.getItem('oilstation_open_plan_after_invite')==='1';
+ if(newOwner)sessionStorage.removeItem('oilstation_open_plan_after_invite');
+ const requested=newOwner?'plan':sessionStorage.getItem('oilstation_last_workspace');
+ const allowed=[...root.querySelectorAll('.ws-nav[data-ws-go]')]
+   .find(button=>button.dataset.wsGo===requested);
+ if(allowed)allowed.click();else mountScreen('overview');
+ document.getElementById('logout').addEventListener('click',async()=>{
+  sessionStorage.removeItem('oilstation_last_workspace');
+  await authClient.auth.signOut();location.replace('/');
+ });
 }
 async function couponViewer(token) {
   if (!COUPON_PATTERN.test(token)) return showError('ลิงก์คูปองไม่ถูกต้อง');
