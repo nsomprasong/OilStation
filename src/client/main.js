@@ -1490,7 +1490,8 @@ function dashboard(data, session, publicConfig={}) {
  const requested=newOwner?'plan':sessionStorage.getItem('oilstation_last_workspace');
  const allowed=[...root.querySelectorAll('.ws-nav[data-ws-go]')]
    .find(button=>button.dataset.wsGo===requested);
- if(allowed)allowed.click();else mountScreen('overview');
+ if(allowed)allowed.click();
+ else root.querySelector('.ws-sidebar [data-ws-go="overview"]')?.click();
  document.getElementById('logout').addEventListener('click',async()=>{
   sessionStorage.removeItem('oilstation_last_workspace');
   await authClient.auth.signOut();location.replace('/');
