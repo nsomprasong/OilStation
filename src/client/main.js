@@ -52,21 +52,21 @@ function guestView(invited) {
     <p class="lead">คูปองน้ำมัน · พนักงาน · การเงิน</p>
     <section class="panel" aria-label="เข้าสู่ระบบ">
       <div class="section-title"><span class="status-dot"></span>
-        <span>${invited ? 'ยืนยันคำเชิญเพื่อเริ่มใช้งาน' : 'พื้นที่ใช้งานสำหรับผู้ได้รับเชิญ'}</span></div>
-      <p>${invited ? 'เลือกบัญชีที่คุณสะดวก' : 'เจ้าของปั๊มหรือผู้ดูแลจะส่งลิงก์เชิญทางอีเมล'}</p>
+        <span>${invited ? 'ยืนยันคำเชิญเพื่อเริ่มใช้งาน' : 'เข้าสู่ระบบ OilStation'}</span></div>
+      <p>${invited ? 'เข้าสู่ระบบเพื่อยืนยันคำเชิญของคุณ' : 'สำหรับผู้ดูแลและผู้ที่ได้รับเชิญจากองค์กรเท่านั้น'}</p>
       <div class="divider"></div>
-      ${invited ? `<div class="auth-buttons"><button class="button primary" id="google"><i data-brand-icon="google"></i>เข้าสู่ระบบด้วย Google</button>
-         <button class="button secondary" id="facebook"><i data-brand-icon="facebook"></i>เข้าสู่ระบบด้วย Facebook</button></div>` :
-        `<div class="step"><span class="number">1</span><i data-ui-icon="mail"></i> รับอีเมลคำเชิญ</div>
-         <div class="step"><span class="number">2</span><i data-ui-icon="shield"></i> เลือก Google หรือ Facebook</div>
-         <div class="step"><span class="number">3</span><i data-ui-icon="check"></i> เข้าสู่ระบบตามสิทธิ์</div>`}
-      <div class="hint">ไม่เปิดรับสมัครสาธารณะ</div>
+      <div class="auth-buttons">
+        <button class="button primary" id="google"><i data-brand-icon="google"></i>เข้าสู่ระบบด้วย Google</button>
+        <button class="button secondary" id="facebook"><i data-brand-icon="facebook"></i>เข้าสู่ระบบด้วย Facebook</button>
+      </div>
+      ${invited ? '' : `<div class="step"><span class="number">1</span><i data-ui-icon="mail"></i> สมาชิกใหม่รับลิงก์เชิญจากผู้ดูแล</div>
+         <div class="step"><span class="number">2</span><i data-ui-icon="shield"></i> เข้าสู่ระบบด้วยบัญชีที่ได้รับอนุญาต</div>`}
+      <p class="hint">ไม่เปิดรับสมัครสาธารณะ การเข้าสู่ระบบไม่ได้ให้สิทธิ์ใช้งานโดยอัตโนมัติ</p>
+      ${invited ? '' : '<a class="button secondary" href="/setup">ตั้งค่าผู้ดูแลระบบคนแรก</a>'}
       <p id="notice" class="notice" role="status" hidden></p>
     </section>`);
-  if (invited) {
-    document.getElementById('google').addEventListener('click', () => login('google'));
-    document.getElementById('facebook').addEventListener('click', () => login('facebook'));
-  }
+  document.getElementById('google').addEventListener('click', () => login('google'));
+  document.getElementById('facebook').addEventListener('click', () => login('facebook'));
 }
 async function login(provider) {
   if (!authClient) return message('การเข้าสู่ระบบยังไม่ได้ตั้งค่า', 'error');

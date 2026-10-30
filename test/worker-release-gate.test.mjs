@@ -202,3 +202,74 @@ test('production preview exposes only public OAuth config, not finance or privil
  assert.equal(method.status,405);
  assert.equal((await worker.fetch(request('/api/ready'),env)).status,503);
 });
+
+test('preview mode permits authenticated first-admin bootstrap and membership lookup only',async()=>{
+ const env={
+   ASSETS:assets,OILSTATION_DEPLOY_TARGET:'production',
+   OILSTATION_PREVIEW_LOGIN_ENABLED:'true',OILSTATION_API_ENABLED:'false',
+   SUPABASE_URL:'https://example-test.supabase.co',
+   SUPABASE_ANON_KEY:'public_key',SUPABASE_SERVICE_ROLE_KEY:'private_test_key',
+   COUPON_SIGNING_KEY:'A'.repeat(48),BOOTSTRAP_ADMIN_EMAIL:'superadmin@example.com',
+ };
+ const original=globalThis.fetch, urls=[];
+ globalThis.fetch=async (url,init)=>{
+   const path=String(url);urls.push(path);
+   if(path.endsWith('/auth/v1/user')) {
+     assert.equal(init.headers.apikey,env.SUPABASE_ANON_KEY);
+     return new Response(JSON.stringify({id:'11111111-1111-4111-8111-111111111111'}),{status:200});
+   }
+   if(path.endsWith('/rpc/bootstrap_first_platform_admin')) {
+     const body=JSON.parse(init.body);
+     assert.equal(body.p_expected_email,'superadmin@example.com');
+     return new Response(JSON.stringify({success:true,role:'platform_superadmin'}),{status:200});
+   }
+   if(path.includes('/rest/v1/memberships?')) {
+     return new Response(JSON.stringify([{active:true,scope_type:'platform',
+       role_code:'platform_superadmin',organization_id:null,station_id:null,
+       corporate_company_id:null,extra_permissions:{}}]),{status:200});
+   }
+   throw Error('unexpected external call '+path);
+ };
+ try{
+   const unauthorized=await worker.fetch(new Request(BASE+'/api/bootstrap',{method:'POST'}),env);
+   assert.equal(unauthorized.status,401);
+   const rejectedOrigin=await worker.fetch(new Request(BASE+'/api/bootstrap',{
+     method:'POST',headers:{authorization:'Bearer verified',origin:'https://other.example'},
+   }),env);
+   assert.equal(rejectedOrigin.status,403);
+   assert.equal(urls.length,0);
+   const good=await worker.fetch(new Request(BASE+'/api/bootstrap',{
+     method:'POST',headers:{authorization:'Bearer verified',origin:BASE},
+   }),env);
+   assert.equal(good.status,200);
+   assert.equal((await good.json()).success,true);
+   const me=await worker.fetch(new Request(BASE+'/api/me',{
+     headers:{authorization:'Bearer verified'},
+   }),env);
+   assert.equal(me.status,200);
+   assert.equal((await me.json()).memberships[0].role,'platform_superadmin');
+   const before=urls.length;
+   for(const route of ['/api/invitations/create','/api/coupons','/api/billing/payment-intent']){
+     const blocked=await worker.fetch(new Request(BASE+route,{method:'POST'}),env);
+     assert.equal(blocked.status,503,route);
+   }
+   assert.equal(urls.length,before);
+ }finally{globalThis.fetch=original;}
+});
+
+test('bootstrap preview exemption never applies to isolated UAT or non-preview deployment',async()=>{
+ const basic={
+  ASSETS:assets,OILSTATION_API_ENABLED:'false',
+  SUPABASE_URL:'https://example-test.supabase.co',
+  SUPABASE_ANON_KEY:'public_key',SUPABASE_SERVICE_ROLE_KEY:'private_test_key',
+  COUPON_SIGNING_KEY:'A'.repeat(48),
+ };
+ for(const changed of [
+   {OILSTATION_DEPLOY_TARGET:'uat',OILSTATION_PREVIEW_LOGIN_ENABLED:'true'},
+   {OILSTATION_DEPLOY_TARGET:'production',OILSTATION_PREVIEW_LOGIN_ENABLED:'false'},
+ ]){
+   const r=await worker.fetch(new Request(BASE+'/api/bootstrap',{method:'POST'}),{...basic,...changed});
+   assert.equal(r.status,503);
+   assert.equal((await r.json()).error,'release_not_enabled');
+ }
+});

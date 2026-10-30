@@ -77,6 +77,23 @@ export default {
         }),{status:200,headers:{'content-type':'application/json; charset=utf-8',
            'cache-control':'no-store','x-content-type-options':'nosniff'}});
       }
+      // In preview mode, first-admin bootstrap and authenticated membership
+      // lookup are the only privileged routes accessible before the full
+      // financial release. Supabase validates the OAuth token and the bootstrap
+      // RPC enforces the preconfigured confirmed email and single admin.
+      if (env.OILSTATION_DEPLOY_TARGET === 'production' &&
+          env.OILSTATION_PREVIEW_LOGIN_ENABLED === 'true' &&
+          env.OILSTATION_API_ENABLED !== 'true' &&
+          (url.pathname === '/api/bootstrap' || url.pathname === '/api/me')) {
+        try {
+          return createApi(createSupabaseAdapter(env))(request);
+        } catch {
+          return new Response(JSON.stringify({error:'service_not_configured'}),{
+            status:503,headers:{'content-type':'application/json; charset=utf-8',
+              'cache-control':'no-store','x-content-type-options':'nosniff'},
+          });
+        }
+      }
       if (url.pathname === '/api/ready') {
         if (request.method !== 'GET') return new Response(null,{status:405});
         // A healthy process is not a ready release. Validate the deployed
