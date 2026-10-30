@@ -37,3 +37,13 @@ The user selected **Gentelella v4** as the OilStation UI. This overrides prior g
 
 ## Boundaries
 CSS is isolated to authenticated workspace or guest authentication; API validation, tenancy, signed coupon rules, financial accounting and background processing remain unchanged. No template copy or new runtime dependency.
+
+## Mobile-first presentation — selected reference (30 October 2026)
+
+The user provided a banking-style app screenshot as the **mobile information-architecture reference**, not as an authorization to copy its brand, exact orange palette, financial balances, icons or proprietary artwork. Preserve Gentelella v4 for desktop and OilStation teal + navy identity on mobile.
+
+**On phone (up to 850 px):** full-width greeting + functional service search; four icon-based fast actions from the server-issued role screens; two truthful information cards (account access scope and count of accessible modules); an icon grid for all accessible features; persistent five-position bottom navigation, with a raised central QR scan button. The center scan is only enabled for members authorized for the station pump module. More opens the existing accessible sidebar. No fabricated wallets, points, balances, alerts or transactions.
+
+**Scan behavior:** one tap navigates to pump workspace and opens the native rear-camera BarcodeDetector reader. Frame the QR, read it, then use the existing station-side server inspection; never skip authorization, license gate, plate evidence or supervisor approvals. Stop all camera tracks after scan, navigating away, canceling or backgrounding the tab. On unsupported browsers or denied permissions, explain the limitation and allow manual QR payload entry. Never claim a decoded QR is an approved or settled transaction.
+
+**Desktop:** stays on Gentelella v4 grouped sidebar and conventional workspace, with no bottom bar. The mobile adaptation is in `src/client/mobile-home.js` and `public/mobile-app.css`. All feature labels and navigation keys come from `selectWorkspaceScreens` to reflect real roles. Reuse Lucide allowlist icons.
