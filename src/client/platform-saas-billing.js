@@ -46,13 +46,24 @@ export function mountPlatformSaasBilling({target,token}){
  const plan=el('form');plan.className='coupon-form saas-simple-card';
  plan.append(el('h3','2. สร้างแพ็กเกจราคา'),
    el('p','กำหนดราคาต่อปั๊มตามบริการที่เปิดใช้งาน ลูกค้าเลือกแพ็กเกจหลังตอบรับคำเชิญ'));
- plan.append(field('ชื่อแพ็กเกจ','name',{placeholder:'เช่น Standard'}),
-  field('รหัสแพ็กเกจ (ภาษาอังกฤษ)','code',{placeholder:'standard_monthly'}),
-  field('รอบชำระเงิน','frequency',{options:[['monthly','รายเดือน'],['yearly','รายปี']]}),
-  field('QR Coupon (บาท/ปั๊ม)','couponBaht',{placeholder:'1500.00'}),
-  field('HR & Payroll (บาท/ปั๊ม)','hrBaht',{placeholder:'500.00'}),
-  field('QR Coupon + HR & Payroll (ราคาแพ็กคู่ / บาท)','bundleBaht',{placeholder:'เช่น 25000.00'}),
-  field('เริ่มมีผลวันที่','effectiveOn',{type:'date'}));
+ const planBasics=el('div');planBasics.className='os-plan-basics';
+ planBasics.append(
+  field('ชื่อแพ็กเกจ','name',{placeholder:'เช่น Standard รายปี'}),
+  field('รหัสแพ็กเกจ (ภาษาอังกฤษ)','code',{placeholder:'standard_year'}),
+  field('รอบชำระเงิน','frequency',{options:[['monthly','รายเดือน'],['yearly','รายปี']]})
+ );
+ const prices=el('div');prices.className='os-plan-pricing';
+ prices.append(el('h4','ราคาที่ลูกค้าจะเห็น'));
+ const priceFields=el('div');priceFields.className='os-price-grid';
+ priceFields.append(
+  field('QR Coupon อย่างเดียว (บาท/ปั๊ม)','couponBaht',{placeholder:'16000.00'}),
+  field('HR & Payroll อย่างเดียว (บาท/ปั๊ม)','hrBaht',{placeholder:'16000.00'}),
+  field('ทั้ง 2 บริการ (ราคาแพ็กคู่ / บาท)','bundleBaht',{placeholder:'25000.00'})
+ );
+ const priceNote=el('p','เมื่อเปิดทั้ง 2 บริการ ระบบจะใช้ราคาแพ็กคู่ที่กำหนด ไม่บวกราคาสองรายการ');
+ priceNote.className='os-price-hint';
+ prices.append(priceFields,priceNote);
+ plan.append(planBasics,prices,field('เริ่มมีผลวันที่','effectiveOn',{type:'date'}));
  const codeInput=plan.querySelector('[name="code"]');
  codeInput.addEventListener('input',()=>{codeInput.value=codeInput.value.toLowerCase().replace(/\s+/g,'_');});
  const savePlan=el('button','สร้างแพ็กเกจ');savePlan.type='submit';savePlan.className='button primary';

@@ -1218,29 +1218,37 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
 async function platformWorkspace(accessToken) {
   const target=document.getElementById('platform-workspace');
   if (!target) return;
+
   target.innerHTML = `
-    <div class="section-title">ขั้นตอนที่ 1 — สร้างปั๊มน้ำมัน</div>
-    <p>ระบุข้อมูลปั๊มและบริการที่ใช้ โดยยังไม่ต้องเลือกแพ็กเกจราคา</p>
-    <form class="coupon-form" id="new-station-form">
-      <label class="field">ชื่อองค์กร / เจ้าของกิจการ
-        <input id="org-name" autocomplete="organization" maxlength="160" required placeholder="เช่น บริษัท ตัวอย่าง จำกัด"></label>
-      <label class="field">ชื่อปั๊มน้ำมัน / สาขา
-        <input id="station-name" maxlength="160" required placeholder="เช่น สถานี A"></label>
-      <label class="field">แบรนด์ปั๊มน้ำมัน
-        <select id="brand-select" required></select></label>
-      <div class="module-choices">
-        <label><input type="checkbox" id="module-qr" checked> QR Coupon</label>
-        <label><input type="checkbox" id="module-hr"> HR & Payroll</label>
-      </div>
-      <p class="hint">รายชื่อน้ำมันจะเตรียมไว้ตามแบรนด์ โดยยังปิดการขายทั้งหมดจนกว่าจะเลือกชนิดและตั้งราคา</p>
-      <button class="button primary" id="new-station-submit" type="submit"><i data-ui-icon="building"></i>สร้างปั๊ม</button>
-      <p id="platform-notice" class="notice" hidden role="status"></p>
-    </form>
-    <div class="divider"></div>
-    <div class="section-title">ขั้นตอนที่ 2 — เชิญเจ้าของปั๊ม</div>
-    <p>เมื่อสร้างปั๊มแล้ว กดเชิญเจ้าของปั๊มในรายการด้านล่าง หลังตอบรับคำเชิญ เจ้าของปั๊มจะเลือกแพ็กเกจและวิธีชำระเงินเอง</p>
-    <div class="section-title">ปั๊มในแพลตฟอร์ม</div>
-    <div id="station-list" class="module-list"><p>กำลังโหลด…</p></div>
+    <div class="os-station-layout">
+      <section class="os-create-station" aria-labelledby="os-create-heading">
+        <span class="os-onboarding-label">ขั้นตอนที่ 1 / ข้อมูลปั๊ม</span>
+        <h3 id="os-create-heading">สร้างปั๊มน้ำมัน</h3>
+        <p class="os-section-copy">กรอกข้อมูลสาขาและเลือกบริการ ยังไม่ต้องเลือกแพ็กเกจราคา</p>
+        <form class="coupon-form" id="new-station-form">
+          <label class="field">ชื่อองค์กร / เจ้าของกิจการ
+            <input id="org-name" autocomplete="organization" maxlength="160" required placeholder="เช่น บริษัท ตัวอย่าง จำกัด"></label>
+          <label class="field">ชื่อปั๊มน้ำมัน / สาขา
+            <input id="station-name" maxlength="160" required placeholder="เช่น สถานี A"></label>
+          <label class="field">แบรนด์ปั๊มน้ำมัน
+            <select id="brand-select" required></select></label>
+          <div class="module-choices" role="group" aria-label="บริการที่จะเปิดใช้งาน">
+            <label><input type="checkbox" id="module-qr" checked> QR Coupon</label>
+            <label><input type="checkbox" id="module-hr"> HR & Payroll</label>
+          </div>
+          <p class="hint">ระบบเตรียมชนิดน้ำมันตามแบรนด์ไว้ให้ แต่ยังไม่เปิดขายจนกว่าจะตั้งราคาและเปิดใช้งาน</p>
+          <button class="button primary" id="new-station-submit" type="submit"><i data-ui-icon="building"></i>สร้างปั๊ม</button>
+          <p id="platform-notice" class="notice" hidden role="status"></p>
+        </form>
+      </section>
+      <section class="os-station-directory" aria-labelledby="os-directory-heading">
+        <span class="os-onboarding-label">ขั้นตอนที่ 2 / เชิญเจ้าของปั๊ม</span>
+        <h3 id="os-directory-heading">ปั๊มที่สร้างแล้ว</h3>
+        <p class="os-section-copy">เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง</p>
+        <p id="station-count" class="os-directory-count" role="status"></p>
+        <div id="station-list" class="module-list"><p>กำลังโหลดรายชื่อปั๊ม…</p></div>
+      </section>
+    </div>
     <div id="fuel-editor"></div>
   `;
   const el=id=>document.getElementById(id);
@@ -1254,23 +1262,34 @@ async function platformWorkspace(accessToken) {
     if (!r.ok) throw new Error('station_list_failed');
     const list=el('station-list');
     list.replaceChildren();
+    el('station-count').textContent='ทั้งหมด '+(r.data.stations?.length||0)+' ปั๊ม';
     if (!r.data.stations?.length) {
       const msg=document.createElement('p');msg.textContent='ยังไม่มีปั๊มน้ำมันในระบบ';list.appendChild(msg);
     }
     for (const s of (r.data.stations||[])) {
       const node=document.createElement('div');
-      node.className='module-item';
-      const name=document.createElement('strong');name.textContent=s.stationName;
+      node.className='module-item os-station-card';
+      const name=document.createElement('strong');name.className='os-station-card-name';name.textContent=s.stationName;
       const detail=document.createElement('div');detail.className='module-subtitle';
+      detail.classList.add('os-station-card-meta');
       detail.textContent=s.organizationName+' · '+s.brandName+' · '+Object.entries(s.modules||{})
         .filter(([,status])=>status==='enabled').map(([module])=>module==='qr_coupon'?'QR Coupon':'HR').join(' + ');
       const manage=document.createElement('button');
       manage.type='button';manage.className='button secondary';
       manage.textContent='จัดการน้ำมัน';
-      manage.addEventListener('click',()=>fuelPriceEditor(accessToken,s.id,el('fuel-editor'))
-        .catch(()=>notice('เปิดจัดการน้ำมันไม่ได้',true)));
-      node.append(name,detail,manage,
+      manage.addEventListener('click',async()=>{
+        const editor=el('fuel-editor');
+        editor.replaceChildren();
+        try{
+          await fuelPriceEditor(accessToken,s.id,editor);
+          editor.scrollIntoView({block:'start',behavior:'smooth'});
+        }catch{notice('เปิดจัดการน้ำมันไม่ได้',true);}
+      });
+      const actions=document.createElement('div');
+      actions.className='os-station-actions';
+      actions.append(manage,
         createInviteControl(accessToken,'station',s.id,[['station_owner','เจ้าของปั๊ม']]));
+      node.append(name,detail,actions);
       list.appendChild(node);
     }
   }
