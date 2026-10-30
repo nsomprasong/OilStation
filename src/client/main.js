@@ -1318,6 +1318,10 @@ function dashboard(data, session, publicConfig={}) {
   show(renderWorkspaceShell(screens));
   root.classList.add('workspace-mode');
   wireWorkspaceNavigation(root);
+  if(sessionStorage.getItem('oilstation_open_plan_after_invite')==='1'){
+    sessionStorage.removeItem('oilstation_open_plan_after_invite');
+    root.querySelector('[data-ws-go="plan"]')?.click();
+  }
   document.getElementById('scope-title').textContent = active.title;
   const all = document.getElementById('scopes');
   memberships.forEach((m) => {
@@ -1491,6 +1495,7 @@ async function invitedEmailVerification(accessToken,invite) {
     if(!res.ok||res.data.accepted!==true)
      return notify('รหัสไม่ถูกต้อง หมดอายุ หรือคำเชิญถูกใช้แล้ว',true);
     sessionStorage.removeItem(INVITE_KEY);
+    sessionStorage.setItem('oilstation_open_plan_after_invite','1');
     history.replaceState(null,'','/');
     location.replace('/');
    }catch{notify('เชื่อมต่อไม่ได้ กรุณาลองใหม่ก่อนรหัสหมดอายุ',true);}
@@ -1546,6 +1551,7 @@ async function boot() {
       return message(responseError(accepted.data),'error');
     }
     sessionStorage.removeItem(INVITE_KEY);
+    sessionStorage.setItem('oilstation_open_plan_after_invite','1');
     history.replaceState(null,'','/');
   }
   const result = await getApi('/api/me',session.access_token);
