@@ -34,7 +34,7 @@ test('home has an accessible power icon in the top-right corner which uses exist
  assert.match(home,/data-mobile-logout/);
  assert.match(home,/aria-label="ออกจากระบบ"/);
  assert.match(home,/data-ui-icon="power"/);
- assert.match(layout,/data-mobile-logout/);
+ assert.match(read('src/client/logout-dialog.js'),/data-mobile-logout/);
  assert.doesNotMatch(layout,/window\.confirm\(/);
  assert.match(layout,/wireLogoutDialog\(root\)/);
  assert.match(layout,/renderLogoutDialog\(\)/);
