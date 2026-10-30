@@ -177,3 +177,28 @@ test('UAT cron cannot touch live SQL even if explicitly enabled',async()=>{
   assert.equal(queries,0);
  }finally{globalThis.fetch=original;}
 });
+
+test('production preview exposes only public OAuth config, not finance or privileged APIs',async()=>{
+ const env={ASSETS:assets,OILSTATION_DEPLOY_TARGET:'production',
+  OILSTATION_PREVIEW_LOGIN_ENABLED:'true',OILSTATION_API_ENABLED:'false',
+  SUPABASE_URL:'https://cxihsotcpdnalswfoysx.supabase.co',
+  SUPABASE_ANON_KEY:'sb_publishable_example_public_only',
+  SUPABASE_SERVICE_ROLE_KEY:'not_a_real_private_key'};
+ const response=await worker.fetch(request('/api/public-config'),env);
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.deepEqual(body,{
+  supabaseUrl:env.SUPABASE_URL,supabaseAnonKey:env.SUPABASE_ANON_KEY,
+  stripePublishableKey:null,
+ });
+ assert.ok(!JSON.stringify(body).includes(env.SUPABASE_SERVICE_ROLE_KEY));
+ for(const endpoint of ['/api/me','/api/invitations/email-challenge',
+     '/api/billing/payment-intent','/api/coupons','/api/webhooks/stripe']){
+  const denied=await worker.fetch(request(endpoint),env);
+  assert.equal(denied.status,503,endpoint);
+  assert.equal((await denied.json()).error,'release_not_enabled');
+ }
+ const method=await worker.fetch(new Request(BASE+'/api/public-config',{method:'POST'}),env);
+ assert.equal(method.status,405);
+ assert.equal((await worker.fetch(request('/api/ready'),env)).status,503);
+});
