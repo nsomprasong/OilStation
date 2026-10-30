@@ -37,3 +37,14 @@ test('misconfigured provider, wrong project sender, invalid codes and failures f
  assert.equal(calls,0);
  assert.equal(await sendInvitedEmailOtp({env,email,id,code:'12345678',fetchImpl}),false);
 });
+
+test('UAT OTP can only be delivered to an explicitly allowed mailbox',async()=>{
+ let sent=0;
+ const fetchImpl=async()=>{sent++;return new Response('{"id":"email_1234"}',{status:200})};
+ const uat={...env,OILSTATION_DEPLOY_TARGET:'uat'};
+ assert.equal(await sendInvitedEmailOtp({env:uat,email,id,code:'00000123',fetchImpl}),false);
+ assert.equal(await sendInvitedEmailOtp({env:{...uat,OILSTATION_UAT_TEST_EMAIL:'someoneelse@example.com'},email,id,code:'00000123',fetchImpl}),false);
+ assert.equal(sent,0);
+ assert.equal(await sendInvitedEmailOtp({env:{...uat,OILSTATION_UAT_TEST_EMAIL:'INVITED@EXAMPLE.COM'},email,id,code:'00000123',fetchImpl}),true);
+ assert.equal(sent,1);
+});
