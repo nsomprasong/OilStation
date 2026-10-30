@@ -1,0 +1,73 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {chooseMobileActions,renderMobileHome,renderMobileNav} from '../../src/client/mobile-home.js';
+import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/workspace-layout.js';
+const source=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
+const m=(scopeType,role,extra={})=>({scopeType,role,...extra});
+
+test('mobile home reflects real allowed modules and does not invent monetary balances',()=>{
+ const screens=selectWorkspaceScreens([m('platform','platform_superadmin')]);
+ const html=renderMobileHome(screens);
+ assert.match(html,/data-mobile-search-input/);
+ assert.match(html,/os-mobile-quick-grid/);
+ assert.match(html,/os-mobile-summary-grid/);
+ assert.match(html,/os-mobile-feature-grid/);
+ assert.match(html,/2 รายการ/);
+ assert.match(html,/แพ็กเกจและ VAT/);
+ assert.doesNotMatch(html,/อัตราคงเหลือ|ยอดเงินคงเหลือ|฿[\d,]/);
+ assert.doesNotMatch(html,/data-ws-go="pump"/);
+});
+test('role-scoped five-tab bottom navigation supports direct scan only for pump role',()=>{
+ const owner=selectWorkspaceScreens([m('station','station_owner',{stationId:'s'})]);
+ const nav=renderMobileNav(owner);
+ assert.match(nav,/data-ws-go="overview"/);
+ assert.match(nav,/data-ws-scan/);
+ assert.match(nav,/เปิดกล้องสแกน QR คูปอง/);
+ assert.match(nav,/data-ws-more/);
+ assert.match(nav,/os-mobile-scan-bubble/);
+ assert.equal((nav.match(/class="os-mobile-tab/g)||[]).length,5);
+ const platform=renderMobileNav(selectWorkspaceScreens([m('platform','platform_superadmin')]));
+ assert.match(platform,/ไม่มีสิทธิ์สแกน QR คูปอง/);
+ assert.match(platform,/disabled title="บัญชีนี้ไม่มีสิทธิ์งานหน้าลาน"/);
+});
+test('mobile scan button sends action, lazy mounts pump and starts scanner with one tap',()=>{
+ const shell=source('src/client/workspace-layout.js');
+ const main=source('src/client/main.js');
+ assert.match(shell,/oilstation:scanrequest/);
+ assert.match(main,/oilstation:scanrequest/);
+ assert.match(main,/pendingMobileScan/);
+ assert.match(main,/target\.querySelector\('#start-camera'\)\?\.click\(\)/);
+ assert.match(main,/oilstation:leave-pump/);
+ assert.match(main,/getUserMedia/);
+ assert.match(main,/BarcodeDetector/);
+ assert.match(main,/facingMode:\{ideal:'environment'\}/);
+ assert.match(main,/video\.play\(\)/);
+ assert.match(main,/if\(document\.hidden\)stop\(\)/);
+ assert.match(main,/เล็งกล้องไปที่ QR/);
+});
+test('bottom bar and screenshot-style home exist only on mobile; desktop Gentelella remains',()=>{
+ const html=source('index.html');
+ const css=source('public/mobile-app.css');
+ assert.match(html,/href="\/mobile-app\.css"/);
+ assert.match(css,/\.os-mobile-home,\.os-mobile-bottom\{display:none\}/);
+ assert.match(css,/@media\(max-width:850px\)/);
+ assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.os-mobile-camera\.is-scanning/);
+ assert.match(css,/env\(safe-area-inset-bottom\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(source('public/gentelella-v4-selected.css'),/--gt-sidebar:#1a2332/);
+ assert.match(source('src/client/icons.js'),/home:House/);
+ const rendered=renderWorkspaceShell(selectWorkspaceScreens([m('platform','platform_superadmin')]));
+ assert.match(rendered,/os-mobile-bottom/);
+ assert.match(rendered,/os-mobile-home/);
+});
+test('mobile app search uses available client-side screen labels and descriptions only',()=>{
+ const sourceFile=source('src/client/workspace-layout.js');
+ assert.match(sourceFile,/dataset\.mobileSearch/);
+ assert.match(sourceFile,/data-mobile-no-results/);
+ assert.match(sourceFile,/oilstation:screenchange/);
+ const allowed=chooseMobileActions(selectWorkspaceScreens([m('station','cashier',{stationId:'s'})]));
+ assert.equal(allowed.canScan,true);
+ assert.ok(allowed.headline.includes('pump'));
+});
