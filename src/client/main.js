@@ -408,7 +408,13 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
   link.setAttribute('aria-label','ลิงก์คำเชิญ');
   const copy=document.createElement('button');
   copy.className='button secondary';copy.type='button';copy.textContent='คัดลอกลิงก์';copy.hidden=true;
-  toggle.addEventListener('click',()=>{box.hidden=!box.hidden;});
+  toggle.setAttribute('aria-expanded','false');
+  email.autocomplete='email';
+  toggle.addEventListener('click',()=>{
+    box.hidden=!box.hidden;
+    toggle.setAttribute('aria-expanded',String(!box.hidden));
+    if(!box.hidden)email.focus();
+  });
   copy.addEventListener('click',async()=>{
     try {await navigator.clipboard.writeText(link.value);copy.textContent='คัดลอกแล้ว';}
     catch {link.select();}
@@ -421,12 +427,13 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
           email:email.value.trim(),roleCode:roles.value,scopeType,scopeId,
         }),
       });
-      if(!r.ok){status.textContent='สร้างคำเชิญไม่สำเร็จ ('+responseError(r.data)+')';return;}
+      if(!r.ok){setUiStatus(status,'สร้างคำเชิญไม่สำเร็จ: '+responseError(r.data),'error');return;}
       link.value=r.data.invitation.inviteUrl;link.hidden=false;copy.hidden=false;
-      status.textContent=r.data.invitation.delivery==='email_accepted'?
+      setUiStatus(status,r.data.invitation.delivery==='email_accepted'?
         'ผู้ให้บริการรับคำขอส่งอีเมลแล้ว (ยังไม่ยืนยันการส่งถึงผู้รับ) สามารถคัดลอกลิงก์ได้':
-        'สร้างลิงก์แล้ว การส่งอีเมลอัตโนมัติยังไม่ยืนยัน กรุณาคัดลอกและส่งให้ผู้รับ';
-    }catch{status.textContent='เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ';}
+        'สร้างลิงก์แล้ว การส่งอีเมลอัตโนมัติยังไม่ยืนยัน กรุณาคัดลอกและส่งให้ผู้รับ',
+        r.data.invitation.delivery==='email_accepted'?'success':'warning');
+    }catch{setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ','error');}
     finally{submit.disabled=false;}
   });
   box.append(email,roles,submit,status,link,copy);
@@ -880,8 +887,15 @@ async function fuelPriceEditor(accessToken,stationId,target) {
   target.appendChild(hint);
   const res=await getApi('/api/station-fuels?stationId='+encodeURIComponent(stationId),accessToken);
   if (!res.ok) {
-    const error=document.createElement('p');error.textContent='ไม่สามารถโหลดรายการน้ำมัน';target.appendChild(error);
+    const error=document.createElement('p');error.setAttribute('role','alert');
+    error.textContent='โหลดรายการน้ำมันไม่ได้: '+responseError(res.data);
+    error.dataset.tone='error';target.appendChild(error);
     return;
+  }
+  if(!res.data.fuels?.length){
+    const empty=document.createElement('p');empty.className='ws-empty';
+    empty.textContent='ยังไม่มีชนิดน้ำมันสำหรับปั๊มนี้ กรุณาตรวจแบรนด์ของปั๊มหรือติดต่อผู้ดูแล';
+    target.appendChild(empty);return;
   }
   for (const fuel of res.data.fuels||[]) {
     const row=document.createElement('div');row.className='fuel-row';
@@ -889,26 +903,30 @@ async function fuelPriceEditor(accessToken,stationId,target) {
     const controls=document.createElement('div');controls.className='fuel-row-controls';
     const toggle=document.createElement('label');
     const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=fuel.enabled;
+    checkbox.setAttribute('aria-label','เปิดขาย '+fuel.name);
     toggle.append(checkbox,document.createTextNode(' เปิดขาย'));
     const price=document.createElement('input');
     price.inputMode='decimal';price.value=fuel.publicPrice??'';
-    price.placeholder='ราคา/ลิตร';price.setAttribute('aria-label','ราคาต่อลิตรสำหรับ '+fuel.name);
+    price.placeholder='บาทต่อลิตร';price.autocomplete='off';price.setAttribute('aria-label','ราคาบาทต่อลิตรสำหรับ '+fuel.name);
     const save=document.createElement('button');save.type='button';save.className='button secondary';
     save.textContent='บันทึก';
     const status=document.createElement('small');status.setAttribute('role','status');
+    status.setAttribute('aria-live','polite');
     save.addEventListener('click',async()=>{
       if (!/^[0-9]{1,8}(?:\.[0-9]{1,4})?$/.test(price.value) || Number(price.value)<=0) {
-        status.textContent='กรุณาระบุราคาที่ถูกต้อง';return;
+        setUiStatus(status,'กรุณาใส่ราคาบาทต่อลิตรเป็นตัวเลขมากกว่า 0','error');price.focus();return;
       }
-      save.disabled=true;status.textContent='กำลังบันทึก…';
+      save.disabled=true;setUiStatus(status,'กำลังบันทึกราคาน้ำมัน…','neutral');
       try {
         const res=await getApi('/api/station-fuel-config',accessToken,{
           method:'POST',body:JSON.stringify({
             stationId,stationFuelId:fuel.id,publicPrice:price.value,enabled:checkbox.checked,
           }),
         });
-        status.textContent=res.ok?'บันทึกราคาสำเร็จ':'ไม่สำเร็จ ('+responseError(res.data)+')';
-      } catch {status.textContent='เชื่อมต่อไม่สำเร็จ';}
+        setUiStatus(status,res.ok?
+          (checkbox.checked?'บันทึกราคาและเปิดขายแล้ว':'บันทึกราคาแล้ว สถานะปิดขาย'):
+          'บันทึกไม่ได้: '+responseError(res.data),res.ok?'success':'error');
+      } catch {setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาลองบันทึกอีกครั้ง','error');}
       finally {save.disabled=false;}
     });
     controls.append(toggle,price,save);
