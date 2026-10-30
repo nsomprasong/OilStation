@@ -1505,14 +1505,13 @@ function dashboard(data, session, publicConfig={}) {
   if(signingOut)return;
   signingOut=true;
   try{
+   const {error}=await authClient.auth.signOut();
+   if(error)throw error;
    sessionStorage.removeItem('oilstation_last_workspace');
-   await authClient.auth.signOut();
    location.replace('/');
   }catch{
    signingOut=false;
-   const power=root.querySelector('[data-mobile-logout]');
-   if(power)power.disabled=false;
-   window.alert('ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง');
+   shell?.dispatchEvent(new CustomEvent('oilstation:logoutfailed'));
   }
  };
  document.getElementById('logout').addEventListener('click',signOut);

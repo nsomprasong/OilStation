@@ -442,3 +442,112 @@
  #app.workspace-mode .os-mobile-page-hero,
  #app.workspace-mode .os-mobile-page-shortcuts button{transition:none}
 }
+
+
+/* OilStation confirmation dialog — same visual language as the mobile home.
+   Native <dialog> supplies top-layer, focus containment and Android back/Escape
+   semantics without rendering browser-domain confirm text. */
+#app.workspace-mode .os-logout-dialog{
+  box-sizing:border-box;
+  width:min(400px,calc(100vw - 32px));
+  max-width:calc(100vw - 32px);
+  max-height:min(85dvh,540px);
+  margin:auto;padding:0;
+  border:1px solid rgba(228,238,239,.96);
+  border-radius:24px;
+  background:#fff;color:#203849;
+  box-shadow:0 25px 75px rgba(7,36,47,.23);
+  overflow:auto;
+  font-family:"Noto Sans Thai","Segoe UI",Tahoma,system-ui,sans-serif;
+  text-align:center;
+}
+#app.workspace-mode .os-logout-dialog::backdrop{
+  background:rgba(7,27,35,.68);
+  backdrop-filter:blur(3px);
+}
+#app.workspace-mode .os-logout-dialog-body{
+  padding:30px 25px 24px;
+  display:flex;flex-direction:column;align-items:center;
+}
+#app.workspace-mode .os-logout-icon{
+  display:grid;place-items:center;
+  width:66px;height:66px;
+  border-radius:21px;
+  background:linear-gradient(145deg,#e6f8f2,#d9f3ea);
+  color:#087d6a;
+  margin-bottom:17px;
+}
+#app.workspace-mode .os-logout-icon svg{
+  width:32px;height:32px;stroke-width:2;
+}
+#app.workspace-mode .os-logout-eyebrow{
+  color:#087f6d;font-size:10px;letter-spacing:.13em;
+  font-weight:800;margin-bottom:7px;
+}
+#app.workspace-mode .os-logout-dialog h2{
+  margin:0 0 9px;
+  font-size:23px;font-weight:790;
+  letter-spacing:-.025em;line-height:1.4;
+  color:#1d3442;
+}
+#app.workspace-mode .os-logout-dialog p#os-logout-description{
+  margin:0;color:#607682;
+  font-size:14px;line-height:1.75;
+  max-width:300px;
+}
+#app.workspace-mode .os-logout-feedback{
+  align-self:stretch;border-radius:11px;
+  padding:11px 13px;margin:14px 0 0;
+  background:#e9f7f2;color:#116e5c;
+  font-size:12px;line-height:1.65;
+}
+#app.workspace-mode .os-logout-feedback[data-tone="error"]{
+  background:#fff1ee;color:#b03d37;
+  border:1px solid #ebcbc6;
+}
+#app.workspace-mode .os-logout-actions{
+  display:grid;grid-template-columns:1fr 1fr;
+  width:100%;gap:11px;margin-top:25px;
+}
+#app.workspace-mode .os-logout-actions button{
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;min-width:0;min-height:49px;
+  padding:11px 13px;
+  border-radius:12px;
+  border:1px solid #d8e4e8;
+  font:inherit;font-size:14px;
+  font-weight:750;line-height:1.35;
+  touch-action:manipulation;
+  cursor:pointer;
+}
+#app.workspace-mode .os-logout-cancel{
+  background:#f3f6f7;color:#405766;
+}
+#app.workspace-mode .os-logout-cancel:hover{
+  background:#e9eff1;
+}
+#app.workspace-mode .os-logout-confirm{
+  background:#099681;border-color:#087f71!important;
+  color:#fff;
+}
+#app.workspace-mode .os-logout-confirm:hover:not(:disabled){
+  background:#087966;
+}
+#app.workspace-mode .os-logout-confirm svg{
+  width:18px;height:18px;flex:none;
+}
+#app.workspace-mode .os-logout-actions button:focus-visible{
+  outline:3px solid #098f7a;
+  outline-offset:3px;
+}
+#app.workspace-mode .os-logout-actions button:disabled{
+  opacity:.64;cursor:progress;
+}
+@media(max-width:360px){
+ #app.workspace-mode .os-logout-dialog-body{padding:24px 17px 18px}
+ #app.workspace-mode .os-logout-actions{gap:8px}
+}
+@media(prefers-reduced-motion:reduce){
+ #app.workspace-mode .os-logout-dialog *,
+ #app.workspace-mode .os-logout-dialog{transition:none;animation:none}
+}
