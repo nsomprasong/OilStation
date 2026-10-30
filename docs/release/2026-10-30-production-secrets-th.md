@@ -5,9 +5,9 @@
 ## สถานะจริงก่อนเปิดระบบ
 
 - Production Supabase `cxihsotcpdnalswfoysx`: 65 public tables, 30 migrations ในประวัติ; 28 migrations ใหม่ยังไม่ติดตั้ง
-- ตรวจ Cloudflare Production Worker `oilstation` ล่าสุด (30 ต.ค.): มี `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `COUPON_SIGNING_KEY`, `BOOTSTRAP_ADMIN_EMAIL` เป็น `secret_text` แล้ว และตั้ง `OILSTATION_API_ENABLED=false` ถูกต้อง; UAT Worker ยังไม่มี Secret
+- ตรวจ Cloudflare Production Worker `oilstation` ล่าสุด (30 ต.ค.): มี `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `COUPON_SIGNING_KEY`, `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY` เป็น `secret_text`; มี `INVITATION_FROM_EMAIL=no-reply@oilstation.goldensoft.cloud`, `INVITATION_EMAIL_ENABLED=false` และ `OILSTATION_API_ENABLED=false`; UAT Worker ยังไม่มี Secret
 - `oilstation.goldensoft.cloud` ยังเป็นหน้า Maintenance; UAT Worker ปัจจุบันเป็น Canary
-- ไม่มี Auth user ใน Supabase ณ วันที่ตรวจสอบ; **อย่าเปิดสมัครสาธารณะ**
+- ปัจจุบันมีผู้ใช้ Supabase Auth **1 ราย** หลังจากทดสอบส่งคำเชิญผ่าน SMTP ไปยัง Gmail สำเร็จ; ยังไม่มีการยืนยันว่าได้รับ membership ของ OilStation และ **อย่าเปิดสมัครสาธารณะ**
 - GitHub Actions แยก 8 ชุดตรวจและไม่ Deploy อัตโนมัติ
 - โค้ดนี้รองรับธุรกรรมคูปองและเติมเงินที่ต้องผ่านการตรวจหลักฐาน แต่ **Stripe อยู่เฉพาะ Test Mode**; Payroll payout, Commission payout, ธนาคารอัตโนมัติ, Face/Liveness ยังไม่ใช่ระบบ Live ที่เสร็จแล้ว
 
@@ -44,7 +44,7 @@ Supabase: https://supabase.com/dashboard/project/cxihsotcpdnalswfoysx/auth/provi
 
 Cloudflare Worker `oilstation`:
 - `RESEND_API_KEY`: คีย์จาก Resend (Secret)
-- `INVITATION_FROM_EMAIL`: เช่น `invite@<โดเมนที่ Resend ตรวจสอบแล้ว>`
+- `INVITATION_FROM_EMAIL`: **ต้องเป็น `no-reply@oilstation.goldensoft.cloud`** ตามข้อบังคับในโค้ด OilStation ปัจจุบัน ห้ามใช้โดเมน EA
 - `INVITATION_EMAIL_ENABLED`: `true` เฉพาะหลังทดสอบการส่ง/ตอบกลับจริง, เริ่ม `false`
 
 ## D. OCR ภาพทะเบียนรถ / ปั๊ม / ใบเสร็จ
@@ -135,3 +135,12 @@ PostgREST Fuel Catalog \`limit=0\` ด้วย Service Role Key เพื่อ
 *ผ่านการทดสอบตัวจำลองใน GitHub Actions เท่านั้น ยังไม่มีผลยืนยัน End-to-End
 จาก Worker ที่ Deploy จริง*
 
+
+
+## การทดสอบอีเมลจริงและเทมเพลตภาษาไทย (30 ต.ค. 2026)
+
+- Resend ยืนยันโดเมน `oilstation.goldensoft.cloud` แล้ว; Supabase Auth SMTP ส่งอีเมลเชิญที่ Gmail รับได้ โดยแสดงผู้ส่ง `OilStation <no-reply@oilstation.goldensoft.cloud>`
+- **ยังไม่ใช่การทดสอบ Cloudflare Worker → Resend API**; การที่ชื่อ Secret มีอยู่ไม่ได้ยืนยันว่าคีย์ส่งผ่าน API ได้จริง
+- เตรียมไฟล์ HTML ภาษาไทยครบ 6 ประเภทใน `supabase/email-templates/` และมีคู่มือ `docs/release/2026-10-30-resend-thai-email-setup.md`
+- ไฟล์ GitHub ไม่แก้ Hosted Supabase Auth Email Templates อัตโนมัติ ต้องนำ HTML ไปวางและ Save ใน Supabase Dashboard
+- คง `INVITATION_EMAIL_ENABLED=false` และ `OILSTATION_API_ENABLED=false` บน Production จนกว่าจะผ่านการทดสอบ UAT แยกและการอนุมัติ Release
