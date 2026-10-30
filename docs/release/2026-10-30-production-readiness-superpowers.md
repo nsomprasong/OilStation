@@ -1,6 +1,6 @@
 # OilStation — Superpowers production release assessment (2026-10-30)
 
-**Status: NOT RELEASE-READY.** This is a verification snapshot, not an authorization to turn on money writes, payroll, or live coupon settling.
+**Status: Database readiness now PASS; external financial/operational acceptance still NOT COMPLETE.** This is a verification snapshot, not an authorization to turn on money writes, payroll, or live coupon settling.
 
 ## Reproduced production issues (fixed in feature branch; NOT deployed)
 
@@ -16,10 +16,10 @@
 
 ## Read-only production checks
 
-- Supabase project `cxihsotcpdnalswfoysx`, `public.oilstation_release_status()`: **`ready:false`**, schemaVersion `20261029215000`.
+- Supabase project `cxihsotcpdnalswfoysx`, `public.oilstation_release_status()`: **`ready:true`**, schemaVersion `20261029215000` after applying three original, source-controlled migrations on 2026-10-30.
 - 73 public tables; **zero** tables violating forced RLS or browser CRUD restrictions.
 - Protected evidence and slip buckets exist and satisfy the release function's privacy checks.
-- **The entire reviewed fuel settlement chain is missing in the live database**, not just the readiness marker: `fuel_supervisor_authorized`, `fuel_photo_review_inbox`, `review_fuel_evidence_photo` and `complete_reviewed_fuel_session` are absent, and both `fuel_evidence_intake` reviewed amount columns are absent. All are present as reviewed source migration `20261029192000_supervisor_fuel_settlement.sql` but have not been installed in Production. Existing finance routines cannot be taken as substitutes: true release requires independently reviewed photographic evidence and controlled settlement. Do not satisfy `/api/ready` by creating a stub.
+- **Reviewed fuel settlement chain now installed.** Applied source migrations `20261029190000_fuel_photo_intake.sql`, `20261029191000_fuel_photo_ocr_preview.sql`, `20261029192000_supervisor_fuel_settlement.sql` in dependency order with versioned migration history entries. Verified security grants: service_role can invoke the reviewed settlement RPC; anon/authenticated cannot; raw settlement remains blocked from service_role. The evidence intake table enforces and forces RLS.
 - Current development data: **one station; one pending invitation; zero active station memberships** at assessment time.
 - Worker at assessment time still has `OILSTATION_API_ENABLED=false`, `OILSTATION_PREVIEW_OPERATIONS_ENABLED=true`, `INVITATION_EMAIL_ENABLED=false`.
 
@@ -38,6 +38,14 @@
 ## Next controlled steps
 
 1. Review this Draft PR; do not merge it to `main` until release is approved because main pushes trigger production preview deployment.
-2. Build/verify `complete_reviewed_fuel_session` and its independent safety tests on an isolated environment, then apply reviewed migrations.
+2. Database migrations complete; now verify the REAL end-to-end reviewed fuel workflow with approved private photos and independent supervisor in UAT. Do not enable financial operations based on the function's existence alone.
 3. Complete external-provider, cross-tenant, real-device, backup and legal/payment gates.
 4. Run the authorized deployment workflow, confirm `/api/ready=200`, inspect live delivery and tenant permissions; only then enable the complete production API.
+
+## Verified database migration follow-up — October 30
+
+- Before migration: 0 fuel sessions in progress, 0 stored fuel evidence, evidence bucket private.
+- Applied three migrations in dependency order via Supabase migration tool, all reported success.
+- After migration: readiness `true`; 74 tables RLS/enforced, zero publicly exposed CRUD tables; security advisors reported expected INFO no-policy (server-only access model) and WARN leaked-password protection configuration.
+- Platform Super Admin read-only inventory query returned 7 station fuels, 0 enabled. Unknown actor rejected from the same inventory and reviewed settlement RPC denied invalid evidence. No sale or financial write was performed.
+- **Do not equate SQL structural readiness with full production launch:** bank/Stripe payments, external Resend inbox receipt, OAuth invited-owner workflow, independent photo review and backup/restore drill remain unverified.
