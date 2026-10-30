@@ -24,7 +24,7 @@ export function authMarkup({invited=false,setup=false}={}){
      </div>
      <p class="os-auth-note"><i data-ui-icon="shield"></i>
        ไม่มีการสมัครสาธารณะ การเข้าสู่ระบบไม่ใช่การอนุมัติสิทธิ์</p>
-     ${setup?'':`<div class="os-auth-actions"><a href="/setup">ตั้งค่าผู้ดูแลครั้งแรก</a></div>`}
+     ${setup||invited?'':`<div class="os-auth-actions"><a href="/setup">ตั้งค่าผู้ดูแลครั้งแรก</a></div>`}
      <p id="notice" class="notice" role="status" hidden></p>
    </section>
  </div>`;
