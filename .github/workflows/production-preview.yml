@@ -45,6 +45,11 @@ jobs:
             jq -e '.service == "oilstation" and .status == "ok"'
           curl --fail --silent --show-error --retry 5 --retry-delay 2 --max-time 15 "$base/api/public-config" |
             jq -e '.supabaseUrl == "https://cxihsotcpdnalswfoysx.supabase.co" and (.supabaseAnonKey | length > 0) and .stripePublishableKey == null'
-          code="$(curl --silent --output /tmp/oilstation-business.json --write-out '%{http_code}' --max-time 15 "$base/api/me")"
+          # /api/me is intentionally accessible to authenticated preview users;
+          # an anonymous caller must get 401 rather than a 503 release error.
+          code="$(curl --silent --output /tmp/oilstation-member.json --write-out '%{http_code}' --max-time 15 "$base/api/me")"
+          test "$code" = 401
+          jq -e '.error == "unauthenticated"' /tmp/oilstation-member.json
+          code="$(curl --silent --output /tmp/oilstation-business.json --write-out '%{http_code}' --max-time 15 "$base/api/coupons")"
           test "$code" = 503
           jq -e '.error == "release_not_enabled"' /tmp/oilstation-business.json
