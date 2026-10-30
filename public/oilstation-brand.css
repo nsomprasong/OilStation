@@ -1,0 +1,38 @@
+/* Gold 3D OilStation emblem: one transparent branded image everywhere.
+   Keep brand wordmarks as normal text; never print letters onto the logo. */
+:where(.brand-icon,.ws-logo,.os-auth-mark,.ws-toolbar-brand,.os-mobile-brandmark){
+ background:transparent!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;object-fit:contain;object-position:center;
+ overflow:visible;flex-shrink:0;
+}
+.brand-icon{display:block!important;width:38px!important;height:38px!important}
+#app.auth-mode .os-auth-mark{
+ display:block!important;width:45px!important;height:45px!important;
+ padding:0!important;
+}
+#app.workspace-mode .ws-logo{
+ display:block!important;width:38px!important;height:38px!important;
+ margin:0!important;
+}
+#app.workspace-mode .ws-toolbar-title{
+ display:inline-flex!important;align-items:center;gap:8px;white-space:normal;
+}
+#app.workspace-mode .ws-toolbar-brand{
+ display:block;width:28px;height:28px;
+}
+#app.workspace-mode .ws-toolbar-title>span{margin-inline-start:4px}
+#app.workspace-mode .os-mobile-brandline{
+ display:flex;align-items:center;gap:7px;margin-bottom:4px;
+}
+#app.workspace-mode .os-mobile-brandline .os-mobile-eyebrow{margin:0}
+#app.workspace-mode .os-mobile-brandmark{
+ display:block;width:40px;height:40px;filter:drop-shadow(0 2px 4px #0a3f3660);
+}
+#app.workspace-mode .os-mobile-hero-title>div{min-width:0}
+@media(max-width:850px){
+ #app.workspace-mode .ws-toolbar-brand{width:26px;height:26px}
+ #app.workspace-mode .ws-logo{width:36px!important;height:36px!important}
+}
+@media(max-width:360px){
+ #app.workspace-mode .os-mobile-brandmark{width:33px;height:33px}
+}

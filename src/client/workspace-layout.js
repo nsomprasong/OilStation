@@ -83,7 +83,7 @@ export function renderWorkspaceShell(screens){
      aria-label="ปิดเมนูนำทาง"></button>
    <aside class="ws-sidebar" id="ws-sidebar" aria-label="เมนูพื้นที่ทำงาน">
      <div class="ws-side-head">
-       <span class="ws-logo" aria-hidden="true">O</span>
+       <img class="ws-logo" src="/oilstation-gold-logo.png" width="38" height="38" alt="" aria-hidden="true">
        <div class="ws-brand-copy"><strong>OilStation</strong><small>OPERATIONS</small></div>
        <button type="button" class="ws-mobile-close" data-ws-menu-close aria-label="ปิดเมนู">×</button>
      </div>
@@ -99,7 +99,7 @@ export function renderWorkspaceShell(screens){
          aria-label="ย่อเมนูด้านข้าง" aria-pressed="false" title="ย่อหรือขยายเมนู">
          <i data-ui-icon="menu"></i>
        </button>
-       <span class="ws-toolbar-title">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
+       <span class="ws-toolbar-title"><img class="ws-toolbar-brand" src="/oilstation-gold-logo.png" width="28" height="28" alt="" aria-hidden="true">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
        <span class="ws-toolbar-context" aria-hidden="true">WORKSPACE</span>
      </div>
      <header class="ws-header">

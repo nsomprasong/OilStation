@@ -64,3 +64,7 @@ Replace the home hero's decorative O mark with a 46px accessible **Power** icon 
 - All errors, pending states, monetary records and role checks remain real, and incomplete forms retain their input values on errors.
 - Final CSS order: existing styles -> Gentelella v4 -> Mobile App -> unified design. New design only creates presentation elements and defers form visibility, never mutates API outcomes.
 - Manual QA required on authenticated Android and Desktop for layout, keyboard, 200% zoom, top tabs, create FAB, card edit and error recovery. Automated tests are not sufficient to claim screenshots are perfect.
+
+## Gold 3D brand logo (approved 30 October 2026)
+
+The user-selected transparent gold 3D oil-drop and fuel-nozzle emblem is the single canonical OilStation application logo. Source-of-truth: `public/oilstation-gold-logo.svg` embeds a compact optimized transparent bitmap derived from the supplied generated PNG. Node prebuild/predev materializes a standalone browser-compatible PNG `public/oilstation-gold-logo.png` for favicon and iOS home-screen icons. Use the SVG master for login, public header, desktop sidebar and toolbar, and mobile home. Preserve OilStation text beside the emblem where the interface needs a text label; do not alter or overlay wording on the emblem itself. The source artwork has no background and no lettering. Do not replace it with a CSS-generated O, and avoid external image CDNs.
