@@ -248,3 +248,27 @@
  #app.workspace-mode .os-mobile-tab,
  #app.workspace-mode .os-mobile-scan{transition:none;animation:none}
 }
+
+/* Mobile drawer must sit ABOVE its scrim and the persistent bottom tabs.
+   Regression fix: Gentelella's desktop sidebar z-index (25) was overriding
+   the older mobile value (45), leaving the scrim (44) intercepting taps. */
+@media(max-width:850px){
+ #app.workspace-mode .ws-sidebar,
+ #app.workspace-mode .ws-layout[data-rail="collapsed"] .ws-sidebar{
+   z-index:120;
+   pointer-events:auto;
+ }
+ #app.workspace-mode .ws-menu-backdrop:not([hidden]){
+   z-index:100;
+ }
+ #app.workspace-mode .os-mobile-bottom{
+   z-index:60;
+ }
+ #app.workspace-mode .ws-mobile-close{
+   color:#f3faf9;
+   background:rgba(255,255,255,.1);
+ }
+ #app.workspace-mode .ws-mobile-close:hover{
+   background:rgba(255,255,255,.17);
+ }
+}
