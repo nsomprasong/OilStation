@@ -1,0 +1,50 @@
+name: OilStation Production Preview
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-production-preview
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install pinned dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check, test and build
+        run: |
+          npm run check
+          npm test
+          npm run build
+      - name: Require Cloudflare deployment token
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Set CLOUDFLARE_API_TOKEN in the GitHub production environment"
+            exit 1
+          fi
+      - name: Deploy OilStation frontend and guarded Worker to real domain
+        run: npx --yes wrangler@4 deploy
+      - name: Verify public preview and disabled financial operations
+        run: |
+          set -e
+          base="https://oilstation.goldensoft.cloud"
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --max-time 15 "$base/" > /tmp/oilstation-preview.html
+          test -s /tmp/oilstation-preview.html
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --max-time 15 "$base/api/health" |
+            jq -e '.service == "oilstation" and .status == "ok"'
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 --max-time 15 "$base/api/public-config" |
+            jq -e '.supabaseUrl == "https://cxihsotcpdnalswfoysx.supabase.co" and (.supabaseAnonKey | length > 0) and .stripePublishableKey == null'
+          code="$(curl --silent --output /tmp/oilstation-business.json --write-out '%{http_code}' --max-time 15 "$base/api/me")"
+          test "$code" = 503
+          jq -e '.error == "release_not_enabled"' /tmp/oilstation-business.json
