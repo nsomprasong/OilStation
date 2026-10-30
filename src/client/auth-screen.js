@@ -4,7 +4,7 @@ export function authMarkup({invited=false,setup=false}={}){
  const note=setup?'เฉพาะบัญชีผู้ดูแลที่ระบบอนุญาต':invited?'เข้าสู่ระบบด้วยบัญชีที่ได้รับเชิญ':'สำหรับสมาชิกของปั๊มและบริษัทที่ได้รับเชิญเท่านั้น';
  return `<div class="os-auth-shell">
    <section class="os-auth-hero" aria-label="OilStation">
-     <div class="os-auth-wordmark"><img class="os-auth-mark" src="/oilstation-gold-logo.png" width="45" height="45" alt="" aria-hidden="true"><span>OilStation</span></div>
+     <div class="os-auth-wordmark"><img class="os-auth-mark" src="/oilstation-gold-logo.png?v=2" width="45" height="45" alt="" aria-hidden="true"><span>OilStation</span></div>
      <div class="os-auth-hero-copy">
        <span class="os-auth-eyebrow">OILSTATION WORKSPACE</span>
        <h1>จัดการงานปั๊ม<br>ในที่เดียว</h1>
