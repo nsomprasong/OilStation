@@ -42,3 +42,48 @@ All files use only documented Supabase Auth variables such as `{{ .ConfirmationU
 - Email layout and security validations for the Worker: `src/notifications/invitation-email.mjs`.
 - Dedicated test cases: `test/notifications/invitation-email.test.mjs` and `test/notifications/invited-email-otp.test.mjs`.
 - Supabase dashboard cannot be configured through the currently connected Supabase tool; the HTML files are a prepared artifact for operator copy/paste.
+
+
+## Isolated UAT guard — implemented after the email setup
+
+The actual UAT Cloudflare Worker currently has Supabase encrypted bindings,
+but their **values cannot be inspected** using Cloudflare's settings API.
+Never assume those secrets refer to an isolated staging project.
+
+The application now stamps `OILSTATION_DEPLOY_TARGET=uat` in the Wrangler UAT
+environment. Even if someone accidentally switches
+`OILSTATION_API_ENABLED=true`, business endpoints, `/api/ready`, and scheduled
+tasks stay blocked until **both** conditions hold:
+
+1. `OILSTATION_UAT_SUPABASE_REF` is a separate 20-character Supabase project
+   reference, different from production `cxihsotcpdnalswfoysx`.
+2. The actual `SUPABASE_URL` binding **exactly** matches
+   `https://<OILSTATION_UAT_SUPABASE_REF>.supabase.co` (optional trailing slash),
+   and the independent `oilstation_release_status()` database gate returns
+   the required schema version and `ready=true`.
+
+No separate billable Supabase branch or project has been created by this change.
+Until one is explicitly authorized, keep the UAT service offline for business
+functions. A UAT deployment may still serve the public application shell and
+`/api/health` without opening any business route.
+
+**Email safeguards in UAT:** set `OILSTATION_UAT_TEST_EMAIL` to an explicitly
+authorized test mailbox on the **UAT Worker only**. Both scoped invitations and
+8-digit OTP sending reject all other destination addresses without calling
+Resend, even when `INVITATION_EMAIL_ENABLED=true`. This is an exact,
+case-insensitive address comparison, **not** an unbounded domain allowlist.
+
+Before UAT delivery, configure a *separate UAT Resend Sending API key* as the
+UAT Worker's `RESEND_API_KEY` secret and set
+`INVITATION_FROM_EMAIL=no-reply@oilstation.goldensoft.cloud`.
+Never move an encrypted production secret into source, chat, or a browser. Keep
+`INVITATION_EMAIL_ENABLED=false` until a reviewed, isolated test run is
+authorized; UAT Worker does not inherit its production bindings.
+
+Release checklist:
+- [ ] Approve and create a separate Supabase UAT DB (or paid staging branch), then apply and test pending migrations there
+- [ ] Configure exact UAT project ref and UAT Supabase credentials
+- [ ] Verify `/api/ready` returns 200 only when isolated DB passes release gate
+- [ ] Set UAT-only destination mailbox and separately scoped Resend key
+- [ ] Verify real email acceptance and delivery with approved test mailbox; reject foreign recipients and stale OTPs
+- [ ] Keep production `OILSTATION_API_ENABLED=false` and `INVITATION_EMAIL_ENABLED=false` until full release authorization
