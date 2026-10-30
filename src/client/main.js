@@ -1342,118 +1342,116 @@ async function platformWorkspace(accessToken) {
 }
 
 function dashboard(data, session, publicConfig={}) {
-  const memberships = data.memberships || [];
-  const scopes = {
-    platform: { title: 'แพลตฟอร์ม', modules: ['ปั๊มที่ให้บริการ', 'พนักงานขาย', 'การเรียกเก็บเงิน'] },
-    organization: { title: 'เจ้าของกิจการ', modules: ['บริหารปั๊ม', 'สมาชิกและสิทธิ์', 'การเงิน'] },
-    station: { title: 'จัดการปั๊มน้ำมัน', modules: ['คูปองเติมน้ำมัน', 'พนักงานและกะ', 'อนุมัติรายการ'] },
-    corporate_company: { title: 'บัญชีลูกค้าบริษัท', modules: ['คูปองเติมน้ำมัน', 'วงเงินและยอดใช้', 'ประวัติเติมน้ำมัน'] },
-  };
-  const active = scopes[memberships[0]?.scopeType] || scopes.station;
-  const screens=selectWorkspaceScreens(memberships);
-  show(renderWorkspaceShell(screens));
-  root.classList.add('workspace-mode');
-  wireWorkspaceNavigation(root);
-  // Restore only a screen that still exists under current server-issued membership.
-  const afterInvitation=sessionStorage.getItem('oilstation_open_plan_after_invite')==='1';
-  if(afterInvitation)sessionStorage.removeItem('oilstation_open_plan_after_invite');
-  const requested=afterInvitation?'plan':sessionStorage.getItem('oilstation_last_workspace');
-  if(requested){
-    const allowed=[...root.querySelectorAll('.ws-nav[data-ws-go]')]
-      .find(button=>button.dataset.wsGo===requested);
-    allowed?.click();
+ const memberships=data.memberships||[];
+ const scopes={
+  platform:{title:'แพลตฟอร์ม',modules:['ปั๊มที่ให้บริการ','พนักงานขาย','การเรียกเก็บเงิน']},
+  organization:{title:'เจ้าของกิจการ',modules:['บริหารปั๊ม','สมาชิกและสิทธิ์','การเงิน']},
+  station:{title:'จัดการปั๊มน้ำมัน',modules:['คูปองเติมน้ำมัน','พนักงานและกะ','อนุมัติรายการ']},
+  corporate_company:{title:'บัญชีลูกค้าบริษัท',modules:['คูปองเติมน้ำมัน','วงเงินและยอดใช้','ประวัติเติมน้ำมัน']},
+ };
+ const active=scopes[memberships[0]?.scopeType]||scopes.station;
+ const screens=selectWorkspaceScreens(memberships);
+ show(renderWorkspaceShell(screens));root.classList.add('workspace-mode');
+ document.getElementById('scope-title').textContent=active.title;
+ const scopesNode=document.getElementById('scopes');
+ for(const m of memberships){
+  const chip=document.createElement('div');chip.className='scope-chip';
+  chip.textContent=m.role+' · '+(scopes[m.scopeType]?.title||m.scopeType);
+  scopesNode.appendChild(chip);
+ }
+ const modules=document.getElementById('modules');
+ const icons={
+  platform:['building','users','receipt'],organization:['fuel','users','wallet'],
+  station:['ticket','calendar','clipboard'],corporate_company:['qr','wallet','receipt'],
+ }[memberships[0]?.scopeType]||['fuel','users','wallet'];
+ active.modules.forEach((name,i)=>{
+  const item=document.createElement('div');item.className='module-item menu-module';
+  item.append(makeIcon(icons[i]),document.createTextNode(name));modules.appendChild(item);
+ });
+ // Mount a module on first visit only, keeping form inputs and scroll state intact.
+ const mounts=new Map(),opened=new Set();
+ const register=(key,fn)=>{
+  if(!mounts.has(key))mounts.set(key,[]);
+  mounts.get(key).push(fn);
+ };
+ const mountScreen=key=>{
+  if(opened.has(key))return;
+  opened.add(key);
+  for(const fn of mounts.get(key)||[]){
+   Promise.resolve().then(fn).catch(()=>{
+    const panel=root.querySelector('[data-ws-screen="'+key+'"]');
+    if(!panel)return;
+    const error=document.createElement('p');error.className='notice';
+    error.dataset.tone='error';error.setAttribute('role','alert');
+    error.textContent='โหลดข้อมูลส่วนนี้ไม่ได้ กรุณาเปิดหน้าใหม่หรือตรวจสอบสิทธิ์กับผู้ดูแล';
+    panel.appendChild(error);
+   });
   }
-  document.getElementById('scope-title').textContent = active.title;
-  const all = document.getElementById('scopes');
-  memberships.forEach((m) => {
-    const e = document.createElement('div');
-    e.className = 'scope-chip';
-    e.textContent = m.role + ' · ' + (scopes[m.scopeType]?.title || m.scopeType);
-    all.appendChild(e);
-  });
-  const modules = document.getElementById('modules');
-  active.modules.forEach((name) => {
-    const e = document.createElement('div');
-    e.className = 'module-item menu-module';
-    const iconNames = {
-      platform:['building','users','receipt'], organization:['fuel','users','wallet'],
-      station:['ticket','calendar','clipboard'], corporate_company:['qr','wallet','receipt'],
-    }[memberships[0]?.scopeType] || ['fuel','users','wallet'];
-    e.append(makeIcon(iconNames[modules.children.length]), document.createTextNode(name));
-    modules.appendChild(e);
-  });
-  if (memberships.some(m => m.scopeType==='platform' && m.role==='platform_superadmin')) {
-    platformWorkspace(session.access_token).catch(() => {});
-    mountPlatformSaasBilling({target:document.getElementById('platform-saas-billing'),
-      token:session.access_token});
-  }
-  const invitedOwner=memberships.find(m=>m.scopeType==='station' &&
-    ['station_owner','owner'].includes(m.role) && m.stationId);
-  if(invitedOwner) {
-    mountStationPlanChoice({target:document.getElementById('station-saas-plan-workspace'),
-      token:session.access_token,stationId:invitedOwner.stationId});
-  }
-  const billingMember=memberships.find(m=>m.scopeType==='organization'&&
-    ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
-  if(billingMember){
-    mountBillingWorkspace({target:document.getElementById('saas-billing-workspace'),
-      token:session.access_token,organizationId:billingMember.organizationId,
-      publishableKey:publicConfig.stripePublishableKey});
-  }
-  const attendanceMember=memberships.find(m=>m.scopeType==='station'&&m.stationId);
-  if(attendanceMember?.stationId){
-    mountAttendanceWorkspace({target:document.getElementById('attendance-workspace'),
-      token:session.access_token,stationId:attendanceMember.stationId});
-  }
-  const attendanceSupervisor=memberships.find(m=>m.scopeType==='station'&&
-    ['station_owner','owner','manager','hr_manager'].includes(m.role)&&m.stationId);
-  if(attendanceSupervisor){
-    mountAttendanceReview({target:document.getElementById('attendance-review-workspace'),
-      token:session.access_token,stationId:attendanceSupervisor.stationId});
-    mountAttendancePayrollPreview({target:document.getElementById('attendance-payroll-preview-workspace'),
-      token:session.access_token,stationId:attendanceSupervisor.stationId});
-  }
-  const pumpMember=memberships.find(m=>m.scopeType==='station'
-    && ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
-  if(pumpMember?.stationId) {
-    stationPumpWorkspace(session.access_token,pumpMember.stationId,
-      document.getElementById('station-pump-workspace'),
-      ['station_owner','owner','manager','cashier'].includes(pumpMember.role)).catch(()=>{});
-  }
-  const stationMember=memberships.find(m=>m.scopeType==='station'
-    && ['station_owner','owner','manager'].includes(m.role));
-  if(stationMember?.stationId) {
-    hrWorkspace(session.access_token,stationMember.stationId,
-      document.getElementById('hr-workspace')).catch(()=>{});
-    fuelPriceEditor(session.access_token,stationMember.stationId,
-      document.getElementById('station-fuel-workspace')).catch(()=>{});
-    if (['station_owner','owner','manager'].includes(stationMember.role)) {
-      stationFinanceWorkspace(session.access_token,stationMember.stationId,
-        document.getElementById('station-finance-workspace')).catch(()=>{});
-      stationCorporateWorkspace(session.access_token,stationMember.stationId,
-        document.getElementById('station-customers-workspace')).catch(()=>{});
-    }
-  }
-  const invites=document.getElementById('member-invites');
-  if (stationMember?.stationId) {
-    invites.appendChild(createInviteControl(session.access_token,'station',
-      stationMember.stationId,
-      [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม']]));
-  }
-  const corporateAdmin=memberships.find(m=>m.scopeType==='corporate_company' && m.role==='corporate_admin');
-  if (corporateAdmin?.corporateCompanyId) {
-    invites.appendChild(createInviteControl(session.access_token,'corporate_company',
-      corporateAdmin.corporateCompanyId,
-      [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']]));
-  }
-  if (memberships.some(m => m.scopeType==='corporate_company')) {
-    corporateWorkspace(session.access_token).catch(() => {});
-  }
-  document.getElementById('logout').addEventListener('click', async () => {
-    sessionStorage.removeItem('oilstation_last_workspace');
-    await authClient.auth.signOut();
-    location.replace('/');
-  });
+ };
+ if(memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')){
+  register('stations',()=>platformWorkspace(session.access_token));
+  register('billing',()=>mountPlatformSaasBilling({
+   target:document.getElementById('platform-saas-billing'),token:session.access_token}));
+ }
+ const owner=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner'].includes(m.role)&&m.stationId);
+ if(owner)register('plan',()=>mountStationPlanChoice({
+  target:document.getElementById('station-saas-plan-workspace'),
+  token:session.access_token,stationId:owner.stationId}));
+ const bill=memberships.find(m=>m.scopeType==='organization'&&
+  ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
+ if(bill)register('billing',()=>mountBillingWorkspace({
+  target:document.getElementById('saas-billing-workspace'),token:session.access_token,
+  organizationId:bill.organizationId,publishableKey:publicConfig.stripePublishableKey}));
+ const attendance=memberships.find(m=>m.scopeType==='station'&&m.stationId);
+ if(attendance)register('attendance',()=>mountAttendanceWorkspace({
+  target:document.getElementById('attendance-workspace'),
+  token:session.access_token,stationId:attendance.stationId}));
+ const supervisor=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner','manager','hr_manager'].includes(m.role)&&m.stationId);
+ if(supervisor){
+  register('reviews',()=>mountAttendanceReview({
+   target:document.getElementById('attendance-review-workspace'),
+   token:session.access_token,stationId:supervisor.stationId}));
+  register('payroll',()=>mountAttendancePayrollPreview({
+   target:document.getElementById('attendance-payroll-preview-workspace'),
+   token:session.access_token,stationId:supervisor.stationId}));
+ }
+ const pump=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role)&&m.stationId);
+ if(pump)register('pump',()=>stationPumpWorkspace(session.access_token,pump.stationId,
+  document.getElementById('station-pump-workspace'),
+  ['station_owner','owner','manager','cashier'].includes(pump.role)));
+ const station=memberships.find(m=>m.scopeType==='station'&&
+  ['station_owner','owner','manager'].includes(m.role)&&m.stationId);
+ if(station){
+  register('hr',()=>hrWorkspace(session.access_token,station.stationId,document.getElementById('hr-workspace')));
+  register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,document.getElementById('station-fuel-workspace')));
+  register('finance',()=>stationFinanceWorkspace(session.access_token,station.stationId,document.getElementById('station-finance-workspace')));
+  register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace')));
+  register('invitations',()=>document.getElementById('member-invites')?.appendChild(
+   createInviteControl(session.access_token,'station',station.stationId,
+    [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม']])));
+ }
+ const corpAdmin=memberships.find(m=>m.scopeType==='corporate_company'&&m.role==='corporate_admin'&&m.corporateCompanyId);
+ if(corpAdmin)register('invitations',()=>document.getElementById('member-invites')?.appendChild(
+  createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
+   [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']])));
+ if(memberships.some(m=>m.scopeType==='corporate_company'))
+  register('corporate',()=>corporateWorkspace(session.access_token));
+ const shell=root.querySelector('[data-workspace-shell]');
+ shell?.addEventListener('oilstation:screenchange',event=>mountScreen(event.detail.key));
+ wireWorkspaceNavigation(root);
+ const newOwner=sessionStorage.getItem('oilstation_open_plan_after_invite')==='1';
+ if(newOwner)sessionStorage.removeItem('oilstation_open_plan_after_invite');
+ const requested=newOwner?'plan':sessionStorage.getItem('oilstation_last_workspace');
+ const allowed=[...root.querySelectorAll('.ws-nav[data-ws-go]')]
+   .find(button=>button.dataset.wsGo===requested);
+ if(allowed)allowed.click();else mountScreen('overview');
+ document.getElementById('logout').addEventListener('click',async()=>{
+  sessionStorage.removeItem('oilstation_last_workspace');
+  await authClient.auth.signOut();location.replace('/');
+ });
 }
 async function couponViewer(token) {
   if (!COUPON_PATTERN.test(token)) return showError('ลิงก์คูปองไม่ถูกต้อง');

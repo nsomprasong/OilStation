@@ -170,6 +170,8 @@ export function wireWorkspaceNavigation(root){
    closeMenu();
    if(mobile?.matches)menuToggle?.focus();
    else heading?.focus({preventScroll:true});
+   root.querySelector('[data-workspace-shell]')?.dispatchEvent(
+     new CustomEvent('oilstation:screenchange',{detail:{key}}));
    root.querySelector(".ws-main")?.scrollIntoView({block:"start",behavior:"auto"});
   });
  }
