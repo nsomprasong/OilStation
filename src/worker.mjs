@@ -107,7 +107,8 @@ export default {
         const stationPages=new Set(['/api/fuel-brands',
           '/api/platform/stations','/api/platform/create-station',
           '/api/invitations/create','/api/invitations/accept',
-          '/api/invitations/email-challenge','/api/invitations/email-confirm']);
+          '/api/invitations/email-challenge','/api/invitations/email-confirm',
+          '/api/station-fuels','/api/station-fuel-config']);
         try {
           if(billingPages.has(url.pathname))
             return createPlatformBillingApi(createSupabaseAdapter(env))(request);
