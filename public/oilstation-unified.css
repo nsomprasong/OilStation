@@ -199,3 +199,40 @@ body:has(#app.auth-mode)>.shell>footer{display:none}
 @media(prefers-reduced-motion:reduce){
  #app.workspace-mode .os-add-fab,#app.auth-mode .os-auth-provider{transition:none}
 }
+
+/* Work-specific form menu replaces HR's old uninterrupted wall of inputs. */
+#app.workspace-mode .os-local-tabs{
+  display:flex;align-items:center;gap:8px;overflow-x:auto;
+  padding:7px 0 14px;margin:8px 0 15px;scrollbar-width:thin;
+}
+#app.workspace-mode .os-local-tab{
+  flex:0 0 auto;min-height:42px;
+  border:1px solid #c9e1db;background:#f5faf8;color:#426c65;
+  border-radius:11px;padding:9px 13px;
+  font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+}
+#app.workspace-mode .os-local-tab.active{
+  border-color:#69c5b1;background:#dff5ec;color:#096e5d;
+}
+#app.workspace-mode .os-local-tab:focus-visible{
+  outline:3px solid #0d9680;outline-offset:2px;
+}
+#app.workspace-mode .os-local-tab + .os-local-tab{margin:0}
+#app.workspace-mode .os-record-card :where(.fuel-row-controls)[hidden],
+#app.workspace-mode .os-editable-card > [hidden],
+#app.workspace-mode .os-create-station[hidden],
+#app.workspace-mode #hr-workspace form[hidden],
+#app.workspace-mode #station-customers-workspace form[hidden]{
+  display:none!important;
+}
+#app.workspace-mode .os-station-card .os-station-actions{
+  justify-content:flex-end;margin-top:14px;
+  border-top:1px solid #e5eeeb;padding-top:12px;
+}
+#app.workspace-mode .saas-plan-row{
+  border:1px solid #e2eae8;border-radius:14px;
+  padding:17px;margin:11px 0;background:#fff;
+}
+#app.workspace-mode .saas-plan-delete{
+  margin-inline-start:auto;border-radius:9px;
+}
