@@ -39,5 +39,5 @@ test('pending owner invitation and bootstrap survive the callback boundary',()=>
  assert.match(segment,/if \(setup\)/);
  assert.match(segment,/if \(invite\)/);
  assert.doesNotMatch(segment,/sessionStorage\.clear\(/);
- assert.doesNotMatch(segment,/signOut\(\)/);
+ assert.match(segment,/if \(!bootResult\.ok\) \{\s*await authClient\.auth\.signOut\(\)/);
 });
