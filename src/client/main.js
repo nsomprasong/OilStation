@@ -1498,10 +1498,25 @@ function dashboard(data, session, publicConfig={}) {
    .find(button=>button.dataset.wsGo===requested);
  if(allowed)allowed.click();
  else root.querySelector('.ws-sidebar [data-ws-go="overview"]')?.click();
- document.getElementById('logout').addEventListener('click',async()=>{
-  sessionStorage.removeItem('oilstation_last_workspace');
-  await authClient.auth.signOut();location.replace('/');
- });
+ // Both the desktop/sidebar button and the mobile power icon share one
+ // authenticated logout flow. It must work even when the sidebar is inert.
+ let signingOut=false;
+ const signOut=async()=>{
+  if(signingOut)return;
+  signingOut=true;
+  try{
+   sessionStorage.removeItem('oilstation_last_workspace');
+   await authClient.auth.signOut();
+   location.replace('/');
+  }catch{
+   signingOut=false;
+   const power=root.querySelector('[data-mobile-logout]');
+   if(power)power.disabled=false;
+   window.alert('ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง');
+  }
+ };
+ document.getElementById('logout').addEventListener('click',signOut);
+ shell?.addEventListener('oilstation:logoutrequested',signOut);
 }
 async function couponViewer(token) {
   if (!COUPON_PATTERN.test(token)) return showError('ลิงก์คูปองไม่ถูกต้อง');

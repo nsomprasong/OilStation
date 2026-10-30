@@ -138,7 +138,8 @@ export function wireWorkspaceNavigation(root){
  const mobileLogout=root.querySelector('[data-mobile-logout]');
  mobileLogout?.addEventListener('click',()=>{
   if(!window.confirm('ต้องการออกจากระบบ OilStation หรือไม่?'))return;
-  root.querySelector('#logout')?.click();
+  root.querySelector('[data-workspace-shell]')?.dispatchEvent(
+   new CustomEvent('oilstation:logoutrequested'));
  });
  const backdrop=root.querySelector(".ws-menu-backdrop");
  const menu=root.querySelector(".ws-sidebar");
