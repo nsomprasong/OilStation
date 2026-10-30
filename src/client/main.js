@@ -944,7 +944,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      <label class="field">รหัส QR คูปอง <input id="scan-payload" required autocomplete="off" placeholder="สแกน QR หรือวางข้อมูลคูปอง"></label>
      <button class="button primary" type="submit"><i data-ui-icon="scan"></i>ตรวจสอบคูปอง</button>
    </form>
-   <div class="camera-area">
+   <div class="camera-area os-mobile-camera">
      <button id="start-camera" type="button" class="button secondary"><i data-ui-icon="camera"></i>เปิดกล้องสแกน QR</button>
      <button id="stop-camera" type="button" class="button secondary" hidden>ปิดกล้อง</button>
      <video id="scan-video" playsinline muted autoplay hidden></video>
@@ -1008,7 +1008,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    const out=$('pump-notice');out.textContent=text;out.hidden=false;
    out.dataset.tone=error?'error':'neutral';
  };
- let current=null,stream=null,scanTimer=null,reading=false,photoId=null,sessionId=null;
+ let current=null,stream=null,scanTimer=null,reading=false,startingCamera=false,photoId=null,sessionId=null;
  let fuelProofIds={};
  const photoPanel=$('plate-verification');
  const photoStatus=$('plate-verification-status');
@@ -1025,6 +1025,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    if(stream){for(const track of stream.getTracks())track.stop();}
    stream=null;
    $('scan-video').srcObject=null;$('scan-video').hidden=true;
+   target.querySelector('.os-mobile-camera')?.classList.remove('is-scanning');
    $('stop-camera').hidden=true;$('start-camera').hidden=false;
  };
  async function inspect(){
@@ -1207,30 +1208,46 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    }finally{button.disabled=false;}
  });
  $('stop-camera').addEventListener('click',stop);
- $('start-camera').addEventListener('click',async()=>{
+ const startCamera=async()=>{
+   if(stream||startingCamera)return;
    if(!('BarcodeDetector' in window)||!navigator.mediaDevices?.getUserMedia)
-     return report('อุปกรณ์นี้ยังไม่รองรับการสแกนจากหน้าเว็บ กรุณาใช้เครื่องสแกน QR หรือวางข้อมูลคูปอง',true);
+     return report('เบราว์เซอร์นี้ยังไม่รองรับการสแกน QR แบบสด กรุณาเปิดด้วย Chrome บน Android หรือใส่รหัสคูปองด้วยตนเอง',true);
+   startingCamera=true;
    try{
      const supported=await BarcodeDetector.getSupportedFormats();
      if(!supported.includes('qr_code'))throw new Error('no_qr');
      const detector=new BarcodeDetector({formats:['qr_code']});
-     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
-     $('scan-video').srcObject=stream;$('scan-video').hidden=false;
+     const video=$('scan-video');
+     stream=await navigator.mediaDevices.getUserMedia({
+       video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},
+       audio:false,
+     });
+     video.srcObject=stream;video.hidden=false;
      $('stop-camera').hidden=false;$('start-camera').hidden=true;
+     target.querySelector('.os-mobile-camera')?.classList.add('is-scanning');
+     await video.play();
+     report('กำลังสแกน QR คูปอง… เล็งกล้องไปที่ QR');
      scanTimer=setInterval(async()=>{
-       if(reading || !stream || document.hidden)return;
+       if(reading||!stream||document.hidden||video.readyState<2)return;
        reading=true;
        try{
-         const found=await detector.detect($('scan-video'));
-         if(found.length){
+         const found=await detector.detect(video);
+         if(found.length&&typeof found[0].rawValue==='string'){
            $('scan-payload').value=found[0].rawValue;
            stop();await inspect();
          }
        }catch{}
        finally{reading=false;}
-     },650);
-   }catch{stop();report('ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบสิทธิ์กล้องหรือวางข้อมูล QR',true);}
- });
+     },450);
+   }catch{
+     stop();
+     report('เปิดกล้องไม่ได้ กรุณาอนุญาตสิทธิ์กล้องในเบราว์เซอร์แล้วลองใหม่ หรือใส่รหัสคูปองด้วยตนเอง',true);
+   }finally{startingCamera=false;}
+ };
+ $('start-camera').addEventListener('click',startCamera);
+ target.addEventListener('oilstation:leave-pump',stop);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+
 }
 
 async function platformWorkspace(accessToken) {
@@ -1420,9 +1437,16 @@ function dashboard(data, session, publicConfig={}) {
  }
  const pump=memberships.find(m=>m.scopeType==='station'&&
   ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role)&&m.stationId);
- if(pump)register('pump',()=>stationPumpWorkspace(session.access_token,pump.stationId,
-  document.getElementById('station-pump-workspace'),
-  ['station_owner','owner','manager','cashier'].includes(pump.role)));
+ let pendingMobileScan=false;
+ if(pump)register('pump',async()=>{
+  const target=document.getElementById('station-pump-workspace');
+  await stationPumpWorkspace(session.access_token,pump.stationId,target,
+   ['station_owner','owner','manager','cashier'].includes(pump.role));
+  if(pendingMobileScan&&root.querySelector('[data-workspace-shell]')?.dataset.activeScreen==='pump'){
+   pendingMobileScan=false;
+   target.querySelector('#start-camera')?.click();
+  }
+ });
  const station=memberships.find(m=>m.scopeType==='station'&&
   ['station_owner','owner','manager'].includes(m.role)&&m.stationId);
  if(station){
@@ -1441,7 +1465,25 @@ function dashboard(data, session, publicConfig={}) {
  if(memberships.some(m=>m.scopeType==='corporate_company'))
   register('corporate',()=>corporateWorkspace(session.access_token));
  const shell=root.querySelector('[data-workspace-shell]');
- shell?.addEventListener('oilstation:screenchange',event=>mountScreen(event.detail.key));
+ shell?.addEventListener('oilstation:screenchange',event=>{
+  if(event.detail.key!=='pump'){
+   pendingMobileScan=false;
+   document.getElementById('station-pump-workspace')
+    ?.dispatchEvent(new Event('oilstation:leave-pump'));
+  }
+  mountScreen(event.detail.key);
+ });
+ shell?.addEventListener('oilstation:scanrequest',()=>{
+  if(!pump)return;
+  const firstVisit=!opened.has('pump');
+  if(firstVisit)pendingMobileScan=true;
+  const tab=root.querySelector('.ws-sidebar [data-ws-go="pump"]');
+  tab?.click();
+  if(!firstVisit){
+   document.getElementById('station-pump-workspace')
+     ?.querySelector('#start-camera')?.click();
+  }
+ });
  wireWorkspaceNavigation(root);
  const newOwner=sessionStorage.getItem('oilstation_open_plan_after_invite')==='1';
  if(newOwner)sessionStorage.removeItem('oilstation_open_plan_after_invite');
