@@ -29,7 +29,7 @@ test('owner plan selection is outside SaaS administration and station creation',
 
 test('bundle price has independent third form field and delete confirmation',()=>{
  const src=readFileSync(new URL('../../src/client/platform-saas-billing.js',import.meta.url),'utf8');
- assert.match(src,/field\('QR Coupon \+ HR & Payroll \(ราคาแพ็กคู่/);
+ assert.match(src,/field\('ทั้ง 2 บริการ \(ราคาแพ็กคู่/);
  assert.match(src,/const bundlePriceSatang=moneyToSatang/);
  assert.match(src,/submit\('bundle-plan'/);
  assert.match(src,/window\.confirm/);
