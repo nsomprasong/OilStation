@@ -57,3 +57,19 @@ test('external invite URL and malformed email never trigger network',async()=>{
  }
  assert.equal(calls,0);
 });
+
+test('UAT invitation dispatch is restricted to a single configured test mailbox',async()=>{
+ const attempted=[];
+ const fetchImpl=async(_url,options)=>{
+  attempted.push(JSON.parse(options.body).to[0]);
+  return new Response('{"id":"email_1234"}',{status:200});
+ };
+ const uat={...env,OILSTATION_DEPLOY_TARGET:'uat'};
+ assert.equal((await sendInvitationEmail({...base,env:uat,fetchImpl})).deliveryStatus,'recipient_not_allowed');
+ assert.equal((await sendInvitationEmail({...base,env:{...uat,OILSTATION_UAT_TEST_EMAIL:'other@example.com'},fetchImpl})).deliveryStatus,'recipient_not_allowed');
+ assert.deepEqual(attempted,[]);
+ const allowed=await sendInvitationEmail({...base,
+   env:{...uat,OILSTATION_UAT_TEST_EMAIL:'MEMBER@example.com'},fetchImpl});
+ assert.equal(allowed.delivery,'email_accepted');
+ assert.deepEqual(attempted,['member@example.com']);
+});
