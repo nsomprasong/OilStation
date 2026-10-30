@@ -1,30 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mountPlatformSaasBilling} from '../../src/client/platform-saas-billing.js';
+import {mountPlatformSaasBilling,formattedBaht} from '../../src/client/platform-saas-billing.js';
 import {readFileSync} from 'node:fs';
-test('Thai platform billing UI supports reviewed invoice issuance and owner setup',()=>{
+test('platform SaaS UI offers only VAT policy and plan management',()=>{
  const src=readFileSync(new URL('../../src/client/platform-saas-billing.js',import.meta.url),'utf8');
  assert.equal(typeof mountPlatformSaasBilling,'function');
- for(const s of ['tax','flat-plan','group','subscription','draft','issue','billing-group-station-choices',
-   'ตรวจราคา ภาษี และส่วนลด']){
-  assert.ok(src.includes(s),s);
+ for(const word of ['vatMode','ratePercent','flat-plan','couponPriceSatang','hrPriceSatang','แพ็กเกจที่มีอยู่','นโยบายภาษีมูลค่าเพิ่ม']){
+  assert.ok(src.includes(word),word);
  }
- assert.match(src,/checkbox\.addEventListener\('change'/);
- assert.match(src,/button\.disabled=!checkbox\.checked/);
+ for(const removed of ["rpc('group'","rpc('subscription'","rpc('draft'","rpc('issue'","billing-group-station-choices","ตรวจร่างและออกใบแจ้งหนี้"]){
+  assert.equal(src.includes(removed),false,removed);
+ }
+ assert.match(src,/บันทึกนโยบาย VAT/);
+ assert.match(src,/สร้างแพ็กเกจ/);
 });
-test('drafting uses only group, service window and payment method: no client amount',()=>{
- const src=readFileSync(new URL('../../src/client/platform-saas-billing.js',import.meta.url),'utf8');
- assert.match(src,/billingGroupId:d\.get\('billingGroupId'\)/);
- assert.match(src,/couponPriceSatang=currencyToSatang/);
- assert.match(src,/organizationId:d\.get\('organizationId'\)/);
- assert.doesNotMatch(src,/stripe\.confirmPayment/);
+test('plan prices render from server satang values without rounding discrepancies',()=>{
+ assert.equal(formattedBaht('150000'),'1,500.00 บาท');
+ assert.equal(formattedBaht('0'),'0.00 บาท');
+ assert.equal(formattedBaht(undefined),'—');
 });
-
-
-test('paid invoice commission button reads preview only, never issues payout',()=>{
- const src=readFileSync(new URL('../../src/client/platform-saas-billing.js',import.meta.url),'utf8');
- assert.match(src,/api\/platform\/billing\/commission-preview/);
- assert.match(src,/invoice\.status==='paid'/);
- assert.match(src,/ยังไม่ได้ลงบัญชีหรืออนุมัติจ่าย/);
- assert.doesNotMatch(src,/api\/platform\/billing\/commission\/payout/);
+test('owner plan selection is outside SaaS administration and station creation',()=>{
+ const src=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');
+ const a=src.indexOf('async function platformWorkspace('),b=src.indexOf('function dashboard(',a);
+ const station=src.slice(a,b);
+ assert.match(station,/createInviteControl/);
+ assert.doesNotMatch(station,/planId|pricingPlanId|selectedPlanId/);
 });

@@ -1,208 +1,130 @@
-/** Platform billing editor. The server owns every price and permission check. */
-const currencyToSatang=value=>{
+/** OilStation SaaS pricing settings: two owner tasks, tax and plans only.
+ * Historic invoice/group/subscription APIs remain for the separate checkout flow.
+ */
+const moneyToSatang = value => {
  if(typeof value!=='string'||!/^(?:0|[1-9]\d{0,7})(?:\.\d{1,2})?$/.test(value))return null;
- const [whole,coins='']=value.split('.');
- return (BigInt(whole)*100n+BigInt(coins.padEnd(2,'0'))).toString();
+ const [whole,cents='']=value.split('.');
+ return (BigInt(whole)*100n+BigInt(cents.padEnd(2,'0'))).toString();
 };
-const elem=(tag,label='')=>{const x=document.createElement(tag);if(label)x.textContent=label;return x;};
-const opt=(value,label)=>{const x=elem('option',label);x.value=value;return x;};
-function addFields(form,fields){
- for(const f of fields){
-  const label=elem('label',f.label);label.className='field';
-  const el=f.options?elem('select'):elem('input');
-  el.name=f.name;el.required=true;
-  if(!f.options){el.type=f.type||'text';if(f.step)el.step=f.step;
-    if(f.type==='number'){el.min='0';el.max='100';}
-  }else for(const [value,name] of f.options)el.append(opt(value,name));
-  if(f.placeholder)el.placeholder=f.placeholder;
-  label.append(el);form.append(label);
- }
+export const formattedBaht=satang=>{
+ if(!/^(?:0|[1-9]\d{0,15})$/.test(String(satang??'')))return '—';
+ const n=BigInt(satang);return (n/100n).toLocaleString('th-TH')+'.'+(n%100n).toString().padStart(2,'0')+' บาท';
+};
+const el=(name,txt)=>{const n=document.createElement(name);if(txt!==undefined)n.textContent=txt;return n;};
+function field(title,name,{type='text',options,placeholder,required=true,step,max,min}={}){
+ const wrap=el('label',title);wrap.className='field';
+ const input=el(options?'select':'input');input.name=name;input.required=required;
+ if(options){for(const [value,label] of options){const o=el('option',label);o.value=value;input.append(o);}}
+ else{input.type=type;if(placeholder)input.placeholder=placeholder;
+  if(step)input.step=step;if(min!==undefined)input.min=String(min);if(max!==undefined)input.max=String(max);}
+ wrap.append(input);return wrap;
 }
-const spec=[
- ['tax','ยืนยันนโยบายภาษี',[
-  {label:'รูปแบบภาษี',name:'vatMode',options:[['exclusive','แยก VAT'],['inclusive','รวม VAT']]},
-  {label:'อัตราภาษี (%)',name:'ratePercent',type:'number',step:'.01'},
-  {label:'เริ่มมีผลวันที่',name:'effectiveOn',type:'date'}]],
- ['flat-plan','กำหนดแผนราคาเหมาจ่าย',[
-  {label:'รหัสแผน (ไม่ซ้ำ)',name:'code',placeholder:'standard_2026'},
-  {label:'ชื่อแผน',name:'name'},
-  {label:'รอบชำระ',name:'frequency',options:[['monthly','รายเดือน'],['yearly','รายปี']]},
-  {label:'QR Coupon (บาท/ปั๊ม)',name:'couponBaht',placeholder:'1500.00'},
-  {label:'HR & Payroll (บาท/ปั๊ม)',name:'hrBaht',placeholder:'500.00'},
-  {label:'ราคาเริ่มมีผลวันที่',name:'effectiveOn',type:'date'}]],
- ['group','สร้างกลุ่ม Billing (ปิด Auto Pay)',[
-  {label:'องค์กร',name:'organizationId',options:[]},
-  {label:'ชื่อกลุ่ม',name:'name'}]],
- ['subscription','สมัครสมาชิกให้สถานี (Trial)',[
-  {label:'สถานี',name:'stationId',options:[]},
-  {label:'แผนราคา',name:'planId',options:[]},
-  {label:'รอบเริ่มต้น UTC',name:'startsOn',type:'date'},
-  {label:'รอบสิ้นสุด UTC',name:'endsOn',type:'date'}]],
- ['draft','ร่างใบแจ้งหนี้จากราคาที่ตั้งไว้',[
-  {label:'Billing Group',name:'billingGroupId',options:[]},
-  {label:'ช่องทาง',name:'paymentMethod',options:[['card','บัตร'],['promptpay','PromptPay ลด 2%']]},
-  {label:'วันเริ่มให้บริการ',name:'periodStart',type:'date'},
-  {label:'วันสิ้นสุด (ไม่รวม)',name:'periodEnd',type:'date'}]],
-];
+function feedback(text=''){
+ const p=el('p',text);p.className='saas-simple-status';p.setAttribute('role','status');return p;
+}
+function policySummary(value){
+ if(!value)return 'ยังไม่ได้กำหนดนโยบาย VAT';
+ const type=value.vatMode==='inclusive'?'ราคาที่แสดงรวม VAT':'คิด VAT แยกจากราคา';
+ return type+' · '+(value.rateBasisPoints/100)+'% · มีผลวันที่ '+value.effectiveOn;
+}
 export function mountPlatformSaasBilling({target,token}){
  if(!target)return;
- const section=elem('section');section.className='platform-saas-config';
- section.append(elem('h3','ตั้งค่า SaaS Billing — Platform Super Admin'),
-   elem('p','ขั้นตอน: ภาษีที่ตรวจสอบแล้ว → แผนราคา → กลุ่มปั๊ม → Subscription → ร่างใบแจ้งหนี้ → ออกใบแจ้งหนี้'));
- const status=elem('p');status.setAttribute('role','status');section.append(status);
- const refresh=elem('button','รีเฟรชข้อมูล Billing');refresh.className='button secondary';
- refresh.type='button';section.append(refresh);
- const forms=elem('div');forms.className='billing-settings-layout';section.append(forms);
- const maps=new Map();
- for(const [key,title,fields] of spec){
-  const form=elem('form');form.className='coupon-form';
-  form.append(elem('h3',title));addFields(form,fields);
-  if(key==='group'){
-   const fieldset=elem('fieldset');fieldset.className='saas-station-fieldset';
-   fieldset.append(elem('legend','เลือกปั๊มในองค์กรเดียวกัน'));
-   const choices=elem('div');choices.id='billing-group-station-choices';
-   fieldset.append(choices);form.append(fieldset);
-  }
-  const submit=elem('button','บันทึก / สร้างรายการ');
-  submit.type='submit';submit.className='button secondary';form.append(submit);
-  maps.set(key,form);forms.append(form);
- }
- const results=elem('div');results.className='billing-invoice-list';
- section.append(elem('h3','ตรวจร่างและออกใบแจ้งหนี้'),results);
- target.append(section);
- let loaded=null;
- const rpc=async(key,payload)=>{
+ target.replaceChildren();
+ const root=el('div');root.className='saas-simple-layout';
+ const intro=el('div');intro.className='saas-simple-intro';
+ intro.append(el('h3','ตั้งค่าเพียง 2 อย่าง'),
+   el('p','กำหนด VAT และสร้างแพ็กเกจที่ลูกค้าจะเลือกเอง หลังจากได้รับคำเชิญเข้าปั๊ม'));
+ root.append(intro);
+ const tax=el('form');tax.className='coupon-form saas-simple-card';
+ tax.append(el('h3','1. นโยบายภาษีมูลค่าเพิ่ม'));
+ const taxCurrent=el('p','กำลังโหลดนโยบาย…');taxCurrent.className='saas-current-summary';tax.append(taxCurrent);
+ tax.append(field('วิธีคำนวณ VAT','vatMode',{options:[['exclusive','ราคาไม่รวม VAT'],['inclusive','ราคารวม VAT']]}),
+  field('อัตรา VAT (%)','ratePercent',{type:'number',step:'0.01',min:0,max:100,placeholder:'7.00'}),
+  field('เริ่มมีผลวันที่','effectiveOn',{type:'date'}));
+ const saveTax=el('button','บันทึกนโยบาย VAT');saveTax.type='submit';saveTax.className='button primary';
+ const taxStatus=feedback();tax.append(saveTax,taxStatus);
+ const plan=el('form');plan.className='coupon-form saas-simple-card';
+ plan.append(el('h3','2. สร้างแพ็กเกจราคา'),
+   el('p','กำหนดราคาต่อปั๊มตามบริการที่เปิดใช้งาน ลูกค้าเลือกแพ็กเกจหลังตอบรับคำเชิญ'));
+ plan.append(field('ชื่อแพ็กเกจ','name',{placeholder:'เช่น Standard'}),
+  field('รหัสแพ็กเกจ (ภาษาอังกฤษ)','code',{placeholder:'standard_monthly'}),
+  field('รอบชำระเงิน','frequency',{options:[['monthly','รายเดือน'],['yearly','รายปี']]}),
+  field('QR Coupon (บาท/ปั๊ม)','couponBaht',{placeholder:'1500.00'}),
+  field('HR & Payroll (บาท/ปั๊ม)','hrBaht',{placeholder:'500.00'}),
+  field('เริ่มมีผลวันที่','effectiveOn',{type:'date'}));
+ const savePlan=el('button','สร้างแพ็กเกจ');savePlan.type='submit';savePlan.className='button primary';
+ const planStatus=feedback();plan.append(savePlan,planStatus);
+ const current=el('section');current.className='saas-simple-card saas-existing-plans';
+ const bar=el('div');bar.className='saas-plan-heading';
+ bar.append(el('h3','แพ็กเกจที่มีอยู่'));
+ const refresh=el('button','รีเฟรช');refresh.type='button';refresh.className='button secondary';bar.append(refresh);
+ const planItems=el('div');planItems.className='saas-plan-list';
+ const summaryStatus=feedback();
+ current.append(bar,planItems,summaryStatus);
+ root.append(tax,plan,current);target.append(root);
+ async function rpc(path,payload){
   const init={cache:'no-store',headers:{authorization:'Bearer '+token}};
-  if(payload!==undefined){
-   init.method='POST';init.headers['content-type']='application/json';
-   init.body=JSON.stringify(payload);
-  }
-  const response=await fetch('/api/platform/billing/'+key,init);
-  if(!response.ok)throw new Error('not_authorized_or_invalid');
-  return (await response.json()).result;
- };
- const select=(key,name)=>maps.get(key).elements.namedItem(name);
- const fill=(input,records,label)=>{
-  input.replaceChildren(opt('','— เลือก —'));
-  for(const r of records)input.append(opt(r.id,label(r)));
- };
- function groupStations(){
-  const container=section.querySelector('#billing-group-station-choices');
-  container.replaceChildren();
-  const org=select('group','organizationId').value;
-  const assigned=new Set((loaded?.groups||[]).flatMap(g=>g.stationIds||[]));
-  for(const s of loaded?.stations||[]){
-   if(s.organizationId!==org||assigned.has(s.id))continue;
-   const label=elem('label');label.className='saas-station-pick';
-   const box=elem('input');box.type='checkbox';box.value=s.id;
-   label.append(box,document.createTextNode(' '+s.name));container.append(label);
-  }
-  if(!container.children.length)container.append(elem('p','ไม่มีปั๊มที่ยังไม่อยู่ใน Billing Group'));
+  if(payload!==undefined){init.method='POST';init.headers['content-type']='application/json';init.body=JSON.stringify(payload);}
+  const r=await fetch('/api/platform/billing/'+path,init);
+  if(!r.ok)throw new Error('billing_unavailable');
+  return (await r.json()).result;
  }
- function invoices(){
-  results.replaceChildren();
-  for(const invoice of loaded?.invoices||[]){
-   const card=elem('article');card.className='billing-invoice-card';
-   card.append(elem('strong',invoice.number+' · '+String(invoice.amountSatang)+' สตางค์'),
-     elem('p',invoice.status+' · '+invoice.serviceStart+' ถึง '+invoice.serviceEnd));
-   if(invoice.status==='paid'){
-    const heading=elem('p','ประเมินค่าคอมมิชชันจากรายการที่รับชำระแล้ว (แสดงข้อมูลเท่านั้น)');
-    card.append(heading);
-    for(const line of invoice.lines||[]){
-     const button=elem('button','ดูประมาณการ Sales: '+(line.moduleCode||'')+' · '+line.stationId.slice(0,8));
-     button.type='button';button.className='button secondary';
-     const preview=elem('p');preview.setAttribute('role','status');
-     card.append(button,preview);
-     button.addEventListener('click',async()=>{
-      button.disabled=true;preview.textContent='กำลังตรวจสิทธิ์และช่วงเวลา Sales…';
-      try{
-       const res=await fetch('/api/platform/billing/commission-preview?invoiceLineId='+
-         encodeURIComponent(line.lineId),{
-           cache:'no-store',headers:{authorization:'Bearer '+token},
-         });
-       if(!res.ok)throw new Error('preview_unavailable');
-       const data=(await res.json()).preview;
-       const items=(data.allocations||[]).map(x=>
-         x.salesId.slice(0,8)+': '+x.proposedSatang+' สตางค์').join(' | ');
-       preview.textContent='คอมมิชชันประมาณการ '+data.totalProposedSatang+
-         ' สตางค์ · '+items+' · ยังไม่ได้ลงบัญชีหรืออนุมัติจ่าย';
-      }catch{
-       preview.textContent='ประเมินไม่ได้ ต้องตรวจ Sales assignment, กฎค่าคอม และยอดรับชำระ';
-      }finally{button.disabled=false;}
-     });
-    }
-   }
-   if(invoice.status==='draft'){
-    const label=elem('label');label.className='saas-review-check';
-    const checkbox=elem('input');checkbox.type='checkbox';
-    label.append(checkbox,document.createTextNode(' ตรวจราคา ภาษี และส่วนลดของร่างแล้ว'));
-    const button=elem('button','ยืนยันออกใบแจ้งหนี้');button.className='button primary';
-    button.type='button';button.disabled=true;
-    checkbox.addEventListener('change',()=>{button.disabled=!checkbox.checked;});
-    button.addEventListener('click',()=>act('issue',{invoiceId:invoice.invoiceId},button));
-    card.append(label,button);
-   }
-   results.append(card);
+ function paintPlans(plans){
+  planItems.replaceChildren();
+  if(!plans.length){planItems.append(el('p','ยังไม่มีแพ็กเกจ สร้างแพ็กเกจแรกได้จากแบบฟอร์มด้านบน'));return;}
+  for(const p of plans){
+   const card=el('article');card.className='saas-plan-row';
+   const main=el('div');main.className='saas-plan-meta';
+   main.append(el('strong',p.name),el('small',p.code+' · '+(p.frequency==='yearly'?'รายปี':'รายเดือน')));
+   const prices=el('div');prices.className='saas-plan-prices';
+   const get=(code)=>p.rules?.find(r=>r.moduleCode===code)?.priceSatang;
+   prices.append(el('span','QR Coupon '+formattedBaht(get('qr_coupon'))),
+    el('span','HR & Payroll '+formattedBaht(get('hr_payroll'))));
+   card.append(main,prices);planItems.append(card);
   }
  }
  async function load(){
-  refresh.disabled=true;status.textContent='กำลังโหลด Billing…';
+  refresh.disabled=true;summaryStatus.textContent='กำลังโหลดข้อมูล…';
   try{
-   loaded=await rpc('overview');
-   fill(select('group','organizationId'),loaded.organizations||[],x=>x.name);
-   fill(select('subscription','stationId'),loaded.stations||[],x=>x.name);
-   fill(select('subscription','planId'),loaded.plans||[],x=>x.name+' ('+x.frequency+')');
-   fill(select('draft','billingGroupId'),loaded.groups||[],x=>x.name);
-   groupStations();invoices();
-   status.textContent=loaded.taxPolicy?
-    'นโยบายภาษีล่าสุด: '+loaded.taxPolicy.rateBasisPoints/100+'% ('+loaded.taxPolicy.vatMode+')':
-    'ยังไม่มีนโยบายภาษีที่ตรวจสอบ กรุณากำหนดก่อนออกใบแจ้งหนี้';
-  }catch{status.textContent='โหลด Billing ไม่สำเร็จ — ตรวจสิทธิ์ Platform Super Admin';}
-  finally{refresh.disabled=false;}
+   const data=await rpc('overview');
+   taxCurrent.textContent=policySummary(data.taxPolicy);
+   paintPlans(data.plans||[]);
+   summaryStatus.textContent='';
+  }catch{
+   taxCurrent.textContent='ยังไม่สามารถโหลดนโยบายได้';
+   planItems.replaceChildren();
+   summaryStatus.textContent='โหลดข้อมูลไม่สำเร็จ กรุณาลองรีเฟรชอีกครั้ง';
+  }finally{refresh.disabled=false;}
  }
- async function act(route,body,button){
+ async function submit(route,body,button,status){
   button.disabled=true;status.textContent='กำลังบันทึก…';
-  try{await rpc(route,body);await load();status.textContent='บันทึกสำเร็จ โปรดตรวจรายการอีกครั้ง';}
-  catch{status.textContent='บันทึกไม่สำเร็จ — กรุณาตรวจสิทธิ์ วันที่ และข้อมูล';}
+  try{await rpc(route,body);status.textContent='บันทึกสำเร็จ';await load();}
+  catch{status.textContent='บันทึกไม่สำเร็จ กรุณาตรวจข้อมูลและสิทธิ์ของบัญชี';}
   finally{button.disabled=false;}
  }
- function bodyFor(key,d){
-  if(key==='tax'){
-   const pct=d.get('ratePercent');
-   if(!/^(?:0|[1-9]\d{0,2})(?:\.\d{1,2})?$/.test(pct))return null;
-   const rateBasisPoints=Number(pct)*100;
-   if(!Number.isInteger(rateBasisPoints))return null;
-   return {vatMode:d.get('vatMode'),rateBasisPoints,effectiveOn:d.get('effectiveOn')};
+ tax.addEventListener('submit',e=>{
+  e.preventDefault();
+  const d=new FormData(tax),rate=String(d.get('ratePercent')??'');
+  if(!/^(?:0|[1-9]\d{0,2})(?:\.\d{1,2})?$/.test(rate)){
+   taxStatus.textContent='อัตรา VAT ไม่ถูกต้อง';return;
   }
-  if(key==='flat-plan'){
-   const couponPriceSatang=currencyToSatang(d.get('couponBaht').trim());
-   const hrPriceSatang=currencyToSatang(d.get('hrBaht').trim());
-   return couponPriceSatang!==null&&hrPriceSatang!==null?{
-    code:d.get('code').trim(),name:d.get('name').trim(),frequency:d.get('frequency'),
-    couponPriceSatang,hrPriceSatang,effectiveOn:d.get('effectiveOn'),
-   }:null;
+  const rateBasisPoints=Number(rate)*100;
+  if(!Number.isInteger(rateBasisPoints)){taxStatus.textContent='อัตรา VAT ไม่ถูกต้อง';return;}
+  submit('tax',{vatMode:d.get('vatMode'),rateBasisPoints,effectiveOn:d.get('effectiveOn')},saveTax,taxStatus);
+ });
+ plan.addEventListener('submit',e=>{
+  e.preventDefault();
+  const d=new FormData(plan);
+  const couponPriceSatang=moneyToSatang(String(d.get('couponBaht')??'').trim());
+  const hrPriceSatang=moneyToSatang(String(d.get('hrBaht')??'').trim());
+  if(couponPriceSatang===null||hrPriceSatang===null||
+     BigInt(couponPriceSatang)+BigInt(hrPriceSatang)<1000n){
+   planStatus.textContent='กรุณาระบุราคาให้ถูกต้อง โดยยอดรวมต้องไม่น้อยกว่า 10 บาท';return;
   }
-  if(key==='group'){
-   const stationIds=[...section.querySelectorAll('#billing-group-station-choices input:checked')]
-      .map(el=>el.value);
-   return stationIds.length?{organizationId:d.get('organizationId'),
-      name:d.get('name').trim(),stationIds}:null;
-  }
-  if(key==='subscription')return {stationId:d.get('stationId'),planId:d.get('planId'),
-   startsAt:d.get('startsOn')+'T00:00:00Z',periodEnd:d.get('endsOn')+'T00:00:00Z'};
-  if(key==='draft')return {billingGroupId:d.get('billingGroupId'),
-   paymentMethod:d.get('paymentMethod'),periodStart:d.get('periodStart'),
-   periodEnd:d.get('periodEnd')};
-  return null;
- }
- for(const [key,form] of maps){
-  form.addEventListener('submit',e=>{
-   e.preventDefault();const body=bodyFor(key,new FormData(form));
-   if(!body){status.textContent='กรุณากรอกข้อมูลให้ถูกต้อง';return;}
-   act(key,body,form.querySelector('button[type=submit]'));
-  });
- }
- select('group','organizationId').addEventListener('change',groupStations);
+  const body={code:String(d.get('code')??'').trim(),name:String(d.get('name')??'').trim(),
+    frequency:d.get('frequency'),couponPriceSatang,hrPriceSatang,effectiveOn:d.get('effectiveOn')};
+  submit('flat-plan',body,savePlan,planStatus);
+ });
  refresh.addEventListener('click',load);
- load().catch(()=>{status.textContent='เชื่อมต่อ Billing ไม่สำเร็จ';});
+ load();
 }

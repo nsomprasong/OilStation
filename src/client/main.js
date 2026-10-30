@@ -1218,8 +1218,8 @@ async function platformWorkspace(accessToken) {
   const target=document.getElementById('platform-workspace');
   if (!target) return;
   target.innerHTML = `
-    <div class="section-title">สร้างปั๊มน้ำมัน</div>
-    <p>เลือกแบรนด์และโมดูลที่ลูกค้าต้องการเปิดใช้งาน</p>
+    <div class="section-title">ขั้นตอนที่ 1 — สร้างปั๊มน้ำมัน</div>
+    <p>ระบุข้อมูลปั๊มและบริการที่ใช้ โดยยังไม่ต้องเลือกแพ็กเกจราคา</p>
     <form class="coupon-form" id="new-station-form">
       <label class="field">ชื่อองค์กร / เจ้าของกิจการ
         <input id="org-name" autocomplete="organization" maxlength="160" required placeholder="เช่น บริษัท ตัวอย่าง จำกัด"></label>
@@ -1236,6 +1236,8 @@ async function platformWorkspace(accessToken) {
       <p id="platform-notice" class="notice" hidden role="status"></p>
     </form>
     <div class="divider"></div>
+    <div class="section-title">ขั้นตอนที่ 2 — เชิญเจ้าของปั๊ม</div>
+    <p>เมื่อสร้างปั๊มแล้ว กดเชิญเจ้าของปั๊มในรายการด้านล่าง หลังตอบรับคำเชิญ เจ้าของปั๊มจะเลือกแพ็กเกจและวิธีชำระเงินเอง</p>
     <div class="section-title">ปั๊มในแพลตฟอร์ม</div>
     <div id="station-list" class="module-list"><p>กำลังโหลด…</p></div>
     <div id="fuel-editor"></div>

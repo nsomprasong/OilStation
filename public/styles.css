@@ -224,3 +224,26 @@
 @media(prefers-color-scheme:dark){.ws-sidebar,.ws-screen.panel{background:#122338;border-color:#2c4558}.ws-side-head,.ws-signout,.ws-screen-head{border-color:#304b5c}
 .ws-nav,.ws-signout{color:#adc3d0}.ws-nav:hover,.ws-signout:hover{background:#1b3447}.ws-nav.active{background:#214254;color:#a9e0e6}
 .ws-current{border-color:#365569}.ws-quick{border-color:#335368}.ws-quick:hover{background:#1a3547}.ws-quick small,.ws-header p:not(.eyebrow),.ws-screen-head p{color:#a8bbc9}}
+
+/* SaaS Billing: two settings only; financial checkout belongs to the invited station owner. */
+.saas-simple-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.saas-simple-intro,.saas-existing-plans{grid-column:1/-1}
+.saas-simple-intro h3{font-size:18px;margin:0 0 5px}
+.saas-simple-intro p{font-size:13px;color:#8296a5;margin:0}
+.saas-simple-card{min-width:0;border:1px solid #385268;border-radius:12px;padding:22px;background:transparent}
+.saas-simple-card h3{font-size:16px;margin:0 0 12px}
+.saas-simple-card>p{font-size:13px;line-height:1.65;color:#a2bacc}
+.saas-simple-card .button{width:100%;margin-top:8px}
+.saas-simple-status{min-height:20px;margin:8px 0 0;font-size:13px;color:#8bcac3}
+.saas-current-summary{padding:11px 13px;border-radius:8px;background:#1d3a4e}
+.saas-plan-heading{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.saas-plan-heading .button{width:auto;margin:0}
+.saas-plan-list{display:grid;gap:10px;margin-top:16px}
+.saas-plan-row{display:flex;justify-content:space-between;align-items:center;gap:24px;border-bottom:1px solid #314d61;padding:13px 0}
+.saas-plan-row:last-child{border-bottom:0}
+.saas-plan-meta,.saas-plan-prices{display:grid;gap:6px}
+.saas-plan-meta small{font-size:12px;color:#a9c1cd}
+.saas-plan-prices{font-size:13px;text-align:right}
+@media(max-width:850px){.saas-simple-layout{grid-template-columns:1fr}.saas-simple-intro,.saas-existing-plans{grid-column:1}}
+@media(max-width:520px){.saas-plan-row{display:grid;gap:8px}.saas-plan-prices{text-align:left}}
+@media(prefers-color-scheme:light){.saas-simple-card{border-color:#d8e5ec}.saas-simple-card>p,.saas-plan-meta small,.saas-simple-intro p{color:#647988}.saas-current-summary{background:#e6f2f4}.saas-plan-row{border-color:#e0e9ef}}
