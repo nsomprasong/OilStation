@@ -9,57 +9,146 @@ export function selectWorkspaceScreens(memberships=[]){
  const corp=memberships.some(m=>m.scopeType==='corporate_company');
  const invite=memberships.some(m=>m.scopeType==='corporate_company'&&m.corporateCompanyId&&m.role==='corporate_admin');
  return [
-  {key:'overview',label:'ภาพรวม',icon:'layout-dashboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
-  {key:'stations',label:'จัดการปั๊มน้ำมัน',icon:'building-2',desc:'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล',ids:['platform-workspace'],yes:p},
-  {key:'plan',label:'แพ็กเกจและชำระเงิน',icon:'credit-card',desc:'เลือกแพ็กเกจและวิธีชำระเงิน',
+  {key:'overview',label:'ภาพรวม',icon:'clipboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
+  {key:'stations',label:'จัดการปั๊มน้ำมัน',icon:'building',desc:'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล',ids:['platform-workspace'],yes:p},
+  {key:'plan',label:'แพ็กเกจและชำระเงิน',icon:'wallet',desc:'เลือกแพ็กเกจและวิธีชำระเงิน',
     ids:['station-saas-plan-workspace'],
     yes:memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner'].includes(m.role))},
   {key:'billing',label:p?'แพ็กเกจและ VAT':'ค่าบริการ',icon:'receipt',desc:p?'กำหนด VAT และแพ็กเกจให้ลูกค้าเลือก':'ดูและชำระค่าบริการ',ids:[...(p?['platform-saas-billing']:[]),...(b?['saas-billing-workspace']:[])],yes:p||b},
   {key:'fuel',label:'ชนิดและราคาน้ำมัน',icon:'fuel',desc:'กำหนดสินค้าและราคาหน้าปั๊ม',ids:['station-fuel-workspace'],yes:s},
-  {key:'pump',label:'งานหน้าลาน',icon:'scan-line',desc:'จัดการคูปองและรายการเติมน้ำมัน',ids:['station-pump-workspace'],yes:pump},
+  {key:'pump',label:'งานหน้าลาน',icon:'scan',desc:'จัดการคูปองและรายการเติมน้ำมัน',ids:['station-pump-workspace'],yes:pump},
   {key:'customers',label:'ลูกค้าบริษัท',icon:'building',desc:'บัญชีลูกค้าและวงเงิน',ids:['station-customers-workspace'],yes:s},
   {key:'finance',label:'การเงิน',icon:'wallet',desc:'รับเงินและตรวจสอบหลักฐาน',ids:['station-finance-workspace'],yes:s},
   {key:'hr',label:'พนักงานและกะ',icon:'users',desc:'บริหารพนักงานและตารางกะ',ids:['hr-workspace'],yes:s},
-  {key:'attendance',label:'ลงเวลา',icon:'clock-3',desc:'ลงเวลาทำงาน',ids:['attendance-workspace'],yes:attendance},
-  {key:'reviews',label:'อนุมัติลงเวลา',icon:'clipboard-check',desc:'ตรวจรายการลงเวลา',ids:['attendance-review-workspace'],yes:review},
-  {key:'payroll',label:'สรุปเงินเดือน',icon:'file-spreadsheet',desc:'ตรวจข้อมูลเตรียมจ่าย',ids:['attendance-payroll-preview-workspace'],yes:review},
+  {key:'attendance',label:'ลงเวลา',icon:'calendar',desc:'ลงเวลาทำงาน',ids:['attendance-workspace'],yes:attendance},
+  {key:'reviews',label:'อนุมัติลงเวลา',icon:'check',desc:'ตรวจรายการลงเวลา',ids:['attendance-review-workspace'],yes:review},
+  {key:'payroll',label:'สรุปเงินเดือน',icon:'receipt',desc:'ตรวจข้อมูลเตรียมจ่าย',ids:['attendance-payroll-preview-workspace'],yes:review},
   {key:'corporate',label:'บัญชีบริษัท',icon:'ticket',desc:'คูปองและประวัติใช้วงเงิน',ids:['corporate-workspace'],yes:corp},
   {key:'invitations',label:'เชิญสมาชิก',icon:'user-plus',desc:'เชิญและกำหนดสิทธิ์',ids:['member-invites'],yes:s||invite}
  ].filter(x=>x.yes);
 }
 
+const NAV_GROUPS=[{"title":"เริ่มต้น","keys":["overview"]},{"title":"จัดการแพลตฟอร์ม","keys":["stations","billing"]},{"title":"งานปั๊มน้ำมัน","keys":["fuel","pump","customers","finance","plan"]},{"title":"ทีมงาน","keys":["hr","attendance","reviews","payroll","invitations"]},{"title":"ลูกค้าบริษัท","keys":["corporate"]}];
+const NAV_ICONS=new Set(["fuel","users","wallet","calendar","qr","logout","shield","mail","clipboard","scan","ticket","building","user-plus","receipt","camera","check","settings"]);
+export function navMarkup(screens){
+ return NAV_GROUPS.map(group=>{
+  const items=group.keys.map(key=>screens.find(s=>s.key===key)).filter(Boolean);
+  if(!items.length)return "";
+  return `<div class="ws-nav-group"><div class="ws-nav-heading">${group.title}</div>
+   ${items.map(s=>`<button type="button" class="ws-nav${s.key==="overview"?" active":""}"
+    data-ws-go="${s.key}" aria-controls="ws-${s.key}" ${s.key==="overview"?'aria-current="page"':""}>
+    <i data-ui-icon="${NAV_ICONS.has(s.icon)?s.icon:"clipboard"}"></i><span>${s.label}</span>
+    </button>`).join("")}</div>`;
+ }).join("");
+}
+
 export function renderWorkspaceShell(screens){
- const buttons=screens.map((s,i)=>`<button type="button" class="ws-nav${i===0?' active':''}" data-ws-go="${s.key}" aria-controls="ws-${s.key}" ${i===0?'aria-current="page"':''}><i data-ui-icon="${s.icon}"></i><span>${s.label}</span></button>`).join('');
- const quick=screens.filter(x=>x.key!=='overview').slice(0,4).map(s=>`<button class="ws-quick" type="button" data-ws-go="${s.key}"><strong>${s.label}</strong><small>${s.desc}</small></button>`).join('');
- const panels=screens.map((s,i)=>`<section class="panel ws-screen" data-ws-screen="${s.key}" id="ws-${s.key}" ${i===0?'':'hidden'}>
-  <div class="ws-screen-head"><span class="eyebrow">OilStation / ${s.label}</span><h2 tabindex="-1">${s.key==='overview'?'เริ่มต้นทำงาน':s.label}</h2><p>${s.key==='overview'?'เลือกงานจากทางลัดหรือเมนูด้านข้าง':s.desc}</p></div>
-  ${s.key==='overview'?`<div class="section-title"><span class="status-dot"></span>สิทธิ์ของคุณ</div><div class="scope-list" id="scopes"></div>
-   <div class="ws-overview-columns"><div><h3>งานที่ทำได้</h3><div class="ws-quick-grid">${quick||'<p>ยังไม่มีโมดูลที่เปิดใช้งาน</p>'}</div></div>
-   <div><h3>โมดูลตามสิทธิ์</h3><div class="module-list" id="modules"></div></div></div>`:
-   s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join('')}
- </section>`).join('');
+ const quick=screens.filter(s=>s.key!=="overview").slice(0,6).map(s=>`
+ <button class="ws-quick" type="button" data-ws-go="${s.key}">
+  <span class="ws-quick-copy"><strong>${s.label}</strong><small>${s.desc}</small></span>
+  <span class="ws-quick-arrow" aria-hidden="true">›</span>
+ </button>`).join("");
+ const panels=screens.map((s,i)=>`
+ <section class="panel ws-screen" data-ws-screen="${s.key}" id="ws-${s.key}"
+   ${i===0?"":"hidden"} aria-labelledby="ws-heading-${s.key}">
+   <div class="ws-screen-head">
+     <div class="ws-breadcrumb">OilStation <span aria-hidden="true">/</span> ${s.label}</div>
+     <h2 id="ws-heading-${s.key}" tabindex="-1">${s.key==="overview"?"พื้นที่ทำงานของคุณ":s.label}</h2>
+     <p>${s.key==="overview"?"เลือกงานที่ต้องการจากรายการด้านล่าง ทุกเมนูแสดงตามสิทธิ์ที่ได้รับ":s.desc}</p>
+   </div>
+   ${s.key==="overview"?`
+     <div class="ws-overview-columns">
+       <div class="ws-overview-primary">
+         <div class="ws-section-heading"><h3>เริ่มทำงาน</h3>
+           <span>งานที่พร้อมใช้งานสำหรับบัญชีนี้</span></div>
+         <div class="ws-quick-grid">${quick||'<p class="ws-empty">ยังไม่มีงานให้เลือกสำหรับสิทธิ์นี้</p>'}</div>
+       </div>
+       <aside class="ws-overview-side" aria-label="ข้อมูลสิทธิ์ของคุณ">
+         <div class="ws-section-heading"><h3>สิทธิ์ของคุณ</h3></div>
+         <div class="scope-list" id="scopes"></div>
+         <div class="ws-section-heading ws-section-heading-spaced"><h3>พื้นที่รับผิดชอบ</h3></div>
+         <div class="module-list" id="modules"></div>
+       </aside>
+     </div>`:
+     s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join("")}
+ </section>`).join("");
  return `<div class="ws-layout" data-workspace-shell>
- <aside class="ws-sidebar" aria-label="เมนูพื้นที่ทำงาน"><div class="ws-side-head"><strong>OilStation</strong><small>WORKSPACE</small></div>
- <nav class="ws-nav-list" aria-label="เมนูหลัก">${buttons}</nav>
- <button class="ws-signout" id="logout" type="button"><i data-ui-icon="log-out"></i>ออกจากระบบ</button></aside>
- <div class="ws-main"><header class="ws-header"><div><p class="eyebrow">OILSTATION WORKSPACE</p><h1 id="scope-title"></h1><p>พื้นที่บริหารจัดการตามสิทธิ์ของคุณ</p></div><span class="ws-current" id="ws-current">ภาพรวม</span></header>${panels}</div></div>`;
+   <button class="ws-menu-backdrop" type="button" data-ws-menu-close hidden
+     aria-label="ปิดเมนูนำทาง"></button>
+   <aside class="ws-sidebar" id="ws-sidebar" aria-label="เมนูพื้นที่ทำงาน">
+     <div class="ws-side-head">
+       <span class="ws-logo" aria-hidden="true">O</span>
+       <div><strong>OilStation</strong><small>OPERATIONS</small></div>
+       <button type="button" class="ws-mobile-close" data-ws-menu-close aria-label="ปิดเมนู">×</button>
+     </div>
+     <nav class="ws-nav-list" aria-label="เมนูหลัก">${navMarkup(screens)}</nav>
+     <div class="ws-sidebar-bottom">
+       <span class="ws-sidebar-caption">ระบบบริหารจัดการสถานีบริการน้ำมัน</span>
+       <button class="ws-signout" id="logout" type="button"><i data-ui-icon="logout"></i>ออกจากระบบ</button>
+     </div>
+   </aside>
+   <div class="ws-main">
+     <header class="ws-header">
+       <button class="ws-mobile-toggle" type="button" aria-label="เปิดเมนู"
+         aria-controls="ws-sidebar" aria-expanded="false" data-ws-menu-toggle>
+         <span aria-hidden="true">☰</span><span>เมนู</span>
+       </button>
+       <div class="ws-header-copy">
+         <p class="ws-overline">OILSTATION / WORKSPACE</p>
+         <h1 id="scope-title"></h1>
+         <p>ศูนย์จัดการงานของคุณในที่เดียว</p>
+       </div>
+       <span class="ws-current" id="ws-current">ภาพรวม</span>
+     </header>
+     <main class="ws-content" id="ws-content">${panels}</main>
+   </div>
+ </div>`;
 }
 
 export function wireWorkspaceNavigation(root){
- const views=[...root.querySelectorAll('[data-ws-screen]')],links=[...root.querySelectorAll('[data-ws-go]')];
- for(const link of links)link.addEventListener('click',()=>{
-  const key=link.dataset.wsGo,view=views.find(x=>x.dataset.wsScreen===key);
-  if(!view)return;
-  for(const v of views)v.hidden=v!==view;
-  for(const button of links){
-   const selected=button.dataset.wsGo===key;
-   button.classList.toggle('active',selected);
-   if(button.closest('nav')&&selected)button.setAttribute('aria-current','page');
-   else button.removeAttribute('aria-current');
-  }
-  const heading=view.querySelector('h2');
-  const current=root.querySelector('#ws-current');if(current)current.textContent=heading?.textContent||'';
-  heading?.focus({preventScroll:true});
-  root.scrollIntoView({block:'start',behavior:'auto'});
+ const views=[...root.querySelectorAll("[data-ws-screen]")];
+ const links=[...root.querySelectorAll("[data-ws-go]")];
+ const menuToggle=root.querySelector("[data-ws-menu-toggle]");
+ const backdrop=root.querySelector(".ws-menu-backdrop");
+ const menu=root.querySelector(".ws-sidebar");
+ const closeMenu=()=>{
+  menu?.classList.remove("is-open");
+  if(backdrop)backdrop.hidden=true;
+  menuToggle?.setAttribute("aria-expanded","false");
+ };
+ const openMenu=()=>{
+  menu?.classList.add("is-open");
+  if(backdrop)backdrop.hidden=false;
+  menuToggle?.setAttribute("aria-expanded","true");
+ };
+ menuToggle?.addEventListener("click",()=>{
+  if(menu?.classList.contains("is-open"))closeMenu();else openMenu();
  });
+ root.querySelectorAll("[data-ws-menu-close]").forEach(button=>
+  button.addEventListener("click",()=>{closeMenu();menuToggle?.focus();}));
+ root.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&menu?.classList.contains("is-open")){
+   closeMenu();menuToggle?.focus();
+  }
+ });
+ for(const button of links){
+  button.addEventListener("click",()=>{
+   const key=button.dataset.wsGo;
+   const view=views.find(x=>x.dataset.wsScreen===key);
+   if(!view)return;
+   views.forEach(v=>{v.hidden=v!==view;});
+   links.forEach(link=>{
+    const active=link.dataset.wsGo===key;
+    link.classList.toggle("active",active);
+    if(active&&link.closest("nav"))link.setAttribute("aria-current","page");
+    else link.removeAttribute("aria-current");
+   });
+   const heading=view.querySelector("h2");
+   const current=root.querySelector("#ws-current");
+   if(current&&heading)current.textContent=heading.textContent;
+   closeMenu();
+   heading?.focus({preventScroll:true});
+   root.querySelector(".ws-main")?.scrollIntoView({block:"start",behavior:"auto"});
+  });
+ }
 }
