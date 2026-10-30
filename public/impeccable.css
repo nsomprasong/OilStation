@@ -11,6 +11,20 @@
   --oil-warn-wash:#fff5e1;--oil-radius:10px;
   color-scheme:light;
 }
+/* Stable light public surface even when the OS requests a dark palette.
+   Previous CSS contains an unrelated dark-mode block; override its contrast. */
+body{background:var(--oil-canvas);color:var(--oil-ink)}
+body>.shell>.topbar{background:#fff;border-color:var(--oil-line)}
+body>.shell>.topbar .tag{background:#eaf5f4;color:#165f65}
+body>.shell>footer{color:#637d8a}
+#app.center:not(.workspace-mode) .panel{background:#fff;color:var(--oil-ink)}
+#app.center:not(.workspace-mode) :where(.step,.field,.module-item){color:#355363}
+#app.center:not(.workspace-mode) :where(.hint,.number){background:#eff5f6;color:#486977}
+#app.center:not(.workspace-mode) :where(.divider){background:#e4eaee}
+#app.center:not(.workspace-mode) .field :is(input,select,textarea){
+  background:#fff;color:var(--oil-ink);border-color:#bbced5;
+}
+body:has(#app.workspace-mode .ws-sidebar.is-open){overflow:hidden}
 html{scroll-behavior:auto;scroll-padding-top:12px}
 body{min-width:0;overflow-wrap:break-word}
 ::selection{background:#b9e7e0;color:#122d37}
@@ -217,4 +231,11 @@ input::placeholder,textarea::placeholder{color:#70848f;opacity:1}
  #app.workspace-mode .ws-layout{display:block}
  #app.workspace-mode .ws-main{padding:0}
  #app.workspace-mode .ws-screen.panel{border:0;padding:0}
+}
+
+@media(max-width:620px){
+ #app.center:not(.workspace-mode) :where(input,select,textarea){
+   font-size:16px!important;
+ }
+ #app.center:not(.workspace-mode){padding-inline:16px}
 }
