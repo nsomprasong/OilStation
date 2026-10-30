@@ -334,3 +334,18 @@ body:has(#app.workspace-mode)>.shell>footer{display:none}
  #app.workspace-mode .ws-sidebar{transition:none}
  #app.workspace-mode .button{transition:none}
 }
+
+/* Form hierarchy — one grouped price decision, not three unrelated full-width inputs. */
+#app.workspace-mode .os-plan-basics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+#app.workspace-mode .os-plan-basics .field:first-child{grid-column:1/-1}
+#app.workspace-mode .os-plan-pricing{border:1px solid #d5e4e9;background:#fff;border-radius:9px;padding:15px;display:grid;gap:14px}
+#app.workspace-mode .os-plan-pricing h4{margin:0;font-size:14px;color:#274757}
+#app.workspace-mode .os-price-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+#app.workspace-mode .os-price-grid .field:last-child{grid-column:1/-1;border-top:1px solid #e1ecee;padding-top:15px;color:#086f70}
+#app.workspace-mode .os-price-hint{font-size:12px;margin:0;line-height:1.65;color:#6a8591}
+#app.workspace-mode .os-directory-count{font-size:12px;color:#52798a;margin:-7px 0 14px}
+#app.workspace-mode .os-create-station #platform-notice[hidden]{display:none}
+@media(max-width:620px){
+ #app.workspace-mode .os-plan-basics,#app.workspace-mode .os-price-grid{grid-template-columns:1fr}
+ #app.workspace-mode .os-price-grid .field:last-child{grid-column:1}
+}
