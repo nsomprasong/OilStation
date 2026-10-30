@@ -190,3 +190,11 @@ GRANT EXECUTE ON FUNCTION public.platform_define_saas_bundle_plan(
 REVOKE ALL ON FUNCTION public.platform_archive_saas_plan(uuid,uuid)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.platform_archive_saas_plan(uuid,uuid) TO service_role;
+
+-- Updated pre-existing SQL functions retain the same service-role-only ACL.
+REVOKE ALL ON FUNCTION public.station_plan_pricing(uuid,uuid,text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.station_plan_pricing(uuid,uuid,text) TO service_role;
+REVOKE ALL ON FUNCTION public.platform_saas_billing_overview(uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.platform_saas_billing_overview(uuid) TO service_role;
