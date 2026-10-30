@@ -19,6 +19,7 @@ test('selected Gentelella v4 loads as the final canonical CSS layer',()=>{
  assert.match(css,/\.owner-plan-card/);
  assert.match(css,/\.attendance-workspace|\.ws-widget>section/);
  assert.match(css,/@media\(max-width:850px\)/);
+ assert.match(css,/\.ws-layout\[data-rail="collapsed"\] \.ws-sidebar\.is-open/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
 test('desktop rail is keyboard-usable and mobile drawer retains accessibility',()=>{

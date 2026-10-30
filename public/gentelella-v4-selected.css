@@ -315,7 +315,10 @@ body:has(#app.workspace-mode){background:var(--gt-canvas);color:var(--gt-text)}
   transform:translateX(-110%);
   transition:transform .18s ease;
  }
- #app.workspace-mode .ws-sidebar.is-open{transform:translateX(0)}
+ #app.workspace-mode .ws-sidebar.is-open,
+ #app.workspace-mode .ws-layout[data-rail="collapsed"] .ws-sidebar.is-open{
+  transform:translateX(0);
+ }
  #app.workspace-mode .ws-layout[data-rail="collapsed"] :is(.ws-brand-copy,.ws-nav-heading,.ws-sidebar-caption,.ws-nav span,.ws-signout span){display:revert}
  #app.workspace-mode .ws-layout[data-rail="collapsed"] .ws-brand-copy{display:grid}
  #app.workspace-mode .ws-layout[data-rail="collapsed"] .ws-nav-heading{display:block}
