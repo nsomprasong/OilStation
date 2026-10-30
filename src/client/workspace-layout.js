@@ -1,4 +1,4 @@
-import {renderMobileHome,renderMobileNav} from './mobile-home.js';
+import {renderMobileHome,renderMobileNav,renderMobileScreenHero} from './mobile-home.js';
 
 export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
@@ -73,7 +73,7 @@ export function renderWorkspaceShell(screens){
          <div class="module-list" id="modules"></div>
        </aside>
      </div>`:
-     s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join("")}
+     `${renderMobileScreenHero(s,screens)}<div class="os-mobile-page-content">${s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join("")}</div>`}
  </section>`).join("");
  return `<div class="ws-layout" data-workspace-shell>
    <button class="ws-menu-backdrop" type="button" data-ws-menu-close hidden
@@ -135,6 +135,12 @@ export function wireWorkspaceNavigation(root){
  const menuToggle=root.querySelector("[data-ws-menu-toggle]");
  const mobileMore=root.querySelector("[data-ws-more]");
  const scanButton=root.querySelector("[data-ws-scan]");
+ const mobileLogout=root.querySelector('[data-mobile-logout]');
+ mobileLogout?.addEventListener('click',()=>{
+  if(!window.confirm('ต้องการออกจากระบบ OilStation หรือไม่?'))return;
+  root.querySelector('[data-workspace-shell]')?.dispatchEvent(
+   new CustomEvent('oilstation:logoutrequested'));
+ });
  const backdrop=root.querySelector(".ws-menu-backdrop");
  const menu=root.querySelector(".ws-sidebar");
  const mobile=typeof matchMedia==="function"?matchMedia("(max-width:850px)"):null;

@@ -31,7 +31,10 @@ export function renderMobileHome(screens){
      <div class="os-mobile-hero-title">
        <div><span class="os-mobile-eyebrow">OILSTATION</span>
          <h3>พร้อมเริ่มงานวันนี้</h3><p>เลือกบริการหรือสแกน QR คูปองได้จากหน้าแรก</p></div>
-       <span class="os-mobile-hero-mark" aria-hidden="true">O</span>
+       <button class="os-mobile-power" type="button" data-mobile-logout
+         aria-label="ออกจากระบบ" title="ออกจากระบบ">
+         <i data-ui-icon="power"></i>
+       </button>
      </div>
      <label class="os-mobile-search"><i data-ui-icon="scan"></i>
        <input type="search" data-mobile-search-input autocomplete="off"
@@ -76,4 +79,41 @@ export function renderMobileNav(screens){
   <button class="os-mobile-tab" type="button" data-ws-more aria-label="เปิดเมนูทั้งหมด"
     aria-controls="ws-sidebar" aria-expanded="false"><i data-ui-icon="menu"></i><span>เมนู</span></button>
  </nav>`;
+}
+
+export function renderMobileScreenHero(screen,screens=[]){
+ if(!screen||screen.key==='overview')return '';
+ const suggestions={
+  stations:['billing','invitations','fuel'],fuel:['pump','customers','finance'],
+  pump:['fuel','customers','reviews'],customers:['finance','pump','fuel'],
+  finance:['customers','billing','pump'],plan:['billing','pump','fuel'],
+  billing:['stations','plan','finance'],hr:['attendance','reviews','payroll'],
+  attendance:['reviews','hr','payroll'],reviews:['attendance','payroll','hr'],
+  payroll:['reviews','attendance','hr'],corporate:['billing','invitations','finance'],
+  invitations:['stations','hr','corporate'],
+ };
+ const eligible=new Set(screens.map(item=>item.key));
+ const related=(suggestions[screen.key]||[]).filter(key=>eligible.has(key)&&key!==screen.key)
+   .slice(0,3).map(key=>screens.find(s=>s.key===key));
+ return `<div class="os-mobile-page-hero" aria-label="หัวข้อ${screen.label}">
+   <div class="os-mobile-page-top">
+     <span class="os-mobile-eyebrow">OILSTATION / WORKSPACE</span>
+     <button class="os-mobile-page-home" type="button" data-ws-go="overview">
+       <i data-ui-icon="home"></i><span>หน้าแรก</span>
+     </button>
+   </div>
+   <div class="os-mobile-page-heading">
+     <span class="os-mobile-page-icon"><i data-ui-icon="${screen.icon}"></i></span>
+     <div class="os-mobile-page-copy">
+       <span class="os-mobile-page-kicker">พื้นที่ทำงาน</span>
+       <strong>${screen.label}</strong>
+       <p>${screen.desc}</p>
+     </div>
+   </div>
+   ${related.length?`<div class="os-mobile-page-shortcuts" aria-label="ทางลัดบริการที่เกี่ยวข้อง">
+     ${related.map(s=>`<button type="button" data-ws-go="${s.key}" title="${s.label}">
+       <i data-ui-icon="${s.icon}"></i><span>${s.label}</span>
+     </button>`).join('')}
+   </div>`:''}
+ </div>`;
 }
