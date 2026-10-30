@@ -10,6 +10,7 @@ import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
+import {humanizeApiError,setUiStatus} from './ui-status.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -25,15 +26,13 @@ iconObserver.observe(root, {subtree:true,childList:true});
 function message(text, tone = 'neutral') {
   const node = document.getElementById('notice');
   if (!node) return;
-  node.textContent = text;
-  node.dataset.tone = tone;
-  node.hidden = !text;
+  setUiStatus(node,text,tone);
 }
 function showError(msg) {
   show('<div class="mark">!</div><h1>ไม่สามารถเปิดหน้านี้ได้</h1><p class="lead" id="reason"></p><a href="/" class="button primary">กลับหน้าแรก</a>');
   document.getElementById('reason').textContent = msg;
 }
-function responseError(res) { return res?.error || 'ไม่สามารถดำเนินการได้'; }
+function responseError(res) { return humanizeApiError(res?.error); }
 function platformSetupView() {
   show(`<div class="mark" aria-hidden="true">O</div>
     <h1>เริ่มต้นผู้ดูแล OilStation</h1>
@@ -1337,9 +1336,14 @@ function dashboard(data, session, publicConfig={}) {
   show(renderWorkspaceShell(screens));
   root.classList.add('workspace-mode');
   wireWorkspaceNavigation(root);
-  if(sessionStorage.getItem('oilstation_open_plan_after_invite')==='1'){
-    sessionStorage.removeItem('oilstation_open_plan_after_invite');
-    root.querySelector('[data-ws-go="plan"]')?.click();
+  // Restore only a screen that still exists under current server-issued membership.
+  const afterInvitation=sessionStorage.getItem('oilstation_open_plan_after_invite')==='1';
+  if(afterInvitation)sessionStorage.removeItem('oilstation_open_plan_after_invite');
+  const requested=afterInvitation?'plan':sessionStorage.getItem('oilstation_last_workspace');
+  if(requested){
+    const allowed=[...root.querySelectorAll('.ws-nav[data-ws-go]')]
+      .find(button=>button.dataset.wsGo===requested);
+    allowed?.click();
   }
   document.getElementById('scope-title').textContent = active.title;
   const all = document.getElementById('scopes');
@@ -1428,6 +1432,7 @@ function dashboard(data, session, publicConfig={}) {
     corporateWorkspace(session.access_token).catch(() => {});
   }
   document.getElementById('logout').addEventListener('click', async () => {
+    sessionStorage.removeItem('oilstation_last_workspace');
     await authClient.auth.signOut();
     location.replace('/');
   });

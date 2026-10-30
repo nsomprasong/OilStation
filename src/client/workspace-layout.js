@@ -111,24 +111,44 @@ export function wireWorkspaceNavigation(root){
  const menuToggle=root.querySelector("[data-ws-menu-toggle]");
  const backdrop=root.querySelector(".ws-menu-backdrop");
  const menu=root.querySelector(".ws-sidebar");
+ const mobile=typeof matchMedia==="function"?matchMedia("(max-width:850px)"):null;
+ let open=false;
+ const focusable=()=>[...menu.querySelectorAll("button:not([disabled]),a[href],input:not([disabled]),select:not([disabled])")]
+   .filter(node=>!node.hidden&&node.getClientRects().length>0);
+ const syncMenu=()=>{
+  const active=Boolean(mobile?.matches&&open);
+  menu?.classList.toggle("is-open",active);
+  if(menu)menu.inert=Boolean(mobile?.matches&&!active);
+  if(backdrop)backdrop.hidden=!active;
+  menuToggle?.setAttribute("aria-expanded",String(active));
+ };
  const closeMenu=()=>{
-  menu?.classList.remove("is-open");
-  if(backdrop)backdrop.hidden=true;
-  menuToggle?.setAttribute("aria-expanded","false");
+  open=false;syncMenu();
  };
  const openMenu=()=>{
-  menu?.classList.add("is-open");
-  if(backdrop)backdrop.hidden=false;
-  menuToggle?.setAttribute("aria-expanded","true");
+  open=true;syncMenu();
+  focusable()[0]?.focus();
  };
+ syncMenu();
+ mobile?.addEventListener?.("change",()=>{open=false;syncMenu();});
  menuToggle?.addEventListener("click",()=>{
-  if(menu?.classList.contains("is-open"))closeMenu();else openMenu();
+  if(open)closeMenu();else openMenu();
  });
  root.querySelectorAll("[data-ws-menu-close]").forEach(button=>
   button.addEventListener("click",()=>{closeMenu();menuToggle?.focus();}));
- root.addEventListener("keydown",event=>{
-  if(event.key==="Escape"&&menu?.classList.contains("is-open")){
-   closeMenu();menuToggle?.focus();
+ menu?.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&open){
+   event.preventDefault();closeMenu();menuToggle?.focus();return;
+  }
+  if(event.key==="Tab"&&open){
+   const all=focusable();
+   if(!all.length)return;
+   const first=all[0],last=all[all.length-1];
+   if(event.shiftKey&&document.activeElement===first){
+    event.preventDefault();last.focus();
+   }else if(!event.shiftKey&&document.activeElement===last){
+    event.preventDefault();first.focus();
+   }
   }
  });
  for(const button of links){
@@ -146,8 +166,10 @@ export function wireWorkspaceNavigation(root){
    const heading=view.querySelector("h2");
    const current=root.querySelector("#ws-current");
    if(current&&heading)current.textContent=heading.textContent;
+   try{sessionStorage.setItem("oilstation_last_workspace",key);}catch{}
    closeMenu();
-   heading?.focus({preventScroll:true});
+   if(mobile?.matches)menuToggle?.focus();
+   else heading?.focus({preventScroll:true});
    root.querySelector(".ws-main")?.scrollIntoView({block:"start",behavior:"auto"});
   });
  }
