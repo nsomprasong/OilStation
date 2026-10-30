@@ -22,10 +22,10 @@ test('workflow is manual with pre-deployment production SQL and bindings gates',
  assert.match(wf,/RELEASE_SERVICE_ROLE_KEY/);
  assert.match(wf,/wrangler@4 secret list/);
  assert.match(wf,/for key in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY COUPON_SIGNING_KEY; do/);
- assert.doesNotMatch(wf,/for key in[^\\n]*OILSTATION_API_ENABLED/);
- assert.match(wf,/\\.type == "secret_text"/);
- assert.match(wf,/\\/workers\\/scripts\\/oilstation\\/settings/);
- assert.match(wf,/\\.name == "OILSTATION_API_ENABLED" and \\.type == "plain_text" and \\.text == "true"/);
+ assert.doesNotMatch(wf,/for key in[^\n]*OILSTATION_API_ENABLED/);
+ assert.match(wf,/\.type == "secret_text"/);
+ assert.match(wf,/\/workers\/scripts\/oilstation\/settings/);
+ assert.match(wf,/\.name == "OILSTATION_API_ENABLED" and \.type == "plain_text" and \.text == "true"/);
  assert.match(wf,/Production OILSTATION_API_ENABLED must be an explicit plain-text true/);
  assert.match(wf,/wrangler@4 deploy --env uat/);
  assert.match(wf,/wrangler@4 deploy\s*$/m);
