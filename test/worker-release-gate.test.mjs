@@ -183,7 +183,8 @@ test('production preview exposes only public OAuth config, not finance or privil
   OILSTATION_PREVIEW_LOGIN_ENABLED:'true',OILSTATION_API_ENABLED:'false',
   SUPABASE_URL:'https://cxihsotcpdnalswfoysx.supabase.co',
   SUPABASE_ANON_KEY:'sb_publishable_example_public_only',
-  SUPABASE_SERVICE_ROLE_KEY:'not_a_real_private_key'};
+  SUPABASE_SERVICE_ROLE_KEY:'not_a_real_private_key',
+  COUPON_SIGNING_KEY:'A'.repeat(48)};
  const response=await worker.fetch(request('/api/public-config'),env);
  assert.equal(response.status,200);
  const body=await response.json();
@@ -192,7 +193,10 @@ test('production preview exposes only public OAuth config, not finance or privil
   stripePublishableKey:null,
  });
  assert.ok(!JSON.stringify(body).includes(env.SUPABASE_SERVICE_ROLE_KEY));
- for(const endpoint of ['/api/me','/api/invitations/email-challenge',
+ const unauthenticated=await worker.fetch(request('/api/me'),env);
+ assert.equal(unauthenticated.status,401);
+ assert.equal((await unauthenticated.json()).error,'unauthenticated');
+ for(const endpoint of ['/api/invitations/email-challenge',
      '/api/billing/payment-intent','/api/coupons','/api/webhooks/stripe']){
   const denied=await worker.fetch(request(endpoint),env);
   assert.equal(denied.status,503,endpoint);
