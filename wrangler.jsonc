@@ -1,0 +1,52 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "oilstation",
+  "main": "./src/worker.mjs",
+  "compatibility_date": "2026-10-29",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "triggers": {
+    "crons": [
+      "*/2 * * * *"
+    ]
+  },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "env": {
+    "uat": {
+      "name": "oilstation-uat",
+      "workers_dev": true,
+      "triggers": {
+        "crons": []
+      },
+      "assets": {
+        "directory": "./dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application",
+        "run_worker_first": [
+          "/api/*"
+        ]
+      },
+      "vars": {
+        "OILSTATION_DEPLOY_TARGET": "uat",
+        "OILSTATION_API_ENABLED": "false",
+        "INVITATION_EMAIL_ENABLED": "false",
+        "INVITATION_FROM_EMAIL": "no-reply@oilstation.goldensoft.cloud"
+      }
+    }
+  },
+  "vars": {
+    "OILSTATION_DEPLOY_TARGET": "production",
+    "OILSTATION_PREVIEW_LOGIN_ENABLED": "true",
+    "OILSTATION_API_ENABLED": "false",
+    "INVITATION_EMAIL_ENABLED": "false",
+    "INVITATION_FROM_EMAIL": "no-reply@oilstation.goldensoft.cloud"
+  }
+}

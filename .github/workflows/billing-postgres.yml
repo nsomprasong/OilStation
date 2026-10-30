@@ -1,0 +1,66 @@
+name: Billing SQL Integration (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  billing-postgresql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_billing_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_billing_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply billing migrations to disposable PostgreSQL and run rollback tests
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_billing_test
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-fixture.sql
+              for migration in \
+                20261029182000_stripe_signed_event_inbox.sql \
+                20261029195000_saas_test_payment_intent.sql \
+                20261029200000_reconcile_test_saas_payment.sql \
+                20261029201000_saas_billing_invoice_inbox.sql \
+                20261029202000_saas_invoice_immutability.sql \
+                20261029203000_platform_saas_configuration.sql \
+                20261029204000_saas_flat_invoice_draft.sql \
+                20261029205000_platform_saas_billing_overview.sql \
+                20261029206000_commission_preview_after_paid.sql
+              do
+                psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
+              done
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-seed.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-invoice-first.sql \
+                > /tmp/billing-lock-invoice.log 2>&1 &
+              hold_pid=$!
+              sleep 0.4
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-attach.sql \
+                > /tmp/billing-lock-attach.log 2>&1 &
+              attach_pid=$!
+              if ! wait "$hold_pid"; then
+                cat /tmp/billing-lock-invoice.log /tmp/billing-lock-attach.log
+                exit 1
+              fi
+              if ! wait "$attach_pid"; then
+                cat /tmp/billing-lock-invoice.log /tmp/billing-lock-attach.log
+                exit 1
+              fi
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-verify.sql
+
+            '

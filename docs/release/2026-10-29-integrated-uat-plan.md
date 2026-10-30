@@ -1,0 +1,117 @@
+# OilStation — Integrated User Acceptance Test (single user-facing test round)
+
+**State:** Draft, not executable yet. Do not invite the owner to test until all release gates are met.
+**Test domain:** https://oilstation.goldensoft.cloud
+**Project:** Supabase `cxihsotcpdnalswfoysx`, Cloudflare Worker `oilstation`.
+**User workflow:** Finish development → internal security/CI/end-to-end verification → one integrated user-facing UAT on the domain → log and fix issues by location.
+
+## Current implemented development foundation
+
+- Role-based platform setup; brand catalog and station module choice, owner-level station fuel prices.
+- Corporate customer created against a station, first corporate admin invitation; linking an existing corporate entity to a second station needs company admin approval. Each station has its own money account.
+- Signed public coupon links, immediate wallet reservation at issue, unique cancellation/replacement, start-time pricing, one-time final settlement; no bank funds are moved by the SaaS backend.
+- Manual top-up *database functions* with verified bank-reference requirement, duplicate reference defense, debt-first oldest-AR settlement and a single ledger entry, test transactions rolled back. **API/photo storage and bank verification UI are not completed; feature is NOT customer-accessible.**
+- HR employee roster, morning/afternoon/night templates, multi-shift scheduling, substitute shift request with provisional non-absence and separate supervisor approval. **GPS/photo/face recognition and payroll end-to-end remain unfinished.**
+- All DB privileged routines are service_role-only; direct browser access to 65 public tables stays denied by default.
+
+
+### Additional guarded backend delivered (2026-10-29)
+
+- A reviewed Cloudflare Worker Cron handler runs a service-role-only batch to expire unstarted coupons and release the reservation precisely once. SQL rollback tests passed; scheduling starts only when a reviewed Worker is actually deployed.
+- Station employees can inspect a signed active QR after station membership checks; cancelled QR versions are rejected. The web UI supports native camera scanning where supported, or QR input fallback.
+- A **private** Supabase Storage bucket (`oilstation-evidence`, JPEG/PNG, 5 MiB limit) receives station-authorized plate photos; browser requests cannot directly see other tenants' photos.
+- The fuel start SQL now **requires a private photo object with a separately trusted OCR/supervisor attestation**. Uploaded files default to `pending_ocr`; even if an employee enters the correct plate text, fueling is refused until verified. This is a deliberate safety gate, not a complete OCR integration.
+- HR planned/retrospective OT request records, partial minute approval and anti-self-approval checks are implemented and tested. Legal OT pay multipliers are **not automatically inferred or paid**.
+- All public tables continue to use forced RLS; 65 public tables presently, with no customer test rows remaining.
+
+**Unresolved:** Actual OCR provider and supervised image review, live camera edge cases, image retention/PDPA, protected pump/receipt images, full billing/payroll and externally configured OAuth/payment secrets. This is not ready for real fueling, real payroll or customer UAT.
+
+## New implementation increment — Icons and finance preparation
+
+- Added pinned `lucide@1.62.0` for action/navigation icons and `simple-icons@16.36.0` for Google/Facebook provider marks, using a safe, allowlisted, tree-shaken SVG helper.
+- Integrated accessible, decorative icons into Thai-first invite-only login, corporate coupon issuance, QR scanning, staff shift controls and station module navigation. The app does not call external icon CDNs.
+- Added station-scoped, masked corporate bank options and an authorized pending top-up review inbox (read-only UI). The SQL RPCs are service-role-only, with explicit company/station authorization and SQL rollback tests for tenant isolation.
+- **Do not confuse this with a complete top-up feature:** private bank slip intake, the bank-confirmation review UI and independent bank settlement checks are not yet live. There is deliberately no button to increase a company's available funds from an uploaded slip.
+- No change to the production placeholder Worker and no customer acceptance testing; the Draft PR remains unmerged.
+
+
+### Corporate top-up flow — private-slip implementation update (Oct 29)
+
+- Private `oilstation-slips` Storage bucket (JPEG/PNG, 5 MiB) and uploader validated against both the customer's corporate account and a bank account **owned by that station**.
+- Uploaded slip creates a pending request only. A second distinct manager with that station's finance role must inspect the original bank transfer in bank records, enter its reference and explicitly confirm money received before approving.
+- The manager can download the private slip through an authenticated Worker endpoint; it is never exposed via public Storage URLs. Banking credentials are never sent to the browser.
+- Protected approval uses an atomic database transaction: oldest outstanding corporate debt first, remainder into prepaid balance, immutable journal, single bank-reference reuse protection and idempotent replay.
+- Database rollback tests covered permission isolation, absent/duplicate slip, no credit before approval, denied self-approval, required independent bank confirmation and repeated approval.
+- **Limitation:** the bank feed itself is not integrated. A manager's explicit external-bank-statement confirmation is the trust boundary. Before real transfers, configure actual station bank accounts, reconcile negative and partial scenarios, test with at least two separate human identities and review cash-control procedures.
+- **CI at branch `3b3cf9cb` passed 84/84 Node tests, frontend build and Wrangler dry-run** (run 40888284843). Neither an OAuth login nor a real bank transfer was end-to-end tested. Production Worker remains unchanged.
+
+## Gate A — Foundations & auth (not passed)
+
+- [ ] Configure Google and Facebook OAuth, provider redirect URLs and Supabase Auth policies.
+- [ ] Verify invited-email ownership, including Facebook differing-email flow with re-verification.
+- [ ] Configure Cloudflare Worker server secrets; no service-role or signing secrets in client.
+- [ ] Configure legitimate transaction-email sender and domain/SPF/DKIM (without modifying existing MX routing). Test invitation delivery.
+- [ ] Platform admin invitation lifecycle, owner onboarding, station setup and all delegated permission roles.
+- [ ] Prove a different company/other station user cannot read, update, approve or send a restricted invitation.
+
+## Gate B — QR Coupon & payments (not passed)
+
+- [ ] Corporate company with multiple station wallets; station-specific product selection and negotiated pricing.
+- [ ] Private upload of license plate, dispenser and receipt evidence with signed short-lived storage URLs.
+- [ ] QR scan and state checks, protected OCR/liveness/photo manual exception rules.
+- [ ] Concurrent coupon issuance under real network load, row lock safety, cancel-vs-fuel racing, expiration and retry.
+- [ ] Top-up slip delivery, pending queue, bank received verification, debt-first and duplicate transfer cases.
+- [ ] Real-time dashboard refresh; negotiated/public price scheduled updates during fueling.
+- [ ] Generate printable receipt and reconciliation history.
+
+## Gate C — HR/Payroll (not passed)
+
+- [ ] Station geofence rules, live-camera evidence, proper consent/retention for biometrics.
+- [ ] Employee shifts, double shift, substitute shift, overnight and break recording; manager retrospective approval.
+- [ ] Employee self-service attendance; late/absence/leave and both planned/emergency OT.
+- [ ] Payroll frequencies, lawful withholding/tax/social-security/deduction calculation and approvals.
+- [ ] Salary advances, weekly/current-or-next-cycle repayments, closed payroll adjusted next period.
+- [ ] Bank export formats, multi-payee PromptPay QR with verified payee and manual settlement evidence.
+
+## Gate D — SaaS/Stripe & Sales commission (not passed)
+
+- [ ] Module-specific package pricing/employee-tier/usage/bundle changes effective on renewal.
+- [ ] Multi-station owner consolidated or separate billing, Stripe embedded Payment Element.
+- [ ] Card full amount, QR 2% discount and promotions priced in platform; safe signed Stripe webhooks.
+- [ ] Card recurring charge only if owner explicitly opts in, scoped to entire billing group.
+- [ ] Invoice paid reconciliation before Sales commissions; effective date splitting and annual clawbacks.
+- [ ] LINE notifications that deep-link back into authenticated Web App.
+
+## Gate E — Release prerequisites (not passed)
+
+- [x] GitHub CI checks unit tests, Vite bundle, Worker syntax and Wrangler dry-run.
+- [x] Database CRUD and financial transactions tested with local SQL rollback scenarios.
+- [ ] Integration tests with real Supabase Auth and isolated staging secrets.
+- [ ] Security review: cross-tenant, service-role, rate limit, storage access, QR replay and expiry, data retention.
+- [ ] Privacy/legal review for Thailand HR, biometrics, tax/SSO and payment fees.
+- [ ] Restore/backups, runbook and rollout plan.
+- [ ] Reviewed PR, authorized merge and explicit release approval.
+- [ ] Deploy only after all gates and verify URL returns the real app, not maintenance or errors.
+
+## Single coordinated owner test when all gates pass
+
+Open `oilstation.goldensoft.cloud`, use a platform admin, pump owner, corporate accountant/issuer/driver, attendant, manager, employee and Sales accounts. Run the same complete process across two independent pumps and both modules. Collect an issue log with page, steps, expected/actual behavior and evidence; fix issues one by one and rerun *internal* regression tests. The owner should not need to test each intermediate feature or branch.
+
+
+## Oct 30 incremental gate review (still not live-UAT ready)
+
+The development branch now includes provider-gated invitation emails and secure
+actor-bound alternate-mailbox verification for social login. These flows are
+tested with fake email providers and isolated PostgreSQL, not real Google/
+Facebook accounts or a verified delivery domain. Eight CI workflows, including
+full-schema parity, pass on synthetic fixtures. Migration version tracking:
+30 applied in the live project, 26 newer developer migrations unapplied.
+
+A billed Supabase staging branch requires owner cost confirmation; the attempt
+to create it was blocked and no new branch or production migration occurred.
+Before final customer UAT: authorize staging cost, provision providers/secrets,
+complete real OAuth and Storage tests, real-device photo workflows, bank/Stripe
+sandbox reconciliation, legally reviewed payroll and security/backup runbooks.
+Never label the production domain UAT-ready before verifying a reviewed,
+approved deployment actually serves the application.
+

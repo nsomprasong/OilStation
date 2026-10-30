@@ -1,0 +1,38 @@
+name: Attendance SQL Integration (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  attendance-postgresql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_attendance_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_attendance_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify live attendance column contract in disposable PostgreSQL
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_attendance_test
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/attendance-fixture.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261029181000_gps_attendance_pending.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261029193000_attendance_supervisor_fallback.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261029207000_hr_reviewed_time_preview.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/attendance-assertions.sql
+            '

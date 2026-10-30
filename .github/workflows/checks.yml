@@ -1,0 +1,28 @@
+name: Checks
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  domain-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install frontend dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Worker syntax check
+        run: npm run check
+      - name: Bundle browser app
+        run: npm run build
+      - name: Domain and API unit tests
+        run: npm test
+      - name: Validate Cloudflare Worker bundle without deployment
+        run: npx --yes wrangler@4 deploy --dry-run --outdir .wrangler-dry-run
+      - name: Validate isolated UAT Worker bundle and inherited asset binding
+        run: npx --yes wrangler@4 deploy --dry-run --env uat --outdir .wrangler-uat-dry-run

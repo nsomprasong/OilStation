@@ -1,0 +1,5625 @@
+{
+  "source": "Supabase OilStation",
+  "project_id": "cxihsotcpdnalswfoysx",
+  "captured_on": "2026-10-29",
+  "purpose": "Read-only structure snapshot; not runnable migration; no row data or secrets.",
+  "tables": [
+    {
+      "rls": true,
+      "table": "accounts_receivable",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "outstanding_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "fuel_session_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX accounts_receivable_pkey ON public.accounts_receivable USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (account_id) REFERENCES corporate_station_accounts(id)",
+          "name": "accounts_receivable_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (amount_satang > 0)",
+          "name": "accounts_receivable_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (outstanding_satang >= 0 AND outstanding_satang <= amount_satang)",
+          "name": "accounts_receivable_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (fuel_session_id) REFERENCES fuel_sessions(id)",
+          "name": "accounts_receivable_fuel_session_fk",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "accounts_receivable_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "advance_repayments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "advance_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "payroll_line_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX advance_repayments_advance_id_payroll_line_id_key ON public.advance_repayments USING btree (advance_id, payroll_line_id)",
+        "CREATE UNIQUE INDEX advance_repayments_pkey ON public.advance_repayments USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (advance_id) REFERENCES salary_advances(id)",
+          "name": "advance_repayments_advance_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (advance_id, payroll_line_id)",
+          "name": "advance_repayments_advance_id_payroll_line_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (amount_satang > 0)",
+          "name": "advance_repayments_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (payroll_line_id) REFERENCES payroll_lines(id)",
+          "name": "advance_repayments_payroll_line_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "advance_repayments_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "app_users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'active'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX app_users_pkey ON public.app_users USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE RESTRICT",
+          "name": "app_users_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "app_users_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "ar_statements",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "period_start",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "period_end",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "due_date",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "total_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'open'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX ar_statements_account_id_period_start_period_end_key ON public.ar_statements USING btree (account_id, period_start, period_end)",
+        "CREATE UNIQUE INDEX ar_statements_pkey ON public.ar_statements USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (account_id) REFERENCES corporate_station_accounts(id)",
+          "name": "ar_statements_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (account_id, period_start, period_end)",
+          "name": "ar_statements_account_id_period_start_period_end_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (period_end >= period_start)",
+          "name": "ar_statements_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "ar_statements_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (total_satang >= 0)",
+          "name": "ar_statements_total_satang_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "attendance_adjustments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "original_event_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "requested_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "corrected_time",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "reviewed_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX attendance_adjustments_pkey ON public.attendance_adjustments USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "attendance_adjustments_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (original_event_id) REFERENCES attendance_events(id)",
+          "name": "attendance_adjustments_original_event_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "attendance_adjustments_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (reviewed_by) REFERENCES app_users(id)",
+          "name": "attendance_adjustments_reviewed_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))",
+          "name": "attendance_adjustments_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "attendance_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "event_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "shift_assignment_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "latitude",
+          "type": "numeric(10,7)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "longitude",
+          "type": "numeric(10,7)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "accuracy_meters",
+          "type": "numeric(10,2)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "photo_path",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "face_confidence",
+          "type": "numeric(5,4)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "geofence_status",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "review_status",
+          "type": "text",
+          "default": "'accepted'::text",
+          "not_null": true
+        },
+        {
+          "name": "recorded_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX attendance_events_pkey ON public.attendance_events USING btree (id)",
+        "CREATE INDEX idx_attendance_employee_date ON public.attendance_events USING btree (employee_id, occurred_at)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "attendance_events_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (event_type = ANY (ARRAY['clock_in'::text, 'clock_out'::text, 'break_start'::text, 'break_end'::text]))",
+          "name": "attendance_events_event_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "attendance_events_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (review_status = ANY (ARRAY['accepted'::text, 'pending'::text, 'rejected'::text]))",
+          "name": "attendance_events_review_status_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (shift_assignment_id) REFERENCES shift_assignments(id)",
+          "name": "attendance_events_shift_assignment_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "audit_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "organization_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "entity_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "entity_id",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "action",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "before_state",
+          "type": "jsonb",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "after_state",
+          "type": "jsonb",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX audit_events_pkey ON public.audit_events USING btree (id)",
+        "CREATE INDEX idx_audit_events_scope ON public.audit_events USING btree (station_id, created_at)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (actor_id) REFERENCES app_users(id)",
+          "name": "audit_events_actor_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (organization_id) REFERENCES organizations(id)",
+          "name": "audit_events_organization_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "audit_events_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "audit_events_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "bank_export_batches",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "payroll_run_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_bank_account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "adapter_code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "file_path",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'exported'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX bank_export_batches_pkey ON public.bank_export_batches USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (payroll_run_id) REFERENCES payroll_runs(id)",
+          "name": "bank_export_batches_payroll_run_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "bank_export_batches_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_bank_account_id) REFERENCES station_bank_accounts(id)",
+          "name": "bank_export_batches_station_bank_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['exported'::text, 'submitted'::text, 'reconciled'::text, 'failed'::text]))",
+          "name": "bank_export_batches_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "billing_group_stations",
+      "columns": [
+        {
+          "name": "billing_group_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "joined_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX billing_group_stations_pkey ON public.billing_group_stations USING btree (billing_group_id, station_id)",
+        "CREATE UNIQUE INDEX billing_group_stations_station_id_key ON public.billing_group_stations USING btree (station_id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (billing_group_id) REFERENCES billing_groups(id)",
+          "name": "billing_group_stations_billing_group_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (billing_group_id, station_id)",
+          "name": "billing_group_stations_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "billing_group_stations_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (station_id)",
+          "name": "billing_group_stations_station_id_key",
+          "type": "u"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "billing_groups",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "organization_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "autopay_consent",
+          "type": "boolean",
+          "default": "false",
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'active'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX billing_groups_pkey ON public.billing_groups USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (organization_id) REFERENCES organizations(id)",
+          "name": "billing_groups_organization_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "billing_groups_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "biometric_templates",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "encrypted_template",
+          "type": "bytea",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "consent_basis",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "retention_until",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX biometric_templates_pkey ON public.biometric_templates USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "biometric_templates_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "biometric_templates_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "brand_fuel_products",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "brand_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "name_th",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "name_en",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "fuel_family",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "verification_status",
+          "type": "text",
+          "default": "'review_required'::text",
+          "not_null": true
+        },
+        {
+          "name": "source_url",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "last_verified_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX brand_fuel_products_brand_id_code_key ON public.brand_fuel_products USING btree (brand_id, code)",
+        "CREATE UNIQUE INDEX brand_fuel_products_pkey ON public.brand_fuel_products USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "UNIQUE (brand_id, code)",
+          "name": "brand_fuel_products_brand_id_code_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (brand_id) REFERENCES fuel_brands(id)",
+          "name": "brand_fuel_products_brand_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "brand_fuel_products_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (verification_status = ANY (ARRAY['official_confirmed'::text, 'government_category'::text, 'review_required'::text, 'retired'::text]))",
+          "name": "brand_fuel_products_verification_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "commission_entitlements",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "sales_user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "invoice_line_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "service_period_start",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "service_period_end",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX commission_entitlements_pkey ON public.commission_entitlements USING btree (id)",
+        "CREATE UNIQUE INDEX commission_entitlements_station_id_sales_user_id_invoice_li_key ON public.commission_entitlements USING btree (station_id, sales_user_id, invoice_line_id, service_period_start, service_period_end)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (service_period_end >= service_period_start)",
+          "name": "commission_entitlements_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (invoice_line_id) REFERENCES saas_invoice_lines(id)",
+          "name": "commission_entitlements_invoice_line_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "commission_entitlements_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (sales_user_id) REFERENCES app_users(id)",
+          "name": "commission_entitlements_sales_user_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "commission_entitlements_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (station_id, sales_user_id, invoice_line_id, service_period_start, service_period_end)",
+          "name": "commission_entitlements_station_id_sales_user_id_invoice_li_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'earned'::text, 'reversed'::text, 'paid'::text]))",
+          "name": "commission_entitlements_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "commission_ledger",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "sales_user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "entitlement_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "entry_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "reference_key",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX commission_ledger_pkey ON public.commission_ledger USING btree (id)",
+        "CREATE UNIQUE INDEX commission_ledger_reference_key_key ON public.commission_ledger USING btree (reference_key)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (entitlement_id) REFERENCES commission_entitlements(id)",
+          "name": "commission_ledger_entitlement_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (entry_type = ANY (ARRAY['earned'::text, 'paid'::text, 'reversal'::text, 'clawback'::text, 'recovery'::text]))",
+          "name": "commission_ledger_entry_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "commission_ledger_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "UNIQUE (reference_key)",
+          "name": "commission_ledger_reference_key_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (sales_user_id) REFERENCES app_users(id)",
+          "name": "commission_ledger_sales_user_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "commission_ledger_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "commission_payouts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "sales_user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "payment_period",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "paid_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "evidence_path",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX commission_payouts_pkey ON public.commission_payouts USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (amount_satang > 0)",
+          "name": "commission_payouts_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "commission_payouts_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (sales_user_id) REFERENCES app_users(id)",
+          "name": "commission_payouts_sales_user_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'paid'::text, 'failed'::text]))",
+          "name": "commission_payouts_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "commission_rules",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "sales_user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "mode",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "amount",
+          "type": "numeric(12,4)",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "payout_policy",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "effective_from",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "effective_until",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX commission_rules_pkey ON public.commission_rules USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (amount >= 0::numeric)",
+          "name": "commission_rules_amount_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (mode = ANY (ARRAY['fixed'::text, 'percent'::text]))",
+          "name": "commission_rules_mode_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (payout_policy = ANY (ARRAY['monthly'::text, 'upfront'::text]))",
+          "name": "commission_rules_payout_policy_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "commission_rules_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (sales_user_id) REFERENCES app_users(id)",
+          "name": "commission_rules_sales_user_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "commission_rules_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "corporate_companies",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "tax_id",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "contact_email",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'active'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX corporate_companies_pkey ON public.corporate_companies USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "corporate_companies_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "corporate_drivers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "company_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX corporate_drivers_pkey ON public.corporate_drivers USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (company_id) REFERENCES corporate_companies(id)",
+          "name": "corporate_drivers_company_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "corporate_drivers_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (user_id) REFERENCES app_users(id)",
+          "name": "corporate_drivers_user_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "corporate_price_rules",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_fuel_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "rule_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "value_per_liter",
+          "type": "numeric(12,4)",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "effective_from",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "effective_to",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX corporate_price_rules_pkey ON public.corporate_price_rules USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (account_id) REFERENCES corporate_station_accounts(id)",
+          "name": "corporate_price_rules_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (effective_to IS NULL OR effective_to > effective_from)",
+          "name": "corporate_price_rules_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "corporate_price_rules_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (rule_type = ANY (ARRAY['fixed'::text, 'discount'::text]))",
+          "name": "corporate_price_rules_rule_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (station_fuel_id) REFERENCES station_fuel_products(id)",
+          "name": "corporate_price_rules_station_fuel_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (value_per_liter >= 0::numeric)",
+          "name": "corporate_price_rules_value_per_liter_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "corporate_station_accounts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "company_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "prepaid_balance_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "credit_limit_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "debt_outstanding_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "reserved_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "due_mode",
+          "type": "text",
+          "default": "'per_fill'::text",
+          "not_null": true
+        },
+        {
+          "name": "payment_terms_days",
+          "type": "integer",
+          "default": "30",
+          "not_null": true
+        },
+        {
+          "name": "statement_close_day",
+          "type": "integer",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX corporate_station_accounts_id_station_id_key ON public.corporate_station_accounts USING btree (id, station_id)",
+        "CREATE UNIQUE INDEX corporate_station_accounts_pkey ON public.corporate_station_accounts USING btree (id)",
+        "CREATE UNIQUE INDEX corporate_station_accounts_station_id_company_id_key ON public.corporate_station_accounts USING btree (station_id, company_id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (reserved_satang <= GREATEST(0::bigint, prepaid_balance_satang + credit_limit_satang - debt_outstanding_satang))",
+          "name": "corporate_station_accounts_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (company_id) REFERENCES corporate_companies(id)",
+          "name": "corporate_station_accounts_company_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (credit_limit_satang >= 0)",
+          "name": "corporate_station_accounts_credit_limit_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (debt_outstanding_satang >= 0)",
+          "name": "corporate_station_accounts_debt_outstanding_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (due_mode = ANY (ARRAY['per_fill'::text, 'statement'::text]))",
+          "name": "corporate_station_accounts_due_mode_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (id, station_id)",
+          "name": "corporate_station_accounts_id_station_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (payment_terms_days >= 0 AND payment_terms_days <= 365)",
+          "name": "corporate_station_accounts_payment_terms_days_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "corporate_station_accounts_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (prepaid_balance_satang >= 0)",
+          "name": "corporate_station_accounts_prepaid_balance_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (reserved_satang >= 0)",
+          "name": "corporate_station_accounts_reserved_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (statement_close_day >= 1 AND statement_close_day <= 31)",
+          "name": "corporate_station_accounts_statement_close_day_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (station_id, company_id)",
+          "name": "corporate_station_accounts_station_id_company_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "corporate_station_accounts_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "corporate_vehicles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "company_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "plate_number",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "province",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX corporate_vehicles_pkey ON public.corporate_vehicles USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (company_id) REFERENCES corporate_companies(id)",
+          "name": "corporate_vehicles_company_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "corporate_vehicles_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "coupon_versions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "coupon_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "version_number",
+          "type": "integer",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "qr_payload_hash",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX coupon_versions_coupon_id_version_number_key ON public.coupon_versions USING btree (coupon_id, version_number)",
+        "CREATE UNIQUE INDEX coupon_versions_pkey ON public.coupon_versions USING btree (id)",
+        "CREATE UNIQUE INDEX coupon_versions_qr_payload_hash_key ON public.coupon_versions USING btree (qr_payload_hash)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (coupon_id) REFERENCES coupons(id)",
+          "name": "coupon_versions_coupon_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (coupon_id, version_number)",
+          "name": "coupon_versions_coupon_id_version_number_key",
+          "type": "u"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "coupon_versions_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "UNIQUE (qr_payload_hash)",
+          "name": "coupon_versions_qr_payload_hash_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (version_number > 0)",
+          "name": "coupon_versions_version_number_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "coupons",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_fuel_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "issued_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "driver_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "vehicle_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "plate_snapshot",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "max_amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "secret_link_hash",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'reserved'::text",
+          "not_null": true
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "replaces_coupon_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX coupons_pkey ON public.coupons USING btree (id)",
+        "CREATE UNIQUE INDEX coupons_secret_link_hash_key ON public.coupons USING btree (secret_link_hash)",
+        "CREATE INDEX idx_coupons_account_status ON public.coupons USING btree (account_id, status, expires_at)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (account_id, station_id) REFERENCES corporate_station_accounts(id, station_id)",
+          "name": "coupon_account_station_fk",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_fuel_id, station_id) REFERENCES station_fuel_products(id, station_id)",
+          "name": "coupon_station_fuel_fk",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (driver_id) REFERENCES corporate_drivers(id)",
+          "name": "coupons_driver_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (issued_by) REFERENCES app_users(id)",
+          "name": "coupons_issued_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (max_amount_satang > 0)",
+          "name": "coupons_max_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "coupons_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (replaces_coupon_id) REFERENCES coupons(id)",
+          "name": "coupons_replaces_coupon_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (secret_link_hash)",
+          "name": "coupons_secret_link_hash_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['reserved'::text, 'verified'::text, 'fueling'::text, 'completed'::text, 'cancelled'::text, 'expired'::text]))",
+          "name": "coupons_status_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (vehicle_id) REFERENCES corporate_vehicles(id)",
+          "name": "coupons_vehicle_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "credit_reservations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "coupon_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "consumed_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "released_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'held'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX credit_reservations_coupon_id_key ON public.credit_reservations USING btree (coupon_id)",
+        "CREATE UNIQUE INDEX credit_reservations_pkey ON public.credit_reservations USING btree (id)",
+        "CREATE INDEX idx_reservations_account_status ON public.credit_reservations USING btree (account_id, status)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (account_id) REFERENCES corporate_station_accounts(id)",
+          "name": "credit_reservations_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (amount_satang > 0)",
+          "name": "credit_reservations_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK ((consumed_satang + released_satang) <= amount_satang)",
+          "name": "credit_reservations_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (consumed_satang >= 0)",
+          "name": "credit_reservations_consumed_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (coupon_id) REFERENCES coupons(id)",
+          "name": "credit_reservations_coupon_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (coupon_id)",
+          "name": "credit_reservations_coupon_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "credit_reservations_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (released_satang >= 0)",
+          "name": "credit_reservations_released_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['held'::text, 'settled'::text, 'released'::text]))",
+          "name": "credit_reservations_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "employee_payment_methods",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "payment_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "encrypted_reference",
+          "type": "bytea",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "masked_reference",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "bank_code",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "default": "false",
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "verified_name",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX employee_payment_methods_pkey ON public.employee_payment_methods USING btree (id)",
+        "CREATE UNIQUE INDEX employee_payment_primary ON public.employee_payment_methods USING btree (employee_id) WHERE (is_primary AND (status = 'approved'::text))"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (approved_by) REFERENCES app_users(id)",
+          "name": "employee_payment_methods_approved_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "employee_payment_methods_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (payment_type = ANY (ARRAY['promptpay_phone'::text, 'promptpay_national_id'::text, 'bank_account'::text]))",
+          "name": "employee_payment_methods_payment_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "employee_payment_methods_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))",
+          "name": "employee_payment_methods_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "employees",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "employee_code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "hired_on",
+          "type": "date",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "employment_status",
+          "type": "text",
+          "default": "'active'::text",
+          "not_null": true
+        },
+        {
+          "name": "wage_type",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "wage_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "payroll_frequency",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX employees_id_station_id_key ON public.employees USING btree (id, station_id)",
+        "CREATE UNIQUE INDEX employees_pkey ON public.employees USING btree (id)",
+        "CREATE UNIQUE INDEX employees_station_id_employee_code_key ON public.employees USING btree (station_id, employee_code)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "UNIQUE (id, station_id)",
+          "name": "employees_id_station_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (payroll_frequency = ANY (ARRAY['weekly'::text, 'semi_monthly'::text, 'monthly'::text]))",
+          "name": "employees_payroll_frequency_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "employees_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "UNIQUE (station_id, employee_code)",
+          "name": "employees_station_id_employee_code_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "employees_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (user_id) REFERENCES app_users(id)",
+          "name": "employees_user_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (wage_satang >= 0)",
+          "name": "employees_wage_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (wage_type = ANY (ARRAY['monthly'::text, 'daily'::text, 'hourly'::text]))",
+          "name": "employees_wage_type_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "fuel_brands",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "display_name_th",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "display_name_en",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX fuel_brands_code_key ON public.fuel_brands USING btree (code)",
+        "CREATE UNIQUE INDEX fuel_brands_pkey ON public.fuel_brands USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "UNIQUE (code)",
+          "name": "fuel_brands_code_key",
+          "type": "u"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "fuel_brands_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "fuel_evidence",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "session_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "kind",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "storage_path",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "ocr_result",
+          "type": "jsonb",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX fuel_evidence_pkey ON public.fuel_evidence USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (kind = ANY (ARRAY['plate'::text, 'pump_display'::text, 'receipt'::text, 'other'::text]))",
+          "name": "fuel_evidence_kind_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "fuel_evidence_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (session_id) REFERENCES fuel_sessions(id)",
+          "name": "fuel_evidence_session_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "fuel_price_schedules",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_fuel_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "new_price",
+          "type": "numeric(12,4)",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "effective_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "applied_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX fuel_price_schedules_pkey ON public.fuel_price_schedules USING btree (id)",
+        "CREATE INDEX idx_price_schedule_due ON public.fuel_price_schedules USING btree (effective_at) WHERE (status = 'pending'::text)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (created_by) REFERENCES app_users(id)",
+          "name": "fuel_price_schedules_created_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (new_price > 0::numeric)",
+          "name": "fuel_price_schedules_new_price_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "fuel_price_schedules_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_fuel_id) REFERENCES station_fuel_products(id)",
+          "name": "fuel_price_schedules_station_fuel_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'applied'::text, 'cancelled'::text, 'failed'::text]))",
+          "name": "fuel_price_schedules_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "fuel_price_versions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_fuel_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "public_price",
+          "type": "numeric(12,4)",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "effective_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX fuel_price_versions_pkey ON public.fuel_price_versions USING btree (id)",
+        "CREATE UNIQUE INDEX fuel_price_versions_station_fuel_id_effective_at_key ON public.fuel_price_versions USING btree (station_fuel_id, effective_at)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (created_by) REFERENCES app_users(id)",
+          "name": "fuel_price_versions_created_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "fuel_price_versions_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (public_price > 0::numeric)",
+          "name": "fuel_price_versions_public_price_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (station_fuel_id, effective_at)",
+          "name": "fuel_price_versions_station_fuel_id_effective_at_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (station_fuel_id) REFERENCES station_fuel_products(id)",
+          "name": "fuel_price_versions_station_fuel_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "fuel_sessions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "coupon_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_fuel_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "operator_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'fueling'::text",
+          "not_null": true
+        },
+        {
+          "name": "plate_verified_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "plate_verified_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "locked_public_price",
+          "type": "numeric(12,4)",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "locked_net_price",
+          "type": "numeric(12,4)",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "liters",
+          "type": "numeric(14,3)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "pump_gross_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "net_amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX fuel_sessions_coupon_id_key ON public.fuel_sessions USING btree (coupon_id)",
+        "CREATE UNIQUE INDEX fuel_sessions_pkey ON public.fuel_sessions USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (coupon_id) REFERENCES coupons(id)",
+          "name": "fuel_sessions_coupon_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (coupon_id)",
+          "name": "fuel_sessions_coupon_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (liters >= 0::numeric)",
+          "name": "fuel_sessions_liters_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (locked_net_price >= 0::numeric)",
+          "name": "fuel_sessions_locked_net_price_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (locked_public_price > 0::numeric)",
+          "name": "fuel_sessions_locked_public_price_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (net_amount_satang >= 0)",
+          "name": "fuel_sessions_net_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (operator_id) REFERENCES app_users(id)",
+          "name": "fuel_sessions_operator_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "fuel_sessions_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (plate_verified_by) REFERENCES app_users(id)",
+          "name": "fuel_sessions_plate_verified_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (pump_gross_satang >= 0)",
+          "name": "fuel_sessions_pump_gross_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (station_fuel_id) REFERENCES station_fuel_products(id)",
+          "name": "fuel_sessions_station_fuel_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "fuel_sessions_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['fueling'::text, 'review'::text, 'completed'::text, 'void'::text]))",
+          "name": "fuel_sessions_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "invitations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "token_hash",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "role_code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "permissions",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "not_null": true
+        },
+        {
+          "name": "scope_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "organization_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "corporate_company_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "invited_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX invitations_pkey ON public.invitations USING btree (id)",
+        "CREATE UNIQUE INDEX invitations_token_hash_key ON public.invitations USING btree (token_hash)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (corporate_company_id) REFERENCES corporate_companies(id)",
+          "name": "invitations_corporate_company_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (invited_by) REFERENCES app_users(id)",
+          "name": "invitations_invited_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (organization_id) REFERENCES organizations(id)",
+          "name": "invitations_organization_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "invitations_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (scope_type = ANY (ARRAY['platform'::text, 'organization'::text, 'station'::text, 'corporate_company'::text]))",
+          "name": "invitations_scope_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "invitations_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (token_hash)",
+          "name": "invitations_token_hash_key",
+          "type": "u"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "leave_requests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "leave_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "reviewed_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX leave_requests_pkey ON public.leave_requests USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (end_date >= start_date)",
+          "name": "leave_requests_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "leave_requests_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "leave_requests_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (reviewed_by) REFERENCES app_users(id)",
+          "name": "leave_requests_reviewed_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))",
+          "name": "leave_requests_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "memberships",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "role_code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "scope_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "organization_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "corporate_company_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "extra_permissions",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "not_null": true
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX memberships_pkey ON public.memberships USING btree (id)",
+        "CREATE UNIQUE INDEX memberships_scope_unique ON public.memberships USING btree (user_id, role_code, scope_type, COALESCE(organization_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(station_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(corporate_company_id, '00000000-0000-0000-0000-000000000000'::uuid))"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (scope_type = 'platform'::text AND organization_id IS NULL AND station_id IS NULL AND corporate_company_id IS NULL OR scope_type = 'organization'::text AND organization_id IS NOT NULL AND station_id IS NULL AND corporate_company_id IS NULL OR scope_type = 'station'::text AND station_id IS NOT NULL AND organization_id IS NULL AND corporate_company_id IS NULL OR scope_type = 'corporate_company'::text AND corporate_company_id IS NOT NULL AND station_id IS NULL AND organization_id IS NULL)",
+          "name": "memberships_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (corporate_company_id) REFERENCES corporate_companies(id)",
+          "name": "memberships_corporate_company_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (jsonb_typeof(extra_permissions) = 'object'::text)",
+          "name": "memberships_extra_permissions_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (organization_id) REFERENCES organizations(id)",
+          "name": "memberships_organization_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "memberships_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (scope_type = ANY (ARRAY['platform'::text, 'organization'::text, 'station'::text, 'corporate_company'::text]))",
+          "name": "memberships_scope_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "memberships_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (user_id) REFERENCES app_users(id)",
+          "name": "memberships_user_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "notification_outbox",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "recipient_user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "channel",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "event_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "payload",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "next_attempt_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "attempts",
+          "type": "integer",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_notification_outbox_due ON public.notification_outbox USING btree (next_attempt_at) WHERE (status = 'pending'::text)",
+        "CREATE UNIQUE INDEX notification_outbox_pkey ON public.notification_outbox USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (attempts >= 0)",
+          "name": "notification_outbox_attempts_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (channel = ANY (ARRAY['in_app'::text, 'email'::text, 'line'::text, 'sms'::text]))",
+          "name": "notification_outbox_channel_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "notification_outbox_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (recipient_user_id) REFERENCES app_users(id)",
+          "name": "notification_outbox_recipient_user_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "notification_outbox_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text, 'cancelled'::text]))",
+          "name": "notification_outbox_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "organizations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "legal_name",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "tax_id",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "timezone",
+          "type": "text",
+          "default": "'Asia/Bangkok'::text",
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'active'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "organizations_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['active'::text, 'disabled'::text]))",
+          "name": "organizations_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "overtime_requests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "shift_assignment_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "planned",
+          "type": "boolean",
+          "default": "false",
+          "not_null": true
+        },
+        {
+          "name": "requested_minutes",
+          "type": "integer",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "approved_minutes",
+          "type": "integer",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX overtime_requests_pkey ON public.overtime_requests USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (approved_by) REFERENCES app_users(id)",
+          "name": "overtime_requests_approved_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (approved_minutes >= 0)",
+          "name": "overtime_requests_approved_minutes_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (approved_minutes IS NULL OR approved_minutes <= requested_minutes)",
+          "name": "overtime_requests_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "overtime_requests_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "overtime_requests_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (requested_minutes >= 0)",
+          "name": "overtime_requests_requested_minutes_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (shift_assignment_id) REFERENCES shift_assignments(id)",
+          "name": "overtime_requests_shift_assignment_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'partial'::text, 'rejected'::text]))",
+          "name": "overtime_requests_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "payment_method_consents",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "billing_group_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "stripe_payment_method_id",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "consented_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        },
+        {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "consent_text_version",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX payment_method_consents_pkey ON public.payment_method_consents USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (billing_group_id) REFERENCES billing_groups(id)",
+          "name": "payment_method_consents_billing_group_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (consented_by) REFERENCES app_users(id)",
+          "name": "payment_method_consents_consented_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "payment_method_consents_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "payroll_adjustments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "source_period_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "target_period_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX payroll_adjustments_pkey ON public.payroll_adjustments USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (approved_by) REFERENCES app_users(id)",
+          "name": "payroll_adjustments_approved_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "payroll_adjustments_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "payroll_adjustments_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (source_period_id) REFERENCES payroll_periods(id)",
+          "name": "payroll_adjustments_source_period_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (target_period_id) REFERENCES payroll_periods(id)",
+          "name": "payroll_adjustments_target_period_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "payroll_lines",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "payroll_run_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "gross_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "tax_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "social_security_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "deductions_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "adjustments_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "net_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "breakdown",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_payroll_employee ON public.payroll_lines USING btree (employee_id)",
+        "CREATE UNIQUE INDEX payroll_lines_payroll_run_id_employee_id_key ON public.payroll_lines USING btree (payroll_run_id, employee_id)",
+        "CREATE UNIQUE INDEX payroll_lines_pkey ON public.payroll_lines USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (deductions_satang >= 0)",
+          "name": "payroll_lines_deductions_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "payroll_lines_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (payroll_run_id, employee_id)",
+          "name": "payroll_lines_payroll_run_id_employee_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (payroll_run_id) REFERENCES payroll_runs(id)",
+          "name": "payroll_lines_payroll_run_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "payroll_lines_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (social_security_satang >= 0)",
+          "name": "payroll_lines_social_security_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (tax_satang >= 0)",
+          "name": "payroll_lines_tax_satang_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "payroll_payouts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "payroll_line_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "payment_method_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "station_bank_account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "transfer_reference",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "evidence_path",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "confirmed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX payroll_payouts_pkey ON public.payroll_payouts USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (amount_satang > 0)",
+          "name": "payroll_payouts_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (payment_method_id) REFERENCES employee_payment_methods(id)",
+          "name": "payroll_payouts_payment_method_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (payroll_line_id) REFERENCES payroll_lines(id)",
+          "name": "payroll_payouts_payroll_line_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "payroll_payouts_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_bank_account_id) REFERENCES station_bank_accounts(id)",
+          "name": "payroll_payouts_station_bank_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'exported'::text, 'submitted'::text, 'paid'::text, 'failed'::text]))",
+          "name": "payroll_payouts_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "payroll_periods",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "starts_on",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "ends_on",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "frequency",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'draft'::text",
+          "not_null": true
+        },
+        {
+          "name": "locked_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX payroll_periods_pkey ON public.payroll_periods USING btree (id)",
+        "CREATE UNIQUE INDEX payroll_periods_station_id_starts_on_ends_on_frequency_key ON public.payroll_periods USING btree (station_id, starts_on, ends_on, frequency)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (ends_on >= starts_on)",
+          "name": "payroll_periods_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (frequency = ANY (ARRAY['weekly'::text, 'semi_monthly'::text, 'monthly'::text]))",
+          "name": "payroll_periods_frequency_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "payroll_periods_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "payroll_periods_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (station_id, starts_on, ends_on, frequency)",
+          "name": "payroll_periods_station_id_starts_on_ends_on_frequency_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['draft'::text, 'review'::text, 'locked'::text, 'closed'::text]))",
+          "name": "payroll_periods_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "payroll_runs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "payroll_period_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'draft'::text",
+          "not_null": true
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "locked_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX payroll_runs_pkey ON public.payroll_runs USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (approved_by) REFERENCES app_users(id)",
+          "name": "payroll_runs_approved_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (payroll_period_id) REFERENCES payroll_periods(id)",
+          "name": "payroll_runs_payroll_period_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "payroll_runs_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['draft'::text, 'review'::text, 'approved'::text, 'paying'::text, 'paid'::text, 'partial'::text, 'failed'::text]))",
+          "name": "payroll_runs_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "pricing_plans",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "billing_frequency",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX pricing_plans_code_key ON public.pricing_plans USING btree (code)",
+        "CREATE UNIQUE INDEX pricing_plans_pkey ON public.pricing_plans USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (billing_frequency = ANY (ARRAY['monthly'::text, 'yearly'::text]))",
+          "name": "pricing_plans_billing_frequency_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (code)",
+          "name": "pricing_plans_code_key",
+          "type": "u"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "pricing_plans_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "pricing_rules",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "plan_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "module_code",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "billing_method",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "price_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "configuration",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "not_null": true
+        },
+        {
+          "name": "effective_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX pricing_rules_pkey ON public.pricing_rules USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (billing_method = ANY (ARRAY['flat'::text, 'per_employee'::text, 'tier'::text, 'bundle'::text]))",
+          "name": "pricing_rules_billing_method_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (module_code = ANY (ARRAY['qr_coupon'::text, 'hr_payroll'::text]))",
+          "name": "pricing_rules_module_code_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "pricing_rules_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (plan_id) REFERENCES pricing_plans(id)",
+          "name": "pricing_rules_plan_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (price_satang >= 0)",
+          "name": "pricing_rules_price_satang_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "promotions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "code",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "discount_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "discount_value",
+          "type": "numeric(12,2)",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX promotions_code_key ON public.promotions USING btree (code)",
+        "CREATE UNIQUE INDEX promotions_pkey ON public.promotions USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (ends_at > starts_at)",
+          "name": "promotions_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (code)",
+          "name": "promotions_code_key",
+          "type": "u"
+        },
+        {
+          "sql": "CHECK (discount_type = ANY (ARRAY['percent'::text, 'fixed'::text]))",
+          "name": "promotions_discount_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (discount_value >= 0::numeric)",
+          "name": "promotions_discount_value_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "promotions_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "request_idempotency",
+      "columns": [
+        {
+          "name": "scope_key",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "idempotency_key",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "request_hash",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "response_snapshot",
+          "type": "jsonb",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX request_idempotency_pkey ON public.request_idempotency USING btree (scope_key, idempotency_key)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "PRIMARY KEY (scope_key, idempotency_key)",
+          "name": "request_idempotency_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "saas_invoice_lines",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "invoice_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "module_code",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "quantity",
+          "type": "numeric(12,3)",
+          "default": "1",
+          "not_null": true
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "discount_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "price_snapshot",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX saas_invoice_lines_pkey ON public.saas_invoice_lines USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (invoice_id) REFERENCES saas_invoices(id)",
+          "name": "saas_invoice_lines_invoice_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "saas_invoice_lines_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "saas_invoice_lines_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "saas_invoices",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "billing_group_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "invoice_number",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "subtotal_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "discount_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "tax_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "total_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'draft'::text",
+          "not_null": true
+        },
+        {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "due_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "paid_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "pricing_snapshot",
+          "type": "jsonb",
+          "default": "'{}'::jsonb",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_saas_invoices_group ON public.saas_invoices USING btree (billing_group_id, created_at)",
+        "CREATE UNIQUE INDEX saas_invoices_invoice_number_key ON public.saas_invoices USING btree (invoice_number)",
+        "CREATE UNIQUE INDEX saas_invoices_pkey ON public.saas_invoices USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (billing_group_id) REFERENCES billing_groups(id)",
+          "name": "saas_invoices_billing_group_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (discount_satang >= 0)",
+          "name": "saas_invoices_discount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (invoice_number)",
+          "name": "saas_invoices_invoice_number_key",
+          "type": "u"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "saas_invoices_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['draft'::text, 'issued'::text, 'pending'::text, 'paid'::text, 'overdue'::text, 'void'::text, 'refunded'::text]))",
+          "name": "saas_invoices_status_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (subtotal_satang >= 0)",
+          "name": "saas_invoices_subtotal_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (tax_satang >= 0)",
+          "name": "saas_invoices_tax_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (total_satang >= 0)",
+          "name": "saas_invoices_total_satang_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "saas_payment_attempts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "invoice_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "payment_method",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "stripe_payment_intent_id",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "idempotency_key",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'created'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "settled_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX saas_payment_attempts_idempotency_key_key ON public.saas_payment_attempts USING btree (idempotency_key)",
+        "CREATE UNIQUE INDEX saas_payment_attempts_pkey ON public.saas_payment_attempts USING btree (id)",
+        "CREATE UNIQUE INDEX saas_payment_attempts_stripe_payment_intent_id_key ON public.saas_payment_attempts USING btree (stripe_payment_intent_id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (amount_satang > 0)",
+          "name": "saas_payment_attempts_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (idempotency_key)",
+          "name": "saas_payment_attempts_idempotency_key_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (invoice_id) REFERENCES saas_invoices(id)",
+          "name": "saas_payment_attempts_invoice_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (payment_method = ANY (ARRAY['card'::text, 'promptpay'::text]))",
+          "name": "saas_payment_attempts_payment_method_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "saas_payment_attempts_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['created'::text, 'requires_action'::text, 'processing'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text, 'refunded'::text]))",
+          "name": "saas_payment_attempts_status_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (stripe_payment_intent_id)",
+          "name": "saas_payment_attempts_stripe_payment_intent_id_key",
+          "type": "u"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "salary_advances",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "principal_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "outstanding_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "repayment_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "start_period_policy",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'requested'::text",
+          "not_null": true
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX salary_advances_pkey ON public.salary_advances USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (approved_by) REFERENCES app_users(id)",
+          "name": "salary_advances_approved_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (outstanding_satang >= 0 AND outstanding_satang <= principal_satang)",
+          "name": "salary_advances_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "salary_advances_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "salary_advances_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (principal_satang > 0)",
+          "name": "salary_advances_principal_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (repayment_satang > 0)",
+          "name": "salary_advances_repayment_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (start_period_policy = ANY (ARRAY['next'::text, 'following'::text]))",
+          "name": "salary_advances_start_period_policy_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['requested'::text, 'approved'::text, 'rejected'::text, 'paid'::text, 'repaid'::text]))",
+          "name": "salary_advances_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "sales_assignments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "sales_user_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "effective_from",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "effective_until",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "assigned_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_sales_assignment_station ON public.sales_assignments USING btree (station_id, effective_from)",
+        "CREATE UNIQUE INDEX sales_assignments_pkey ON public.sales_assignments USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (assigned_by) REFERENCES app_users(id)",
+          "name": "sales_assignments_assigned_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (effective_until IS NULL OR effective_until > effective_from)",
+          "name": "sales_assignments_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "sales_assignments_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (sales_user_id) REFERENCES app_users(id)",
+          "name": "sales_assignments_sales_user_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "sales_assignments_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "shift_assignments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "shift_template_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "shift_date",
+          "type": "date",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'scheduled'::text",
+          "not_null": true
+        },
+        {
+          "name": "replacement_of",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX shift_assignments_pkey ON public.shift_assignments USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (approved_by) REFERENCES app_users(id)",
+          "name": "shift_assignments_approved_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "shift_assignments_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "shift_assignments_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (replacement_of) REFERENCES shift_assignments(id)",
+          "name": "shift_assignments_replacement_of_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (shift_template_id) REFERENCES shift_templates(id)",
+          "name": "shift_assignments_shift_template_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['scheduled'::text, 'replaced'::text, 'worked'::text, 'cancelled'::text, 'absence_review'::text]))",
+          "name": "shift_assignments_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "shift_change_requests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "employee_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "original_assignment_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "replacement_assignment_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "request_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX shift_change_requests_pkey ON public.shift_change_requests USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (approved_by) REFERENCES app_users(id)",
+          "name": "shift_change_requests_approved_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (employee_id) REFERENCES employees(id)",
+          "name": "shift_change_requests_employee_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (original_assignment_id) REFERENCES shift_assignments(id)",
+          "name": "shift_change_requests_original_assignment_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "shift_change_requests_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (replacement_assignment_id) REFERENCES shift_assignments(id)",
+          "name": "shift_change_requests_replacement_assignment_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (request_type = ANY (ARRAY['swap'::text, 'replace'::text, 'double_shift'::text, 'correction'::text]))",
+          "name": "shift_change_requests_request_type_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))",
+          "name": "shift_change_requests_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "shift_templates",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "start_time",
+          "type": "time without time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "end_time",
+          "type": "time without time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "default_break_minutes",
+          "type": "integer",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX shift_templates_pkey ON public.shift_templates USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (default_break_minutes >= 0 AND default_break_minutes <= 480)",
+          "name": "shift_templates_default_break_minutes_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "shift_templates_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "shift_templates_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "station_bank_accounts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "bank_code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "account_name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "account_number_encrypted",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "account_number_masked",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "default": "false",
+          "not_null": true
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "true",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX station_bank_accounts_pkey ON public.station_bank_accounts USING btree (id)",
+        "CREATE UNIQUE INDEX stations_bank_primary ON public.station_bank_accounts USING btree (station_id) WHERE (is_primary AND active)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "station_bank_accounts_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "station_bank_accounts_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "station_fuel_products",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "brand_product_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "custom_name",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "name_override",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "default": "false",
+          "not_null": true
+        },
+        {
+          "name": "current_public_price",
+          "type": "numeric(12,4)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX station_fuel_products_id_station_id_key ON public.station_fuel_products USING btree (id, station_id)",
+        "CREATE UNIQUE INDEX station_fuel_products_pkey ON public.station_fuel_products USING btree (id)",
+        "CREATE UNIQUE INDEX station_fuel_products_station_id_brand_product_id_key ON public.station_fuel_products USING btree (station_id, brand_product_id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (brand_product_id) REFERENCES brand_fuel_products(id)",
+          "name": "station_fuel_products_brand_product_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (brand_product_id IS NOT NULL OR NULLIF(btrim(custom_name), ''::text) IS NOT NULL)",
+          "name": "station_fuel_products_check",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (NOT enabled OR current_public_price IS NOT NULL)",
+          "name": "station_fuel_products_check1",
+          "type": "c"
+        },
+        {
+          "sql": "CHECK (current_public_price > 0::numeric)",
+          "name": "station_fuel_products_current_public_price_check",
+          "type": "c"
+        },
+        {
+          "sql": "UNIQUE (id, station_id)",
+          "name": "station_fuel_products_id_station_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "station_fuel_products_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "UNIQUE (station_id, brand_product_id)",
+          "name": "station_fuel_products_station_id_brand_product_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "station_fuel_products_station_id_fkey",
+          "type": "f"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "station_modules",
+      "columns": [
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "module_code",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'disabled'::text",
+          "not_null": true
+        },
+        {
+          "name": "valid_from",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "valid_until",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX station_modules_pkey ON public.station_modules USING btree (station_id, module_code)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (module_code = ANY (ARRAY['qr_coupon'::text, 'hr_payroll'::text]))",
+          "name": "station_modules_module_code_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (station_id, module_code)",
+          "name": "station_modules_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "station_modules_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['enabled'::text, 'disabled'::text, 'grace'::text, 'suspended'::text]))",
+          "name": "station_modules_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "station_subscriptions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "station_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "plan_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "current_period_end",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'trialing'::text",
+          "not_null": true
+        },
+        {
+          "name": "price_override_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX station_subscriptions_pkey ON public.station_subscriptions USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "CHECK (current_period_end > starts_at)",
+          "name": "station_subscriptions_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "station_subscriptions_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (plan_id) REFERENCES pricing_plans(id)",
+          "name": "station_subscriptions_plan_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (price_override_satang >= 0)",
+          "name": "station_subscriptions_price_override_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "FOREIGN KEY (station_id) REFERENCES stations(id)",
+          "name": "station_subscriptions_station_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['trialing'::text, 'active'::text, 'overdue'::text, 'grace'::text, 'suspended'::text, 'cancelled'::text]))",
+          "name": "station_subscriptions_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "stations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "organization_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "brand_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "timezone",
+          "type": "text",
+          "default": "'Asia/Bangkok'::text",
+          "not_null": true
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "latitude",
+          "type": "numeric(10,7)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "longitude",
+          "type": "numeric(10,7)",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'active'::text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX stations_id_organization_id_key ON public.stations USING btree (id, organization_id)",
+        "CREATE UNIQUE INDEX stations_pkey ON public.stations USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (brand_id) REFERENCES fuel_brands(id)",
+          "name": "stations_brand_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "UNIQUE (id, organization_id)",
+          "name": "stations_id_organization_id_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (organization_id) REFERENCES organizations(id)",
+          "name": "stations_organization_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "stations_pkey",
+          "type": "p"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "stripe_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "event_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        },
+        {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "payload_hash",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'received'::text",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX stripe_events_pkey ON public.stripe_events USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "stripe_events_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['received'::text, 'processed'::text, 'failed'::text]))",
+          "name": "stripe_events_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "topup_requests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "default": "gen_random_uuid()",
+          "not_null": true
+        },
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "station_bank_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "amount_satang",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "slip_storage_path",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "bank_reference",
+          "type": "text",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "default": "'pending'::text",
+          "not_null": true
+        },
+        {
+          "name": "requested_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "reviewed_by",
+          "type": "uuid",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "default": null,
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_topup_station_pending ON public.topup_requests USING btree (account_id, status)",
+        "CREATE UNIQUE INDEX topup_requests_pkey ON public.topup_requests USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "FOREIGN KEY (account_id) REFERENCES corporate_station_accounts(id)",
+          "name": "topup_requests_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (amount_satang > 0)",
+          "name": "topup_requests_amount_satang_check",
+          "type": "c"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "topup_requests_pkey",
+          "type": "p"
+        },
+        {
+          "sql": "FOREIGN KEY (requested_by) REFERENCES app_users(id)",
+          "name": "topup_requests_requested_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (reviewed_by) REFERENCES app_users(id)",
+          "name": "topup_requests_reviewed_by_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "FOREIGN KEY (station_bank_id) REFERENCES station_bank_accounts(id)",
+          "name": "topup_requests_station_bank_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text]))",
+          "name": "topup_requests_status_check",
+          "type": "c"
+        }
+      ]
+    },
+    {
+      "rls": true,
+      "table": "wallet_ledger",
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "entry_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "delta_prepaid_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "delta_debt_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "delta_reserved_satang",
+          "type": "bigint",
+          "default": "0",
+          "not_null": true
+        },
+        {
+          "name": "reference_type",
+          "type": "text",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "reference_id",
+          "type": "uuid",
+          "default": null,
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "default": "now()",
+          "not_null": true
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_wallet_ledger_account ON public.wallet_ledger USING btree (account_id, created_at)",
+        "CREATE UNIQUE INDEX wallet_ledger_account_id_entry_type_reference_type_referenc_key ON public.wallet_ledger USING btree (account_id, entry_type, reference_type, reference_id)",
+        "CREATE UNIQUE INDEX wallet_ledger_pkey ON public.wallet_ledger USING btree (id)"
+      ],
+      "force_rls": true,
+      "constraints": [
+        {
+          "sql": "UNIQUE (account_id, entry_type, reference_type, reference_id)",
+          "name": "wallet_ledger_account_id_entry_type_reference_type_referenc_key",
+          "type": "u"
+        },
+        {
+          "sql": "FOREIGN KEY (account_id) REFERENCES corporate_station_accounts(id)",
+          "name": "wallet_ledger_account_id_fkey",
+          "type": "f"
+        },
+        {
+          "sql": "PRIMARY KEY (id)",
+          "name": "wallet_ledger_pkey",
+          "type": "p"
+        }
+      ]
+    }
+  ]
+}
