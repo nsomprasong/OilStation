@@ -429,10 +429,11 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
       });
       if(!r.ok){setUiStatus(status,'สร้างคำเชิญไม่สำเร็จ: '+responseError(r.data),'error');return;}
       link.value=r.data.invitation.inviteUrl;link.hidden=false;copy.hidden=false;
-      setUiStatus(status,r.data.invitation.delivery==='email_accepted'?
+      const accepted=r.data.invitation.delivery==='email_accepted';
+      setUiStatus(status,accepted?
         'ผู้ให้บริการรับคำขอส่งอีเมลแล้ว (ยังไม่ยืนยันการส่งถึงผู้รับ) สามารถคัดลอกลิงก์ได้':
         'สร้างลิงก์แล้ว การส่งอีเมลอัตโนมัติยังไม่ยืนยัน กรุณาคัดลอกและส่งให้ผู้รับ',
-        r.data.invitation.delivery==='email_accepted'?'success':'warning');
+        accepted?'success':'warning');
     }catch{setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ','error');}
     finally{submit.disabled=false;}
   });
