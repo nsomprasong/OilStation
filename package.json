@@ -10,7 +10,9 @@
     "test": "node --test",
     "check": "node --check src/worker.mjs && node --check src/api/router.mjs && node --check src/adapters/supabase.mjs",
     "build": "vite build",
-    "dev": "vite --host 0.0.0.0"
+    "dev": "vite --host 0.0.0.0",
+    "prebuild": "node scripts/materialize-brand-assets.mjs",
+    "predev": "node scripts/materialize-brand-assets.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
