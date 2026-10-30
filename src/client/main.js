@@ -1035,7 +1035,9 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    }).catch(()=>null);
    if(!res?.ok){
      current=null;$('coupon-inspection').hidden=true;
-     report('ไม่สามารถใช้ QR นี้ได้ กรุณาตรวจสิทธิ์ สถานะ และวันหมดอายุ',true);
+     if(res?.data?.error==='release_not_enabled')
+       report('อ่าน QR แล้ว แต่ระบบตรวจคูปองยังไม่เปิดใช้งาน จึงยังไม่เริ่มเติมน้ำมัน',true);
+     else report('ไม่สามารถใช้ QR นี้ได้ กรุณาตรวจสิทธิ์ สถานะ และวันหมดอายุ',true);
      return;
    }
    const coupon=res.data.coupon;
@@ -1218,10 +1220,14 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      if(!supported.includes('qr_code'))throw new Error('no_qr');
      const detector=new BarcodeDetector({formats:['qr_code']});
      const video=$('scan-video');
-     stream=await navigator.mediaDevices.getUserMedia({
+     const cameraStream=await navigator.mediaDevices.getUserMedia({
        video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},
        audio:false,
      });
+     if(document.hidden||target.closest('[data-ws-screen="pump"]')?.hidden){
+       cameraStream.getTracks().forEach(track=>track.stop());return;
+     }
+     stream=cameraStream;
      video.srcObject=stream;video.hidden=false;
      $('stop-camera').hidden=false;$('start-camera').hidden=true;
      target.querySelector('.os-mobile-camera')?.classList.add('is-scanning');
