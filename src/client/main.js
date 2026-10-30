@@ -12,6 +12,7 @@ import { mountFuelReviewInbox } from './fuel-review.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
 import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
+import {canonicalLandingAfterOAuth} from './oauth-landing.js';
 import {installProgressiveWorkspace} from './progressive-workspace.js';
 
 const root = document.getElementById('app');
@@ -1611,6 +1612,15 @@ async function boot() {
   const { data: {session}, error } = await authClient.auth.getSession();
   if (error) return showError('เข้าสู่ระบบไม่สำเร็จ');
   if (!session) return setup ? platformSetupView() : guestView(Boolean(invite));
+  // The PKCE session is now persisted. A new same-origin document after
+  // Google's OAuth callback resets mobile Chrome Custom Tab viewport scaling,
+  // which can otherwise show the desktop shell until a manual refresh.
+  // This only runs on /auth/callback; it never redirects again from '/'.
+  const landing=canonicalLandingAfterOAuth(location.pathname,session);
+  if (landing) {
+    location.replace(landing);
+    return;
+  }
   if (setup) {
     const bootResult = await getApi('/api/bootstrap',session.access_token,{method:'POST'});
     if (!bootResult.ok) {
