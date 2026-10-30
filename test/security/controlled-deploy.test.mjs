@@ -9,6 +9,10 @@ test('UAT Worker is distinct from production and has no scheduled money jobs',()
  assert.equal(config.env.uat.workers_dev,true);
  assert.deepEqual(config.env.uat.triggers.crons,[]);
  assert.equal(config.env.uat.assets.binding,'ASSETS');
+ assert.equal(config.vars.OILSTATION_DEPLOY_TARGET,'production');
+ assert.equal(config.env.uat.vars.OILSTATION_DEPLOY_TARGET,'uat');
+ assert.equal(config.env.uat.vars.OILSTATION_UAT_SUPABASE_REF,undefined);
+ assert.equal(config.env.uat.vars.OILSTATION_UAT_TEST_EMAIL,undefined);
  assert.ok(config.triggers.crons.includes('*/2 * * * *'));
 });
 test('workflow is manual with pre-deployment production SQL and bindings gates',()=>{
