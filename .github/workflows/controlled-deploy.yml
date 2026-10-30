@@ -84,15 +84,26 @@ jobs:
             "$RELEASE_SUPABASE_URL/rest/v1/rpc/oilstation_release_status" > "$tmp"
           jq -e '.ready == true and .schemaVersion == "20261029215000"' "$tmp" >/dev/null || {
             echo "::error::Production Supabase readiness failed"; exit 1; }
-      - name: Check required encrypted Cloudflare bindings before production replacement
+      - name: Check encrypted secrets and explicitly enabled production flag
         if: inputs.target == 'production'
         run: |
-          npx --yes wrangler@4 secret list > /tmp/oilstation-bindings.json
-          for key in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY COUPON_SIGNING_KEY OILSTATION_API_ENABLED; do
-            jq -e --arg k "$key" 'any(.[]; .name == $k)' /tmp/oilstation-bindings.json >/dev/null || {
-              echo "::error::Missing required Cloudflare Worker binding: $key"; exit 1; }
+          set -eu
+          secrets_file="$(mktemp)"
+          settings_file="$(mktemp)"
+          trap 'rm -f "$secrets_file" "$settings_file"' EXIT
+          # Wrangler secret list only includes encrypted secrets, not plain-text
+          # Worker vars. The API activation flag must be checked separately.
+          npx --yes wrangler@4 secret list > "$secrets_file"
+          for key in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY COUPON_SIGNING_KEY; do
+            jq -e --arg k "$key" 'any(.[]; .name == $k and .type == "secret_text")' "$secrets_file" >/dev/null || {
+              echo "::error::Missing required encrypted Worker secret: $key"; exit 1; }
           done
-          rm -f /tmp/oilstation-bindings.json
+          curl --fail --silent --show-error --max-time 12 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/oilstation/settings" > "$settings_file"
+          jq -e '.success == true and any(.result.bindings[]?; .name == "OILSTATION_API_ENABLED" and .type == "plain_text" and .text == "true")' \
+            "$settings_file" >/dev/null || {
+              echo "::error::Production OILSTATION_API_ENABLED must be an explicit plain-text true before deploying"; exit 1; }
       - name: Deploy safe isolated UAT Worker (no production route or cron)
         if: inputs.target == 'uat'
         run: npx --yes wrangler@4 deploy --env uat
