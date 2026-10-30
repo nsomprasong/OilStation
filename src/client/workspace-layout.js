@@ -1,5 +1,6 @@
 import {renderMobileHome,renderMobileNav,renderMobileScreenHero} from './mobile-home.js';
 import {renderLogoutDialog,wireLogoutDialog} from './logout-dialog.js';
+import {categoryFor,renderWorkspaceCategories} from './workspace-categories.js';
 
 export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
@@ -61,6 +62,7 @@ export function renderWorkspaceShell(screens){
    </div>
    ${s.key==="overview"?`
      ${renderMobileHome(screens)}
+     ${renderWorkspaceCategories(screens,s.key)}
      <div class="ws-overview-columns">
        <div class="ws-overview-primary">
          <div class="ws-section-heading"><h3>เริ่มทำงาน</h3>
@@ -74,7 +76,7 @@ export function renderWorkspaceShell(screens){
          <div class="module-list" id="modules"></div>
        </aside>
      </div>`:
-     `${renderMobileScreenHero(s,screens)}<div class="os-mobile-page-content">${s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join("")}</div>`}
+     `${renderMobileScreenHero(s,screens)}${renderWorkspaceCategories(screens,s.key)}<div class="os-mobile-page-content">${s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join("")}</div>`}
  </section>`).join("");
  return `<div class="ws-layout" data-workspace-shell>
    <button class="ws-menu-backdrop" type="button" data-ws-menu-close hidden
@@ -210,7 +212,7 @@ export function wireWorkspaceNavigation(root){
    views.forEach(v=>{v.hidden=v!==view;});
    links.forEach(link=>{
     const active=link.dataset.wsGo===key;
-    link.classList.toggle("active",active);
+    link.classList.toggle("active",active||Boolean(link.dataset.taskGroup&&link.dataset.taskGroup===categoryFor(key)));
     link.classList.toggle("is-current",active&&Boolean(link.closest(".os-mobile-bottom")));
     if(active&&link.closest("nav"))link.setAttribute("aria-current","page");
     else link.removeAttribute("aria-current");

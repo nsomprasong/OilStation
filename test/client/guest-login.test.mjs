@@ -1,13 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {authMarkup} from '../../src/client/auth-screen.js';
 const source=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');
-const guest=source.slice(source.indexOf('function guestView(invited) {'),source.indexOf('async function login(provider)'));
-test('login buttons and first-admin setup link remain visible without an invitation',()=>{
- assert.match(guest,/id="google"/);
- assert.match(guest,/id="facebook"/);
- assert.match(guest,/href="\/setup"/);
+const guest=source.slice(source.indexOf('function guestView(invited)'),source.indexOf('async function login(provider)'));
+test('login OAuth actions and first-admin link remain visible without an invitation',()=>{
+ const html=authMarkup();
+ assert.match(html,/id="google"/);
+ assert.match(html,/id="facebook"/);
+ assert.match(html,/href="\/setup"/);
  assert.match(guest,/document\.getElementById\('google'\)\.addEventListener/);
  assert.match(guest,/document\.getElementById\('facebook'\)\.addEventListener/);
- assert.match(guest,/ไม่เปิดรับสมัครสาธารณะ/);
+ assert.match(html,/ไม่มีการสมัครสาธารณะ/);
+});
+test('invited users see welcome invitation rather than setup links',()=>{
+ const html=authMarkup({invited:true});
+ assert.match(html,/ยืนยันคำเชิญ/);
+ assert.doesNotMatch(html,/href="\/setup"/);
 });

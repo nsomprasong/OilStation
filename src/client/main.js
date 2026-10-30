@@ -11,6 +11,8 @@ import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
 import {humanizeApiError,setUiStatus} from './ui-status.js';
+import {authMarkup} from './auth-screen.js';
+import {installProgressiveWorkspace} from './progressive-workspace.js';
 
 const root = document.getElementById('app');
 const INVITE_KEY = 'oilstation_pending_invitation';
@@ -19,7 +21,7 @@ const INVITE_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
 const COUPON_PATTERN = /^[0-9a-f-]{36}\.[a-f0-9]{64}$/i;
 let authClient;
 
-function show(html) { root.classList.remove('workspace-mode');root.innerHTML = html; decorateIcons(root); }
+function show(html) { root.classList.remove('workspace-mode');root.classList.toggle('auth-mode',html.includes('os-auth-shell'));root.innerHTML = html; decorateIcons(root); }
 // Dynamic forms are inserted after async data loads; decorate their placeholders too.
 const iconObserver = new MutationObserver(() => decorateIcons(root));
 iconObserver.observe(root, {subtree:true,childList:true});
@@ -33,41 +35,15 @@ function showError(msg) {
   document.getElementById('reason').textContent = msg;
 }
 function responseError(res) { return humanizeApiError(res?.error); }
-function platformSetupView() {
-  show(`<div class="mark" aria-hidden="true">O</div>
-    <h1>เริ่มต้นผู้ดูแล OilStation</h1>
-    <p class="lead">สำหรับผู้ดูแลแพลตฟอร์มคนแรกที่ได้รับอนุญาตเท่านั้น</p>
-    <section class="panel"><div class="section-title">ยืนยันตัวตน</div>
-    <p>ต้องใช้อีเมลที่ผู้ดูแลระบบกำหนดไว้บนเซิร์ฟเวอร์ และบัญชีอีเมลต้องผ่านการยืนยัน</p>
-    <div class="auth-buttons">
-    <button class="button primary" id="google"><i data-brand-icon="google"></i>ดำเนินการด้วย Google</button>
-    <button class="button secondary" id="facebook"><i data-brand-icon="facebook"></i>ดำเนินการด้วย Facebook</button>
-    </div><p id="notice" class="notice" hidden role="status"></p></section>`);
-  document.getElementById('google').addEventListener('click',()=>login('google'));
-  document.getElementById('facebook').addEventListener('click',()=>login('facebook'));
+function platformSetupView(){
+ show(authMarkup({setup:true}));
+ document.getElementById('google').addEventListener('click',()=>login('google'));
+ document.getElementById('facebook').addEventListener('click',()=>login('facebook'));
 }
-function guestView(invited) {
-  show(`
-    <div class="mark" aria-hidden="true">O</div>
-    <h1>จัดการปั๊มได้ง่ายขึ้น</h1>
-    <p class="lead">คูปองน้ำมัน · พนักงาน · การเงิน</p>
-    <section class="panel" aria-label="เข้าสู่ระบบ">
-      <div class="section-title"><span class="status-dot"></span>
-        <span>${invited ? 'ยืนยันคำเชิญเพื่อเริ่มใช้งาน' : 'เข้าสู่ระบบ OilStation'}</span></div>
-      <p>${invited ? 'เข้าสู่ระบบเพื่อยืนยันคำเชิญของคุณ' : 'สำหรับผู้ดูแลและผู้ที่ได้รับเชิญจากองค์กรเท่านั้น'}</p>
-      <div class="divider"></div>
-      <div class="auth-buttons">
-        <button class="button primary" id="google"><i data-brand-icon="google"></i>เข้าสู่ระบบด้วย Google</button>
-        <button class="button secondary" id="facebook"><i data-brand-icon="facebook"></i>เข้าสู่ระบบด้วย Facebook</button>
-      </div>
-      ${invited ? '' : `<div class="step"><span class="number">1</span><i data-ui-icon="mail"></i> สมาชิกใหม่รับลิงก์เชิญจากผู้ดูแล</div>
-         <div class="step"><span class="number">2</span><i data-ui-icon="shield"></i> เข้าสู่ระบบด้วยบัญชีที่ได้รับอนุญาต</div>`}
-      <p class="hint">ไม่เปิดรับสมัครสาธารณะ การเข้าสู่ระบบไม่ได้ให้สิทธิ์ใช้งานโดยอัตโนมัติ</p>
-      ${invited ? '' : '<a class="button secondary" href="/setup">ตั้งค่าผู้ดูแลระบบคนแรก</a>'}
-      <p id="notice" class="notice" role="status" hidden></p>
-    </section>`);
-  document.getElementById('google').addEventListener('click', () => login('google'));
-  document.getElementById('facebook').addEventListener('click', () => login('facebook'));
+function guestView(invited){
+ show(authMarkup({invited}));
+ document.getElementById('google').addEventListener('click',()=>login('google'));
+ document.getElementById('facebook').addEventListener('click',()=>login('facebook'));
 }
 async function login(provider) {
   if (!authClient) return message('การเข้าสู่ระบบยังไม่ได้ตั้งค่า', 'error');
@@ -1376,6 +1352,7 @@ function dashboard(data, session, publicConfig={}) {
  const active=scopes[memberships[0]?.scopeType]||scopes.station;
  const screens=selectWorkspaceScreens(memberships);
  show(renderWorkspaceShell(screens));root.classList.add('workspace-mode');
+ installProgressiveWorkspace(root);
  document.getElementById('scope-title').textContent=active.title;
  const scopesNode=document.getElementById('scopes');
  for(const m of memberships){
