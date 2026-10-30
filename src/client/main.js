@@ -1505,9 +1505,9 @@ function dashboard(data, session, publicConfig={}) {
   if(signingOut)return;
   signingOut=true;
   try{
-   sessionStorage.removeItem('oilstation_last_workspace');
    const {error}=await authClient.auth.signOut();
    if(error)throw error;
+   sessionStorage.removeItem('oilstation_last_workspace');
    location.replace('/');
   }catch{
    signingOut=false;

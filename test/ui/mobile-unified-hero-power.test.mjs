@@ -38,7 +38,7 @@ test('home has an accessible power icon in the top-right corner which uses exist
  assert.doesNotMatch(layout,/window\.confirm\(/);
  assert.match(layout,/wireLogoutDialog\(root\)/);
  assert.match(layout,/renderLogoutDialog\(\)/);
- assert.match(layout,/oilstation:logoutrequested/);
+ assert.match(read('src/client/logout-dialog.js'),/oilstation:logoutrequested/);
  assert.match(main,/addEventListener\('oilstation:logoutrequested',signOut\)/);
  assert.match(main,/authClient\.auth\.signOut\(\)/);
  assert.match(read('src/client/icons.js'),/power:Power/);
