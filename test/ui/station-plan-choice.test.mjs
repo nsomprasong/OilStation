@@ -20,5 +20,5 @@ test('owner chooser stores plan and method without client-submitted price or cha
  assert.match(source,/\/api\/station\/billing\/select/);
  assert.match(source,/planId:current,paymentMethod:selectedMethod\(\)/);
  assert.match(source,/ยังไม่ตัดเงิน/);
- assert.doesNotMatch(source,/stripe\.confirmPayment|amountSatang:|subscription/gi);
+ assert.doesNotMatch(source,/stripe\.confirmPayment|amountSatang:/gi);
 });

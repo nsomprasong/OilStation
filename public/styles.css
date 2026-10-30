@@ -247,3 +247,21 @@
 @media(max-width:850px){.saas-simple-layout{grid-template-columns:1fr}.saas-simple-intro,.saas-existing-plans{grid-column:1}}
 @media(max-width:520px){.saas-plan-row{display:grid;gap:8px}.saas-plan-prices{text-align:left}}
 @media(prefers-color-scheme:light){.saas-simple-card{border-color:#d8e5ec}.saas-simple-card>p,.saas-plan-meta small,.saas-simple-intro p{color:#647988}.saas-current-summary{background:#e6f2f4}.saas-plan-row{border-color:#e0e9ef}}
+
+/* Invitation-first SaaS selection, no automatic charge. */
+.owner-plan-onboarding{max-width:900px}
+.owner-plan-step{color:#48b5c1;font-size:12px;font-weight:750;letter-spacing:.03em}
+.owner-plan-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px;margin:20px 0}
+.owner-plan-card{display:flex;gap:12px;align-items:center;cursor:pointer;border:1px solid #36596e;border-radius:12px;padding:17px;min-height:84px}
+.owner-plan-card:has(input:checked){border-color:#21a7b2;background:#1c3b4f}
+.owner-plan-card input{width:18px;height:18px;flex:none}
+.owner-plan-description{display:grid;gap:6px}.owner-plan-description strong{font-size:15px}.owner-plan-description small{color:#a5bfd0;font-size:12px}
+.owner-payment-methods{border:1px solid #36596e;border-radius:12px;padding:16px;margin:14px 0;display:flex;gap:12px;flex-wrap:wrap}
+.owner-payment-methods legend{padding:0 7px;font-weight:750;font-size:14px}
+.owner-payment-methods label{display:flex;align-items:center;gap:5px;cursor:pointer;min-height:35px}
+.owner-payment-methods input{width:17px;height:17px}
+.owner-plan-quote{display:flex;align-items:end;justify-content:space-between;gap:20px;padding:18px 0;border-top:1px solid #335164;font-size:14px}
+.owner-plan-quote p{margin:4px 0}.owner-plan-quote strong{font-size:20px}
+.owner-plan-status{font-size:13px;min-height:22px;color:#8cdbcb}
+@media(max-width:520px){.owner-plan-quote{display:grid}.owner-payment-methods{display:grid}}
+@media(prefers-color-scheme:light){.owner-plan-card,.owner-payment-methods{border-color:#d5e4e9}.owner-plan-card:has(input:checked){background:#eaf7f6}.owner-plan-description small{color:#657e8c}.owner-plan-quote{border-color:#dee9ed}}

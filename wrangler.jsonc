@@ -47,6 +47,7 @@
     "OILSTATION_PREVIEW_LOGIN_ENABLED": "true",
     "OILSTATION_API_ENABLED": "false",
     "INVITATION_EMAIL_ENABLED": "false",
-    "INVITATION_FROM_EMAIL": "no-reply@oilstation.goldensoft.cloud"
+    "INVITATION_FROM_EMAIL": "no-reply@oilstation.goldensoft.cloud",
+    "OILSTATION_PREVIEW_OPERATIONS_ENABLED": "true"
   }
 }
