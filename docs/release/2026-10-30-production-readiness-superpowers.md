@@ -19,7 +19,7 @@
 - Supabase project `cxihsotcpdnalswfoysx`, `public.oilstation_release_status()`: **`ready:false`**, schemaVersion `20261029215000`.
 - 73 public tables; **zero** tables violating forced RLS or browser CRUD restrictions.
 - Protected evidence and slip buckets exist and satisfy the release function's privacy checks.
-- Missing required procedure: `public.complete_reviewed_fuel_session(uuid,uuid,uuid,uuid)`. Existing finance routines cannot be taken as substitutes: true release requires reviewed photographic evidence and controlled settlement.
+- **The entire reviewed fuel settlement chain is missing in the live database**, not just the readiness marker: `fuel_supervisor_authorized`, `fuel_photo_review_inbox`, `review_fuel_evidence_photo` and `complete_reviewed_fuel_session` are absent, and both `fuel_evidence_intake` reviewed amount columns are absent. All are present as reviewed source migration `20261029192000_supervisor_fuel_settlement.sql` but have not been installed in Production. Existing finance routines cannot be taken as substitutes: true release requires independently reviewed photographic evidence and controlled settlement. Do not satisfy `/api/ready` by creating a stub.
 - Current development data: **one station; one pending invitation; zero active station memberships** at assessment time.
 - Worker at assessment time still has `OILSTATION_API_ENABLED=false`, `OILSTATION_PREVIEW_OPERATIONS_ENABLED=true`, `INVITATION_EMAIL_ENABLED=false`.
 
