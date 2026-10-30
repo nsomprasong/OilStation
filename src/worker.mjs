@@ -20,6 +20,7 @@ import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
 import { createWalletIntegrityApi } from './api/wallet-integrity.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
+import { createSupabaseConnectivityProbe } from './api/supabase-connectivity.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 
@@ -38,6 +39,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) {
+      if (url.pathname === '/api/internal/supabase-connectivity') {
+        return createSupabaseConnectivityProbe(env)(request);
+      }
       if (url.pathname === '/api/health') {
         return new Response(JSON.stringify({ service: 'oilstation', status: 'ok' }), {
           status: request.method === 'GET' ? 200 : 405,

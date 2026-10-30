@@ -37,3 +37,35 @@ Only after a reviewed merge to main does the GitHub workflow OilStation Controll
 - External HTTP smoke checks from the current web tooling were not accessible; do **not** claim end-user reachability based solely on Cloudflare API state. The owner or a connected runner must verify that endpoint.
 - The manual GitHub Actions `uat` deployment will replace the canary with the real built application only after the code is reviewed/merged and a scoped GitHub Cloudflare token has been configured. Staging database secrets and approval are required before enabling business APIs.
 - Latest isolated CI at dc52b4a8: **234/234 Node tests PASS**, frontend build and both Wrangler Worker dry-runs PASS, **all eight workflows PASS**.
+
+
+## Safe read-only Cloudflare ↔ Supabase proof (opt-in; no deploy yet)
+
+Worker source now includes **GET** \`/api/internal/supabase-connectivity\`.
+This endpoint is deliberately **disabled** unless BOTH dedicated Worker
+encrypted secrets are configured:
+
+- \`OILSTATION_DIAGNOSTICS_ENABLED=true\` (feature switch, kept false otherwise)
+- \`DIAGNOSTICS_BEARER_TOKEN\` — independent random 32+ character token, NOT an
+  existing Supabase key or OAuth bearer token
+
+Send only an Authorization Bearer header from an approved operator's secure
+terminal. Never paste the token into a browser URL, logs, screenshot, PR,
+conversation or shell history. Never use a Supabase secret as the diagnostic token.
+
+The probe uses **GET only**: Supabase Auth settings with the publishable key,
+and PostgREST \`brand_fuel_products?select=id&limit=0\` with the server key.
+It returns only three booleans (\`connected\`, \`publicKeyValid\`,
+\`serviceKeyValid\`) and never reads a catalog record or returns credentials.
+Response is 404 when disabled, 401 for unauthorized calls, and 503 when
+credential or network tests fail. Cross-origin browser requests are blocked.
+
+The existing \`OILSTATION_API_ENABLED=false\` must remain false while the
+database is not release ready. The connectivity probe is **independent of
+financial API activation**. A connectivity PASS is NOT a production release
+authorization and does not apply the 28 pending database migrations.
+
+Only enable and deploy this diagnostic after a reviewed release of this code;
+disable/remove the diagnostic credentials immediately after the test. Current
+production Worker cannot expose this new endpoint until the code is deployed.
+
