@@ -178,7 +178,10 @@ export default {
           // Only synthetic QA identities on the fixed 4 stations / 12 companies
           // may use real QR reservation and settlement against QA money.
           // Ordinary production finance remains closed in preview.
-          if(qaFinanceEnabled(env)){
+          if(qaFinanceEnabled(env)||(
+            qaIsEnabled(env)&&
+            ['/api/corporate/drivers','/api/corporate/driver-vehicle',
+             '/api/driver/coupons'].includes(url.pathname))){
             const result=await createQaOperationsApi({
               env,...createSupabaseAdapter(env)})(request);
             if(result.status!==404)return result;
