@@ -231,8 +231,9 @@ export function mountSaasPlanManager({root,rpc}){
   busy=true;save.disabled=true;cancel.disabled=true;
   toggleStatus(formStatus,'กำลังบันทึกแพ็กเกจ…');
   try{
-   await rpc(editingId?'edit-plan':'bundle-plan',editingId?{planId:editingId,...result.body}:result.body);
-   closeEditor();await load();toggleStatus(listStatus,editingId?'บันทึกการแก้ไขแล้ว':'บันทึกแพ็กเกจใหม่เรียบร้อย','success');
+   const wasEditing=Boolean(editingId);
+   await rpc(wasEditing?'edit-plan':'bundle-plan',wasEditing?{planId:editingId,...result.body}:result.body);
+   closeEditor();await load();toggleStatus(listStatus,wasEditing?'บันทึกการแก้ไขแล้ว':'บันทึกแพ็กเกจใหม่เรียบร้อย','success');
    add.focus();
   }catch(error){toggleStatus(formStatus,errorFor(error.message),'error');}
   finally{busy=false;save.disabled=false;cancel.disabled=false;}
