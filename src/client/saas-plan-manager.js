@@ -67,9 +67,10 @@ export function mountSaasPlanManager({root,rpc}){
  const refresh=makeButton('รีเฟรช');refresh.classList.add('os-plan-refresh');
  const add=makeButton('+ เพิ่มแพ็กเกจ','primary');
  actions.append(search,refresh,add);heading.append(headingCopy,actions);
+ const vatNotice=el('p');vatNotice.className='os-plan-vat-notice';
  const list=el('div');list.className='saas-plan-list';
  const listStatus=el('p');listStatus.className='saas-simple-status';listStatus.setAttribute('role','status');
- section.append(heading,listStatus,list);
+ section.append(heading,vatNotice,listStatus,list);
  const form=el('form');form.id='os-plan-editor';form.className='coupon-form saas-simple-card os-plan-editor';
  form.hidden=true;
  const formHead=el('div');formHead.className='os-plan-form-head';
@@ -222,6 +223,10 @@ export function mountSaasPlanManager({root,rpc}){
   loading=true;refresh.disabled=true;toggleStatus(listStatus,'กำลังโหลดรายการแพ็กเกจ…');
   try{
    const data=await rpc('overview');plans=Array.isArray(data.plans)?data.plans:[];
+   vatNotice.textContent=!data.taxPolicy?'ยังไม่ได้กำหนด VAT — ต้องบันทึกนโยบาย VAT ด้านล่างก่อนลูกค้าจะชำระเงินได้':
+    data.taxPolicy.effectiveOn>dateToday()?'นโยบาย VAT เริ่มมีผลวันที่ '+data.taxPolicy.effectiveOn+' — ราคานี้ยังไม่พร้อมชำระเงิน':
+    'นโยบาย VAT กำหนดแล้ว · ลูกค้าจะเห็นราคาพร้อมภาษีตามการตั้งค่าของระบบ';
+   vatNotice.dataset.ready=String(Boolean(data.taxPolicy&&data.taxPolicy.effectiveOn<=dateToday()));
    paint();toggleStatus(listStatus,'ทั้งหมด '+plans.length+' แพ็กเกจ');
   }catch(e){toggleStatus(listStatus,'โหลดรายการไม่สำเร็จ กรุณากดรีเฟรช','error');}
   finally{refresh.disabled=false;loading=false;}
