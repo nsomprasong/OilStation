@@ -52,7 +52,10 @@ BEGIN
  blocked:=false;
  BEGIN PERFORM public.create_scoped_invitation(sales,'test@qa.invalid',
    'cashier','station',null,s1,null,v_token,clock_timestamp()+interval '1 day');
- EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='FORBIDDEN';END;
+ EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Sales cashier invitation rejected: %',SQLERRM;
+  blocked:=SQLERRM='FORBIDDEN';
+ END;
  IF NOT blocked THEN RAISE EXCEPTION 'Sales invited cashier';END IF;
  blocked:=false;
  BEGIN PERFORM public.create_scoped_invitation(sales,'test@qa.invalid',
