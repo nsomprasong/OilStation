@@ -1,5 +1,8 @@
 # OilStation — Comprehensive Pre-UAT Situation Simulation Catalog
 
+> **UAT owner override — 31 Oct 2026:** Skip all **Platform Support / `support01` authenticated tests and account provisioning** at the owner's explicit direction. Record as **SKIPPED_BY_OWNER (not PASS/FAIL)**. Retain the `platform_support` production role and existing read-only Support code; do **not** create `support01`, add its password secret, trigger `authorized-support`, or delete/migrate any Support feature. P-14's independent *Admin/audit* checks remain in scope; prior anonymous denial evidence remains valid and separate. The original 99-account catalog remains a historical scope baseline; active provisioning target is **98 accounts: 2 existing QA Sales + 96 remaining organization/station/corporate identities; 1 Support identity explicitly skipped**. The 236-scenario catalog keeps its original numbering; only Support-actor branches are skipped. Continue Platform non-Support checks, then Station and Corporate in order. No QA cleanup/reset or financial activation.
+
+
 **Plan:** QA-20261031-MASTER-001 · **Run:** QA-20261031-PLATFORM-001 · **As of:** 2026-10-31
 **Status:** SCENARIOS FROZEN / UNIT SIMULATIONS STARTED / AUTHENTICATED BROWSER UAT NOT STARTED
 **Machine-readable source of truth:** `docs/qa/scenarios/oilstation-master-scenarios.json` (**236 cases**)
