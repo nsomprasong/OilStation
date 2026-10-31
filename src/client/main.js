@@ -1476,21 +1476,17 @@ function dashboard(data, session, publicConfig={}) {
   if(!pump)return;
   const firstVisit=!opened.has('pump');
   if(firstVisit)pendingMobileScan=true;
-  const tab=root.querySelector('.ws-sidebar [data-ws-go="pump"]');
-  tab?.click();
+  navigation.navigateTo('pump',{track:true});
   if(!firstVisit){
    document.getElementById('station-pump-workspace')
      ?.querySelector('#start-camera')?.click();
   }
  });
- wireWorkspaceNavigation(root);
+ const navigation=wireWorkspaceNavigation(root,{screens,userId:session.user?.id});
  const newOwner=sessionStorage.getItem('oilstation_open_plan_after_invite')==='1';
  if(newOwner)sessionStorage.removeItem('oilstation_open_plan_after_invite');
  const requested=newOwner?'plan':sessionStorage.getItem('oilstation_last_workspace');
- const allowed=[...root.querySelectorAll('.ws-nav[data-ws-go]')]
-   .find(button=>button.dataset.wsGo===requested);
- if(allowed)allowed.click();
- else root.querySelector('.ws-sidebar [data-ws-go="overview"]')?.click();
+ if(!navigation.navigateTo(requested||'overview'))navigation.navigateTo('overview');
  // Both the desktop/sidebar button and the mobile power icon share one
  // authenticated logout flow. It must work even when the sidebar is inert.
  let signingOut=false;
@@ -1507,7 +1503,6 @@ function dashboard(data, session, publicConfig={}) {
    shell?.dispatchEvent(new CustomEvent('oilstation:logoutfailed'));
   }
  };
- document.getElementById('logout').addEventListener('click',signOut);
  shell?.addEventListener('oilstation:logoutrequested',signOut);
 }
 async function couponViewer(token) {
