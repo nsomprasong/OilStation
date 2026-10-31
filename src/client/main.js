@@ -964,16 +964,16 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
        </label>
        <button type="submit" class="button primary"><i data-ui-icon="camera"></i>ส่งรูปตรวจทะเบียน</button>
      </form>
-     <p class="hint">ต้องให้ระบบตรวจภาพทะเบียนและยืนยันความถูกต้องก่อนเริ่มเติมน้ำมัน พนักงานไม่สามารถข้ามขั้นตอนนี้ได้</p>
+     <p class="hint">ใช้ภาพทะเบียนเป็นหลักฐาน ไม่ใช้ OCR และต้องให้ผู้มีสิทธิ์คนอื่นตรวจรูปก่อนเริ่มเติมน้ำมัน</p>
      <section id="plate-verification" class="plate-verification" hidden aria-label="ผลตรวจทะเบียน">
        <div class="section-title"><i data-ui-icon="shield"></i>ยืนยันหลักฐานทะเบียน</div>
        <p id="plate-verification-status" role="status" aria-live="polite">ยังไม่ได้ตรวจ</p>
-       <button type="button" id="plate-ocr-retry" class="button secondary">ตรวจด้วย OCR อีกครั้ง</button>
+       <button type="button" id="plate-review-refresh" class="button secondary">ตรวจสถานะการอนุมัติรูป</button>
        <form id="plate-supervisor-form" class="coupon-form">
          <label class="field">ทะเบียนที่เห็นจากภาพจริง
            <input id="plate-supervisor-value" autocomplete="off" maxlength="40" placeholder="ตัวอย่าง กข 1234" required>
          </label>
-         <p class="hint">สำหรับแคชเชียร์/ผู้จัดการที่ไม่ได้ถ่ายภาพนี้เท่านั้น ต้องตรวจภาพจริงและตรงกับทะเบียนคูปอง ห้ามยืนยันจากข้อความ OCR อย่างเดียว</p>
+         <p class="hint">แคชเชียร์หรือผู้จัดการที่ไม่ได้ถ่ายรูป ต้องเปิดดูรูปจริงและยืนยันทะเบียนให้ตรงกับคูปอง ไม่ใช้ OCR</p>
          <button class="button primary" type="submit">ยืนยันทะเบียนตรงกับภาพจริง</button>
          <button id="plate-reject" class="button secondary" type="button">ไม่ผ่าน — ปฏิเสธภาพนี้</button>
        </form>
@@ -1012,12 +1012,12 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
  let fuelProofIds={};
  const photoPanel=$('plate-verification');
  const photoStatus=$('plate-verification-status');
- const photoRetry=$('plate-ocr-retry');
+ const photoRefresh=$('plate-review-refresh');
  const reviewerForm=$('plate-supervisor-form');
  const setPhotoStatus=(text,verified=false)=>{
    photoStatus.textContent=text;
    photoPanel.dataset.verified=verified?'true':'false';
-   photoRetry.hidden=verified;reviewerForm.hidden=verified;
+   photoRefresh.hidden=verified;reviewerForm.hidden=verified||!canReview;
    $('fuel-start-panel').hidden=!verified||Boolean(sessionId);
  };
  const stop=()=>{
@@ -1077,34 +1077,34 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      if(!current || current.couponId!==couponIdAtUpload)return;
      if(res.ok && data.evidence?.photoId){
        photoId=data.evidence.photoId;photoPanel.hidden=false;
-       setPhotoStatus('ภาพอยู่ในพื้นที่จัดเก็บส่วนตัว กำลังตรวจ OCR…');
-       await runPlateOcr();
+       setPhotoStatus('รับรูปทะเบียนแล้ว — รอผู้จัดการ/แคชเชียร์คนอื่นตรวจภาพ');
+       report('รูปถูกบันทึกแล้ว ยังเริ่มเติมน้ำมันไม่ได้จนกว่าจะอนุมัติ');
      } else report('ส่งภาพไม่สำเร็จ ('+(data.error||'service_unavailable')+')',true);
    }catch{report('การอัปโหลดล้มเหลว',true);}
    finally{button.disabled=false;}
  });
 
- async function runPlateOcr(){
+ async function refreshPlateApproval(){
    if(!photoId)return;
-   const pendingPhotoId=photoId;photoRetry.disabled=true;
-   setPhotoStatus('กำลังอ่านทะเบียนจากภาพส่วนตัว…');
+   const currentPhotoId=photoId;
+   photoRefresh.disabled=true;
    try{
-     const res=await getApi('/api/evidence/plate/ocr',token,{
-       method:'POST',body:JSON.stringify({photoId:pendingPhotoId}),
-     });
-     if(photoId!==pendingPhotoId)return;
-     if(res.ok && res.data.result?.verified){
-       setPhotoStatus('ตรวจทะเบียนผ่าน ✓ หลักฐานได้รับการยืนยัน',true);
-       report('ทะเบียนผ่านการตรวจสอบ OCR');
-     }else{
-       setPhotoStatus(res.ok ? 'OCR ไม่แน่ชัดหรือตรวจพบทะเบียนต่างจากคูปอง — ต้องให้แคชเชียร์/ผู้จัดการตรวจภาพจริง' :
-         'OCR ยังไม่พร้อมใช้งาน — รอผู้มีสิทธิ์ตรวจภาพจริง');
-       report('ยังไม่อนุญาตเริ่มเติมน้ำมัน',true);
-     }
-   }catch{setPhotoStatus('เชื่อมต่อ OCR ไม่สำเร็จ — รอผู้จัดการตรวจภาพ');}
-   finally{photoRetry.disabled=false;}
+     const r=await getApi('/api/evidence/plate/status?photoId='+encodeURIComponent(photoId),token);
+     if(photoId!==currentPhotoId)return;
+     if(!r.ok)return report('โหลดสถานะการตรวจรูปไม่สำเร็จ',true);
+     const result=r.data.result||{};
+     if(result.verified===true){
+       setPhotoStatus('ผู้มีสิทธิ์ตรวจรูปทะเบียนผ่านแล้ว ✓',true);
+       report('รูปทะเบียนอนุมัติแล้ว เริ่มเติมน้ำมันได้');
+     }else if(result.status==='rejected'){
+       setPhotoStatus('รูปถูกปฏิเสธ กรุณาถ่ายใหม่');
+       photoId=null;photoPanel.hidden=true;
+       report('รูปทะเบียนไม่ผ่าน ต้องถ่ายใหม่',true);
+     }else setPhotoStatus('รอผู้มีสิทธิ์คนอื่นตรวจรูปทะเบียน');
+   }catch{report('เชื่อมต่อระบบสถานะไม่ได้',true);}
+   finally{photoRefresh.disabled=false;}
  }
- photoRetry.addEventListener('click',runPlateOcr);
+ photoRefresh.addEventListener('click',refreshPlateApproval);
  async function supervisorDecision(approved){
    if(!photoId)return report('กรุณาอัปโหลดภาพก่อน',true);
    const pendingPhotoId=photoId;
@@ -1163,7 +1163,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    status.textContent='กำลังส่งหลักฐานแบบส่วนตัว…';
    const activeSession=sessionId;
    try{
-     const preview=[];
+     const savedKinds=[];
      for(const [kind,file] of uploads){
        const response=await fetch('/api/evidence/fuel?sessionId='+encodeURIComponent(activeSession)
          +'&kind='+kind,{method:'POST',headers:{authorization:'Bearer '+token,
@@ -1173,15 +1173,11 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
        const evidenceId=saved.evidence?.evidenceId;
        if(evidenceId){
          fuelProofIds[kind]=evidenceId;
-         const ocr=await getApi('/api/evidence/fuel/ocr',token,{
-           method:'POST',body:JSON.stringify({evidenceId}),
-         }).catch(()=>null);
-         preview.push(ocr?.ok?kind+': OCR รอผู้จัดการตรวจ':
-           kind+': รับภาพแล้ว OCR ยังไม่พร้อม');
+         savedKinds.push(kind==='pump_display'?'รูปหัวจ่าย':'รูปใบเสร็จ');
        }
      }
      if(sessionId!==activeSession)return;
-     status.textContent='รับภาพแล้ว · '+preview.join(' / ')+' · ยังไม่ปิดยอด ไม่ตัดวงเงิน';
+     status.textContent='รับภาพแล้ว · '+savedKinds.join(' / ')+' · รอผู้จัดการตรวจ ไม่ตัดวงเงินก่อนปิดยอด';
      $('finish-verified-fueling').hidden=!(fuelProofIds.pump_display&&fuelProofIds.receipt);
    }catch{
      status.textContent='ส่งหลักฐานไม่ครบ กรุณาตรวจสอบรูปภาพและลองส่งใหม่';
