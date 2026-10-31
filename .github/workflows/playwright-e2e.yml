@@ -6,10 +6,10 @@ on:
     inputs:
       suite:
         type: choice
-        description: Run public smoke or protected Platform session
+        description: Run public smoke, Sales, or Platform Support
         required: true
         default: public
-        options: [public, authorized-platform]
+        options: [public, authorized-platform, authorized-support]
       allow_missing_station_creation:
         type: boolean
         description: Allow Sales02 to create ONLY missing QA-S02-B after DB preflight
@@ -85,5 +85,53 @@ jobs:
         with:
           name: oilstation-protected-playwright-encrypted
           path: qa-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
+
+  authorized-support:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.suite == 'authorized-support'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_SUPPORT_RUN: 'true'
+      OILSTATION_QA_SUPPORT01_PASSWORD: ${{ secrets.OILSTATION_QA_SUPPORT01_PASSWORD }}
+      OILSTATION_QA_DB_KEY: ${{ secrets.OILSTATION_QA_DB_KEY }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Fail closed unless Support01 and evidence secrets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OILSTATION_QA_SUPPORT01_PASSWORD OILSTATION_QA_DB_KEY OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Missing protected secret name: $name"; exit 1; }
+          done
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Read-only Support browser/API/Supabase/audit/role-denial
+        run: npm run test:e2e -- --grep '@support'
+      - name: Encrypt ALL Support traces and screenshots before upload
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf support-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output support-evidence.tar.gz.gpg support-evidence.tar.gz
+          rm -rf support-evidence.tar.gz playwright-report test-results
+      - name: Upload encrypted Support evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-support-playwright-encrypted
+          path: support-evidence.tar.gz.gpg
           if-no-files-found: error
           retention-days: 14
