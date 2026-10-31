@@ -1,5 +1,5 @@
 // Test-mode accounts are fully authenticated Supabase users with scoped roles.
-// Shown to platform Super Admin only when the Worker explicitly enables QA.
+// Shown only to the platform owner and to each business unit's own administrator.
 const roles={
  platform:[['platform_sales','เซลล์ (Sales)'],['platform_support','ฝ่ายสนับสนุน']],
  organization:[['organization_owner','เจ้าขององค์กร'],['billing_manager','ผู้จัดการค่าบริการ']],
@@ -28,7 +28,12 @@ const option=(value,label)=>{
  const node=el('option',label);
  node.value=value;return node;
 };
-export function mountQaAccountsAdmin({target,token,salesMode=false}){
+export function mountQaAccountsAdmin({target,token,mode='platform_admin'}){
+ const platformMode=mode==='platform_admin';
+ const ownStation=mode==='station_owner';
+ const ownCompany=mode==='corporate_admin';
+ const ownOrg=mode==='organization_owner';
+ if(![platformMode,ownStation,ownCompany,ownOrg].some(Boolean))return;
  if(!target)return;
  target.replaceChildren();
  const box=el('section',null,'os-qa-admin');
@@ -36,7 +41,9 @@ export function mountQaAccountsAdmin({target,token,salesMode=false}){
  // The native <details> collapsed during automated/keyboard interaction,
  // leaving test users unable to focus or submit the protected fields.
  const details=el('div',null,'os-qa-expanded');
- details.append(el('h3',salesMode?'สร้างบัญชีทดสอบในปั๊มของฉัน':'บัญชีทดสอบ (เฉพาะผู้ดูแลระบบ)'));
+ details.append(el('h3',platformMode?'บัญชี QA สำหรับผู้ดูแลแพลตฟอร์ม':
+  ownStation?'เพิ่มพนักงานปั๊มของฉัน / ส่งมอบ Admin บริษัท':
+  ownCompany?'เพิ่มพนักงานบริษัทของฉัน':'เพิ่มผู้รับผิดชอบองค์กรของฉัน'));
  const explain=el('p','สร้างบัญชีที่ใช้ชื่อผู้ใช้และรหัสผ่านแทนอีเมลจริง พร้อมกำหนดสิทธิ์ตามขอบเขตที่อนุมัติ ไม่มีการส่งคำเชิญหรือยืนยันอีเมล','os-qa-note');
  const status=el('p','','os-qa-status');status.setAttribute('role','status');
  const form=el('form',null,'os-qa-form');
@@ -47,10 +54,11 @@ export function mountQaAccountsAdmin({target,token,salesMode=false}){
  password.required=true;password.minLength=16;password.maxLength=128;
  password.autocomplete='new-password';password.placeholder='อย่างน้อย 16 ตัว พร้อมตัวเลขและสัญลักษณ์';
  const scopeType=el('select');scopeType.required=true;scopeType.id='qa-create-scope-type';
- for(const [key,name] of Object.entries(salesMode?
-  {organization:'เจ้าของกิจการ',station:'ปั๊ม',corporate_company:'บริษัทลูกค้าของปั๊ม'}:
-  {platform:'Platform',organization:'เจ้าของกิจการ',
-   station:'ปั๊ม',corporate_company:'บริษัทลูกค้า'}))scopeType.append(option(key,name));
+ const typeChoices=platformMode?
+   {platform:'Platform',organization:'เจ้าของกิจการ',station:'ปั๊ม',corporate_company:'บริษัทลูกค้า'}:
+   ownStation?{station:'ปั๊มของฉัน',corporate_company:'บริษัทลูกค้าของปั๊ม'}:
+   ownCompany?{corporate_company:'บริษัทของฉัน'}:{organization:'องค์กรของฉัน'};
+ for(const [key,name] of Object.entries(typeChoices))scopeType.append(option(key,name));
  const role=el('select');role.required=true;role.id='qa-create-role';
  const scope=el('select');scope.required=true;scope.id='qa-create-scope';
  const label=(name,node)=>{
@@ -61,10 +69,12 @@ export function mountQaAccountsAdmin({target,token,salesMode=false}){
  form.append(label('ชื่อบัญชีทดสอบ',username),label('รหัสผ่านทดสอบ',password),
   label('ประเภทสิทธิ์',scopeType),label('บทบาท',role),
   label('พื้นที่ที่อนุญาต',scope),send);
- if(!salesMode)form.append(reset);
- const note=el('p',salesMode?
-  'สร้างบัญชี QA ได้เฉพาะองค์กร ปั๊ม และบริษัทลูกค้าที่เชื่อมกับปั๊มที่ตนเองเปิดและยังดูแลทั้งหมด ไม่มีสิทธิ์สร้าง Sales หรือ Support':
-  'ขอบเขตทดสอบ Sales 2 คน ปั๊มรวม 4 แห่ง บริษัท 12 ราย ข้ามบทบาท Support ตามคำสั่งเจ้าของโครงการ','os-qa-note');
+ if(platformMode)form.append(reset);
+ const note=el('p',platformMode?
+  'ผู้ดูแลแพลตฟอร์มตั้งค่าบัญชีเริ่มต้นของโครงการได้':
+  ownStation?'เฉพาะปั๊มที่คุณดูแล: เพิ่มพนักงานปั๊มหรือส่งมอบ Admin คนแรกให้บริษัทลูกค้า โดย Sales ไม่มีสิทธิ์เพิ่มพนักงาน':
+  ownCompany?'เฉพาะบริษัทของคุณ: เพิ่มบัญชี ฝ่ายออกคูปอง การเงิน และคนขับ ไม่สามารถเพิ่มให้บริษัทอื่นได้':
+  'เฉพาะองค์กรของคุณ: เพิ่มผู้จัดการค่าบริการ','os-qa-note');
  details.append(explain,form,note,status);box.append(details);target.append(box);
  let scopes={};
  const aliasForSelection=()=>{
@@ -80,7 +90,12 @@ export function mountQaAccountsAdmin({target,token,salesMode=false}){
  const suggestAlias=()=>{username.value=aliasForSelection();};
  const refresh=()=>{
   const kind=scopeType.value;
-  role.replaceChildren(...(roles[kind]||[]).map(([value,name])=>option(value,name)));
+  const allowed=(roles[kind]||[]).filter(([value])=>platformMode||
+    (ownStation&&(kind==='station'?value!=='station_owner':
+      kind==='corporate_company'&&value==='corporate_admin'))||
+    (ownCompany&&kind==='corporate_company'&&value!=='corporate_admin')||
+    (ownOrg&&kind==='organization'&&value==='billing_manager'));
+  role.replaceChildren(...allowed.map(([value,name])=>option(value,name)));
   scope.replaceChildren();
   for(const entry of scopes[kind]||[]){
     const item=option(entry.id||'',entry.name);

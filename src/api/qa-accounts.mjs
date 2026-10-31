@@ -79,34 +79,62 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
    const user=await authenticate(token);
    if(!UUID.test(user?.id||''))return json(401,{error:'unauthenticated'});
    const memberships=await db.memberships(user.id);
-   const isAdmin=memberships?.some(m=>m.active===true&&m.scope_type==='platform'&&
-     m.role_code==='platform_superadmin')===true;
-   const isSales=!isAdmin&&user.isQa===true&&memberships?.some(m=>m.active===true&&
-     m.scope_type==='platform'&&m.role_code==='platform_sales')===true;
-   if(!isAdmin&&!isSales)return json(403,{error:'permission_denied'});
+   const active=(memberships||[]).filter(m=>m.active===true);
+   const isAdmin=active.some(m=>m.scope_type==='platform'&&
+     m.role_code==='platform_superadmin');
+   const isSales=active.some(m=>m.scope_type==='platform'&&
+     m.role_code==='platform_sales');
+   const qaActor=user.isQa===true;
+   const stationOwners=qaActor?active.filter(m=>m.scope_type==='station'&&
+     m.role_code==='station_owner').map(m=>m.station_id):[];
+   const orgOwners=qaActor?active.filter(m=>m.scope_type==='organization'&&
+     m.role_code==='organization_owner').map(m=>m.organization_id):[];
+   const companyAdmins=qaActor?active.filter(m=>m.scope_type==='corporate_company'&&
+     m.role_code==='corporate_admin').map(m=>m.corporate_company_id):[];
+   // Sales creates and delivers the station's initial administrator only through
+   // regular onboarding, never staff accounts or Corporate QA roles.
+   if(isSales&&!isAdmin)return json(403,{error:'staff_requires_admin'});
+   if(!isAdmin&&!stationOwners.length&&!orgOwners.length&&!companyAdmins.length)
+    return json(403,{error:'permission_denied'});
    const permitted=qaScopeAllowlist(env);
-   // No scope IDs are accepted outside a pre-approved server allowlist.
-   if(permitted.organization.length>4||permitted.station.length>4||permitted.corporate_company.length>12)
+   if(permitted.organization.length>4||permitted.station.length>4||
+      permitted.corporate_company.length>12)
     return json(503,{error:'qa_scope_misconfigured'});
-   const salesIds=isSales?await db.qaSalesScopes({
-     actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,allowed:permitted}):null;
-   if(isSales&&(!Array.isArray(salesIds?.station)||
-       !Array.isArray(salesIds?.organization)))
-     return json(503,{error:'qa_scope_unavailable'});
-   if(isSales){
-     // Synthetic Corporate roles are only for customers linked *exclusively*
-     // to the Sales' own stations. SQL validates all 12 fixed company mappings.
-     salesIds.corporate_company=permitted.corporate_company.length===0?[]:
-      await db.qaSalesCorporateScopes({
-       actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,allowed:permitted});
-     if(!Array.isArray(salesIds.corporate_company))
+   let bootstrapCompanies=[];
+   if(!isAdmin&&stationOwners.length&&permitted.corporate_company.length){
+    bootstrapCompanies=await db.qaAdminCompanyScopes({
+      actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,allowed:permitted,
+    });
+    if(!Array.isArray(bootstrapCompanies))
       return json(503,{error:'qa_scope_unavailable'});
    }
+   const own={
+     platform:[],organization:permitted.organization.filter(id=>orgOwners.includes(id)),
+     station:permitted.station.filter(id=>stationOwners.includes(id)),
+     corporate_company:permitted.corporate_company.filter(id=>
+       companyAdmins.includes(id)||bootstrapCompanies.includes(id)),
+   };
+   const eligibleRole=(scopeType,scopeId,roleCode)=>{
+     if(isAdmin)return true;
+     if(scopeType==='station')return stationOwners.includes(scopeId)&&
+       ['manager','cashier','attendant','pump_staff','hr_manager','finance_manager'].includes(roleCode);
+     if(scopeType==='organization')return orgOwners.includes(scopeId)&&
+       roleCode==='billing_manager';
+     if(scopeType==='corporate_company')
+       return (roleCode==='corporate_admin'&&bootstrapCompanies.includes(scopeId))||
+         (companyAdmins.includes(scopeId)&&
+          ['coupon_issuer','accountant','finance_manager','driver'].includes(roleCode));
+     return false;
+   };
    if(request.method==='GET'){
     if(url.pathname!=='/api/qa/scopes')return json(404,{error:'not_found'});
     const available=await db.qaScopedOptions(permitted);
     return json(200,{runId:env.OILSTATION_QA_RUN_ID,
-      scopes:qaVisibleScopes(available,salesIds)});
+      scopes:qaVisibleScopes(available,isAdmin?null:own),
+      rolePolicy:isAdmin?{mode:'platform_admin'}:{mode:'unit_admin',
+        bootstrapCompanyIds:bootstrapCompanies,
+        ownedStationIds:own.station,ownedOrganizationIds:own.organization,
+        ownedCompanyIds:companyAdmins}});
    }
    if(url.pathname!=='/api/qa/accounts'&&url.pathname!=='/api/qa/reset-password')
     return json(404,{error:'not_found'});
@@ -147,9 +175,8 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
    }
    if(!qaApprovedAlias({alias,scopeType,roleCode,scopeId},permitted))
     return json(400,{error:'qa_alias_not_in_approved_role_matrix'});
-   if(isSales&&(!['station','organization','corporate_company'].includes(scopeType)||
-     !salesIds[scopeType].includes(scopeId)))
-    return json(403,{error:'scope_not_owned_by_sales'});
+   if(!eligibleRole(scopeType,scopeId,roleCode))
+    return json(403,{error:'staff_requires_own_admin'});
    const result=await provisionAccount({
     actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,
     alias,password,scopeType,scopeId:scopeType==='platform'?null:scopeId,roleCode,
