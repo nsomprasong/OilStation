@@ -1,24 +1,27 @@
 import {test,expect} from '@playwright/test';
+import {createHmac} from 'node:crypto';
 
 // Manual, authenticated and deployment-gated. All 8 writes use real Fuel UI
 // on EXACTLY four QA stations. No direct SQL writes or production pump prices.
 const STATIONS=[
- {code:'s01a',name:'QA-S01-A',id:'e22fb5ff-1878-446f-ab8d-585115e8a1a9'},
- {code:'s01b',name:'QA-S01-B',id:'76388e2c-ef36-4656-808b-7d0fbd1d2c35'},
- {code:'s02a',name:'QA-S02-A',id:'24dc4981-0e6f-4b86-bfd7-03717002d0be'},
- {code:'s02b',name:'QA-S02-B',id:'02183a4e-47b0-4575-9f4f-74cec6553205'},
+ {code:'s01a',sales:'sales01',name:'QA-S01-A',id:'e22fb5ff-1878-446f-ab8d-585115e8a1a9'},
+ {code:'s01b',sales:'sales01',name:'QA-S01-B',id:'76388e2c-ef36-4656-808b-7d0fbd1d2c35'},
+ {code:'s02a',sales:'sales02',name:'QA-S02-A',id:'24dc4981-0e6f-4b86-bfd7-03717002d0be'},
+ {code:'s02b',sales:'sales02',name:'QA-S02-B',id:'02183a4e-47b0-4575-9f4f-74cec6553205'},
 ];
 const BASE='https://oilstation.goldensoft.cloud';
-function secret(code){
- const v=process.env['OILSTATION_QA_'+code.toUpperCase()+'_OWNER_PASSWORD'];
- if(!v)throw new Error('Missing protected QA station owner secret for '+code);
- return v;
+function secret(station){
+ const v=process.env['OILSTATION_QA_'+station.sales.toUpperCase()+'_PASSWORD'];
+ if(!v)throw new Error('Missing protected QA Sales password for '+station.sales);
+ return createHmac('sha256',v)
+  .update('OilStation QA station role account 20261031/v1/'+station.code+'-owner')
+  .digest('base64url').slice(0,30)+'a9!';
 }
 async function signIn(page,station){
  await page.goto('/',{waitUntil:'domcontentloaded'});
  await expect(page.locator('#qa-login-form')).toBeVisible();
  await page.locator('#qa-login-alias').fill(station.code+'-owner');
- await page.locator('#qa-login-password').fill(secret(station.code));
+ await page.locator('#qa-login-password').fill(secret(station));
  await page.locator('#qa-login-form button[type=submit]').click();
  await expect(page.locator('[data-ws-go="fuel"]:visible').first()).toBeVisible();
  const token=await page.evaluate(()=>{
@@ -45,7 +48,7 @@ test('real QA station-owner web form posts fictional price on four stations @qa-
  test.skip(process.env.OILSTATION_QA_PRICE_AUTH_RUN!=='true',
   'Run only via protected workflow_dispatch from deployed main');
  // Fail closed BEFORE first write if one of the four secrets is absent.
- for(const s of STATIONS)secret(s.code);
+ for(const s of STATIONS)secret(s);
  for(const station of STATIONS){
   const page=await browser.newPage();
   try{
