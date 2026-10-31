@@ -18,12 +18,16 @@ export function createQaOperationsApi({env,authenticate,db}){
   const path=new URL(request.url).pathname;
   const driverOnly=['/api/corporate/drivers','/api/corporate/driver-vehicle',
     '/api/driver/coupons'].includes(path);
+  // QA Corporate account/fuel list are read-only; necessary to select the
+  // correct company for driver assignments before synthetic money is enabled.
+  const readOnlyCompany=path==='/api/my-accounts'||
+    /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path);
   // Driver assignment/inbox does not move money, so it can be tested before
   // synthetic finance is activated. All other QA business routes still need
   // the independent finance gate.
   const driverPreview=qaIsEnabled(env)&&
     env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true';
-  if(!qaFinanceEnabled(env)&&!(driverOnly&&driverPreview))
+  if(!qaFinanceEnabled(env)&&!((driverOnly||readOnlyCompany)&&driverPreview))
     return json(404,'not_found');
   const corp=path==='/api/my-accounts'||path==='/api/coupons'||
     /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path)||
