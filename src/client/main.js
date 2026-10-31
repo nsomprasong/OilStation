@@ -1351,7 +1351,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
       <section class="os-station-directory" aria-labelledby="os-directory-heading">
         <span class="os-onboarding-label">${salesMode?'ขั้นตอนที่ 2 / บัญชีและบทบาทในปั๊มของฉัน':'ขั้นตอนที่ 2 / เชิญเจ้าของปั๊ม'}</span>
         <h3 id="os-directory-heading">${salesMode?'ปั๊มที่ฉันรับผิดชอบ':'ปั๊มที่สร้างแล้ว'}</h3>
-        <p class="os-section-copy">${salesMode?'เชิญเจ้าของกิจการและพนักงานในปั๊มที่คุณเปิดได้ทันที ระบบตรวจขอบเขตสิทธิ์จากฐานข้อมูลทุกครั้ง':'เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง'}</p>
+        <p class="os-section-copy">${salesMode?'เชิญเจ้าขององค์กรและเจ้าของปั๊มคนแรกเท่านั้น หลังส่งมอบบัญชี Admin จะเป็นผู้เชิญพนักงานของตัวเอง':'เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง'}</p>
         <p id="station-count" class="os-directory-count" role="status"></p>
         <div id="station-list" class="module-list"><p>กำลังโหลดรายชื่อปั๊ม…</p></div>
       </section>
@@ -1383,17 +1383,13 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         .filter(([,status])=>status==='enabled').map(([module])=>module==='qr_coupon'?'QR Coupon':'HR').join(' + ');
       if(salesMode){
         const hint=document.createElement('p');hint.className='hint';
-        hint.textContent='ปั๊มที่คุณขาย · เชิญสมาชิกได้เฉพาะสาขาที่คุณเปิดและยังรับผิดชอบ';
+        hint.textContent='ปั๊มที่คุณเปิด · เชิญเฉพาะ Admin เริ่มต้น แล้วให้ Admin จัดการพนักงานต่อเอง';
         const actions=document.createElement('div');actions.className='os-station-actions';
         actions.append(
           createInviteControl(accessToken,'organization',s.organizationId,[
-            ['organization_owner','เจ้าขององค์กร'],['organization_manager','ผู้จัดการองค์กร'],
-            ['billing_manager','ผู้ดูแลค่าบริการ']]),
+            ['organization_owner','เจ้าขององค์กร']]),
           createInviteControl(accessToken,'station',s.id,[
-            ['station_owner','เจ้าของปั๊ม'],['manager','ผู้จัดการปั๊ม'],
-            ['cashier','แคชเชียร์'],['attendant','พนักงานเติมน้ำมัน'],
-            ['pump_staff','พนักงานหน้าลาน'],['hr_manager','ผู้จัดการ HR'],
-            ['finance_manager','ผู้จัดการการเงิน']])
+            ['station_owner','เจ้าของปั๊ม']])
         );
         node.append(name,detail,hint,actions);list.appendChild(node);continue;
       }
