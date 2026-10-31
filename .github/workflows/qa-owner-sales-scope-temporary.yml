@@ -1,0 +1,70 @@
+name: OilStation owner one-shot Sales read-only isolation QA (temporary)
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-playwright-live-db
+  cancel-in-progress: false
+jobs:
+  sales-isolation:
+    if: >-
+      github.repository == 'nsomprasong/OilStation' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.issue.number == 45 &&
+      github.event.issue.pull_request != null &&
+      github.actor == 'nsomprasong' &&
+      github.event.comment.user.login == 'nsomprasong' &&
+      github.event.comment.author_association == 'OWNER' &&
+      github.event.comment.body == '/qa-sales-readonly-20261031-once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_SALES_SCOPE_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+      OILSTATION_QA_DB_KEY: ${{ secrets.OILSTATION_QA_DB_KEY }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - name: Check out trusted main only
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Require all existing protected secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD OILSTATION_QA_DB_KEY OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Protected secret unavailable: $name"; exit 1; }
+          done
+      - name: Install pinned packages and Chromium
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Real browser login + Sales read-only audit isolation
+        run: npm run test:e2e -- --grep '@sales-scope'
+      - name: Encrypt all authenticated trace and screenshot evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf sales-scope.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output sales-scope.tar.gz.gpg sales-scope.tar.gz
+          rm -rf sales-scope.tar.gz playwright-report test-results
+      - name: Upload encrypted evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-sales-scope-playwright-encrypted
+          path: sales-scope.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
