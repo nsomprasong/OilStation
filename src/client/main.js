@@ -6,6 +6,7 @@ import { mountPlatformSaasBilling } from './platform-saas-billing.js';
 import { mountPlatformSales } from './platform-sales.js';
 import {installFunctionalSubmenus} from './functional-submenus.js';
 import {mountSalesActivity} from './platform-sales-readonly.js';
+import {mountPlatformSupport} from './platform-support.js';
 import {mountStationPlanChoice} from './station-plan-choice.js';
 import { mountBillingWorkspace } from './billing.js';
 import { mountAttendancePayrollPreview } from './attendance-payroll-preview.js';
@@ -1453,6 +1454,9 @@ function dashboard(data, session, publicConfig={}) {
   register('billing',()=>mountPlatformSaasBilling({
    target:document.getElementById('platform-saas-billing'),token:session.access_token}));
  }
+ if(memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_support'))
+   register('support',()=>mountPlatformSupport({target:document.getElementById('platform-support-workspace'),
+    token:session.access_token}));
  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
     memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales'))
    register('stations',()=>platformWorkspace(session.access_token,{salesMode:true}));

@@ -8,6 +8,7 @@ export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
  const p=has('platform',['platform_superadmin']);
  const sales=has('platform',['platform_sales']);
+ const support=has('platform',['platform_support']);
  const b=memberships.some(m=>m.scopeType==='organization'&&m.organizationId&&['organization_owner','owner','manager','billing_manager'].includes(m.role));
  const s=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager'].includes(m.role));
  const pump=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
@@ -17,6 +18,7 @@ export function selectWorkspaceScreens(memberships=[]){
  const invite=memberships.some(m=>m.scopeType==='corporate_company'&&m.corporateCompanyId&&m.role==='corporate_admin');
  return [
   {key:'overview',label:'ภาพรวม',icon:'clipboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
+  {key:'support',label:'งานฝ่ายสนับสนุน',icon:'clipboard',desc:'สถานะและประวัติปั๊มที่ได้รับสิทธิ์ · อ่านอย่างเดียว',ids:['platform-support-workspace'],yes:support},
   {key:'sales',label:p?'ทีมขายและค่าคอมมิชชั่น':'งานขายของฉัน',icon:'users',desc:'ปั๊มที่ดูแล ประวัติการย้ายงาน และค่าคอมมิชชั่น',ids:['platform-sales-workspace'],yes:p||sales},
   {key:'activity',label:'ประวัติการดำเนินการ',icon:'clipboard',desc:'ใครทำอะไร เมื่อไร · ดูย้อนหลังตามปั๊ม',ids:['platform-sales-activity'],yes:p||sales},
   {key:'stations',label:p?'จัดการปั๊มน้ำมัน':'เปิดปั๊มของฉัน',icon:'building',desc:p?'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล':'สร้างปั๊มด้วยบัญชี Sales และดูปั๊มที่รับผิดชอบ',ids:['platform-workspace'],yes:p||sales},
