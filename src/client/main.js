@@ -14,6 +14,7 @@ import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
 import {mountQaTopupRequest,mountQaTopupApprovals} from './qa-finance.js';
+import {mountCompanyDriverAssignment,mountDriverWorkspace} from './driver-workspace.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
 import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
@@ -124,11 +125,13 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
       <p class="hint">การส่งสลิปไม่ใช่การเติมเงินสำเร็จ ยอดพร้อมใช้จะเพิ่มหลังจากปั๊มตรวจเงินเข้าจริงและอนุมัติเท่านั้น</p>
     </form>
     <section id="qa-topup-workspace" class="module-list" aria-label="เติมเงินจำลองสำหรับ QA"></section>
+    <section id="company-driver-workspace" class="module-list" aria-label="กำหนดทะเบียนให้คนขับ"></section>
     <form id="coupon-form" class="coupon-form" hidden>
       <label class="field">เลือกปั๊มน้ำมัน <select required id="account-select"></select></label>
       <label class="field">ประเภทน้ำมัน <select required id="fuel-select"></select></label>
       <label class="field">วงเงินคูปอง (บาท) <input id="amount-input" inputmode="decimal" autocomplete="off" required placeholder="เช่น 1500.00"></label>
-      <label class="field">ทะเบียนรถ (ไม่บังคับ) <input id="plate-input" maxlength="40" autocomplete="off" placeholder="เช่น กข 1234"></label>
+      <label class="field">ส่ง QR ให้คนขับ <select id="coupon-driver-select" required></select></label>
+      <label class="field">ทะเบียนรถที่ผูกกับคนขับ <input id="plate-input" readonly maxlength="40" placeholder="เลือกคนขับที่กำหนดทะเบียนแล้ว"></label>
       <label class="field">อายุคูปอง <select required id="expiry-select">
         <option value="24">24 ชั่วโมง</option>
         <option value="6">6 ชั่วโมง</option>
@@ -158,6 +161,27 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
   let pendingPayload = null;
   const accountSelect = $('account-select');
   const fuelSelect = $('fuel-select');
+  const driverSelect = $('coupon-driver-select');
+  let eligibleDrivers=[];
+  let driverAssignment;
+  function renderDriverChoices(roster){
+    eligibleDrivers=(roster||[]).filter(d=>d.driverId&&d.vehicleId&&d.plate);
+    const prior=driverSelect.value;
+    driverSelect.replaceChildren();
+    for(const driver of eligibleDrivers){
+      const option=document.createElement('option');option.value=driver.driverId;
+      option.textContent=driver.displayName+' · '+driver.plate;
+      driverSelect.appendChild(option);
+    }
+    if(eligibleDrivers.some(d=>d.driverId===prior))driverSelect.value=prior;
+    driverSelect.dispatchEvent(new Event('change'));
+    const disabled=eligibleDrivers.length===0;
+    $('coupon-submit').disabled=disabled||fuelSelect.options.length===0;
+  }
+  driverSelect.addEventListener('change',()=>{
+    $('plate-input').value=eligibleDrivers.find(d=>d.driverId===driverSelect.value)?.plate||'';
+    pendingIdempotencyKey=null;pendingPayload=null;
+  });
   async function reloadAccounts() {
     const res = await getApi('/api/my-accounts', accessToken);
     if (!res.ok) throw new Error('อ่านบัญชีบริษัทไม่สำเร็จ');
@@ -210,6 +234,13 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
       overview.appendChild(el);
     });
     if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
+    if(!driverAssignment){
+      driverAssignment=mountCompanyDriverAssignment({
+        target:$('company-driver-workspace'),token:accessToken,
+        accountSelect:()=>accounts.find(a=>a.id===accountSelect.value),
+        onSelect:renderDriverChoices,
+      });
+    }else await driverAssignment.refresh();
     if(qaFinanceMode)mountQaTopupRequest({
       target:$('qa-topup-workspace'),token:accessToken,accounts,
       onChanged:async()=>{await reloadAccounts();},
@@ -235,7 +266,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
       opt.textContent=fuel.name + ' · ' + fuel.corporatePrice + ' บาท/ลิตร';
       fuelSelect.appendChild(opt);
     });
-    $('coupon-submit').disabled = fuelSelect.options.length===0;
+    $('coupon-submit').disabled = fuelSelect.options.length===0||eligibleDrivers.length===0;
   }
   async function reloadBankOptions() {
     const view=$('company-bank-options');
@@ -305,6 +336,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
     pendingIdempotencyKey=null;
     reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true));
     reloadBankOptions().catch(()=>setNotice('โหลดบัญชีธนาคารไม่ได้',true));
+    driverAssignment?.refresh();
   });
   $('coupon-form').addEventListener('input',()=>{ pendingIdempotencyKey=null; pendingPayload=null; });
   $('coupon-form').addEventListener('submit',async event => {
@@ -312,13 +344,15 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
     const amountSatang=bahtToSatang($('amount-input').value.trim());
     if (!amountSatang) return setNotice('ระบุจำนวนเงินเป็นบาท เช่น 1500 หรือ 1500.50',true);
     const accountId=accountSelect.value, stationFuelId=fuelSelect.value;
+    const assignedDriver=eligibleDrivers.find(d=>d.driverId===driverSelect.value);
+    if(!assignedDriver)return setNotice('ต้องเลือกคนขับที่ผูกทะเบียนรถแล้วก่อนออก QR',true);
     if (!accountId || !stationFuelId) return setNotice('กรุณาเลือกปั๊มและชนิดน้ำมัน',true);
     // Preserve the exact payload and idempotency key across network retries;
     // do not regenerate expiresAt if the user did not change the form.
     if (!pendingIdempotencyKey || !pendingPayload) {
       pendingPayload=JSON.stringify({
         accountId, stationFuelId, amountSatang,
-        plate:$('plate-input').value.trim(),
+        driverId:assignedDriver.driverId,
         expiresAt:new Date(Date.now()+Number($('expiry-select').value)*3600_000).toISOString(),
       });
       pendingIdempotencyKey=crypto.randomUUID().replace(/-/g,'');
@@ -338,7 +372,12 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
       pendingPayload=null;
       pendingIdempotencyKey=null;
       $('issue-result').hidden=false;
-      $('share-link').value=coupon.shareUrl;
+      $('share-link').value='';
+      $('share-link').hidden=true;
+      $('copy-link').hidden=true;
+      $('issue-result').querySelector('p').textContent=
+        'QR ถูกผูกกับ '+assignedDriver.displayName+' · ทะเบียน '+assignedDriver.plate+
+        ' และจะแสดงในเมนูคูปองของคนขับทันที ไม่ส่งผ่าน LINE';
       $('issued-qr').replaceChildren();
       const canvas=document.createElement('canvas');
       $('issued-qr').appendChild(canvas);
@@ -1556,8 +1595,12 @@ function dashboard(data, session, publicConfig={}) {
  if(corpAdmin)register('invitations',()=>document.getElementById('member-invites')?.appendChild(
   createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
    [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']])));
- if(memberships.some(m=>m.scopeType==='corporate_company'))
+ if(memberships.some(m=>m.scopeType==='corporate_company'&&m.role!=='driver'))
   register('corporate',()=>corporateWorkspace(session.access_token,{qaFinanceMode}));
+ if(memberships.some(m=>m.scopeType==='corporate_company'&&m.role==='driver'))
+  register('driver',()=>mountDriverWorkspace({
+    target:document.getElementById('driver-workspace'),token:session.access_token,
+  }));
  const shell=root.querySelector('[data-workspace-shell]');
  shell?.addEventListener('oilstation:screenchange',event=>{
   if(event.detail.key!=='pump'){
