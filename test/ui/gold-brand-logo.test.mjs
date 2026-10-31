@@ -35,7 +35,7 @@ test('same gold brand asset replaces letter O in mobile, desktop sidebar and log
  ]));
  assert.match(auth,/class="os-auth-mark" src="\/oilstation-gold-logo\.png\?v=2"/);
  assert.match(mobile,/class="os-mobile-brandmark" src="\/oilstation-gold-logo\.png\?v=2"/);
- assert.match(shell,/class="ws-logo" src="\/oilstation-gold-logo\.png\?v=2"/);
+ assert.doesNotMatch(shell,/class="ws-logo"/); // obsolete duplicate sidebar branding
  assert.match(shell,/class="ws-toolbar-brand" src="\/oilstation-gold-logo\.png\?v=2"/);
  assert.doesNotMatch(auth,/class="os-auth-mark">O<\/span>/);
  assert.doesNotMatch(shell,/class="ws-logo"[^>]*>O<\/span>/);
