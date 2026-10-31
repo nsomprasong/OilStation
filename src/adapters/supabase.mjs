@@ -610,6 +610,11 @@ export function createSupabaseAdapter(env) {
           body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId,
             p_observed_plate:d.observedPlate,p_accepted:d.accepted}),
         }),
+      platePhotoStatus: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_plate_photo_status',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
+        }),
       reviewPlate: async d=>serviceRequest(env,
         '/rest/v1/rpc/review_station_plate_photo',{
           method:'POST',headers:{'content-type':'application/json'},
