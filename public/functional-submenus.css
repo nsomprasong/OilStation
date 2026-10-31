@@ -15,9 +15,9 @@
 #app.workspace-mode .os-functional-nav .os-nav-caption{font-size:11px!important;max-height:3.8em;
  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;
  white-space:normal!important;line-height:1.27!important}
-#app.workspace-mode .os-functional-nav [aria-selected="true"] .os-nav-orb{
+#app.workspace-mode .os-functional-nav [aria-pressed="true"] .os-nav-orb{
  outline:2px solid #0d9f85;outline-offset:3px}
-#app.workspace-mode .os-functional-nav [aria-selected="true"] .os-nav-caption{color:#087c6c!important}
+#app.workspace-mode .os-functional-nav [aria-pressed="true"] .os-nav-caption{color:#087c6c!important}
 #app.workspace-mode .ws-context-host{padding-top:0!important;margin-bottom:2px!important}
 #app.workspace-mode .ws-context-group[hidden]{display:none!important}
 #app.workspace-mode .os-station-layout:has(>.os-functional-pane),
