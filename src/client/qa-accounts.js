@@ -10,6 +10,14 @@ const roles={
  corporate_company:[['corporate_admin','ผู้ดูแลบริษัท'],['coupon_issuer','ผู้ออกคูปอง'],
   ['accountant','บัญชี'],['finance_manager','ผู้จัดการการเงิน'],['driver','คนขับรถ']],
 };
+const qaRoleSuffix={
+ organization:{organization_owner:'owner',billing_manager:'billing'},
+ station:{station_owner:'owner',manager:'manager',cashier:'cashier',attendant:'attendant',
+  pump_staff:'pump',hr_manager:'hr',finance_manager:'finance'},
+ corporate_company:{corporate_admin:'admin',coupon_issuer:'issuer',
+  accountant:'accountant',finance_manager:'finance',driver:'driver'},
+};
+const stationCodes=['s01a','s01b','s02a','s02b'];
 const el=(tag,text,cls)=>{
  const node=document.createElement(tag);
  if(text!==undefined&&text!==null)node.textContent=text;
@@ -47,9 +55,19 @@ export function mountQaAccountsAdmin({target,token}){
  form.append(label('ชื่อบัญชีทดสอบ',username),label('รหัสผ่านทดสอบ',password),
   label('ประเภทสิทธิ์',scopeType),label('บทบาท',role),
   label('พื้นที่ที่อนุญาต',scope),send);
- const note=el('p','QA ต้องกำหนดSales 2 คน คนละ 2 ปั๊ม (รวม 4 ปั๊ม) และลูกค้าปั๊มละ 3 ราย (รวม 12 บัญชี)ไว้ในสิทธิ์ฝั่งเซิร์ฟเวอร์ก่อนสร้างผู้ใช้ที่เกี่ยวข้อง','os-qa-note');
+ const note=el('p','ขอบเขตทดสอบ: Sales 2 คน คนละ 2 ปั๊ม รวม 4 ปั๊ม และลูกค้าปั๊มละ 3 ราย รวม 12 บริษัท แต่ละโหนดใช้บัญชีแยกตามบทบาท รวมบัญชี QA ใหม่สูงสุด 99 บัญชี','os-qa-note');
  details.append(explain,form,note,status);box.append(details);target.append(box);
  let scopes={};
+ const aliasForSelection=()=>{
+  const kind=scopeType.value;
+  if(kind==='platform')return role.value==='platform_sales'?'sales01':'support01';
+  const idx=(scopes[kind]||[]).findIndex(x=>String(x.id)===scope.value);
+  if(idx<0)return '';
+  const prefix=kind==='organization'?'o'+String(idx+1).padStart(2,'0'):
+   kind==='station'?stationCodes[idx]:'c'+String(idx+1).padStart(2,'0');
+  return prefix&&qaRoleSuffix[kind]?.[role.value]?prefix+'-'+qaRoleSuffix[kind][role.value]:'';
+ };
+ const suggestAlias=()=>{username.value=aliasForSelection();};
  const refresh=()=>{
   const kind=scopeType.value;
   role.replaceChildren(...(roles[kind]||[]).map(([value,name])=>option(value,name)));
@@ -57,9 +75,12 @@ export function mountQaAccountsAdmin({target,token}){
   for(const entry of scopes[kind]||[])scope.append(option(entry.id||'',entry.name));
   scope.disabled=!(scopes[kind]||[]).length;
   send.disabled=scope.disabled;
+  suggestAlias();
   if(scope.disabled)status.textContent='ยังไม่ได้กำหนดรายการ '+kind+' ในขอบเขต QA ที่อนุมัติ';
  };
  scopeType.addEventListener('change',refresh);
+ role.addEventListener('change',suggestAlias);
+ scope.addEventListener('change',suggestAlias);
  fetch('/api/qa/scopes',{headers:{authorization:'Bearer '+token},cache:'no-store'})
   .then(async res=>{
    if(!res.ok)throw new Error('qa_not_ready');
