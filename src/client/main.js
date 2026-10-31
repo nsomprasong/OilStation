@@ -102,7 +102,7 @@ function bahtToSatang(text) {
   if (amount <= 0n || amount > 999_999_999_999_999n) return null;
   return amount.toString();
 }
-async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
+async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupon=false}={}) {
   const target = document.getElementById('corporate-workspace');
   if (!target) return;
   target.innerHTML = `
@@ -151,6 +151,10 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
     </section>
   `;
   const $ = id => document.getElementById(id);
+  // Keep task submenus in sync with server-side corporate role permissions.
+  // A company accountant must not see car assignment or coupon issuance forms.
+  $('qa-topup-workspace').hidden=!qaFinanceMode;
+  $('company-driver-workspace').hidden=!canIssueCoupon;
   const setNotice = (text, isError = false) => {
     $('coupon-notice').hidden = false;
     $('coupon-notice').textContent = text;
@@ -234,19 +238,22 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
       overview.appendChild(el);
     });
     if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
-    if(!driverAssignment){
+    if(canIssueCoupon&&!driverAssignment){
       driverAssignment=mountCompanyDriverAssignment({
         target:$('company-driver-workspace'),token:accessToken,
         accountSelect:()=>accounts.find(a=>a.id===accountSelect.value),
         onSelect:renderDriverChoices,
       });
-    }else await driverAssignment.refresh();
+    }else if(canIssueCoupon)await driverAssignment.refresh();
     if(qaFinanceMode)mountQaTopupRequest({
       target:$('qa-topup-workspace'),token:accessToken,accounts,
       onChanged:async()=>{await reloadAccounts();},
     });
-    $('coupon-form').hidden = !accounts.some(a => a.couponModuleEnabled);
-    if (accounts.length) { await reloadFuels(); await reloadBankOptions(); }
+    $('coupon-form').hidden = !canIssueCoupon||!accounts.some(a => a.couponModuleEnabled);
+    if(accounts.length){
+      if(canIssueCoupon)await reloadFuels();
+      await reloadBankOptions();
+    }
   }
   async function reloadFuels() {
     fuelSelect.replaceChildren();
@@ -334,7 +341,8 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
   });
   accountSelect.addEventListener('change',() => {
     pendingIdempotencyKey=null;
-    reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true));
+    if(canIssueCoupon)
+      reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true));
     reloadBankOptions().catch(()=>setNotice('โหลดบัญชีธนาคารไม่ได้',true));
     driverAssignment?.refresh();
   });
@@ -1615,8 +1623,16 @@ function dashboard(data, session, publicConfig={}) {
  if(corpAdmin)register('invitations',()=>document.getElementById('member-invites')?.appendChild(
   createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
    [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']])));
- if(memberships.some(m=>m.scopeType==='corporate_company'&&m.role!=='driver'))
-  register('corporate',()=>corporateWorkspace(session.access_token,{qaFinanceMode}));
+ const corpRoles=memberships.filter(m=>m.scopeType==='corporate_company'&&m.role!=='driver');
+ if(corpRoles.length){
+  const canIssueCoupon=corpRoles.some(m=>
+    ['corporate_admin','coupon_issuer','qr_issuer'].includes(m.role));
+  const qaTopupEnabled=qaFinanceMode&&corpRoles.some(m=>
+    ['corporate_admin','accountant','finance_manager'].includes(m.role));
+  register('corporate',()=>corporateWorkspace(session.access_token,{
+    qaFinanceMode:qaTopupEnabled,canIssueCoupon,
+  }));
+ }
  if(memberships.some(m=>m.scopeType==='corporate_company'&&m.role==='driver'))
   register('driver',()=>mountDriverWorkspace({
     target:document.getElementById('driver-workspace'),token:session.access_token,
