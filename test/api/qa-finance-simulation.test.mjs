@@ -123,6 +123,25 @@ test('database denial and pending conflicts are not treated as success',async()=
  assert.equal((await b.handle(post('/api/qa/finance/topup/request',
   {accountId:ACCOUNT,amountSatang:'100000',requestKey:KEY}))).status,409);
 });
+test('QA operations allow scoped read-only corporate accounts when synthetic wallet is off',async()=>{
+ const a=app({config:{...env,OILSTATION_QA_FINANCE_SIM_ENABLED:'false'}});
+ let reads=0;
+ a.db.corporateAccounts=async actorId=>{reads++;assert.equal(actorId,USER);return [{
+   id:ACCOUNT,companyId:COMPANIES[0],stationId:STATIONS[0],availableSatang:'0',
+ }];};
+ a.db.account=async()=>({company_id:COMPANIES[0],station_id:STATIONS[0]});
+ a.db.accountFuels=async()=>[];
+ const api=createQaOperationsApi(a.deps);
+ const get=path=>new Request(origin+path,{headers:{authorization:'Bearer valid-synthetic-session'}});
+ const own=await api(get('/api/my-accounts'));
+ assert.equal(own.status,200);
+ assert.equal((await own.json()).accounts[0].availableSatang,'0');
+ assert.equal(reads,1);
+ assert.equal((await api(get('/api/my-accounts/'+ACCOUNT+'/fuels'))).status,200);
+ assert.equal((await api(post('/api/coupons',{accountId:ACCOUNT}))).status,404);
+ assert.equal((await api(post('/api/qa/finance/topup/request',{
+   accountId:ACCOUNT,amountSatang:'10000',requestKey:KEY}))).status,404);
+});
 test('QA operations do not expose normal corporate accounts to unrelated station users',async()=>{
  const a=app({who:'station'});
  const api=createQaOperationsApi(a.deps);
@@ -131,5 +150,5 @@ test('QA operations do not expose normal corporate accounts to unrelated station
  assert.equal((await api(req)).status,403);
  const disabled=createQaOperationsApi({...a.deps,
   env:{...env,OILSTATION_QA_FINANCE_SIM_ENABLED:'false'}});
- assert.equal((await disabled(req)).status,404);
+ assert.equal((await disabled(req)).status,403);
 });
