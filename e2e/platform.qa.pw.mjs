@@ -257,3 +257,77 @@ test('P-14 Sales own-activity and cross-tenant denial @sales-scope', async ({bro
   expect(after.allStationsCount).toBe(5);
   expect(after.companiesCount).toBe(0);
 });
+
+
+/** P-04/P-15 read-only Role-Matrix guard: real Sales credentials, no writes.
+ * Separate from the older station-creation test. Explicit opt-in from owner.
+ */
+test('P-04/P-15 Sales cannot access Admin/Support APIs on desktop or mobile @sales-guard',
+ async ({browser},info)=>{
+  test.skip(process.env.OILSTATION_QA_SALES_GUARD_RUN!=='true',
+    'Only owner-approved protected one-shot Playwright on main');
+  required('OILSTATION_QA_SALES01_PASSWORD');
+  required('OILSTATION_QA_SALES02_PASSWORD');
+  const before=await snapshot();
+  validateFixture(before,4);
+  const actors=[
+   {alias:'sales01',own:['QA-S01-A','QA-S01-B']},
+   {alias:'sales02',own:['QA-S02-A','QA-S02-B']}
+  ];
+  for(const actor of actors){
+   const context=await browser.newContext({viewport:{width:1280,height:800}});
+   try{
+    const page=await context.newPage();
+    const token=await login(page,actor.alias);
+    const headers={authorization:'Bearer '+token};
+    const who=await page.request.get(BASE+'/api/me',{headers});
+    expect(who.status()).toBe(200);
+    const profile=await who.json();
+    expect(profile.memberships).toHaveLength(1);
+    expect(profile.memberships[0].scopeType).toBe('platform');
+    expect(profile.memberships[0].role).toBe('platform_sales');
+    await ownStations(page,token,actor.own);
+
+    // All of these are *GET only*; do not submit any privileged write.
+    const forbidden=[
+     '/api/qa/scopes',
+     '/api/platform/stations',
+     '/api/platform/billing/overview',
+     '/api/platform/support/overview',
+    ];
+    for(const path of forbidden){
+     const response=await page.request.get(BASE+path,{headers});
+     expect(response.status(),actor.alias+' forbidden '+path).toBe(403);
+    }
+    for(const key of ['support','billing','finance','customers','hr','invitations','fuel']){
+     await expect(page.locator('[data-ws-go="'+key+'"]'),
+       actor.alias+' unauthorized UI '+key).toHaveCount(0);
+    }
+    await page.locator('[data-ws-go="stations"]:visible').first().click();
+    await expect(page.locator('[data-ws-screen="stations"]')).toBeVisible();
+    await expect(page.locator('#station-count')).toContainText('2');
+    await page.screenshot({
+     path:info.outputPath('P-04-'+actor.alias+'-desktop.png'),animations:'disabled'});
+
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('[data-ws-go="overview"]:visible').first().click();
+    await expect(page.locator('[data-ws-screen="overview"]')).toBeVisible();
+    for(const key of ['support','billing','finance','customers','hr','invitations','fuel']){
+     await expect(page.locator('[data-ws-go="'+key+'"]')).toHaveCount(0);
+    }
+    await page.locator('[data-ws-go="stations"]:visible').first().click();
+    await expect(page.locator('[data-ws-screen="stations"]')).toBeVisible();
+    await expect(page.locator('#station-count')).toContainText('2');
+    await page.screenshot({
+     path:info.outputPath('P-04-'+actor.alias+'-mobile.png'),animations:'disabled'});
+   }finally{await context.close();}
+  }
+  const after=await snapshot();
+  expect(after.stations).toEqual(before.stations);
+  expect(after.users).toEqual(before.users);
+  expect(after.assignments).toEqual(before.assignments);
+  expect(after.requests).toEqual(before.requests);
+  expect(after.audit).toEqual(before.audit);
+  expect(after.allStationsCount).toBe(5);
+  expect(after.companiesCount).toBe(0);
+});
