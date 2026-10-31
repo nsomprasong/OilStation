@@ -49,7 +49,7 @@ test('six task groups remain permission-filtered and preserve server role bounda
  assert.doesNotMatch(html,/data-ws-go="hr"/);
  assert.doesNotMatch(html,/data-task-group="people"/);
  const stationHtml=renderWorkspaceShell(selectWorkspaceScreens([station]));
- assert.match(stationHtml,/class="os-category-nav"/);
+ assert.match(stationHtml,/class="os-category-nav os-context-orbs"/);
  assert.match(stationHtml,/os-context-orbs/);
  assert.match(stationHtml,/data-ws-go="fuel"/);
 });
