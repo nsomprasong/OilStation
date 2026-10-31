@@ -38,7 +38,7 @@ test('only role-filtered Admin scope IDs remain visible; global aliases do not s
  assert.deepEqual(visible.platform,[]);
 });
 test('SQL override removes Sales staff invites but preserves strictly limited first-owner handoff',()=>{
- const sql=readFileSync('supabase/migrations/20261031223000_qa_admin_owned_staff_and_company_bootstrap.sql','utf8');
+ const sql=readFileSync('supabase/migrations/20261031223000_qa_admin_owned_staff_and_company_bootstrap.sql','utf8').replace(/\r\n/g,'\n');
  assert.ok(sql.includes('CREATE OR REPLACE FUNCTION public.create_scoped_invitation'));
  assert.ok(sql.includes("v_sales_owns_station\n    AND p_role_code='station_owner'"));
  assert.ok(sql.includes("v_sales_owns_org\n   AND p_role_code='organization_owner'"));
@@ -49,7 +49,7 @@ test('SQL override removes Sales staff invites but preserves strictly limited fi
  assert.match(sql,/TO service_role/);
 });
 test('Sales web station directory offers only initial administrator invitations, no staff roles',()=>{
- const s=readFileSync('src/client/main.js','utf8');
+ const s=readFileSync('src/client/main.js','utf8').replace(/\r\n/g,'\n');
  const begin=s.indexOf('if(salesMode){\n        const hint=');
  const end=s.indexOf('node.append(name,detail,hint,actions);',begin);
  assert.ok(begin>=0&&end>begin);
