@@ -84,6 +84,13 @@ test('all QA user options must be inside exact pre-approved scope allowlists',as
  assert.equal(scopes.corporate_company.length,1);
  const misconfigured=handler({settings:{...env,OILSTATION_QA_STATION_IDS:[stationA,stationB,stationC,stationD,stationE].join(',')}});
  assert.equal((await misconfigured(account(body()))).status,503);
+ const companies=Array.from({length:12},(_,i)=>String(i+10).padStart(8,'0')+'-5555-4555-8555-555555555555');
+ const twelve=handler({settings:{...env,OILSTATION_QA_COMPANY_IDS:companies.join(',')}});
+ const accepted=await twelve(new Request(url+'scopes',{headers:{authorization:'Bearer good'}}));
+ assert.equal(accepted.status,200);
+ assert.equal((await accepted.json()).scopes.corporate_company.length,12);
+ const thirteen=handler({settings:{...env,OILSTATION_QA_COMPANY_IDS:companies.concat('99999999-9999-4999-8999-999999999999').join(',')}});
+ assert.equal((await thirteen(account(body()))).status,503);
 });
 test('new QA users use confirmed Supabase Auth admin user with real membership, never browser service key',()=>{
  const adapter=readFileSync(new URL('../../src/adapters/supabase.mjs',import.meta.url),'utf8');
