@@ -13,7 +13,7 @@ test('mobile home reflects real allowed modules and does not invent monetary bal
  assert.match(html,/os-mobile-quick-grid/);
  assert.match(html,/os-mobile-summary-grid/);
  assert.match(html,/os-mobile-feature-grid/);
- assert.match(html,/3 รายการ/);
+ assert.match(html,/4 รายการ/);
  assert.match(html,/แพ็กเกจและ VAT/);
  assert.doesNotMatch(html,/อัตราคงเหลือ|ยอดเงินคงเหลือ|฿[\d,]/);
  assert.doesNotMatch(html,/data-ws-go="pump"/);
