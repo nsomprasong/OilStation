@@ -93,8 +93,13 @@ function build(screen,key){
    if(i===0)return 0;
    let anchor=host.querySelector(group.anchor);
    if(!anchor||anchor.parentElement!==host)return -1;
-   const prev=anchor.previousElementSibling;
-   if(prev?.tagName===group.previous)anchor=prev;
+   let prev=anchor.previousElementSibling;
+   if(group.previous==='H3'){
+    for(let n=0;prev&&n<4;n++,prev=prev.previousElementSibling){
+     if(prev.tagName==='H3'){anchor=prev;break;}
+     if(prev.tagName==='FORM')break;
+    }
+   }else if(prev?.tagName===group.previous)anchor=prev;
    return children.indexOf(anchor);
   });
   if(boundaries.some(x=>x<0)||new Set(boundaries).size!==boundaries.length)return [];
@@ -113,6 +118,7 @@ export function installFunctionalSubmenus(root){
  let queued=false,installing=false;
  const isAvailable=(state,p)=>p.wrapper?.isConnected&&
   !(state.key==='sales'&&p.nodes[0]?.hidden)&&
+  !(state.key==='corporate'&&p.id!=='account'&&p.nodes[0]?.hidden)&&
   !(state.key==='stations'&&p.id==='fuel'&&!p.nodes[0]?.childElementCount);
  function show(key,id,{focus=false}={}){
   const state=states.get(key);
