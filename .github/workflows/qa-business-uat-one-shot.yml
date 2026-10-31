@@ -2,7 +2,9 @@ name: QA real business UAT - bounded synthetic HR and QR
 on:
   push:
     branches: [main]
-    paths: [.github/workflows/qa-business-uat-one-shot.yml]
+    paths:
+      - .github/workflows/qa-business-uat-one-shot.yml
+      - e2e/qa.business-hr.pw.mjs
 permissions:
   contents: read
   actions: read
@@ -47,14 +49,13 @@ jobs:
           npm run check
           npm test
           npm run build
-      - name: Arm ONLY synthetic QA operations for 45 minutes
+      - name: Arm ONLY scoped QA HR operations for 45 minutes
         shell: bash
         run: |
           set -euo pipefail
           node --input-type=module <<'NODE'
           import {readFileSync,writeFileSync} from 'node:fs';
           const p='wrangler.jsonc',c=JSON.parse(readFileSync(p,'utf8'));
-          c.vars.OILSTATION_QA_FINANCE_SIM_ENABLED='true';
           c.vars.OILSTATION_QA_HR_UAT_ENABLED='true';
           c.vars.OILSTATION_QA_BUSINESS_UAT_TEMP='true';
           c.vars.OILSTATION_QA_UAT_EXPIRES_EPOCH=String(Math.floor(Date.now()/1000)+2700);
@@ -63,7 +64,7 @@ jobs:
           npx --yes wrangler@4 deploy
           curl --fail --silent --show-error --retry 5 --retry-delay 2 \
             https://oilstation.goldensoft.cloud/api/public-config |
-            jq -e '.qaModeEnabled == true and .qaFinanceSimEnabled == true'
+            jq -e '.qaModeEnabled == true and .qaFinanceSimEnabled == false'
           test "$(curl -s -o /tmp/qa-ready -w '%{http_code}' https://oilstation.goldensoft.cloud/api/ready)" = 503
   live-qa-business:
     needs: arm-scoped-qa
@@ -72,7 +73,7 @@ jobs:
     environment: oilstation-qa
     env:
       OILSTATION_QA_BUSINESS_HR_RUN: 'true'
-      OILSTATION_QA_BUSINESS_FINANCE_RUN: 'true'
+      OILSTATION_QA_BUSINESS_FINANCE_RUN: 'false'
       OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
       OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
     steps:
@@ -88,7 +89,7 @@ jobs:
           test -n "$OILSTATION_QA_SALES02_PASSWORD"
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
-      - name: Real station HR creation, separate HR user shift approval and QA simulated QR reserve + scan
+      - name: Real station HR creation and separate manager roster and shifts (finance already verified)
         run: npm run test:e2e -- --grep '@qa-business-' --reporter=list
   disarm-scoped-qa:
     # Undo temporary Worker variables on success, failure OR skipped tests.
