@@ -12,3 +12,8 @@ dist/
 coverage/
 .DS_Store
 .taste-skill/
+playwright-report/
+test-results/
+playwright/.auth/
+*.trace.zip
+qa-evidence.tar.gz*

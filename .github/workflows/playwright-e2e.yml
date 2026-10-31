@@ -1,0 +1,89 @@
+name: OilStation Playwright Browser E2E
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      suite:
+        type: choice
+        description: Run public smoke or protected Platform session
+        required: true
+        default: public
+        options: [public, authorized-platform]
+      allow_missing_station_creation:
+        type: boolean
+        description: Allow Sales02 to create ONLY missing QA-S02-B after DB preflight
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-playwright-live-db
+  cancel-in-progress: false
+jobs:
+  public-browser:
+    if: github.event_name == 'pull_request' || inputs.suite == 'public'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Run real unauthenticated Chromium (never seed QA)
+        run: npm run test:e2e -- --grep '@public'
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: oilstation-public-playwright
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  authorized-platform:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.suite == 'authorized-platform'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_AUTH_RUN: 'true'
+      OILSTATION_QA_ALLOW_CREATE: ${{ inputs.allow_missing_station_creation }}
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+      OILSTATION_QA_DB_KEY: ${{ secrets.OILSTATION_QA_DB_KEY }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Fail closed if protected QA secrets are unavailable
+        run: |
+          for name in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD OILSTATION_QA_DB_KEY OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Missing protected secret name: $name"; exit 1; }
+          done
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Browser + API + actual Supabase + audit (one missing station maximum)
+        run: npm run test:e2e -- --grep '@auth'
+      - name: Encrypt traces and screenshots BEFORE uploading to public-repo Actions
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf qa-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output qa-evidence.tar.gz.gpg qa-evidence.tar.gz
+          rm -rf qa-evidence.tar.gz playwright-report test-results
+      - name: Upload ENCRYPTED browser evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-protected-playwright-encrypted
+          path: qa-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
