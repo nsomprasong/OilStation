@@ -46,7 +46,7 @@ export function mountPlatformSales({target,token,inviteControl}){
  soldDetails.append(make('summary','','ลูกค้าที่มีการชำระค่าบริการแล้ว'),collected);
  const historyDetails=make('details','os-sales-disclosure');
  historyDetails.append(make('summary','','ดูประวัติการมอบหมายและโอนงาน'),history);
- team.append(inviteArea);
+ team.insertBefore(inviteArea,teamList);
  assignment.append(inspectionPanel);
  transfer.append(historyDetails);
  commission.append(soldDetails);
@@ -63,7 +63,7 @@ export function mountPlatformSales({target,token,inviteControl}){
   inspection.close();inspectionPanel.hidden=true;careList.hidden=false;
   assignment.querySelector('h4')?.focus?.();
  });
- let data=null,busy=false;
+ let data=null,busy=false,firstLoad=true;
  const card=(title,details=[])=>{
   const node=make('article','os-sales-card');node.append(make('strong','',title));
   for(const detail of details)node.append(make('p','',detail));
@@ -86,7 +86,7 @@ export function mountPlatformSales({target,token,inviteControl}){
    team.hidden=!isAdmin;inviteArea.hidden=!isAdmin;transfer.hidden=!isAdmin;
    teamList.replaceChildren();careList.replaceChildren();moneyList.replaceChildren();historyList.replaceChildren();collectedList.replaceChildren();
    const people=data.people||[], assignments=data.assignments||[],money=data.commissions||[];
-   if(!people.length)empty(teamList,isAdmin?'ยังไม่มีเซลล์ที่ยืนยันคำเชิญ':'ยังไม่มีข้อมูลบัญชีเซลล์');
+   if(!people.length)empty(teamList,isAdmin?'ยังไม่มีเซลล์ที่ตอบรับคำเชิญ กรุณาใช้ปุ่มเชิญสมาชิกด้านบน เมื่อเซลล์ตอบรับแล้วจึงมอบหมายปั๊มได้':'คุณยังไม่ได้รับงานที่มอบหมาย');
    for(const p of people){
     const active=assignments.filter(a=>a.salesId===p.id&&a.isCurrent).length;
     const upcoming=assignments.filter(a=>a.salesId===p.id&&a.isUpcoming).length;
@@ -153,6 +153,14 @@ export function mountPlatformSales({target,token,inviteControl}){
     if(!pendingLine.isConnected)inviteArea.append(pendingLine);
    }
    status.textContent=isAdmin?'แสดงข้อมูลทีมขายทั้งหมด':'แสดงเฉพาะข้อมูลที่คุณมีสิทธิ์ดู';
+   // First-run onboarding: do not land new platform admins on an empty station list.
+   // Never redirect on refresh, so user's current task and form remain in place.
+   if(firstLoad&&isAdmin&&!people.length){
+    target.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',{
+     bubbles:true,detail:{key:'team'}
+    }));
+   }
+   firstLoad=false;
   }catch{status.textContent='โหลดข้อมูลไม่ได้ กรุณากดรีเฟรช';}
   finally{reload.disabled=false;}
  }
