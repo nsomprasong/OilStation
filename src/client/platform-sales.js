@@ -106,14 +106,34 @@ export function mountPlatformSales({target,token,inviteControl}){
   finally{reload.disabled=false;}
  }
  reload.addEventListener('click',load);
- form.addEventListener('submit',async event=>{
+ const confirmation=make('dialog','os-sales-confirm');
+ const confirmTitle=make('h3','','ยืนยันการย้ายความรับผิดชอบ');
+ confirmTitle.id='sales-confirm-title';confirmation.setAttribute('aria-labelledby',confirmTitle.id);
+ const confirmText=make('p');const confirmActions=make('div','os-sales-confirm-actions');
+ const dismiss=make('button','button secondary','ยกเลิก');dismiss.type='button';
+ const approve=make('button','button primary','ยืนยันการย้าย');approve.type='button';
+ confirmActions.append(dismiss,approve);confirmation.append(confirmTitle,confirmText,confirmActions);
+ root.append(confirmation);dismiss.addEventListener('click',()=>confirmation.close());
+ let pendingTransfer=null;
+ form.addEventListener('submit',event=>{
   event.preventDefault();if(busy||!data?.isAdmin)return;
-  if(!station.value||!sales.value||reason.value.trim().length<5){outcome.textContent='เลือกปั๊ม เซลล์ และกรอกเหตุผลอย่างน้อย 5 ตัวอักษร';return;}
-  busy=true;save.disabled=true;outcome.textContent='กำลังบันทึกคำขอโอนงาน…';
+  if(!station.value||!sales.value||reason.value.trim().length<5){
+   outcome.textContent='เลือกปั๊ม เซลล์ และกรอกเหตุผลอย่างน้อย 5 ตัวอักษร';return;
+  }
+  pendingTransfer={stationId:station.value,salesUserId:sales.value,reason:reason.value.trim()};
+  confirmText.textContent='ย้ายปั๊ม “'+station.selectedOptions[0].textContent+
+   '” ให้เซลล์ “'+sales.selectedOptions[0].textContent+
+   '” มีผลเที่ยงคืนวันถัดไปตามเวลาของปั๊ม โดยไม่แก้ประวัติค่าคอมมิชชั่นเดิม ยืนยันหรือไม่?';
+  confirmation.showModal();dismiss.focus();
+ });
+ approve.addEventListener('click',async()=>{
+  if(busy||!pendingTransfer||!data?.isAdmin)return;
+  busy=true;approve.disabled=true;save.disabled=true;
+  confirmation.close();outcome.textContent='กำลังบันทึกคำขอโอนงาน…';
   try{
    const res=await fetch('/api/platform/sales/transfer',{method:'POST',headers:{
     authorization:'Bearer '+token,'content-type':'application/json'},
-    body:JSON.stringify({stationId:station.value,salesUserId:sales.value,reason:reason.value.trim()})});
+    body:JSON.stringify(pendingTransfer)});
    const payload=await res.json().catch(()=>({}));
    if(!res.ok){
     outcome.textContent=payload.error==='transfer_already_scheduled'?
@@ -122,7 +142,7 @@ export function mountPlatformSales({target,token,inviteControl}){
    }
    reason.value='';outcome.textContent='ตั้งเวลาย้ายงานสำเร็จ มีผลวันที่ '+dateTime(payload.result.effectiveFrom);
   }catch{outcome.textContent='เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนกดซ้ำ';}
-  finally{busy=false;save.disabled=false;await load();}
+  finally{pendingTransfer=null;busy=false;approve.disabled=false;save.disabled=false;await load();}
  });
  load();
  return {reload:load};
