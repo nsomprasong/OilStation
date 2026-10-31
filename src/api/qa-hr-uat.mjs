@@ -1,4 +1,5 @@
 import {qaIsEnabled,qaScopeAllowlist} from './qa-accounts.mjs';
+import {qaUatWindowOpen} from './qa-uat-window.mjs';
 import {createApi} from './router.mjs';
 import {createAttendanceReviewApi} from './attendance-review.mjs';
 import {createAttendancePayrollPreviewApi} from './attendance-payroll-preview.mjs';
@@ -24,7 +25,7 @@ export function createQaHrUatApi({env,authenticate,db}){
  return async request=>{
   const url=new URL(request.url);
   const method=paths.get(url.pathname);
-  if(!qaIsEnabled(env)||env.OILSTATION_QA_HR_UAT_ENABLED!=='true')
+  if(!qaIsEnabled(env)||env.OILSTATION_QA_HR_UAT_ENABLED!=='true'||!qaUatWindowOpen(env))
    return reply(404,'not_found');
   if(!method)return reply(404,'not_found');
   if(request.method!==method)return reply(405,'method_not_allowed');
