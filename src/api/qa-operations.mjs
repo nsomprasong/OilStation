@@ -1,5 +1,5 @@
 import {qaFinanceEnabled,createQaTopupSimulationApi} from './qa-topup-simulation.mjs';
-import {qaScopeAllowlist} from './qa-accounts.mjs';
+import {qaScopeAllowlist,qaIsEnabled} from './qa-accounts.mjs';
 import {createApi} from './router.mjs';
 import {createFuelReviewApi} from './fuel-review.mjs';
 import {createFuelPhotoApi} from './fuel-photo.mjs';
@@ -15,8 +15,16 @@ const json=(status,error)=>new Response(JSON.stringify({error}),{
 });
 export function createQaOperationsApi({env,authenticate,db}){
  return async request=>{
-  if(!qaFinanceEnabled(env))return json(404,'not_found');
   const path=new URL(request.url).pathname;
+  const driverOnly=['/api/corporate/drivers','/api/corporate/driver-vehicle',
+    '/api/driver/coupons'].includes(path);
+  // Driver assignment/inbox does not move money, so it can be tested before
+  // synthetic finance is activated. All other QA business routes still need
+  // the independent finance gate.
+  const driverPreview=qaIsEnabled(env)&&
+    env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true';
+  if(!qaFinanceEnabled(env)&&!(driverOnly&&driverPreview))
+    return json(404,'not_found');
   const corp=path==='/api/my-accounts'||path==='/api/coupons'||
     /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path)||
     path==='/api/corporate/wallet-integrity'||
