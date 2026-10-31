@@ -9,85 +9,125 @@ const station=[
  '77777777-7777-4777-8777-777777777777'];
 const organization=station.map(x=>x.replace(/^[^\-]+/,'11111111'));
 const company=Array.from({length:12},(_,i)=>String(i+10).padStart(8,'0')+'-5555-4555-8555-555555555555');
-const env={OILSTATION_DEPLOY_TARGET:'production',OILSTATION_PREVIEW_LOGIN_ENABLED:'true',OILSTATION_API_ENABLED:'false',
- OILSTATION_QA_MODE_ENABLED:'true',OILSTATION_QA_RUN_ID:'QA-20261031-PLATFORM-001',
+const env={OILSTATION_DEPLOY_TARGET:'production',OILSTATION_PREVIEW_LOGIN_ENABLED:'true',
+ OILSTATION_API_ENABLED:'false',OILSTATION_QA_MODE_ENABLED:'true',
+ OILSTATION_QA_RUN_ID:'QA-20261031-PLATFORM-001',
  OILSTATION_QA_STATION_IDS:station.join(','),OILSTATION_QA_ORGANIZATION_IDS:organization.join(','),
  OILSTATION_QA_COMPANY_IDS:company.join(',')};
-const actor='11111111-1111-4111-8111-111111111111',base='https://oilstation.goldensoft.cloud/api/qa/';
-const pass='CompanyQA2026!SecurePass';
-const account=(alias,roleCode,scopeId)=>new Request(base+'accounts',{method:'POST',headers:{
- authorization:'Bearer qaSales02','content-type':'application/json',origin:'https://oilstation.goldensoft.cloud'},
- body:JSON.stringify({alias,password:pass,scopeType:'corporate_company',scopeId,roleCode})});
-const handler=()=>{
- const creates=[];
+const actor='11111111-1111-4111-8111-111111111111';
+const base='https://oilstation.goldensoft.cloud/api/qa/';
+const pw='CompanyQA2026!SecurePass';
+const roles={
+ sales:{scope_type:'platform',role_code:'platform_sales'},
+ station:{scope_type:'station',role_code:'station_owner',station_id:station[0]},
+ company:{scope_type:'corporate_company',role_code:'corporate_admin',corporate_company_id:company[0]},
+ org:{scope_type:'organization',role_code:'organization_owner',organization_id:organization[0]},
+};
+const request=(path,body)=>new Request(base+path,{method:'POST',headers:{
+ authorization:'Bearer qa','content-type':'application/json',origin:'https://oilstation.goldensoft.cloud'},
+ body:JSON.stringify(body)});
+const account=(alias,roleCode,scopeType,scopeId)=>({alias,password:pw,roleCode,scopeType,scopeId});
+const create=(role)=>{
+ const calls=[];
  const db={
-  memberships:async()=>[{active:true,scope_type:'platform',role_code:'platform_sales'}],
-  qaSalesScopes:async()=>({station:station.slice(2),organization:organization.slice(2)}),
-  qaSalesCorporateScopes:async()=>company.slice(6),
+  memberships:async()=>[{...roles[role],active:true}],
+  qaAdminCompanyScopes:async()=>company.slice(0,3),
   qaScopedOptions:async()=>({
    platform:[],organization:organization.map(id=>({id,name:'QA Org'})),
    station:station.map(id=>({id,name:'QA Station'})),
-   corporate_company:company.map(id=>({id,name:'QA Company'}))})
+   corporate_company:company.map(id=>({id,name:'QA Company'})),
+  }),
  };
- const handle=createQaAccountsApi({env,authenticate:async()=>({id:actor,isQa:true}),db,
-  provisionAccount:async input=>{creates.push(input);return {id:'qa-user',alias:input.alias}},
+ const api=createQaAccountsApi({env,authenticate:async()=>({id:actor,isQa:true}),db,
+  provisionAccount:async data=>{calls.push(data);return {id:'qa-created',alias:data.alias}},
   resetQaPassword:async()=>true});
- return {handle,creates};
+ return {api,calls};
 };
-test('Sales02 can view only C07-C12 and global QA alias numbering remains frozen',async()=>{
- const x=handler();const res=await x.handle(new Request(base+'scopes',{headers:{authorization:'Bearer qaSales02'}}));
- assert.equal(res.status,200);
- const scopes=(await res.json()).scopes;
- assert.deepEqual(scopes.corporate_company.map(x=>x.id),company.slice(6));
- assert.deepEqual(scopes.corporate_company.map(x=>x.aliasPrefix),['c07','c08','c09','c10','c11','c12']);
- assert.deepEqual(scopes.station.map(x=>x.id),station.slice(2));
- assert.deepEqual(scopes.platform,[]);
+test('Sales cannot create employee, initial company admin, or even enumerate subordinate QA account scopes',async()=>{
+ const x=create('sales');
+ assert.equal((await x.api(new Request(base+'scopes',{headers:{authorization:'Bearer qa'}}))).status,403);
+ assert.equal((await x.api(request('accounts',account('c01-admin','corporate_admin','corporate_company',company[0])))).status,403);
+ assert.equal((await x.api(request('accounts',account('s01a-cashier','cashier','station',station[0])))).status,403);
+ assert.equal(x.calls.length,0);
 });
-test('Sales02 may provision own 30 Corporate users but never C01-C06, platform role or reset',async()=>{
- const x=handler();
- for(let i=6;i<12;i++){
-  for(const [role,suffix] of [
-   ['corporate_admin','admin'],['coupon_issuer','issuer'],
-   ['accountant','accountant'],['finance_manager','finance'],['driver','driver']
-  ]){
-   const alias='c'+String(i+1).padStart(2,'0')+'-'+suffix;
-   const res=await x.handle(account(alias,role,company[i]));
-   assert.equal(res.status,201,alias);
-  }
+test('station owner can bootstrap own company first admin and add own station staff, never other staff/company',async()=>{
+ const x=create('station');
+ const r=await x.api(new Request(base+'scopes',{headers:{authorization:'Bearer qa'}}));
+ assert.equal(r.status,200);
+ const scopes=(await r.json()).scopes;
+ assert.deepEqual(scopes.station.map(x=>x.id),[station[0]]);
+ assert.deepEqual(scopes.corporate_company.map(x=>x.id),company.slice(0,3));
+ for(const params of [
+  ['c01-admin','corporate_admin','corporate_company',company[0]],
+  ['s01a-cashier','cashier','station',station[0]],
+ ]){
+  assert.equal((await x.api(request('accounts',account(...params)))).status,201,params[0]);
  }
- assert.equal(x.creates.length,30);
- assert.equal((await x.handle(account('c01-admin','corporate_admin',company[0]))).status,403);
- assert.equal((await x.handle(account('c06-driver','driver',company[5]))).status,403);
- assert.equal((await x.handle(account('c12-admin','corporate_admin',company[0]))).status,400);
- assert.equal((await x.handle(new Request(base+'reset-password',{method:'POST',headers:{
- authorization:'Bearer qaSales02','content-type':'application/json',origin:'https://oilstation.goldensoft.cloud'},
- body:JSON.stringify({alias:'c07-admin',password:pass})}))).status,403);
- assert.equal(x.creates.length,30);
+ for(const params of [
+  ['c01-driver','driver','corporate_company',company[0]],
+  ['c07-admin','corporate_admin','corporate_company',company[6]],
+  ['s01b-cashier','cashier','station',station[1]],
+  ['s01a-owner','station_owner','station',station[0]],
+ ]){
+  assert.equal((await x.api(request('accounts',account(...params)))).status,403,params[0]);
+ }
+ assert.equal(x.calls.length,2);
 });
-test('SQL and configuration pin Corporate role scopes to originally sold and still assigned stations',()=>{
- const sql=readFileSync('supabase/migrations/20261031200000_qa_sales_corporate_role_scopes.sql','utf8');
- for(const string of ["p_scope_type='corporate_company'",
-  "SELECT 1 FROM public.corporate_station_accounts",
-  "NOT public.oilstation_sales_owns_scope(p_actor_id,'station',a.station_id)",
-  "cardinality(p_company_ids) IS DISTINCT FROM 12",
-  "c.name=v_expected","a.station_id=p_station_ids[v_station_idx]",
-  "public.oilstation_qa_sales_corporate_scopes",
-  "('organization','station','corporate_company')",
-  "REVOKE ALL ON FUNCTION","TO service_role"])
-  assert.ok(sql.includes(string),string);
- assert.doesNotMatch(sql,/DROP TABLE|TRUNCATE|GRANT SELECT ON TABLE|GRANT INSERT ON TABLE/i);
- const main=readFileSync('src/client/qa-accounts.js','utf8');
- assert.match(main,/corporate_company:'บริษัทลูกค้าของปั๊ม'/);
+test('Corporate Admin creates only own corporate staff; no bootstrap, no Sales, no foreign-company driver',async()=>{
+ const x=create('company');
+ const r=await x.api(new Request(base+'scopes',{headers:{authorization:'Bearer qa'}}));
+ const scopes=(await r.json()).scopes;
+ assert.deepEqual(scopes.corporate_company.map(x=>x.id),[company[0]]);
+ assert.deepEqual(scopes.station,[]);
+ for(const [role,suffix] of [
+  ['coupon_issuer','issuer'],['accountant','accountant'],
+  ['finance_manager','finance'],['driver','driver']
+ ]){
+  const res=await x.api(request('accounts',account('c01-'+suffix,role,'corporate_company',company[0])));
+  assert.equal(res.status,201,role);
+ }
+ for(const params of [
+  ['c01-admin','corporate_admin','corporate_company',company[0]],
+  ['c02-driver','driver','corporate_company',company[1]],
+  ['s01a-cashier','cashier','station',station[0]],
+  ['sales01','platform_sales','platform',null],
+ ])assert.equal((await x.api(request('accounts',account(...params)))).status,403,params[0]);
+ assert.equal(x.calls.length,4);
+});
+test('organization owner creates only own billing staff',async()=>{
+ const x=create('org');
+ assert.equal((await x.api(request('accounts',
+  account('o01-billing','billing_manager','organization',organization[0])))).status,201);
+ assert.equal((await x.api(request('accounts',
+  account('o01-owner','organization_owner','organization',organization[0])))).status,403);
+ assert.equal((await x.api(request('accounts',
+  account('o02-billing','billing_manager','organization',organization[1])))).status,403);
+});
+test('SQL checks active matching admin scopes and service-only RPC; no Sales personnel grant',()=>{
+ const sql=readFileSync('supabase/migrations/20261031223000_qa_admin_owned_staff_and_company_bootstrap.sql','utf8');
+ for(const term of ["p_role_code='corporate_admin'","m.role_code='station_owner'",
+  "m.role_code='corporate_admin'","p_role_code IN ('coupon_issuer','accountant','finance_manager','driver')",
+  "public.oilstation_qa_admin_company_scopes","public.platform_qa_register_account",
+  'REVOKE ALL ON FUNCTION','TO service_role',
+  "AND p_role_code='station_owner'","AND p_role_code='organization_owner'"])
+  assert.ok(sql.includes(term),term);
+ assert.doesNotMatch(sql,/v_allowed:=v_platform_admin OR v_sales_owns_station OR EXISTS/);
+ assert.doesNotMatch(sql,/v_allowed:=v_platform_admin OR v_sales_owns_org OR EXISTS/);
+ const main=readFileSync('src/client/main.js','utf8');
+ assert.ok(!main.includes('mountQaAccountsAdmin({target:host,token:session.access_token,salesMode:true})'));
+ assert.match(main,/mode:'station_owner'/);
+ assert.match(main,/mode:'corporate_admin'/);
  const adapter=readFileSync('src/adapters/supabase.mjs','utf8');
- assert.match(adapter,/rpc\/oilstation_qa_sales_corporate_scopes/);
- assert.match(adapter,/p_company_ids:allowed\.corporate_company/);
+ assert.match(adapter,/rpc\/oilstation_qa_admin_company_scopes/);
 });
-test('Sales QA Corporate alias suffix cannot impersonate another company or role',()=>{
+test('global alias numbering remains frozen for only one company',()=>{
+ const visible=qaVisibleScopes({platform:[],station:station.map(id=>({id})),
+  organization:[],corporate_company:company.map(id=>({id}))},
+  {platform:[],station:[station[0]],organization:[],corporate_company:[company[6]]});
+ assert.deepEqual(visible.corporate_company.map(x=>x.aliasPrefix),['c07']);
  const allow={corporate_company:company};
- assert.equal(qaApprovedAlias({alias:'c07-admin',scopeType:'corporate_company',
-  roleCode:'corporate_admin',scopeId:company[6]},allow),true);
- assert.equal(qaApprovedAlias({alias:'c12-driver',scopeType:'corporate_company',
-  roleCode:'driver',scopeId:company[11]},allow),true);
- assert.equal(qaApprovedAlias({alias:'c07-admin',scopeType:'corporate_company',
-  roleCode:'corporate_admin',scopeId:company[0]},allow),false);
+ assert.equal(qaApprovedAlias({alias:'c07-driver',scopeType:'corporate_company',
+  roleCode:'driver',scopeId:company[6]},allow),true);
+ assert.equal(qaApprovedAlias({alias:'c07-driver',scopeType:'corporate_company',
+  roleCode:'driver',scopeId:company[0]},allow),false);
 });
