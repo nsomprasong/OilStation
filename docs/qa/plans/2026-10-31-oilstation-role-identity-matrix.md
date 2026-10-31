@@ -85,7 +85,7 @@ For **each of these 99 QA identities** (not just each role type):
 
 - Step A (read-only baseline): verify backup/recovery, row counts, existing admins, permissions, Worker flag/QA mode; record prior state. No reset.
 - Step B: provision QA `sales01`, `sales02`, `support01` using trusted existing Super Admin after enabling QA mode under approved test plan.
-- Step C: login as **Sales01** to create `QA-S01-A/B`; login as **Sales02** to create `QA-S02-A/B`. **CURRENT FUNCTIONAL GAP:** creation API/RPC only accepts Super Admin; fix and deploy before running Step C. Do not pre-create under a Super Admin.
+- Step C: login as **Sales01** to create `QA-S01-A/B`; login as **Sales02** to create `QA-S02-A/B`. **IMPLEMENTED, NOT YET UAT PASS:** Sales-only create/list API and atomic DB assignment have been deployed; execute the actual browser and database checks in Step C before marking PASS. Do not pre-create under a Super Admin.
 - Step D: create role users for the four real organization nodes and all four station nodes; verify role isolation.
 - Step E: create 3 customer companies for each station; now exactly 12 corporate company nodes, then their 60 scoped role users; verify individual and cross-company permissions.
 - Step F: execute the 59 master capability categories broken into real browser/SQL/API test cases, including all 99 QA identities and negative access checks. Every FAIL is repaired, CI-verified, merged and deployed before retest.
