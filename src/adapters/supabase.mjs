@@ -980,9 +980,9 @@ export function createSupabaseAdapter(env) {
             method:'POST',headers:{'content-type':'application/json'},
             body:JSON.stringify({p_actor_id:actorId}),
           });
-        return rows.map(c=>({...c,qrPayload:
+        return Promise.all(rows.map(async c=>({...c,qrPayload:
           ['reserved','verified'].includes(c.status)&&Date.parse(c.expiresAt)>Date.now()
-            ?c.id+'.'+await hmac(env.COUPON_SIGNING_KEY,c.id+':qr'):null}));
+            ?c.id+'.'+await hmac(env.COUPON_SIGNING_KEY,c.id+':qr'):null})));
       },
       issueCoupon: async (input) => {
         const id = crypto.randomUUID();
