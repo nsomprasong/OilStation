@@ -81,8 +81,8 @@ test('audit is dense 3-column table with compact mobile rows and no raw JSON dif
  for(const h of ['ใคร','ทำอะไร','เมื่อไร'])assert.ok(src.includes("'"+h+"'"));
  assert.match(src,/node\('table','os-activity-table'\)/);
  assert.doesNotMatch(src,/before_state|after_state/);
- const css=file('public/platform-sales-readonly.css');
+ const css=file('public/oilstation.css');
  for(const rule of ['table-layout:fixed','border-collapse:collapse','@media(max-width:620px)','padding:7px 6px','font-size:11px'])
   assert.ok(css.includes(rule),rule);
- assert.match(file('index.html'),/platform-sales-readonly\.css/);
+ assert.match(file('index.html'),/oilstation\.css/);
 });

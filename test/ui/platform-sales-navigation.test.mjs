@@ -34,10 +34,10 @@ test('bottom nav has no hamburger; only Home exposes full menu',()=>{
  assert.doesNotMatch(nav,/data-ws-more|data-ws-menu-toggle/);
  assert.match(nav,/data-ws-go="overview"/);
  assert.equal((nav.match(/class="os-mobile-tab /g)||[]).length,5);
- const css=read('public/platform-sales-navigation.css');
+ const css=read('public/oilstation.css');
  assert.match(css,/display:none!important/);
- assert.match(read('public/navigation-standard.css'),/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
- assert.match(read('index.html'),/platform-sales-navigation\.css/);
+ assert.match(read('public/oilstation.css'),/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(read('index.html'),/oilstation\.css/);
 });
 test('commission screen uses ledger and entitlement values; no fabricated payout or arbitrary HTML',()=>{
  const ui=read('src/client/platform-sales.js');

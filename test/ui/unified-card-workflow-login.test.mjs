@@ -77,9 +77,9 @@ test('editable fuel and VAT cards use existing controls, not simulated API actio
  assert.match(read('src/client/platform-saas-billing.js'),/vatMode/);
 });
 test('mobile FAB remains above bottom navigation and desktop inherits teal hero style',()=>{
- const css=read('public/oilstation-unified.css');
+ const css=read('public/oilstation.css');
  const html=read('index.html');
- assert.ok(html.indexOf('/oilstation-unified.css')>html.indexOf('/mobile-app.css'));
+ assert.match(html,/href="\/oilstation\.css"/);
  for(const selector of ['.os-add-fab','.os-card-edit','.os-category-nav','.os-auth-shell','.ws-toolbar']){
   assert.ok(css.includes(selector),selector);
  }

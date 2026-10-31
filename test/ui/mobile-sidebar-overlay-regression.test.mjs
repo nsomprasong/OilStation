@@ -5,7 +5,7 @@ import {renderWorkspaceShell,selectWorkspaceScreens} from '../../src/client/work
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 
 test('one mobile bottom dock sits above content and the old drawer is disabled',()=>{
- const css=read('public/navigation-standard.css');
+ const css=read('public/oilstation.css');
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(css,/\.os-mobile-bottom/);
  assert.match(css,/z-index:70/);
@@ -29,9 +29,8 @@ test('Home exposes allowed destinations and no sidebar or hamburger is rendered'
 
 test('fix is last stylesheet and does not change desktop Gentelella design',()=>{
  const html=read('index.html');
- const gentelella=html.indexOf('/gentelella-v4-selected.css');
- const mobile=html.indexOf('/mobile-app.css');
- assert.ok(gentelella>0&&mobile>gentelella);
- assert.match(read('public/gentelella-v4-selected.css'),/--gt-sidebar:#1a2332/);
- assert.match(read('public/mobile-app.css'),/@media\(max-width:850px\)/);
+ assert.match(html,/href="\/oilstation\.css"/);
+ assert.doesNotMatch(html,/gentelella-v4-selected\.css|mobile-app\.css/);
+ assert.match(read('public/oilstation.css'),/--gt-sidebar:#1a2332/);
+ assert.match(read('public/oilstation.css'),/@media\(max-width:850px\)/);
 });

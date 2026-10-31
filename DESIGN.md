@@ -1,6 +1,8 @@
 # OilStation Interface System
 
-> **Current visual authority — LuxCart (1 November 2026).** Follow `docs/design/2026-11-01-luxcart.md` and last-loaded `public/luxcart.css`. Existing Gentelella color statements below are historical and no longer define the palette, typography, spacing, radius or icon treatment. All 31 October navigation semantics, Thai workflow accessibility, tenancy and financial correctness remain mandatory.
+> **Current visual authority — LuxCart (1 November 2026).** Follow `docs/design/2026-11-01-luxcart.md` and single canonical `public/oilstation.css`. Existing Gentelella color statements below are historical and no longer define the palette, typography, spacing, radius or icon treatment. All 31 October navigation semantics, Thai workflow accessibility, tenancy and financial correctness remain mandatory.
+
+> CSS cleanup 1 November 2026: previous teal/Gentelella guidance below is **archival only**. Current colors are charcoal #1C1917, cream #FFFBEB, gold #B8860B. The approved Home/submenu/five-slot dock pattern is retained without visual teal gradients.
 
 <!-- impeccable:design-system 1 -->
 
@@ -20,7 +22,7 @@ Preserve OilStation's teal identity; emphasize staff decisions and verified reco
 - HR submenus are employees, schedules, replacements, overtime and review queues. Do not add a second local HR tab row. Corporate account and station customers likewise divide by functional task.
 - Other single-workflow screens still have one header submenu, not each data item as a tab. Keep scanning, plate verification, fueling and receipt proof together rather than interrupting a safety-critical sequence.
 - **Never replace/remount forms when changing tabs**. Use `hidden` on surrounding pane wrappers and maintain their live DOM. Scope role-dependent tabs to actual permissions; hidden admin-only operations must never become accessible from a client-only tab.
-- Keep all two-level navigation rules in `AGENTS.md`; implementation is `src/client/functional-submenus.js` and final CSS `public/functional-submenus.css`.
+- Keep all two-level navigation rules in `AGENTS.md`; implementation is `src/client/functional-submenus.js` and canonical CSS `public/oilstation.css`.
 
 ## Tokens
 - Canvas `#F5F7FB`, white `#FFFFFF`, dark navy accent `#1A2332`.
@@ -35,7 +37,7 @@ Preserve OilStation's teal identity; emphasize staff decisions and verified reco
 
 ## Source of visual authority
 
-The user selected **Gentelella v4** as the OilStation UI. This overrides prior generic light-sidebar and Impeccable aesthetic choices. Official upstream: https://github.com/ColorlibHQ/gentelella (MIT License; Colorlib). Reference v4 tokens and shell patterns in `src/scss/v4/_tokens.scss`, `_layout.scss`, `_components.scss`. Our client remains a permission-aware, Thai-first SPA shell, not Gentelella's 58 demo MPA pages. Do not copy demo data into the live app. `public/navigation-standard.css` is the final navigation override after the Gentelella visual layer; legacy styles are compatibility until later consolidation. Preserve design accessibility, financial truth, and UX hardening from Impeccable.
+The user selected **Gentelella v4** as the OilStation UI. This overrides prior generic light-sidebar and Impeccable aesthetic choices. Official upstream: https://github.com/ColorlibHQ/gentelella (MIT License; Colorlib). Reference v4 tokens and shell patterns in `src/scss/v4/_tokens.scss`, `_layout.scss`, `_components.scss`. Our client remains a permission-aware, Thai-first SPA shell, not Gentelella's 58 demo MPA pages. Do not copy demo data into the live app. navigation and all retained legacy behavior now live in one canonical `public/oilstation.css`; Gentelella files were removed. Preserve design accessibility, financial truth, and UX hardening from Impeccable.
 
 ## Building blocks
 `ws-screen` primary task surface; Home full menu, contextual menu below Header, and five-position frequent dock; `.field` visible form labels; `.button.primary` one primary action; `.notice` and `[role=status]` inline feedback; `.module-item` real server-backed record; `.hint` help not an alert; `os-state` semantic status.
@@ -61,7 +63,7 @@ The user provided a banking-style app screenshot as the **mobile information-arc
 
 **Scan behavior:** one tap navigates to pump workspace and opens the native rear-camera BarcodeDetector reader. Frame the QR, read it, then use the existing station-side server inspection; never skip authorization, license gate, plate evidence or supervisor approvals. Stop all camera tracks after scan, navigating away, canceling or backgrounding the tab. On unsupported browsers or denied permissions, explain the limitation and allow manual QR payload entry. Never claim a decoded QR is an approved or settled transaction.
 
-**Desktop:** retains Gentelella-inspired cards but uses the same persistent five-position dock and under-Header contextual navigation as mobile, without sidebar. The mobile adaptation is in `src/client/mobile-home.js` and `public/mobile-app.css`. All feature labels and navigation keys come from `selectWorkspaceScreens` to reflect real roles. Reuse Lucide allowlist icons.
+**Desktop:** retains Gentelella-inspired cards but uses the same persistent five-position dock and under-Header contextual navigation as mobile, without sidebar. The mobile adaptation is in `src/client/mobile-home.js` and `public/oilstation.css`. All feature labels and navigation keys come from `selectWorkspaceScreens` to reflect real roles. Reuse Lucide allowlist icons.
 
 ## Unified mobile screen system and power sign-out (approved 30 October 2026)
 
@@ -77,7 +79,7 @@ Replace the home hero's decorative O mark with a 46px accessible **Power** icon 
 - Progressive forms: on authorized stations, HR, customers and SaaS billing creation screens, the existing create form starts closed and appears only after tapping + above mobile bottom nav. On desktop use an accessible floating create control as well. Do not hide scanner, safety evidence, payment, approval or other critical verification flows.
 - One contextual group under the Header containing only the current authorized task group's screens. Home hides this group. Never render all categories in stacked columns.
 - All errors, pending states, monetary records and role checks remain real, and incomplete forms retain their input values on errors.
-- Final CSS order: existing styles -> Gentelella v4 -> Mobile App -> unified design -> navigation-standard.css last. New design only creates presentation elements and defers form visibility, never mutates API outcomes.
+- CSS contract: `index.html` loads exactly one app stylesheet, `public/oilstation.css`. Edit existing selectors rather than appending overrides. New design only creates presentation elements and defers form visibility, never mutates API outcomes.
 - Manual QA required on authenticated Android and Desktop for layout, keyboard, 200% zoom, top tabs, create FAB, card edit and error recovery. Automated tests are not sufficient to claim screenshots are perfect.
 
 ## Gold 3D brand logo (approved 30 October 2026)

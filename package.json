@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/worker.mjs && node --check src/api/router.mjs && node --check src/adapters/supabase.mjs",
+    "check": "node --check src/worker.mjs && node --check src/api/router.mjs && node --check src/adapters/supabase.mjs && node scripts/audit-css.mjs",
     "build": "vite build",
     "dev": "vite --host 0.0.0.0",
     "prebuild": "node scripts/materialize-brand-assets.mjs",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "vite": "8.3.5",
+    "postcss": "8.5.6",
     "@playwright/test": "1.64.1"
   },
   "overrides": {

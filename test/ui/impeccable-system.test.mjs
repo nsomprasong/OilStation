@@ -15,7 +15,7 @@ test('Impeccable product and design files define truthful operating constraints'
  assert.match(design,/No fake payment success/);
 });
 test('shared design language covers every primary operational area and both guest/workspace',()=>{
- const css=read('public/impeccable.css');
+ const css=read('public/oilstation.css');
  const index=read('index.html');
  for(const t of [
   '#app.workspace-mode','.ws-sidebar','.ws-screen','.field input','.button.primary',
@@ -25,7 +25,7 @@ test('shared design language covers every primary operational area and both gues
   '@media (pointer:coarse)','@media (forced-colors:active)','@media (prefers-reduced-motion:reduce)',
  ])assert.ok(css.includes(t),t);
  assert.match(css,/#app\.center:not\(\.workspace-mode\)/);
- assert.match(index,/href="\/impeccable\.css"/);
+ assert.match(index,/href="\/oilstation\.css"/);
  assert.match(index,/href="#app" class="skip-workspace"/);
  assert.match(index,/viewport-fit=cover/);
  assert.doesNotMatch(index,/id="app" class="center" aria-live="polite"/);

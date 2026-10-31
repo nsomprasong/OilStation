@@ -158,3 +158,58 @@ test('LuxCart Sales desktop and mobile use one coherent non-teal workspace @luxc
  expect(mobile.docWidth).toBeLessThanOrEqual(mobile.viewport+2);
  await page.screenshot({path:info.outputPath('luxcart-sales-mobile-390.png'),animations:'disabled'});
 });
+
+test('LuxCart shell keeps all principal role scopes readable on mobile and desktop @luxcart',async({page},info)=>{
+ const roles=[
+  ['platform-superadmin',[{scopeType:'platform',role:'platform_superadmin'}]],
+  ['platform-sales',[{scopeType:'platform',role:'platform_sales'}]],
+  ['platform-support',[{scopeType:'platform',role:'platform_support'}]],
+  ['station-owner',[{scopeType:'station',role:'station_owner',stationId:'qa-station'}]],
+  ['station-cashier',[{scopeType:'station',role:'cashier',stationId:'qa-station'}]],
+  ['corporate-admin',[{scopeType:'corporate_company',role:'corporate_admin',corporateCompanyId:'qa-company'}]],
+  ['corporate-driver',[{scopeType:'corporate_company',role:'driver',corporateCompanyId:'qa-company'}]],
+ ];
+ for(const width of [390,1440]){
+  await page.setViewportSize({width,height:width===390?844:900});
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  for(const [label,memberships] of roles){
+   const screens=selectWorkspaceScreens(memberships);
+   const dest=screens.find(s=>s.key!=='overview');
+   expect(dest,'at least one authorized task for '+label).toBeTruthy();
+   const html=renderWorkspaceShell(screens);
+   await page.evaluate(({html,dest})=>{
+    const app=document.querySelector('#app');
+    app.className='workspace-mode';
+    app.innerHTML=html;
+    app.querySelector('.ws-layout').dataset.activeScreen=dest;
+    for(const node of app.querySelectorAll('[data-ws-screen]'))node.hidden=node.dataset.wsScreen!==dest;
+    for(const node of app.querySelectorAll('[data-context-for]'))node.hidden=node.dataset.contextFor!==dest;
+    const container=app.querySelector('[data-ws-screen="'+dest+'"] .ws-widget');
+    if(container)container.innerHTML='<section class="os-sales-panel">'+
+     '<h3>ตัวอย่างรายการทำงาน</h3><label class="field">ข้อมูลทดสอบ'+
+     '<input aria-label="ข้อมูลทดสอบ" placeholder="กรอกข้อมูล"></label>'+
+     '<button class="button primary" type="button">ยืนยัน</button></section>';
+   },{html,dest:dest.key});
+   const state=await page.evaluate(()=>{
+    const css=s=>getComputedStyle(document.querySelector(s));
+    return {
+     screenImage:css('[data-ws-screen]:not([hidden]) .ws-screen-head').backgroundImage,
+     screenColor:css('[data-ws-screen]:not([hidden]) .ws-screen-head h2').color,
+     canvas:css('#app.workspace-mode').backgroundColor,
+     dockSlots:document.querySelectorAll('.os-mobile-bottom .os-mobile-tab').length,
+     width:document.documentElement.scrollWidth,
+     viewport:document.documentElement.clientWidth,
+     dockBg:css('.os-mobile-bottom').backgroundColor,
+    };
+   });
+   expect(state.canvas,label+' canvas '+width).toBe('rgb(255, 251, 235)');
+   expect(state.screenImage,label+' gradient '+width).toBe('none');
+   expect(state.screenColor,label+' text '+width).toBe('rgb(28, 25, 23)');
+   expect(state.dockSlots,label+' role '+width).toBe(5);
+   expect(state.dockBg).toBe('rgb(255, 255, 255)');
+   expect(state.width,label+' overflow '+width).toBeLessThanOrEqual(state.viewport+2);
+   if(['station-owner','corporate-admin','platform-sales'].includes(label))
+    await page.screenshot({path:info.outputPath('luxcart-'+label+'-'+width+'.png'),animations:'disabled'});
+  }
+ }
+});

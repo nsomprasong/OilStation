@@ -45,11 +45,11 @@ test('brand icons materialize at build/dev and CSS keeps the transparent backgro
  const pkg=JSON.parse(read('package.json'));
  assert.match(pkg.scripts.prebuild,/materialize-brand-assets\.mjs/);
  assert.match(pkg.scripts.predev,/materialize-brand-assets\.mjs/);
- const css=read('public/oilstation-brand.css');
+ const css=read('public/oilstation.css');
  assert.match(css,/background:transparent!important/);
  assert.match(css,/\.ws-logo/);
  assert.match(css,/\.os-auth-mark/);
  assert.match(css,/\.os-mobile-brandmark/);
  const html=read('index.html');
- assert.ok(html.indexOf('oilstation-brand.css')>html.indexOf('oilstation-unified.css'));
+ assert.match(html,/href="\/oilstation\.css"/);
 });

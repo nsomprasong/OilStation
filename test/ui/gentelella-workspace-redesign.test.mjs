@@ -48,9 +48,9 @@ test('all navigation SVG placeholders are supported by the existing Lucide allow
  }
 });
 test('Gentelella shell styling remains isolated from public login and respects mobility',()=>{
- const css=file('public/workspace-gentelella.css');
+ const css=file('public/oilstation.css');
  const index=file('index.html');
- assert.match(index,/href="\/workspace-gentelella\.css"/);
+ assert.match(index,/href="\/oilstation\.css"/);
  assert.match(css,/#app\.center\.workspace-mode/);
  assert.match(css,/body:has\(#app\.workspace-mode\)/);
  assert.match(css,/@media\(max-width:850px\)/);

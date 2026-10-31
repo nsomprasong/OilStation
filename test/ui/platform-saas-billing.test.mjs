@@ -60,8 +60,8 @@ test('plan management has one intentional creation flow and safe editing + archi
  assert.match(src,/rpc\('archive-plan'/);
  assert.match(src,/dialog\.showModal\(\)/);
  assert.match(src,/dialog\.close\(\)/);
- const css=source('public/saas-plan-workflow.css');
+ const css=source('public/oilstation.css');
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(css,/\.os-plan-manager/);
- assert.match(source('index.html'),/\/saas-plan-workflow\.css/);
+ assert.match(source('index.html'),/\/oilstation\.css/);
 });
