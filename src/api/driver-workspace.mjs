@@ -41,7 +41,7 @@ export function createDriverWorkspaceApi({authenticate,db}){
    if(inbox){
     if(!memberships.some(m=>m.scope_type==='corporate_company'&&m.role_code==='driver'))
      return json(403,{error:'permission_denied'});
-    return json(200,{coupons:await db.driverCouponInbox(actor.id)});
+    return json(200,await db.driverCouponInbox(actor.id));
    }
    const permitted=memberships.some(m=>m.scope_type==='corporate_company'&&
     m.corporate_company_id===companyId&&
