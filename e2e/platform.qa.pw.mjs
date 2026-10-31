@@ -117,6 +117,11 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
         throw Error('QA-S02-B missing: authorized workflow must explicitly opt in to the one missing station creation');
       }
       await page.locator('[data-ws-go="stations"]:visible').first().click();
+      // The approved Navigation Standard starts stations on the directory tab.
+      // Open the functional Create submenu before interacting with the form.
+      const createTab = page.locator('[data-context-for="stations"] [data-os-pane-key="create"]');
+      await expect(createTab).toBeVisible();
+      await createTab.click();
       await expect(page.locator('#new-station-form')).toBeVisible();
       await page.locator('#org-name').fill('QA Organization S02-B');
       await page.locator('#station-name').fill('QA-S02-B');
@@ -132,7 +137,12 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
       expect(created.status()).toBe(201);
       const result = await created.json();
       expect(result.station?.stationName).toBe('QA-S02-B');
+      const directoryTab = page.locator('[data-context-for="stations"] [data-os-pane-key="directory"]');
+      await expect(directoryTab).toBeVisible();
+      await directoryTab.click();
+      await expect(page.locator('#station-count')).toBeVisible();
       await expect(page.locator('#station-count')).toContainText('2');
+      await expect(page.locator('#station-list')).toBeVisible();
       await expect(page.locator('#station-list')).toContainText('QA-S02-B');
     }
     await ownStations(page, token, ['QA-S02-A', 'QA-S02-B']);
