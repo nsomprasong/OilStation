@@ -1,8 +1,8 @@
-import {renderMobileHome,renderMobileNav,renderMobileScreenHero} from './mobile-home.js';
+import {renderMobileHome,renderMobileNav} from './mobile-home.js';
 import {renderLogoutDialog,wireLogoutDialog} from './logout-dialog.js';
 import {readNavUsage,saveNavUsage,incrementNavUsage} from './nav-preferences.js';
 import {decorateIcons} from './icons.js';
-import {categoryFor,renderWorkspaceCategories} from './workspace-categories.js';
+import {renderWorkspaceCategories} from './workspace-categories.js';
 
 export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
@@ -154,6 +154,5 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
   if(link&&root.contains(link))navigateTo(link.dataset.wsGo,{track:true});
  });
  bottom();
- navigateTo('overview');
  return {navigateTo};
 }
