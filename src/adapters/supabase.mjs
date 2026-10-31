@@ -510,6 +510,19 @@ export function createSupabaseAdapter(env) {
         });
         return {...result,...delivery,inviteUrl};
       },
+      qaCreateCorporateCustomer: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_station_create_company',{
+         method:'POST',headers:{'content-type':'application/json'},
+         body:JSON.stringify({
+          p_actor_id:d.actorId,p_qa_run_id:d.qaRunId,p_station_id:d.stationId,
+          p_name:d.name,p_contact_email:d.contactEmail,p_station_ids:d.stationIds,
+         }),
+        }),
+      qaCompanyEvidence: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_company_evidence',{
+         method:'POST',headers:{'content-type':'application/json'},
+         body:JSON.stringify({p_qa_run_id:d.qaRunId,p_station_ids:d.stationIds}),
+        }),
       createCorporateCustomer: async (d) => serviceRequest(env,
         '/rest/v1/rpc/station_create_corporate_customer',{
           method:'POST',headers:{'content-type':'application/json'},
