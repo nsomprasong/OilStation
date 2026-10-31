@@ -73,10 +73,13 @@ export function mountQaAccountsAdmin({target,token}){
   role.replaceChildren(...(roles[kind]||[]).map(([value,name])=>option(value,name)));
   scope.replaceChildren();
   for(const entry of scopes[kind]||[])scope.append(option(entry.id||'',entry.name));
-  scope.disabled=!(scopes[kind]||[]).length;
-  send.disabled=scope.disabled;
+  // Platform has no subordinate UUID: no scope selection is required.
+  const available=kind==='platform'||(scopes[kind]||[]).length>0;
+  scope.disabled=kind==='platform'||!available;
+  scope.required=kind!=='platform';
+  send.disabled=!available;
   suggestAlias();
-  if(scope.disabled)status.textContent='ยังไม่ได้กำหนดรายการ '+kind+' ในขอบเขต QA ที่อนุมัติ';
+  if(!available)status.textContent='ยังไม่ได้กำหนดรายการ '+kind+' ในขอบเขต QA ที่อนุมัติ';
  };
  scopeType.addEventListener('change',refresh);
  role.addEventListener('change',suggestAlias);
@@ -107,6 +110,6 @@ export function mountQaAccountsAdmin({target,token}){
     ') ออกจากระบบแล้วใช้ชื่อผู้ใช้และรหัสผ่านที่ตั้งไว้ได้ทันที';
    username.value='';password.value='';
   }catch{status.textContent='สร้างบัญชีไม่สำเร็จ ตรวจสอบสิทธิ์ ชื่อที่ซ้ำ หรือขอบเขตที่อนุมัติ';}
-  finally{send.disabled=scope.disabled;}
+  finally{send.disabled=!(scopeType.value==='platform'||(scopes[scopeType.value]||[]).length);}
  });
 }
