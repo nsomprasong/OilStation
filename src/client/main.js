@@ -922,14 +922,16 @@ async function stationCorporateWorkspace(accessToken,stationId,target,{qaMode=fa
   });
 }
 
-async function fuelPriceEditor(accessToken,stationId,target) {
+async function fuelPriceEditor(accessToken,stationId,target,{qaDemo=false}={}) {
   if (!target) return;
   target.replaceChildren();
   const title=document.createElement('h2');
   title.textContent='ตั้งราคาน้ำมันและเปิดใช้งาน';
   target.appendChild(title);
   const hint=document.createElement('p');
-  hint.textContent='เลือกเฉพาะชนิดน้ำมันที่สาขาจำหน่ายจริง แล้วระบุราคาต่อลิตร';
+  hint.textContent=qaDemo?
+    'ปั๊ม QA: ใช้ราคาทดสอบสมมติ ดีเซล 32.50 และแก๊สโซฮอล์ 95 35.90 บาท/ลิตร · ต้องกดบันทึกผ่านเว็บจริง':
+    'เลือกเฉพาะชนิดน้ำมันที่สาขาจำหน่ายจริง แล้วระบุราคาต่อลิตร';
   target.appendChild(hint);
   const res=await getApi('/api/station-fuels?stationId='+encodeURIComponent(stationId),accessToken);
   if (!res.ok) {
@@ -945,6 +947,11 @@ async function fuelPriceEditor(accessToken,stationId,target) {
   }
   for (const fuel of res.data.fuels||[]) {
     const row=document.createElement('div');row.className='fuel-row';
+    row.dataset.stationFuelId=fuel.id;
+    const demoPrice=qaDemo?
+      (/ดีเซล|diesel/i.test(fuel.name)?'32.50':
+       /(?:แก๊สโซฮอล์|gasohol).*95/i.test(fuel.name)?'35.90':null):null;
+    if(demoPrice)row.dataset.qaDemoPrice=demoPrice;
     const name=document.createElement('strong');name.textContent=fuel.name;
     const controls=document.createElement('div');controls.className='fuel-row-controls';
     const toggle=document.createElement('label');
@@ -975,6 +982,16 @@ async function fuelPriceEditor(accessToken,stationId,target) {
       } catch {setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาลองบันทึกอีกครั้ง','error');}
       finally {save.disabled=false;}
     });
+    if(demoPrice){
+      const preset=document.createElement('button');
+      preset.type='button';preset.className='button secondary os-qa-fuel-preset';
+      preset.textContent='ใช้ราคาทดสอบ '+demoPrice;
+      preset.addEventListener('click',()=>{
+        price.value=demoPrice;checkbox.checked=true;
+        setUiStatus(status,'ใส่ราคาสมมติแล้ว กรุณากดบันทึก','neutral');
+      });
+      controls.append(preset);
+    }
     controls.append(toggle,price,save);
     row.append(name,controls,status);target.appendChild(row);
   }
@@ -1585,7 +1602,10 @@ function dashboard(data, session, publicConfig={}) {
     stationFinanceWorkspace(session.access_token,stationId,document.getElementById('station-finance-workspace')));
  }
  if(station){
-  register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,document.getElementById('station-fuel-workspace')));
+  register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,
+    document.getElementById('station-fuel-workspace'),{
+      qaDemo:publicConfig.qaModeEnabled===true&&session.user?.app_metadata?.oilstation_qa===true,
+    }));
   register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace'),{qaMode:publicConfig.qaModeEnabled===true}));
   register('invitations',()=>document.getElementById('member-invites')?.appendChild(
    createInviteControl(session.access_token,'station',station.stationId,
