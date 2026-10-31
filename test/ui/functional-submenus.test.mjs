@@ -20,16 +20,31 @@ test('every functional workspace has a declared compact submenu, not a cross-mod
  const nav=renderWorkspaceCategories([], 'sales');
  assert.doesNotMatch(nav,/data-ws-go=|data-task-group=/);
 });
-test('Sales turns eight top-level functional cards into eight compact tabs',()=>{
+test('Sales exposes four real tasks and keeps drilldowns / summaries inside the parent pane',()=>{
  const s=read('src/client/functional-submenus.js');
- for(const label of ['เชิญเซลล์','ทีมขาย','ปั๊มที่รับผิดชอบ','ย้ายการดูแล',
-  'ตรวจสอบปั๊ม','ลูกค้าที่ชำระแล้ว','ค่าคอมมิชชั่น','ประวัติการดูแล'])
+ const ui=read('src/client/platform-sales.js');
+ for(const label of ['ทีมขาย','ปั๊มที่รับผิดชอบ','ย้ายการดูแล','ค่าคอมมิชชั่น'])
   assert.ok(s.includes(label),label);
- assert.match(s,/selector:':scope > section.os-sales-panel'/);
+ assert.match(s,/ids:\['team','assignment','transfer','commission'\]/);
  assert.match(s,/start:'assignment'/);
+ assert.match(s,/selector:':scope > section.os-sales-panel'/);
+ assert.doesNotMatch(s,/ids:\[[^\]]*'inspection'/);
+ assert.doesNotMatch(s,/ids:\[[^\]]*'collected'/);
+ assert.doesNotMatch(s,/ids:\[[^\]]*'invite'/);
  assert.doesNotMatch(s,/selector:'.*os-sales-card/);
- assert.match(read('src/client/platform-sales.js'),/oilstation:open-pane/);
+ assert.match(ui,/root\.append\(team,assignment,transfer,commission\)/);
+ assert.match(ui,/team\.append\(inviteArea\)/);
+ assert.match(ui,/assignment\.append\(inspectionPanel\)/);
+ assert.match(ui,/transfer\.append\(historyDetails\)/);
+ assert.match(ui,/commission\.append\(soldDetails\)/);
+ assert.match(ui,/backToStations\.addEventListener\('click'/);
+ assert.match(ui,/team\.hidden=!isAdmin/);
+ assert.match(ui,/form\.hidden=!canTransfer/);
+ const css=read('public/platform-sales-navigation.css');
+ assert.match(css,/\.os-sales-grid\[hidden\]/);
+ assert.match(css,/\.os-sales-transfer\[hidden\]/);
 });
+
 test('all per-screen functional tabs are exclusive, preserve loaded nodes and restore selection',()=>{
  const s=read('src/client/functional-submenus.js');
  for(const token of ['p.wrapper.hidden','state.selected','wrap.append(node)','new MutationObserver',
