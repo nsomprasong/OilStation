@@ -10,6 +10,6 @@ test('manager review requires original private image and explicit values',()=>{
  assert.match(source,/img\.onload/);
  assert.match(source,/approve\.disabled=true/);
  assert.match(source,/URL\.revokeObjectURL/);
- assert.match(source,/OCR แนะนำ/);
+ assert.doesNotMatch(source,/OCR แนะนำ/);
  assert.match(source,/bahtToSatang\(amount\.value\.trim\(\)\)/);
 });

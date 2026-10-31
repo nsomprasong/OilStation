@@ -149,6 +149,14 @@ export function createSupabaseAdapter(env) {
             p_organization_ids:allowed.organization,p_station_ids:allowed.station,
           }),
         }),
+      qaSalesCorporateScopes: async ({actorId,qaRunId,allowed})=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_sales_corporate_scopes',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+           p_actor_id:actorId,p_qa_run_id:qaRunId,
+           p_station_ids:allowed.station,p_company_ids:allowed.corporate_company,
+          }),
+        }),
       qaScopedOptions: async allow=>{
         // Direct REST SELECT is intentionally unavailable on tenant tables,
         // even to service_role. A read-only QA-run-locked RPC validates every
@@ -602,6 +610,11 @@ export function createSupabaseAdapter(env) {
           body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId,
             p_observed_plate:d.observedPlate,p_accepted:d.accepted}),
         }),
+      platePhotoStatus: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_plate_photo_status',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
+        }),
       reviewPlate: async d=>serviceRequest(env,
         '/rest/v1/rpc/review_station_plate_photo',{
           method:'POST',headers:{'content-type':'application/json'},
@@ -681,6 +694,13 @@ export function createSupabaseAdapter(env) {
           }),
         });
       },
+      qaCouponScope: async ({couponId,allowed})=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_coupon_link_scope',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_coupon_id:couponId,
+            p_station_ids:allowed.station,
+            p_company_ids:allowed.corporate_company}),
+        }),
       couponView: async (token) => {
         const match = /^([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\.([a-f0-9]{64})$/i.exec(token || '');
         if (!match) return null;
@@ -827,6 +847,28 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_account_id:d.accountId}),
         }),
+      qaRequestTopup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_request_wallet_topup',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_qa_run_id:d.qaRunId,
+            p_account_id:d.accountId,p_amount_satang:d.amountSatang,
+            p_request_key:d.requestKey,p_station_ids:d.allowed.station,
+            p_company_ids:d.allowed.corporate_company}),
+        }),
+      qaPendingTopups: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_pending_wallet_topups',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_qa_run_id:d.qaRunId,
+            p_station_id:d.stationId,p_station_ids:d.allowed.station,
+            p_company_ids:d.allowed.corporate_company}),
+        }),
+      qaReviewTopup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_review_wallet_topup',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_qa_run_id:d.qaRunId,
+            p_request_id:d.requestId,p_approved:d.approved,
+            p_station_ids:d.allowed.station,p_company_ids:d.allowed.corporate_company}),
+        }),
       reviewTopup: async d=>serviceRequest(env,
         '/rest/v1/rpc/review_verified_corporate_topup',{
           method:'POST',headers:{'content-type':'application/json'},
@@ -921,6 +963,28 @@ export function createSupabaseAdapter(env) {
         const rows = await serviceRequest(env, '/rest/v1/brand_fuel_products?' + params);
         return rows.map(({ fuel_brands, ...row }) => ({ ...row, brand_code: fuel_brands.code }));
       },
+      companyDriverRoster: async (actorId,companyId)=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_company_driver_roster',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_company_id:companyId}),
+        }),
+      assignDriverVehicle: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_assign_driver_vehicle',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_company_id:d.companyId,
+            p_driver_user_id:d.driverUserId,p_plate:d.plate}),
+        }),
+      driverCouponInbox: async actorId=>{
+        const rows=await serviceRequest(env,
+          '/rest/v1/rpc/oilstation_driver_coupon_inbox',{
+            method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({p_actor_id:actorId}),
+          });
+        return {vehicles:rows.vehicles||[],
+          coupons:await Promise.all((rows.coupons||[]).map(async c=>({...c,qrPayload:
+            ['reserved','verified'].includes(c.status)&&Date.parse(c.expiresAt)>Date.now()
+              ?c.id+'.'+await hmac(env.COUPON_SIGNING_KEY,c.id+':qr'):null}))) };
+      },
       issueCoupon: async (input) => {
         const id = crypto.randomUUID();
         const linkSig = await hmac(env.COUPON_SIGNING_KEY, id + ':link');
@@ -934,12 +998,13 @@ export function createSupabaseAdapter(env) {
           p_station_fuel_id: input.stationFuelId,
           p_amount_satang: input.amountSatang,
           p_expires_at: input.expiresAt,
-          p_plate: input.plate,
+          ...(input.driverId?{p_driver_id:input.driverId}:{p_plate:input.plate}),
           p_secret_hash: await digest(linkToken),
           p_qr_hash: await digest(qrToken),
           p_idempotency_key: input.idempotencyKey,
         };
-        const result = await serviceRequest(env, '/rest/v1/rpc/issue_reserved_coupon', {
+        const result = await serviceRequest(env, input.driverId?
+          '/rest/v1/rpc/oilstation_issue_driver_coupon':'/rest/v1/rpc/issue_reserved_coupon', {
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
         });
         // Idempotency replay can return an existing coupon ID; recalculate tokens.

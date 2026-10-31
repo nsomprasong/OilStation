@@ -1,6 +1,5 @@
 import { createApi } from './api/router.mjs';
 import { createFuelReviewApi } from './api/fuel-review.mjs';
-import { createFuelOcrApi } from './api/fuel-ocr.mjs';
 import { createFuelPhotoApi } from './api/fuel-photo.mjs';
 import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
@@ -19,13 +18,16 @@ import { createAttendancePayrollPreviewApi } from './api/attendance-payroll-prev
 import { createAttendanceReviewApi } from './api/attendance-review.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
-import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
 import { createWalletIntegrityApi } from './api/wallet-integrity.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 import { createSupabaseConnectivityProbe } from './api/supabase-connectivity.mjs';
 import {createQaAccountsApi,qaIsEnabled} from './api/qa-accounts.mjs';
 import {createQaCorporatePreviewApi} from './api/qa-corporate-preview.mjs';
+import {createQaTopupSimulationApi,qaFinanceEnabled} from './api/qa-topup-simulation.mjs';
+import {createQaOperationsApi} from './api/qa-operations.mjs';
+import {createQaCouponViewApi} from './api/qa-coupon-view.mjs';
+import {createDriverWorkspaceApi} from './api/driver-workspace.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -63,6 +65,15 @@ export default {
       }
       // Explicit server-only QA switch. Never expose account creation just
       // because the production preview login is enabled.
+      if(url.pathname.startsWith('/api/qa/finance/topup/')){
+        try {
+          return createQaTopupSimulationApi({env,...createSupabaseAdapter(env)})(request);
+        }catch{
+          return new Response(JSON.stringify({error:'qa_finance_unavailable'}),{
+            status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
+        }
+      }
       if(url.pathname.startsWith('/api/qa/')){
         if(!qaIsEnabled(env))return new Response(JSON.stringify({error:'not_found'}),{
           status:404,headers:{'content-type':'application/json','cache-control':'no-store'},
@@ -98,6 +109,7 @@ export default {
         return new Response(JSON.stringify({
           supabaseUrl:env.SUPABASE_URL,supabaseAnonKey:env.SUPABASE_ANON_KEY,
           stripePublishableKey:null,qaModeEnabled:qaIsEnabled(env),
+          qaFinanceSimEnabled:qaFinanceEnabled(env),
         }),{status:200,headers:{'content-type':'application/json; charset=utf-8',
            'cache-control':'no-store','x-content-type-options':'nosniff'}});
       }
@@ -158,6 +170,22 @@ export default {
             return createPlatformBillingApi(createSupabaseAdapter(env))(request);
           if(stationPages.has(url.pathname))
             return createApi(createSupabaseAdapter(env))(request);
+          // A public driver link is a signed capability, never a general finance API.
+          if(url.pathname==='/api/coupon-view'&&qaFinanceEnabled(env)){
+            const adapter=createSupabaseAdapter(env);
+            return createQaCouponViewApi({env,db:adapter.db})(request);
+          }
+          // Only synthetic QA identities on the fixed 4 stations / 12 companies
+          // may use real QR reservation and settlement against QA money.
+          // Ordinary production finance remains closed in preview.
+          if(qaFinanceEnabled(env)||(
+            qaIsEnabled(env)&&
+            ['/api/corporate/drivers','/api/corporate/driver-vehicle',
+             '/api/driver/coupons'].includes(url.pathname))){
+            const result=await createQaOperationsApi({
+              env,...createSupabaseAdapter(env)})(request);
+            if(result.status!==404)return result;
+          }
           if(url.pathname==='/api/station/billing/options' ||
              url.pathname==='/api/station/billing/select')
             return createStationSaasOnboardingApi(createSupabaseAdapter(env))(request);
@@ -213,8 +241,9 @@ export default {
           return createFuelReviewApi(deps)(request);
         }
         if (url.pathname === '/api/evidence/fuel/ocr') {
-          return createFuelOcrApi({...deps,
-            recognize:createGoogleVisionRecognizer(env.GOOGLE_VISION_API_KEY)})(request);
+          return new Response(JSON.stringify({error:'ocr_removed_use_photo_review'}),{
+            status:410,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
         }
         if (url.pathname === '/api/evidence/fuel') {
           return createFuelPhotoApi(deps)(request);
@@ -256,6 +285,9 @@ export default {
         if (url.pathname === '/api/hr/attendance/gps') {
           return createGpsAttendanceApi(deps)(request);
         }
+        if (['/api/corporate/drivers','/api/corporate/driver-vehicle',
+             '/api/driver/coupons'].includes(url.pathname))
+          return createDriverWorkspaceApi(deps)(request);
         if (url.pathname === '/api/corporate/wallet-integrity') {
           return createWalletIntegrityApi(deps)(request);
         }
@@ -265,10 +297,9 @@ export default {
         if (url.pathname === '/api/evidence/plate/reviews' || url.pathname === '/api/evidence/plate/photo') {
           return createPlateReviewInboxApi(deps)(request);
         }
-        if (url.pathname === '/api/evidence/plate/ocr' || url.pathname === '/api/evidence/plate/review') {
-          return createPlateVerificationApi({ ...deps,
-            recognize: createGoogleVisionRecognizer(env.GOOGLE_VISION_API_KEY),
-          })(request);
+        if (['/api/evidence/plate/ocr','/api/evidence/plate/review',
+             '/api/evidence/plate/status'].includes(url.pathname)) {
+          return createPlateVerificationApi(deps)(request);
         }
         if (url.pathname === '/api/evidence/plate') {
           return createEvidenceApi(deps)(request);

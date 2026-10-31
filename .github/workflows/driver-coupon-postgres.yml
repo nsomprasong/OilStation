@@ -1,0 +1,37 @@
+name: Driver Coupon SQL Integration (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  driver-coupon-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_driver_coupon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_driver_coupon"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run real driver and QR reservation RPCs with imaginary actors and funds only
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_driver_coupon
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261029120000_coupon_reserved_atomic.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031210000_driver_vehicle_direct_coupon_delivery.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/driver-coupon-assertions.sql
+            '

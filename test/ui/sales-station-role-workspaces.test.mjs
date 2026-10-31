@@ -26,6 +26,8 @@ test('UI registers scoped HR/finance workspaces with role-specific station IDs',
  const src=readFileSync('src/client/main.js','utf8');
  assert.match(src,/const hrManager=memberships\.find/);
  assert.match(src,/const financeManager=memberships\.find/);
- assert.match(src,/register\('finance',\(\)=>stationFinanceWorkspace/);
+ assert.match(src,/register\('finance',\(\)=>qaFinanceMode\?/);
+ assert.match(src,/stationFinanceWorkspace\(session\.access_token,stationId/);
+ assert.match(src,/mountQaTopupApprovals\(/);
  assert.match(src,/register\('hr',\(\)=>hrWorkspace/);
 });

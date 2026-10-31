@@ -190,7 +190,7 @@ test('production preview exposes only public OAuth config, not finance or privil
  const body=await response.json();
  assert.deepEqual(body,{
   supabaseUrl:env.SUPABASE_URL,supabaseAnonKey:env.SUPABASE_ANON_KEY,
-  stripePublishableKey:null,qaModeEnabled:false,
+  stripePublishableKey:null,qaModeEnabled:false,qaFinanceSimEnabled:false,
  });
  assert.ok(!JSON.stringify(body).includes(env.SUPABASE_SERVICE_ROLE_KEY));
  const unauthenticated=await worker.fetch(request('/api/me'),env);

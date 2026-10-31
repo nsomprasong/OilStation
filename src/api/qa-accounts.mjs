@@ -34,14 +34,15 @@ export function qaApprovedAlias({alias,scopeType,roleCode,scopeId},allowed){
 }
 // Preserve global alias numbering when filtering to a Sales' own branches.
 export function qaVisibleScopes(available,salesIds=null){
- const prefixes={station:STATION_CODES,organization:['o01','o02','o03','o04']};
+ const prefixes={station:STATION_CODES,organization:['o01','o02','o03','o04'],
+  corporate_company:Array.from({length:12},(_,i)=>'c'+String(i+1).padStart(2,'0'))};
  const visible={};
  for(const kind of ['platform','organization','station','corporate_company']){
   const options=(available?.[kind]||[]).map((item,index)=>({
     ...item,...(prefixes[kind]?.[index]?{aliasPrefix:prefixes[kind][index]}:{})
   }));
   visible[kind]=salesIds===null?options:
-    ['station','organization'].includes(kind)?
+    ['station','organization','corporate_company'].includes(kind)?
     options.filter(x=>(salesIds[kind]||[]).includes(x.id)):[];
  }
  return visible;
@@ -92,6 +93,15 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
    if(isSales&&(!Array.isArray(salesIds?.station)||
        !Array.isArray(salesIds?.organization)))
      return json(503,{error:'qa_scope_unavailable'});
+   if(isSales){
+     // Synthetic Corporate roles are only for customers linked *exclusively*
+     // to the Sales' own stations. SQL validates all 12 fixed company mappings.
+     salesIds.corporate_company=permitted.corporate_company.length===0?[]:
+      await db.qaSalesCorporateScopes({
+       actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,allowed:permitted});
+     if(!Array.isArray(salesIds.corporate_company))
+      return json(503,{error:'qa_scope_unavailable'});
+   }
    if(request.method==='GET'){
     if(url.pathname!=='/api/qa/scopes')return json(404,{error:'not_found'});
     const available=await db.qaScopedOptions(permitted);
@@ -137,7 +147,7 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
    }
    if(!qaApprovedAlias({alias,scopeType,roleCode,scopeId},permitted))
     return json(400,{error:'qa_alias_not_in_approved_role_matrix'});
-   if(isSales&&(!['station','organization'].includes(scopeType)||
+   if(isSales&&(!['station','organization','corporate_company'].includes(scopeType)||
      !salesIds[scopeType].includes(scopeId)))
     return json(403,{error:'scope_not_owned_by_sales'});
    const result=await provisionAccount({

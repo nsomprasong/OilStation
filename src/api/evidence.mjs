@@ -36,7 +36,7 @@ async function limitedBytes(request) {
  }catch{return null;}
  finally{reader.releaseLock();}
 }
-/** No trusted assertions of OCR outcome accepted from the browser. */
+/** Upload original plate photo; only a different authorized reviewer can approve it. */
 export function createEvidenceApi({authenticate,db}) {
  return async function handle(request) {
   const url=new URL(request.url);
@@ -63,7 +63,7 @@ export function createEvidenceApi({authenticate,db}) {
    const record=await db.recordPlate({
     actorId:user.id,stationId,couponId,path,
    });
-   return json(201,{evidence:{photoId:record.photoId,path,status:record.status,verified:false}});
+   return json(201,{evidence:{photoId:record.photoId,path,status:'pending_review',verified:false}});
   }catch(e){
    if(e?.code==='FORBIDDEN')return json(403,{error:'permission_denied'});
    if(e?.code==='INVALID_REQUEST')return json(400,{error:'invalid_evidence'});

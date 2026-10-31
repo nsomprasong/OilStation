@@ -13,6 +13,8 @@ import { mountAttendancePayrollPreview } from './attendance-payroll-preview.js';
 import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
+import {mountQaTopupRequest,mountQaTopupApprovals} from './qa-finance.js';
+import {mountCompanyDriverAssignment,mountDriverWorkspace} from './driver-workspace.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
 import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
@@ -100,7 +102,7 @@ function bahtToSatang(text) {
   if (amount <= 0n || amount > 999_999_999_999_999n) return null;
   return amount.toString();
 }
-async function corporateWorkspace(accessToken) {
+async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
   const target = document.getElementById('corporate-workspace');
   if (!target) return;
   target.innerHTML = `
@@ -122,11 +124,14 @@ async function corporateWorkspace(accessToken) {
       <p id="topup-notice" class="notice" hidden role="status"></p>
       <p class="hint">การส่งสลิปไม่ใช่การเติมเงินสำเร็จ ยอดพร้อมใช้จะเพิ่มหลังจากปั๊มตรวจเงินเข้าจริงและอนุมัติเท่านั้น</p>
     </form>
+    <section id="qa-topup-workspace" class="module-list" aria-label="เติมเงินจำลองสำหรับ QA"></section>
+    <section id="company-driver-workspace" class="module-list" aria-label="กำหนดทะเบียนให้คนขับ"></section>
     <form id="coupon-form" class="coupon-form" hidden>
       <label class="field">เลือกปั๊มน้ำมัน <select required id="account-select"></select></label>
       <label class="field">ประเภทน้ำมัน <select required id="fuel-select"></select></label>
       <label class="field">วงเงินคูปอง (บาท) <input id="amount-input" inputmode="decimal" autocomplete="off" required placeholder="เช่น 1500.00"></label>
-      <label class="field">ทะเบียนรถ (ไม่บังคับ) <input id="plate-input" maxlength="40" autocomplete="off" placeholder="เช่น กข 1234"></label>
+      <label class="field">ส่ง QR ให้คนขับ <select id="coupon-driver-select" required></select></label>
+      <label class="field">ทะเบียนรถที่ผูกกับคนขับ <input id="plate-input" readonly maxlength="40" placeholder="เลือกคนขับที่กำหนดทะเบียนแล้ว"></label>
       <label class="field">อายุคูปอง <select required id="expiry-select">
         <option value="24">24 ชั่วโมง</option>
         <option value="6">6 ชั่วโมง</option>
@@ -156,6 +161,27 @@ async function corporateWorkspace(accessToken) {
   let pendingPayload = null;
   const accountSelect = $('account-select');
   const fuelSelect = $('fuel-select');
+  const driverSelect = $('coupon-driver-select');
+  let eligibleDrivers=[];
+  let driverAssignment;
+  function renderDriverChoices(roster){
+    eligibleDrivers=(roster||[]).filter(d=>d.driverId&&d.vehicleId&&d.plate);
+    const prior=driverSelect.value;
+    driverSelect.replaceChildren();
+    for(const driver of eligibleDrivers){
+      const option=document.createElement('option');option.value=driver.driverId;
+      option.textContent=driver.displayName+' · '+driver.plate;
+      driverSelect.appendChild(option);
+    }
+    if(eligibleDrivers.some(d=>d.driverId===prior))driverSelect.value=prior;
+    driverSelect.dispatchEvent(new Event('change'));
+    const disabled=eligibleDrivers.length===0;
+    $('coupon-submit').disabled=disabled||fuelSelect.options.length===0;
+  }
+  driverSelect.addEventListener('change',()=>{
+    $('plate-input').value=eligibleDrivers.find(d=>d.driverId===driverSelect.value)?.plate||'';
+    pendingIdempotencyKey=null;pendingPayload=null;
+  });
   async function reloadAccounts() {
     const res = await getApi('/api/my-accounts', accessToken);
     if (!res.ok) throw new Error('อ่านบัญชีบริษัทไม่สำเร็จ');
@@ -208,6 +234,17 @@ async function corporateWorkspace(accessToken) {
       overview.appendChild(el);
     });
     if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
+    if(!driverAssignment){
+      driverAssignment=mountCompanyDriverAssignment({
+        target:$('company-driver-workspace'),token:accessToken,
+        accountSelect:()=>accounts.find(a=>a.id===accountSelect.value),
+        onSelect:renderDriverChoices,
+      });
+    }else await driverAssignment.refresh();
+    if(qaFinanceMode)mountQaTopupRequest({
+      target:$('qa-topup-workspace'),token:accessToken,accounts,
+      onChanged:async()=>{await reloadAccounts();},
+    });
     $('coupon-form').hidden = !accounts.some(a => a.couponModuleEnabled);
     if (accounts.length) { await reloadFuels(); await reloadBankOptions(); }
   }
@@ -229,7 +266,7 @@ async function corporateWorkspace(accessToken) {
       opt.textContent=fuel.name + ' · ' + fuel.corporatePrice + ' บาท/ลิตร';
       fuelSelect.appendChild(opt);
     });
-    $('coupon-submit').disabled = fuelSelect.options.length===0;
+    $('coupon-submit').disabled = fuelSelect.options.length===0||eligibleDrivers.length===0;
   }
   async function reloadBankOptions() {
     const view=$('company-bank-options');
@@ -299,6 +336,7 @@ async function corporateWorkspace(accessToken) {
     pendingIdempotencyKey=null;
     reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true));
     reloadBankOptions().catch(()=>setNotice('โหลดบัญชีธนาคารไม่ได้',true));
+    driverAssignment?.refresh();
   });
   $('coupon-form').addEventListener('input',()=>{ pendingIdempotencyKey=null; pendingPayload=null; });
   $('coupon-form').addEventListener('submit',async event => {
@@ -306,13 +344,15 @@ async function corporateWorkspace(accessToken) {
     const amountSatang=bahtToSatang($('amount-input').value.trim());
     if (!amountSatang) return setNotice('ระบุจำนวนเงินเป็นบาท เช่น 1500 หรือ 1500.50',true);
     const accountId=accountSelect.value, stationFuelId=fuelSelect.value;
+    const assignedDriver=eligibleDrivers.find(d=>d.driverId===driverSelect.value);
+    if(!assignedDriver)return setNotice('ต้องเลือกคนขับที่ผูกทะเบียนรถแล้วก่อนออก QR',true);
     if (!accountId || !stationFuelId) return setNotice('กรุณาเลือกปั๊มและชนิดน้ำมัน',true);
     // Preserve the exact payload and idempotency key across network retries;
     // do not regenerate expiresAt if the user did not change the form.
     if (!pendingIdempotencyKey || !pendingPayload) {
       pendingPayload=JSON.stringify({
         accountId, stationFuelId, amountSatang,
-        plate:$('plate-input').value.trim(),
+        driverId:assignedDriver.driverId,
         expiresAt:new Date(Date.now()+Number($('expiry-select').value)*3600_000).toISOString(),
       });
       pendingIdempotencyKey=crypto.randomUUID().replace(/-/g,'');
@@ -332,7 +372,12 @@ async function corporateWorkspace(accessToken) {
       pendingPayload=null;
       pendingIdempotencyKey=null;
       $('issue-result').hidden=false;
-      $('share-link').value=coupon.shareUrl;
+      $('share-link').value='';
+      $('share-link').hidden=true;
+      $('copy-link').hidden=true;
+      $('issue-result').querySelector('p').textContent=
+        'QR ถูกผูกกับ '+assignedDriver.displayName+' · ทะเบียน '+assignedDriver.plate+
+        ' และจะแสดงในเมนูคูปองของคนขับทันที ไม่ส่งผ่าน LINE';
       $('issued-qr').replaceChildren();
       const canvas=document.createElement('canvas');
       $('issued-qr').appendChild(canvas);
@@ -877,14 +922,16 @@ async function stationCorporateWorkspace(accessToken,stationId,target,{qaMode=fa
   });
 }
 
-async function fuelPriceEditor(accessToken,stationId,target) {
+async function fuelPriceEditor(accessToken,stationId,target,{qaDemo=false}={}) {
   if (!target) return;
   target.replaceChildren();
   const title=document.createElement('h2');
   title.textContent='ตั้งราคาน้ำมันและเปิดใช้งาน';
   target.appendChild(title);
   const hint=document.createElement('p');
-  hint.textContent='เลือกเฉพาะชนิดน้ำมันที่สาขาจำหน่ายจริง แล้วระบุราคาต่อลิตร';
+  hint.textContent=qaDemo?
+    'ปั๊ม QA: ใช้ราคาทดสอบสมมติ ดีเซล 32.50 และแก๊สโซฮอล์ 95 35.90 บาท/ลิตร · ต้องกดบันทึกผ่านเว็บจริง':
+    'เลือกเฉพาะชนิดน้ำมันที่สาขาจำหน่ายจริง แล้วระบุราคาต่อลิตร';
   target.appendChild(hint);
   const res=await getApi('/api/station-fuels?stationId='+encodeURIComponent(stationId),accessToken);
   if (!res.ok) {
@@ -900,6 +947,11 @@ async function fuelPriceEditor(accessToken,stationId,target) {
   }
   for (const fuel of res.data.fuels||[]) {
     const row=document.createElement('div');row.className='fuel-row';
+    row.dataset.stationFuelId=fuel.id;
+    const demoPrice=qaDemo?
+      (/ดีเซล|diesel/i.test(fuel.name)?'32.50':
+       /(?:แก๊สโซฮอล์|gasohol).*95/i.test(fuel.name)?'35.90':null):null;
+    if(demoPrice)row.dataset.qaDemoPrice=demoPrice;
     const name=document.createElement('strong');name.textContent=fuel.name;
     const controls=document.createElement('div');controls.className='fuel-row-controls';
     const toggle=document.createElement('label');
@@ -930,6 +982,16 @@ async function fuelPriceEditor(accessToken,stationId,target) {
       } catch {setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาลองบันทึกอีกครั้ง','error');}
       finally {save.disabled=false;}
     });
+    if(demoPrice){
+      const preset=document.createElement('button');
+      preset.type='button';preset.className='button secondary os-qa-fuel-preset';
+      preset.textContent='ใช้ราคาทดสอบ '+demoPrice;
+      preset.addEventListener('click',()=>{
+        price.value=demoPrice;checkbox.checked=true;
+        setUiStatus(status,'ใส่ราคาสมมติแล้ว กรุณากดบันทึก','neutral');
+      });
+      controls.append(preset);
+    }
     controls.append(toggle,price,save);
     row.append(name,controls,status);target.appendChild(row);
   }
@@ -964,16 +1026,16 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
        </label>
        <button type="submit" class="button primary"><i data-ui-icon="camera"></i>ส่งรูปตรวจทะเบียน</button>
      </form>
-     <p class="hint">ต้องให้ระบบตรวจภาพทะเบียนและยืนยันความถูกต้องก่อนเริ่มเติมน้ำมัน พนักงานไม่สามารถข้ามขั้นตอนนี้ได้</p>
+     <p class="hint">ใช้ภาพทะเบียนเป็นหลักฐาน ไม่ใช้ OCR และต้องให้ผู้มีสิทธิ์คนอื่นตรวจรูปก่อนเริ่มเติมน้ำมัน</p>
      <section id="plate-verification" class="plate-verification" hidden aria-label="ผลตรวจทะเบียน">
        <div class="section-title"><i data-ui-icon="shield"></i>ยืนยันหลักฐานทะเบียน</div>
        <p id="plate-verification-status" role="status" aria-live="polite">ยังไม่ได้ตรวจ</p>
-       <button type="button" id="plate-ocr-retry" class="button secondary">ตรวจด้วย OCR อีกครั้ง</button>
+       <button type="button" id="plate-review-refresh" class="button secondary">ตรวจสถานะการอนุมัติรูป</button>
        <form id="plate-supervisor-form" class="coupon-form">
          <label class="field">ทะเบียนที่เห็นจากภาพจริง
            <input id="plate-supervisor-value" autocomplete="off" maxlength="40" placeholder="ตัวอย่าง กข 1234" required>
          </label>
-         <p class="hint">สำหรับแคชเชียร์/ผู้จัดการที่ไม่ได้ถ่ายภาพนี้เท่านั้น ต้องตรวจภาพจริงและตรงกับทะเบียนคูปอง ห้ามยืนยันจากข้อความ OCR อย่างเดียว</p>
+         <p class="hint">แคชเชียร์หรือผู้จัดการที่ไม่ได้ถ่ายรูป ต้องเปิดดูรูปจริงและยืนยันทะเบียนให้ตรงกับคูปอง ไม่ใช้ OCR</p>
          <button class="button primary" type="submit">ยืนยันทะเบียนตรงกับภาพจริง</button>
          <button id="plate-reject" class="button secondary" type="button">ไม่ผ่าน — ปฏิเสธภาพนี้</button>
        </form>
@@ -1012,12 +1074,12 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
  let fuelProofIds={};
  const photoPanel=$('plate-verification');
  const photoStatus=$('plate-verification-status');
- const photoRetry=$('plate-ocr-retry');
+ const photoRefresh=$('plate-review-refresh');
  const reviewerForm=$('plate-supervisor-form');
  const setPhotoStatus=(text,verified=false)=>{
    photoStatus.textContent=text;
    photoPanel.dataset.verified=verified?'true':'false';
-   photoRetry.hidden=verified;reviewerForm.hidden=verified;
+   photoRefresh.hidden=verified;reviewerForm.hidden=verified||!canReview;
    $('fuel-start-panel').hidden=!verified||Boolean(sessionId);
  };
  const stop=()=>{
@@ -1077,34 +1139,34 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
      if(!current || current.couponId!==couponIdAtUpload)return;
      if(res.ok && data.evidence?.photoId){
        photoId=data.evidence.photoId;photoPanel.hidden=false;
-       setPhotoStatus('ภาพอยู่ในพื้นที่จัดเก็บส่วนตัว กำลังตรวจ OCR…');
-       await runPlateOcr();
+       setPhotoStatus('รับรูปทะเบียนแล้ว — รอผู้จัดการ/แคชเชียร์คนอื่นตรวจภาพ');
+       report('รูปถูกบันทึกแล้ว ยังเริ่มเติมน้ำมันไม่ได้จนกว่าจะอนุมัติ');
      } else report('ส่งภาพไม่สำเร็จ ('+(data.error||'service_unavailable')+')',true);
    }catch{report('การอัปโหลดล้มเหลว',true);}
    finally{button.disabled=false;}
  });
 
- async function runPlateOcr(){
+ async function refreshPlateApproval(){
    if(!photoId)return;
-   const pendingPhotoId=photoId;photoRetry.disabled=true;
-   setPhotoStatus('กำลังอ่านทะเบียนจากภาพส่วนตัว…');
+   const currentPhotoId=photoId;
+   photoRefresh.disabled=true;
    try{
-     const res=await getApi('/api/evidence/plate/ocr',token,{
-       method:'POST',body:JSON.stringify({photoId:pendingPhotoId}),
-     });
-     if(photoId!==pendingPhotoId)return;
-     if(res.ok && res.data.result?.verified){
-       setPhotoStatus('ตรวจทะเบียนผ่าน ✓ หลักฐานได้รับการยืนยัน',true);
-       report('ทะเบียนผ่านการตรวจสอบ OCR');
-     }else{
-       setPhotoStatus(res.ok ? 'OCR ไม่แน่ชัดหรือตรวจพบทะเบียนต่างจากคูปอง — ต้องให้แคชเชียร์/ผู้จัดการตรวจภาพจริง' :
-         'OCR ยังไม่พร้อมใช้งาน — รอผู้มีสิทธิ์ตรวจภาพจริง');
-       report('ยังไม่อนุญาตเริ่มเติมน้ำมัน',true);
-     }
-   }catch{setPhotoStatus('เชื่อมต่อ OCR ไม่สำเร็จ — รอผู้จัดการตรวจภาพ');}
-   finally{photoRetry.disabled=false;}
+     const r=await getApi('/api/evidence/plate/status?photoId='+encodeURIComponent(photoId),token);
+     if(photoId!==currentPhotoId)return;
+     if(!r.ok)return report('โหลดสถานะการตรวจรูปไม่สำเร็จ',true);
+     const result=r.data.result||{};
+     if(result.verified===true){
+       setPhotoStatus('ผู้มีสิทธิ์ตรวจรูปทะเบียนผ่านแล้ว ✓',true);
+       report('รูปทะเบียนอนุมัติแล้ว เริ่มเติมน้ำมันได้');
+     }else if(result.status==='rejected'){
+       setPhotoStatus('รูปถูกปฏิเสธ กรุณาถ่ายใหม่');
+       photoId=null;photoPanel.hidden=true;
+       report('รูปทะเบียนไม่ผ่าน ต้องถ่ายใหม่',true);
+     }else setPhotoStatus('รอผู้มีสิทธิ์คนอื่นตรวจรูปทะเบียน');
+   }catch{report('เชื่อมต่อระบบสถานะไม่ได้',true);}
+   finally{photoRefresh.disabled=false;}
  }
- photoRetry.addEventListener('click',runPlateOcr);
+ photoRefresh.addEventListener('click',refreshPlateApproval);
  async function supervisorDecision(approved){
    if(!photoId)return report('กรุณาอัปโหลดภาพก่อน',true);
    const pendingPhotoId=photoId;
@@ -1163,7 +1225,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
    status.textContent='กำลังส่งหลักฐานแบบส่วนตัว…';
    const activeSession=sessionId;
    try{
-     const preview=[];
+     const savedKinds=[];
      for(const [kind,file] of uploads){
        const response=await fetch('/api/evidence/fuel?sessionId='+encodeURIComponent(activeSession)
          +'&kind='+kind,{method:'POST',headers:{authorization:'Bearer '+token,
@@ -1173,15 +1235,11 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
        const evidenceId=saved.evidence?.evidenceId;
        if(evidenceId){
          fuelProofIds[kind]=evidenceId;
-         const ocr=await getApi('/api/evidence/fuel/ocr',token,{
-           method:'POST',body:JSON.stringify({evidenceId}),
-         }).catch(()=>null);
-         preview.push(ocr?.ok?kind+': OCR รอผู้จัดการตรวจ':
-           kind+': รับภาพแล้ว OCR ยังไม่พร้อม');
+         savedKinds.push(kind==='pump_display'?'รูปหัวจ่าย':'รูปใบเสร็จ');
        }
      }
      if(sessionId!==activeSession)return;
-     status.textContent='รับภาพแล้ว · '+preview.join(' / ')+' · ยังไม่ปิดยอด ไม่ตัดวงเงิน';
+     status.textContent='รับภาพแล้ว · '+savedKinds.join(' / ')+' · รอผู้จัดการตรวจ ไม่ตัดวงเงินก่อนปิดยอด';
      $('finish-verified-fueling').hidden=!(fuelProofIds.pump_display&&fuelProofIds.receipt);
    }catch{
      status.textContent='ส่งหลักฐานไม่ครบ กรุณาตรวจสอบรูปภาพและลองส่งใหม่';
@@ -1403,6 +1461,8 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
 
 function dashboard(data, session, publicConfig={}) {
  const memberships=data.memberships||[];
+ const qaFinanceMode=publicConfig.qaFinanceSimEnabled===true&&
+   session.user?.app_metadata?.oilstation_qa===true;
  const scopes={
   platform:{title:'แพลตฟอร์ม',modules:['ปั๊มที่ให้บริการ','พนักงานขาย','การเรียกเก็บเงิน']},
   organization:{title:'เจ้าของกิจการ',modules:['บริหารปั๊ม','สมาชิกและสิทธิ์','การเงิน']},
@@ -1536,10 +1596,16 @@ function dashboard(data, session, publicConfig={}) {
  }
  if(station||financeManager){
   const stationId=(station||financeManager).stationId;
-  register('finance',()=>stationFinanceWorkspace(session.access_token,stationId,document.getElementById('station-finance-workspace')));
+  register('finance',()=>qaFinanceMode?
+    mountQaTopupApprovals({target:document.getElementById('station-finance-workspace'),
+      token:session.access_token,stationId}):
+    stationFinanceWorkspace(session.access_token,stationId,document.getElementById('station-finance-workspace')));
  }
  if(station){
-  register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,document.getElementById('station-fuel-workspace')));
+  register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,
+    document.getElementById('station-fuel-workspace'),{
+      qaDemo:publicConfig.qaModeEnabled===true&&session.user?.app_metadata?.oilstation_qa===true,
+    }));
   register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace'),{qaMode:publicConfig.qaModeEnabled===true}));
   register('invitations',()=>document.getElementById('member-invites')?.appendChild(
    createInviteControl(session.access_token,'station',station.stationId,
@@ -1549,8 +1615,12 @@ function dashboard(data, session, publicConfig={}) {
  if(corpAdmin)register('invitations',()=>document.getElementById('member-invites')?.appendChild(
   createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
    [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']])));
- if(memberships.some(m=>m.scopeType==='corporate_company'))
-  register('corporate',()=>corporateWorkspace(session.access_token));
+ if(memberships.some(m=>m.scopeType==='corporate_company'&&m.role!=='driver'))
+  register('corporate',()=>corporateWorkspace(session.access_token,{qaFinanceMode}));
+ if(memberships.some(m=>m.scopeType==='corporate_company'&&m.role==='driver'))
+  register('driver',()=>mountDriverWorkspace({
+    target:document.getElementById('driver-workspace'),token:session.access_token,
+  }));
  const shell=root.querySelector('[data-workspace-shell]');
  shell?.addEventListener('oilstation:screenchange',event=>{
   if(event.detail.key!=='pump'){

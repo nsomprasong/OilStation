@@ -23,7 +23,7 @@ test('private pump photo upload is authorized before storing, never auto approve
  const a=app();const r=await a.handle(request());
  assert.equal(r.status,201);
  const response=await r.json();
- assert.deepEqual(response.evidence,{evidenceId:E,status:'pending_ocr',verified:false});
+ assert.deepEqual(response.evidence,{evidenceId:E,status:'pending_review',verified:false});
  assert.equal(JSON.stringify(response).includes('stations/'),false);
  assert.deepEqual(a.calls.map(x=>x[0]),['auth','upload','record']);
  assert.equal(a.calls[0][1].actorId,U);
