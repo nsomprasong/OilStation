@@ -29,8 +29,8 @@ test('workflow is manual with pre-deployment production SQL and bindings gates',
  assert.doesNotMatch(wf,/for key in[^\n]*OILSTATION_API_ENABLED/);
  assert.match(wf,/\.type == "secret_text"/);
  assert.match(wf,/\/workers\/scripts\/oilstation\/settings/);
- assert.match(wf,/\.name == "OILSTATION_API_ENABLED" and \.type == "plain_text" and \.text == "true"/);
- assert.match(wf,/Production OILSTATION_API_ENABLED must be an explicit plain-text true/);
+ assert.match(wf,/\.name == "OILSTATION_API_ENABLED" and \.type == "plain_text" and \.text == "false"/);
+ assert.match(wf,/Production OILSTATION_API_ENABLED must remain false before release/);
  assert.match(wf,/wrangler@4 deploy --env uat/);
  assert.match(wf,/wrangler@4 deploy --config wrangler\.production-release\.json/);
  assert.match(wf,/oilstation\.goldensoft\.cloud\/api\/ready/);
