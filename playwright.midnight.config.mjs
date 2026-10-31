@@ -3,13 +3,13 @@ import {defineConfig} from '@playwright/test';
 // Isolated local Vite preview; never points to customer production or a live DB.
 export default defineConfig({
   testDir:'./e2e',
-  testMatch:'**/luxcart.local.pw.mjs',
+  testMatch:'**/midnight.local.pw.mjs',
   timeout:60_000,
   expect:{timeout:10_000},
   workers:1,
   retries:0,
-  reporter:[['list'],['html',{open:'never',outputFolder:'playwright-report-luxcart'}]],
-  outputDir:'test-results-luxcart',
+  reporter:[['list'],['html',{open:'never',outputFolder:'playwright-report-midnight'}]],
+  outputDir:'test-results-midnight',
   use:{
     baseURL:'http://127.0.0.1:4173',
     browserName:'chromium',

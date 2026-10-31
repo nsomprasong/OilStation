@@ -9,8 +9,8 @@ if(links.length!==1||links[0]!=='/oilstation.css')throw Error('Exactly one local
 const assets=readdirSync('public').filter(name=>name.endsWith('.css'));
 if(assets.length!==1||assets[0]!=='oilstation.css')throw Error('Remove orphan theme CSS: '+assets);
 const content=readFileSync('public/oilstation.css','utf8');
-if(!content.includes('--lux-primary:#1C1917')||!content.includes('--lux-cream:#FFFBEB'))
- throw Error('LuxCart tokens not canonical');
+if(!content.includes('--mid-page:#040D3F')||!content.includes('--mid-card:#1D2552')||!content.includes('--mid-cyan:#0D8091'))
+ throw Error('Midnight Banking tokens not canonical');
 const root=postcss.parse(content,{from:'public/oilstation.css'});
 let ruleCount=0,declarations=0;const seen=new Set();
 const context=rule=>{

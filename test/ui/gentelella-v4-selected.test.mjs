@@ -8,7 +8,7 @@ test('legacy components retain behavior under the sole LuxCart stylesheet',()=>{
  const html=read('index.html'),css=read('public/oilstation.css');
  assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1);
  assert.match(html,/href="\/oilstation\.css"/);
- for(const token of ['#1C1917','#FFFBEB','#B8860B','252px','68px'])
+ for(const token of ['#040D3F','#141C4E','#1D2552','252px','68px'])
   assert.ok(css.includes(token),token);
  assert.match(css,/\.ws-nav\.active/);
  assert.match(css,/\.ws-sidebar/);

@@ -50,6 +50,10 @@ export function renderWorkspaceShell(screens){
   <span class="ws-quick-copy"><strong>${s.label}</strong><small>${s.desc}</small></span>
   <span class="ws-quick-arrow" aria-hidden="true">›</span>
  </button>`).join("");
+ const desktopNav=screens.map((item,i)=>`
+ <button class="os-desktop-side-link${i===0?' is-current':''}" type="button" data-ws-go="${item.key}" ${i===0?'aria-current="page"':''}>
+ <span class="os-desktop-side-icon"><i data-ui-icon="${item.icon}"></i></span>
+ <span class="os-desktop-side-copy">${item.label}</span></button>`).join('');
  const panels=screens.map((s,i)=>`
  <section class="panel ws-screen" data-ws-screen="${s.key}" id="ws-${s.key}"
    ${i===0?"":"hidden"} aria-labelledby="ws-heading-${s.key}">
@@ -77,10 +81,16 @@ export function renderWorkspaceShell(screens){
  </section>`).join("");
  const context=screens.filter(item=>item.key!=='overview').map(item=>
   `<div class="ws-context-group" data-context-for="${item.key}" hidden>${renderWorkspaceCategories(screens,item.key)}</div>`).join('');
- return `<div class="ws-layout" data-workspace-shell data-active-screen="overview">
-   <div class="ws-main">
+ return `<div class="ws-layout os-midnight-layout" data-workspace-shell data-active-screen="overview">
+ <aside class="os-desktop-sidebar" aria-label="เมนูหลัก">
+ <div class="os-desktop-brand"><img src="/oilstation-gold-logo.png?v=2" width="37" height="37" alt="" aria-hidden="true"><div><strong>OilStation</strong><small>OPERATIONS PLATFORM</small></div></div>
+ <nav class="os-desktop-side-nav" aria-label="เมนูตามสิทธิ์">${desktopNav}</nav>
+ <div class="os-desktop-side-footer"><span class="os-side-status-dot" aria-hidden="true"></span><span>พื้นที่ทำงานที่ได้รับอนุญาต</span></div>
+ </aside><div class="ws-main">
      <div class="ws-toolbar">
        <span class="ws-toolbar-title"><img class="ws-toolbar-brand" src="/oilstation-gold-logo.png?v=2" width="28" height="28" alt="" aria-hidden="true">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
+       <label class="os-desktop-search"><i data-ui-icon="scan"></i><input type="search" data-desktop-search placeholder="ค้นหาเมนูงาน..." aria-label="ค้นหาเมนูงานตามสิทธิ์" autocomplete="off"></label>
+       <span class="os-desktop-toolbar-label">WORKSPACE</span>
        <button type="button" class="os-toolbar-logout" data-mobile-logout aria-label="ออกจากระบบ">ออกจากระบบ</button>
      </div>
      <header class="ws-header">
@@ -106,6 +116,13 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
  const current=root.querySelector('#ws-current');
  const groups=[...root.querySelectorAll('[data-context-for]')];
  const homeSearch=root.querySelector('[data-mobile-search-input]');
+ const desktopSearch=root.querySelector('[data-desktop-search]');
+ const filterDesktopNavigation=()=>{
+  const q=desktopSearch?.value.trim().toLocaleLowerCase('th')||'';
+  for(const el of root.querySelectorAll('.os-desktop-side-link,.ws-quick')) el.hidden=!!q&&!((el.textContent||'').toLocaleLowerCase('th').includes(q));
+ };
+ desktopSearch?.addEventListener('input',filterDesktopNavigation);
+ desktopSearch?.addEventListener('keydown',event=>{if(event.key==='Escape'){desktopSearch.value='';filterDesktopNavigation();desktopSearch.blur();}});
  wireLogoutDialog(root);
  homeSearch?.addEventListener('input',()=>{
   const query=homeSearch.value.trim().toLocaleLowerCase('th');
@@ -137,6 +154,7 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
   }
   // Keep a stable dock during work; update frequency order only on Home.
   if(key==='overview')bottom();
+  if(desktopSearch?.value){desktopSearch.value='';filterDesktopNavigation();}
   root.querySelectorAll('[data-ws-go]').forEach(button=>{
    const active=button.dataset.wsGo===key;
    button.classList.toggle('active',active);
