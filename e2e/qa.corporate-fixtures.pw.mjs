@@ -75,10 +75,12 @@ test('Station Owner creates 12 idempotent zero-balance QA companies, denies cros
    expect(members[0].role).toBe('station_owner');
    expect(members[0].stationId).toBe(s.id);
    const other=stations.find(x=>x.id!==s.id);
+   const otherIndex=stations.findIndex(x=>x.id===other.id);
+   const otherEmail='qa-c'+String(otherIndex*3+1).padStart(2,'0')+'-admin@qa.oilstation.invalid';
    const cross=await page.request.post(BASE+'/api/station/customers',{
     headers:{authorization:'Bearer '+token,origin:BASE},
     data:{stationId:other.id,name:other.name+'-C01',taxId:null,
-     contactEmail:'qa-c04-admin@qa.oilstation.invalid',
+     contactEmail:otherEmail,
      paymentTermsDays:0,dueMode:'per_fill',statementCloseDay:null}});
    expect(cross.status()).toBe(403);
    const wrongName=await page.request.post(BASE+'/api/station/customers',{
