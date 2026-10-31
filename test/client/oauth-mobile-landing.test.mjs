@@ -30,7 +30,7 @@ test('the canonical root can still render home and does not cause a loop',()=>{
  assert.equal(first,'/');
  assert.equal(canonicalLandingAfterOAuth(first,testSession),null);
  assert.match(html,/<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">/);
- assert.match(main,/if \(!session\) return setup \? platformSetupView\(\) : guestView\(Boolean\(invite\)\)/);
+ assert.match(main,/if \(!session\) return setup \? platformSetupView\(\) : guestView\(Boolean\(invite\),cfg\.qaModeEnabled===true\)/);
 });
 test('pending owner invitation and bootstrap survive the callback boundary',()=>{
  const start=main.indexOf('const landing=canonicalLandingAfterOAuth');
