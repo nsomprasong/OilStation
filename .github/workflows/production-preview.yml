@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: oilstation-production-preview
+  group: oilstation-customer-facing-worker
   cancel-in-progress: false
 jobs:
   deploy:
@@ -33,6 +33,38 @@ jobs:
             echo "::error::Set CLOUDFLARE_API_TOKEN in the GitHub production environment"
             exit 1
           fi
+      - name: Validate preview-only runtime flags before deploying
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          const expected = {
+            OILSTATION_DEPLOY_TARGET: 'production',
+            OILSTATION_API_ENABLED: 'false',
+            OILSTATION_PREVIEW_LOGIN_ENABLED: 'true',
+            OILSTATION_PREVIEW_OPERATIONS_ENABLED: 'true',
+          };
+          for (const [key, value] of Object.entries(expected)) {
+            if (config.vars?.[key] !== value) {
+              console.error('Preview release blocked: '+key+' must equal '+value);
+              process.exitCode = 1;
+            }
+          }
+          NODE
+      - name: Check deployed Worker is still preview-only before deploy
+        run: |
+          set -euo pipefail
+          bindings="$(mktemp)"
+          trap 'rm -f "$bindings"' EXIT
+          curl --fail --silent --show-error --max-time 15 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/oilstation/settings" > "$bindings"
+          jq -e '.success == true
+            and any(.result.bindings[]?; .name == "OILSTATION_API_ENABLED" and .type == "plain_text" and .text == "false")
+            and any(.result.bindings[]?; .name == "OILSTATION_DEPLOY_TARGET" and .type == "plain_text" and .text == "production")' "$bindings" >/dev/null || {
+              echo "::error::Production Worker is not in disabled preview mode; refusing automatic preview deployment"
+              exit 1
+            }
       - name: Deploy OilStation frontend and guarded Worker to real domain
         run: npx --yes wrangler@4 deploy
       - name: Verify public preview and disabled financial operations
@@ -43,6 +75,9 @@ jobs:
           test -s /tmp/oilstation-preview.html
           curl --fail --silent --show-error --retry 5 --retry-delay 2 --max-time 15 "$base/api/health" |
             jq -e '.service == "oilstation" and .status == "ok"'
+          ready_code="$(curl --silent --show-error --output /tmp/oilstation-readiness.json --write-out '%{http_code}' --max-time 15 "$base/api/ready")"
+          test "$ready_code" = 503
+          jq -e '.service == "oilstation" and .ready == false' /tmp/oilstation-readiness.json
           curl --fail --silent --show-error --retry 5 --retry-delay 2 --max-time 15 "$base/api/public-config" |
             jq -e '.supabaseUrl == "https://cxihsotcpdnalswfoysx.supabase.co" and (.supabaseAnonKey | length > 0) and .stripePublishableKey == null'
           # /api/me is intentionally accessible to authenticated preview users;

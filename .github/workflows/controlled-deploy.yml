@@ -14,7 +14,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: oilstation-release-${{ inputs.target }}
+  group: ${{ inputs.target == 'production' && 'oilstation-customer-facing-worker' || 'oilstation-uat' }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -30,12 +30,16 @@ jobs:
       - run: npm test
       - run: npx --yes wrangler@4 deploy --dry-run --outdir .wrangler-dry-run
       - name: Enforce release marker and production approval from main
+        env:
+          RELEASE_TARGET: ${{ inputs.target }}
+          RELEASE_APPROVAL_INPUT: ${{ inputs.production_approval }}
         run: |
+          set -e
           test -f supabase/migrations/20261029215000_release_readiness.sql
           test -f docs/release/2026-10-30-controlled-deploy.md
-          if [ "${{ inputs.target }}" = production ]; then
-            test "${{ github.ref }}" = refs/heads/main
-            test "${{ inputs.production_approval }}" = APPROVED_OILSTATION_PRODUCTION_RELEASE
+          if [ "$RELEASE_TARGET" = production ]; then
+            test "$GITHUB_REF" = refs/heads/main
+            test "$RELEASE_APPROVAL_INPUT" = APPROVED_OILSTATION_PRODUCTION_RELEASE
           fi
   deploy:
     needs: verify
@@ -67,6 +71,10 @@ jobs:
             echo "::error::Production DB preflight credentials are missing"
             exit 1
           }
+          test "$RELEASE_SUPABASE_URL" = "https://cxihsotcpdnalswfoysx.supabase.co" || {
+            echo "::error::Release readiness key must target OilStation production Supabase project"
+            exit 1
+          }
           case "$RELEASE_SUPABASE_URL" in https://*.supabase.co) ;; *)
             echo "::error::Invalid Supabase project URL"; exit 1;; esac
           tmp="$(mktemp)"
@@ -84,7 +92,7 @@ jobs:
             "$RELEASE_SUPABASE_URL/rest/v1/rpc/oilstation_release_status" > "$tmp"
           jq -e '.ready == true and .schemaVersion == "20261029215000"' "$tmp" >/dev/null || {
             echo "::error::Production Supabase readiness failed"; exit 1; }
-      - name: Check encrypted secrets and explicitly enabled production flag
+      - name: Check encrypted secrets and fail-closed existing production flag
         if: inputs.target == 'production'
         run: |
           set -eu
@@ -101,15 +109,33 @@ jobs:
           curl --fail --silent --show-error --max-time 12 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/oilstation/settings" > "$settings_file"
-          jq -e '.success == true and any(.result.bindings[]?; .name == "OILSTATION_API_ENABLED" and .type == "plain_text" and .text == "true")' \
+          jq -e '.success == true and any(.result.bindings[]?; .name == "OILSTATION_API_ENABLED" and .type == "plain_text" and .text == "false")' \
             "$settings_file" >/dev/null || {
-              echo "::error::Production OILSTATION_API_ENABLED must be an explicit plain-text true before deploying"; exit 1; }
+              echo "::error::Production OILSTATION_API_ENABLED must remain false before release"; exit 1; }
       - name: Deploy safe isolated UAT Worker (no production route or cron)
         if: inputs.target == 'uat'
         run: npx --yes wrangler@4 deploy --env uat
+      - name: Prepare explicitly approved production runtime configuration
+        if: inputs.target == 'production'
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          if (config.name !== 'oilstation'
+            || config.vars?.OILSTATION_API_ENABLED !== 'false'
+            || config.vars?.OILSTATION_DEPLOY_TARGET !== 'production') {
+            throw new Error('Production release must originate from fail-closed preview config');
+          }
+          // Only the independently approved release job may activate full business APIs.
+          // Leave the repository default fail-closed for all normal main pushes.
+          config.vars.OILSTATION_API_ENABLED = 'true';
+          config.vars.OILSTATION_PREVIEW_LOGIN_ENABLED = 'false';
+          config.vars.OILSTATION_PREVIEW_OPERATIONS_ENABLED = 'false';
+          writeFileSync('wrangler.production-release.json', JSON.stringify(config,null,2));
+          NODE
       - name: Deploy production only after preflight
         if: inputs.target == 'production'
-        run: npx --yes wrangler@4 deploy
+        run: npx --yes wrangler@4 deploy --config wrangler.production-release.json
       - name: Verify isolated UAT liveness
         if: inputs.target == 'uat'
         run: |

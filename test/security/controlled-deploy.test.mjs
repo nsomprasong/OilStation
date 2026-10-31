@@ -29,10 +29,10 @@ test('workflow is manual with pre-deployment production SQL and bindings gates',
  assert.doesNotMatch(wf,/for key in[^\n]*OILSTATION_API_ENABLED/);
  assert.match(wf,/\.type == "secret_text"/);
  assert.match(wf,/\/workers\/scripts\/oilstation\/settings/);
- assert.match(wf,/\.name == "OILSTATION_API_ENABLED" and \.type == "plain_text" and \.text == "true"/);
- assert.match(wf,/Production OILSTATION_API_ENABLED must be an explicit plain-text true/);
+ assert.match(wf,/\.name == "OILSTATION_API_ENABLED" and \.type == "plain_text" and \.text == "false"/);
+ assert.match(wf,/Production OILSTATION_API_ENABLED must remain false before release/);
  assert.match(wf,/wrangler@4 deploy --env uat/);
- assert.match(wf,/wrangler@4 deploy\s*$/m);
+ assert.match(wf,/wrangler@4 deploy --config wrangler\.production-release\.json/);
  assert.match(wf,/oilstation\.goldensoft\.cloud\/api\/ready/);
 });
 
@@ -41,4 +41,31 @@ test('production release preflight supports new Supabase sb_secret key without J
  assert.match(wf,/\[\[ "\$RELEASE_SERVICE_ROLE_KEY" != sb_secret_\* \]\]/);
  assert.match(wf,/auth_headers\+=\(-H "authorization: Bearer \$RELEASE_SERVICE_ROLE_KEY"\)/);
  assert.match(wf,/"\$\{auth_headers\[@\]\}"/);
+});
+
+test('approved production deploy uses release-only config rather than resetting runtime flag to false',()=>{
+ assert.match(wf,/Prepare explicitly approved production runtime configuration/);
+ assert.match(wf,/OILSTATION_API_ENABLED = 'true'/);
+ assert.match(wf,/wrangler@4 deploy --config wrangler.production-release.json/);
+ assert.match(wf,/wrangler.production-release.json/);
+});
+
+test('production and preview share a deploy lock while UAT remains independent',()=>{
+ assert.match(wf,/oilstation-customer-facing-worker/);
+ assert.match(wf,/oilstation-uat/);
+ assert.match(wf,/cancel-in-progress: false/);
+});
+test('approved release turns off preview-only routes at the same time as enabling business API',()=>{
+ assert.match(wf,/config\.vars\.OILSTATION_API_ENABLED = 'true'/);
+ assert.match(wf,/config\.vars\.OILSTATION_PREVIEW_LOGIN_ENABLED = 'false'/);
+ assert.match(wf,/config\.vars\.OILSTATION_PREVIEW_OPERATIONS_ENABLED = 'false'/);
+});
+
+test('untrusted workflow_dispatch approval is passed through env, never inserted into shell source',()=>{
+ assert.ok(wf.includes('RELEASE_APPROVAL_INPUT: ${{ inputs.production_approval }}'));
+ assert.ok(wf.includes('test "$RELEASE_APPROVAL_INPUT" = APPROVED_OILSTATION_PRODUCTION_RELEASE'));
+ assert.ok(!wf.includes('test "${{ inputs.production_approval }}"'));
+});
+test('production release only accepts the configured live Supabase project as readiness target',()=>{
+ assert.ok(wf.includes('test "$RELEASE_SUPABASE_URL" = "https://cxihsotcpdnalswfoysx.supabase.co"'));
 });
