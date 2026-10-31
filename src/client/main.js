@@ -1338,6 +1338,11 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
       list.appendChild(node);
     }
   }
+  // Block native form submission while async station/brand data is loading.
+  // The submit handler below is bound only after both requests complete.
+  const stationSubmit=el('new-station-submit');
+  stationSubmit.disabled=true;
+  let stationCreateReady=false;
   try {
     const r=await getApi('/api/fuel-brands',accessToken);
     if (!r.ok) throw new Error('brands');
@@ -1348,6 +1353,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
       el('brand-select').appendChild(option);
     });
     await loadStations();
+    stationCreateReady=true;
   } catch { notice('เชื่อมต่อข้อมูลปั๊มไม่สำเร็จ',true); }
   let creationRequestId=null;
   const newStationForm=el('new-station-form');
@@ -1377,6 +1383,10 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
     }catch{notice('ขัดข้องระหว่างสร้างปั๊ม กรุณาตรวจสอบรายการก่อนกดซ้ำ',true);}
     finally{btn.disabled=false;}
   });
+  // Release the button only AFTER the submit listener has been installed.
+  // Tests and assistive tooling can safely observe this explicit readiness.
+  newStationForm.dataset.osStationSubmitReady=String(stationCreateReady);
+  stationSubmit.disabled=!stationCreateReady;
 }
 
 function dashboard(data, session, publicConfig={}) {
