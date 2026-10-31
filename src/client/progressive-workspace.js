@@ -100,6 +100,7 @@ function enableCreation(screen,key,task){
  form.addEventListener('os:create-show',show);
  form.addEventListener('os:create-hide',hide);
  fab.addEventListener('click',()=>{
+  if(form.dataset.osBusy==='true')return;
   if(surface.hidden){form.dispatchEvent(new Event('os:prepare-create'));show();}
   else hide();
  });
