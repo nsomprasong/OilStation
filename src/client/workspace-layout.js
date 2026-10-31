@@ -16,7 +16,8 @@ export function selectWorkspaceScreens(memberships=[]){
  const pump=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
  const attendance=memberships.some(m=>m.scopeType==='station'&&m.stationId);
  const review=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager','hr_manager'].includes(m.role));
- const corp=memberships.some(m=>m.scopeType==='corporate_company');
+ const corp=memberships.some(m=>m.scopeType==='corporate_company'&&m.role!=='driver');
+ const driver=has('corporate_company',['driver']);
  const invite=memberships.some(m=>m.scopeType==='corporate_company'&&m.corporateCompanyId&&m.role==='corporate_admin');
  return [
   {key:'overview',label:'ภาพรวม',icon:'clipboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
@@ -36,7 +37,8 @@ export function selectWorkspaceScreens(memberships=[]){
   {key:'attendance',label:'ลงเวลา',icon:'calendar',desc:'ลงเวลาทำงาน',ids:['attendance-workspace'],yes:attendance},
   {key:'reviews',label:'อนุมัติลงเวลา',icon:'check',desc:'ตรวจรายการลงเวลา',ids:['attendance-review-workspace'],yes:review},
   {key:'payroll',label:'สรุปเงินเดือน',icon:'receipt',desc:'ตรวจข้อมูลเตรียมจ่าย',ids:['attendance-payroll-preview-workspace'],yes:review},
-  {key:'corporate',label:'บัญชีบริษัท',icon:'ticket',desc:'คูปองและประวัติใช้วงเงิน',ids:['corporate-workspace'],yes:corp},
+  {key:'corporate',label:'บัญชีบริษัท',icon:'ticket',desc:'ออกคูปองให้คนขับและดูวงเงิน',ids:['corporate-workspace'],yes:corp},
+  {key:'driver',label:'คูปองของคนขับ',icon:'qr',desc:'รถที่ขับอยู่และ QR เติมน้ำมันของฉัน',ids:['driver-workspace'],yes:driver},
   {key:'invitations',label:'เชิญสมาชิก',icon:'user-plus',desc:'เชิญและกำหนดสิทธิ์',ids:['member-invites'],yes:s||invite||sales}
  ].filter(x=>x.yes);
 }
