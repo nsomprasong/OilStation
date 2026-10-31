@@ -1,5 +1,8 @@
 # OilStation — Master UAT: Platform / Station / Corporate
 
+> **UAT owner override — 31 Oct 2026:** Skip all **Platform Support / `support01` authenticated tests and account provisioning** at the owner's explicit direction. Record as **SKIPPED_BY_OWNER (not PASS/FAIL)**. Retain the `platform_support` production role and existing read-only Support code; do **not** create `support01`, add its password secret, trigger `authorized-support`, or delete/migrate any Support feature. P-14's independent *Admin/audit* checks remain in scope; prior anonymous denial evidence remains valid and separate. The original 99-account catalog remains a historical scope baseline; active provisioning target is **98 accounts: 2 existing QA Sales + 96 remaining organization/station/corporate identities; 1 Support identity explicitly skipped**. The 236-scenario catalog keeps its original numbering; only Support-actor branches are skipped. Continue Platform non-Support checks, then Station and Corporate in order. No QA cleanup/reset or financial activation.
+
+
 **Plan ID:** QA-20261031-MASTER-001  
 **Status:** DRAFT — ready for the owner's per-module approval, NOT an executed test  
 **Environment:** https://oilstation.goldensoft.cloud and the EXISTING Supabase project `cxihsotcpdnalswfoysx`  
