@@ -101,7 +101,7 @@ export function renderWorkspaceShell(screens){
          <i data-ui-icon="menu"></i>
        </button>
        <span class="ws-toolbar-title"><img class="ws-toolbar-brand" src="/oilstation-gold-logo.png?v=2" width="28" height="28" alt="" aria-hidden="true">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
-       <span class="ws-toolbar-context" aria-hidden="true">WORKSPACE</span>
+       <button type="button" class="os-toolbar-logout" data-mobile-logout aria-label="ออกจากระบบ">ออกจากระบบ</button>
      </div>
      <header class="ws-header">
        <button class="ws-mobile-toggle" type="button" aria-label="เปิดเมนู"
