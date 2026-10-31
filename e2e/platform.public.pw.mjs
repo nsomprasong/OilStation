@@ -48,3 +48,22 @@ test('P-14 anonymous browser cannot inspect Platform Support @public', async ({ 
   const unsupportedMutation = await request.post('/api/platform/support/overview', { data: {} });
   expect(unsupportedMutation.status()).toBe(405);
 });
+
+test('P-01-V invalid synthetic QA password rejected without session @public', async ({page,request},info)=>{
+  // Intentional NEVER-EXISTED alias; no real username, real password or
+  // approved actor is sent. Single invalid attempt, no account lockout loop.
+  await page.goto('/',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#qa-login-form')).toBeVisible();
+  await page.locator('#qa-login-alias').fill('unknown-qa-20261031');
+  await page.locator('#qa-login-password').fill('InvalidPassword2026!');
+  await page.locator('#qa-login-form button[type="submit"]').click();
+  await expect(page.locator('#notice')).toContainText('ชื่อผู้ใช้หรือรหัสผ่านทดสอบไม่ถูกต้อง');
+  await expect(page.locator('#qa-login-form')).toBeVisible();
+  const me=await request.get('/api/me');
+  expect(me.status()).toBe(401);
+  // Recovery must present a fresh guest login, not an unexpected session.
+  await page.reload({waitUntil:'domcontentloaded'});
+  await expect(page.locator('#qa-login-form')).toBeVisible();
+  await page.locator('#qa-login-password').fill('');
+  await page.screenshot({path:info.outputPath('P-01-invalid-qa-login-recovery.png'),animations:'disabled'});
+});
