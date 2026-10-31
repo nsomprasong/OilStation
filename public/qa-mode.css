@@ -15,3 +15,6 @@
 .os-qa-admin-host .os-qa-form{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 .os-qa-admin-host .os-qa-form button{align-self:end}
 @media(max-width:540px){.os-qa-login,.os-qa-admin{padding:10px}.os-qa-admin-host .os-qa-form{grid-template-columns:1fr}}
+
+.os-qa-expanded h3{font-size:15px;font-weight:750;line-height:1.4;margin:1px 0 7px;color:#174d49}
+.os-qa-expanded .os-qa-form{display:grid;visibility:visible}
