@@ -106,10 +106,15 @@ test('Each of 12 Corporate Admins assigns own QA driver + car on real web, never
    expect(roster.data.drivers).toHaveLength(1);
    expect(roster.data.drivers[0].plate).toBe(c.plate);
    expect(roster.data.drivers[0].vehicleId).toBe(assignment.vehicleId);
-   // Assignments are nonfinancial; both ordinary coupon issuance and
-   // synthetic wallet must remain unavailable in production preview.
+   // Company account visibility is read-only, and QA topup / QR issuance
+   // are still refused until the separate synthetic-finance gate is enabled.
    const account=await call(page,token,'/api/my-accounts');
-   expect(account.status).toBe(404);
+   expect(account.status).toBe(200);
+   expect((account.data.accounts||[]).some(a=>a.companyId===c.id)).toBe(true);
+   const denied=await call(page,token,'/api/qa/finance/topup/request',{
+    accountId:account.data.accounts[0].id,amountSatang:'10000',
+    requestKey:'77777777-7777-4777-8777-777777777777'});
+   expect(denied.status).toBe(404);
    await page.screenshot({path:info.outputPath(c.alias+'-driver-vehicle-mobile.png'),
     animations:'disabled'});
    const driverCtx=await browser.newContext({viewport:{width:390,height:844}});
