@@ -32,8 +32,11 @@ export function mountQaAccountsAdmin({target,token}){
  if(!target)return;
  target.replaceChildren();
  const box=el('section',null,'os-qa-admin');
- const details=el('details');
- details.append(el('summary','บัญชีทดสอบ (เฉพาะผู้ดูแลระบบ)'));
+ // During QA, keep the authenticated Admin form persistently visible.
+ // The native <details> collapsed during automated/keyboard interaction,
+ // leaving test users unable to focus or submit the protected fields.
+ const details=el('div',null,'os-qa-expanded');
+ details.append(el('h3','บัญชีทดสอบ (เฉพาะผู้ดูแลระบบ)'));
  const explain=el('p','สร้างบัญชีที่ใช้ชื่อผู้ใช้และรหัสผ่านแทนอีเมลจริง พร้อมกำหนดสิทธิ์ตามขอบเขตที่อนุมัติ ไม่มีการส่งคำเชิญหรือยืนยันอีเมล','os-qa-note');
  const status=el('p','','os-qa-status');status.setAttribute('role','status');
  const form=el('form',null,'os-qa-form');
