@@ -36,7 +36,7 @@ test('all navigation actions are permission-filtered; no unsafe stored menu rend
  const nav=renderWorkspaceShell(screens);
  assert.doesNotMatch(nav,/data-ws-go="finance"/);
  const source=read('src/client/main.js');
- assert.match(source,/\.find\(button=>button\.dataset\.wsGo===requested\)/);
+ assert.match(source,/navigation\.navigateTo\(requested\|\|'overview'\)/);
  assert.match(source,/oilstation_last_workspace/);
  assert.match(source,/sessionStorage\.removeItem\('oilstation_last_workspace'\)/);
 });
@@ -52,14 +52,12 @@ test('impeccable lazy-loading avoids eager network operations for hidden modules
  assert.match(block,/Promise\.resolve\(\)\.then\(fn\)\.catch/);
  assert.doesNotMatch(block,/platformWorkspace\(session\.access_token\)\.catch/);
 });
-test('mobile menu is excluded from tab order while closed and traps focus when open',()=>{
+test('obsolete drawer and keyboard focus trap are removed; dock navigation is permission-scoped',()=>{
  const source=read('src/client/workspace-layout.js');
- assert.match(source,/menu\.inert=Boolean\(mobile\?\.matches&&!active\)/);
- assert.match(source,/event\.key==="Tab"/);
- assert.match(source,/event\.shiftKey/);
- assert.match(source,/event\.key==="Escape"/);
- assert.match(source,/first\.focus\(\)/);
- assert.match(source,/last\.focus\(\)/);
+ assert.doesNotMatch(source,/menu\.inert|openMenu\(|closeMenu\(|oilstation_sidebar_rail/);
+ assert.match(source,/allowed\.has\(key\)/);
+ assert.match(source,/aria-current/);
+ assert.match(source,/root\.addEventListener\('click'/);
 });
 test('humanizeApiError provides safe Thai recovery; never shows backend codes',()=>{
  assert.match(humanizeApiError('unauthenticated'),/เข้าสู่ระบบ/);
