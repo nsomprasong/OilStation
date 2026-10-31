@@ -67,3 +67,36 @@ test('P-01-V invalid synthetic QA password rejected without session @public', as
   await page.locator('#qa-login-password').fill('');
   await page.screenshot({path:info.outputPath('P-01-invalid-qa-login-recovery.png'),animations:'disabled'});
 });
+
+
+test('P-01-R guest Login responsive 360/390/430/1280 no horizontal clipping @public',
+ async ({page,request},info)=>{
+ const javascriptErrors=[];
+ page.on('pageerror',e=>javascriptErrors.push(e.name));
+ for(const width of [360,390,430,1280]){
+  const height=width===1280?800:844;
+  await page.setViewportSize({width,height});
+  const response=await page.goto('/',{waitUntil:'domcontentloaded'});
+  expect(response?.status()).toBe(200);
+  for(const selector of ['#google','#facebook','#qa-login-form',
+   '#qa-login-alias','#qa-login-password']){
+   await expect(page.locator(selector)).toBeVisible();
+  }
+  await expect(page.locator('#qa-login-password')).toHaveAttribute('type','password');
+  const layout=await page.evaluate(()=>({
+   viewport:document.documentElement.clientWidth,
+   page:document.documentElement.scrollWidth,
+   form:document.querySelector('#qa-login-form')?.getBoundingClientRect().toJSON(),
+  }));
+  expect(layout.page, 'horizontal overflow at '+width+'px: '+JSON.stringify(layout))
+   .toBeLessThanOrEqual(layout.viewport+1);
+  expect(layout.form?.width,'login form rendered at '+width+'px').toBeGreaterThan(0);
+  expect(layout.form.x,'form x at '+width+'px').toBeGreaterThanOrEqual(-1);
+  expect(layout.form.right,'form right edge at '+width+'px')
+   .toBeLessThanOrEqual(layout.viewport+1);
+  await page.screenshot({path:info.outputPath('P-01-responsive-'+width+'.png'),animations:'disabled'});
+ }
+ expect(javascriptErrors).toEqual([]);
+ const anon=await request.get('/api/me');
+ expect(anon.status()).toBe(401);
+});
