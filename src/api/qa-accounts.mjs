@@ -134,7 +134,7 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
       rolePolicy:isAdmin?{mode:'platform_admin'}:{mode:'unit_admin',
         bootstrapCompanyIds:bootstrapCompanies,
         ownedStationIds:own.station,ownedOrganizationIds:own.organization,
-        ownedCompanyIds:companyAdmins}}});
+        ownedCompanyIds:companyAdmins}});
    }
    if(url.pathname!=='/api/qa/accounts'&&url.pathname!=='/api/qa/reset-password')
     return json(404,{error:'not_found'});
