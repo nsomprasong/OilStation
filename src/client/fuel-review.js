@@ -1,13 +1,10 @@
-/**
- * Manager's private photo approval queue. Visible OCR values are *hints*;
- * the manager must independently enter what is actually shown in the image.
- */
+/** Manager reviews original private fuel photos; no OCR is used. */
 export function mountFuelReviewInbox({target,stationId,token}){
  if(!target)return;
  target.hidden=false;
  target.innerHTML=
   '<h3>ตรวจภาพหัวจ่ายและใบเสร็จ</h3>'+
-  '<p class="hint">เปิดภาพจริงจาก Private Storage ก่อนยืนยันข้อมูล OCR เพียงอย่างเดียวใช้ปิดยอดไม่ได้</p>'+
+  '<p class="hint">เปิดภาพจริงจาก Private Storage แล้วกรอกจำนวนลิตรและยอดเงินเอง ไม่ใช้ OCR</p>'+
   '<button type="button" id="load-fuel-reviews" class="button secondary">โหลดหลักฐานรอตรวจ</button>'+
   '<div id="fuel-review-cards" class="fuel-review-list"></div>';
  const button=target.querySelector('#load-fuel-reviews');
@@ -49,12 +46,7 @@ export function mountFuelReviewInbox({target,stationId,token}){
     heading.textContent=pump?'หน้าจอหัวจ่าย':'ใบเสร็จ';
     const img=document.createElement('img');
     img.alt=pump?'ภาพหน้าจอหัวจ่ายต้นฉบับ':'ภาพใบเสร็จต้นฉบับ';
-    const preview=document.createElement('p');preview.className='fuel-review-ocr';
-    const o=item.ocrPreview||{};
-    const m=satangToBaht(o.grossSatang);
-    preview.textContent='OCR แนะนำ: '+(pump?'ลิตร '+(o.liters||'อ่านไม่ได้')+' · ':'')+
-      'ยอด '+(m||'อ่านไม่ได้')+' บาท — ต้องตรวจจากภาพจริง';
-    const liters=document.createElement('input');
+     const liters=document.createElement('input');
     liters.type='text';liters.inputMode='decimal';liters.placeholder='จำนวนลิตรจากภาพ (เช่น 30.500)';
     liters.setAttribute('aria-label','ลิตรที่อ่านจากภาพจริง');
     const amount=document.createElement('input');
@@ -68,7 +60,7 @@ export function mountFuelReviewInbox({target,stationId,token}){
     actions.append(approve,reject);
     const message=document.createElement('p');message.setAttribute('role','status');
     approve.disabled=true;reject.disabled=true;
-    row.append(heading,preview,img);
+    row.append(heading,img);
     if(pump)row.append(liters);
     row.append(amount,actions,message);list.appendChild(row);
     const res=await fetch('/api/evidence/fuel/photo?evidenceId='+encodeURIComponent(item.evidenceId),{
