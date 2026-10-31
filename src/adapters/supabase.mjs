@@ -157,6 +157,12 @@ export function createSupabaseAdapter(env) {
            p_station_ids:allowed.station,p_company_ids:allowed.corporate_company,
           }),
         }),
+      qaAdminCompanyScopes: async ({actorId,qaRunId,allowed})=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_admin_company_scopes',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_qa_run_id:qaRunId,
+            p_station_ids:allowed.station,p_company_ids:allowed.corporate_company}),
+        }),
       qaScopedOptions: async allow=>{
         // Direct REST SELECT is intentionally unavailable on tenant tables,
         // even to service_role. A read-only QA-run-locked RPC validates every
