@@ -13,9 +13,11 @@ export function mountPlatformSales({target,token,inviteControl}){
   make('p','จัดการทีมขายและผู้ดูแลปั๊ม พร้อมดูยอดค่าคอมมิชชั่นที่บันทึกจริง (ยังไม่ใช่ยอดอนุมัติจ่าย)'));
  const reload=make('button','button secondary','รีเฟรช');reload.type='button';head.append(reload);root.append(head);
  const status=make('p','os-sales-status');status.setAttribute('role','status');root.append(status);
- const inviteArea=make('section','os-sales-subsection');inviteArea.append(make('h4','','เชิญเซลล์เข้าสู่ระบบ'));
+ const inviteArea=make('section','os-sales-subsection');inviteArea.hidden=true;inviteArea.append(make('h4','','เชิญเซลล์เข้าสู่ระบบ'));
  const team=make('section','os-sales-panel'),assignment=make('section','os-sales-panel');
  const transfer=make('section','os-sales-panel'),commission=make('section','os-sales-panel');
+ // Do not show admin-only controls while workspace authorization is loading.
+ team.hidden=true;transfer.hidden=true;
  const collected=make('section','os-sales-subsection');
  const history=make('section','os-sales-subsection');
  const inspectionPanel=make('section','os-sales-subsection');
