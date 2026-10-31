@@ -104,12 +104,25 @@ export function mountQaAccountsAdmin({target,token}){
      scopeType:scopeType.value,scopeId:scopeType.value==='platform'?null:scope.value,
      roleCode:role.value}),
    });
-   if(!result.ok)throw new Error('qa_create_failed');
+   if(!result.ok){
+     const failure=await result.json().catch(()=>({}));
+     const reason=typeof failure.error==='string'&&/^[a-z_]{3,70}$/.test(failure.error)?
+       failure.error:'request_failed';
+     const error=new Error(reason);error.status=result.status;
+     throw error;
+   }
    const data=await result.json();
    status.textContent='สร้างบัญชี '+data.account.alias+' สำเร็จ ('+data.account.roleCode+
     ') ออกจากระบบแล้วใช้ชื่อผู้ใช้และรหัสผ่านที่ตั้งไว้ได้ทันที';
    username.value='';password.value='';
-  }catch{status.textContent='สร้างบัญชีไม่สำเร็จ ตรวจสอบสิทธิ์ ชื่อที่ซ้ำ หรือขอบเขตที่อนุมัติ';}
+  }catch(error){
+   // Keep passwords and internal database diagnostics out of the UI while
+   // surfacing a safe reason/status for a reproducible QA failure report.
+   const reason=String(error?.message||'request_failed');
+   status.textContent='สร้างบัญชีไม่สำเร็จ ('+reason+
+    (error?.status?' HTTP '+error.status:'')+
+    ') โปรดตรวจรายงานข้อผิดพลาดก่อนส่งคำขอซ้ำ';
+  }
   finally{send.disabled=!(scopeType.value==='platform'||(scopes[scopeType.value]||[]).length);}
  });
 }

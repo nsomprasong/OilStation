@@ -115,10 +115,17 @@ test('new QA users use confirmed Supabase Auth admin user with real membership, 
  const client=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');
  const html=readFileSync(new URL('../../src/client/auth-screen.js',import.meta.url),'utf8');
  const plan=readFileSync(new URL('../../docs/qa/plans/2026-10-31-oilstation-master-uat.md',import.meta.url),'utf8');
+ const migration=readFileSync(new URL('../../supabase/migrations/20261031153000_qa_account_registration_rpc.sql',import.meta.url),'utf8');
  for(const term of ['auth.admin.createUser','email_confirm:true',
-   'oilstation_qa_run_id','auth.admin.deleteUser','/rest/v1/memberships',
-   '/rest/v1/app_users','/rest/v1/audit_events','user.app_metadata?.oilstation_qa===true'])
+   'oilstation_qa_run_id','auth.admin.deleteUser',
+   '/rest/v1/rpc/platform_qa_register_account','user.app_metadata?.oilstation_qa===true'])
   assert.ok(adapter.includes(term),term);
+ for(const term of ['public.platform_qa_register_account','public.app_users',
+  'public.memberships','public.audit_events','SECURITY DEFINER',
+  'TO service_role','REVOKE ALL ON FUNCTION','INVALID_QA_IDENTITY'])
+  assert.ok(migration.includes(term),term);
+ assert.ok(!migration.includes('GRANT INSERT ON public.app_users'));
+ assert.ok(!adapter.includes("serviceRequest(env,'/rest/v1/app_users'"));
  assert.ok(worker.includes('qaIsEnabled(env)'));
  assert.ok(client.includes('signInWithPassword'));
  assert.ok(html.includes('qaMode&&!setup&&!invited'));
