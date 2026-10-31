@@ -20,20 +20,20 @@ export function validatePlanDraft(input){
  const couponPriceSatang=moneyToSatang(String(input.couponBaht??'').trim());
  const hrPriceSatang=moneyToSatang(String(input.hrBaht??'').trim());
  const bundlePriceSatang=moneyToSatang(String(input.bundleBaht??'').trim());
- if(name.length<3||name.length>120)return {error:'กรุณาตั้งชื่อแพ็กเกจอย่างน้อย 3 ตัวอักษร (ไม่เกิน 120)'};
- if(!/^[a-z][a-z0-9_-]{2,39}$/.test(code))return {error:'รหัสแพ็กเกจต้องเป็นภาษาอังกฤษตัวเล็ก 3–40 ตัว เริ่มด้วยตัวอักษร'};
- if(!['monthly','yearly'].includes(input.frequency))return {error:'กรุณาเลือกรอบชำระเงิน'};
+ if(name.length<3||name.length>120)return {field:'name',error:'กรุณาตั้งชื่อแพ็กเกจอย่างน้อย 3 ตัวอักษร (ไม่เกิน 120)'};
+ if(!/^[a-z][a-z0-9_-]{2,39}$/.test(code))return {field:'code',error:'รหัสแพ็กเกจต้องเป็นภาษาอังกฤษตัวเล็ก 3–40 ตัว เริ่มด้วยตัวอักษร'};
+ if(!['monthly','yearly'].includes(input.frequency))return {field:'frequency',error:'กรุณาเลือกรอบชำระเงิน'};
  if([couponPriceSatang,hrPriceSatang,bundlePriceSatang].some(v=>v===null))
-  return {error:'ระบุราคาทั้ง 3 ช่องเป็นตัวเลขบาท ไม่ใส่เครื่องหมายคอมมา และทศนิยมไม่เกิน 2 ตำแหน่ง'};
+  return {field:['couponBaht','hrBaht','bundleBaht'][[couponPriceSatang,hrPriceSatang,bundlePriceSatang].findIndex(v=>v===null)],error:'ระบุราคาทั้ง 3 ช่องเป็นตัวเลขบาท ไม่ใส่เครื่องหมายคอมมา และทศนิยมไม่เกิน 2 ตำแหน่ง'};
  if(BigInt(couponPriceSatang)>99999999n||BigInt(hrPriceSatang)>99999999n||
   BigInt(bundlePriceSatang)<1000n||BigInt(bundlePriceSatang)>99999999n||
   BigInt(couponPriceSatang)+BigInt(hrPriceSatang)<1000n)
-  return {error:'ราคารวมอย่างน้อย 10 บาท และราคาแต่ละรายการต้องไม่เกิน 999,999.99 บาท'};
+  return {field:'bundleBaht',error:'ราคารวมอย่างน้อย 10 บาท และราคาแต่ละรายการต้องไม่เกิน 999,999.99 บาท'};
  const effectiveOn=String(input.effectiveOn??'');
  const date=new Date(effectiveOn+'T00:00:00Z');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(effectiveOn)||Number.isNaN(date.valueOf())||
   date.toISOString().slice(0,10)!==effectiveOn||effectiveOn<'2025-01-01')
-  return {error:'กรุณาเลือกวันที่เริ่มใช้ราคาที่ถูกต้อง'};
+  return {field:'effectiveOn',error:'กรุณาเลือกวันที่เริ่มใช้ราคาที่ถูกต้อง'};
  return {body:{name,code,frequency:input.frequency,
   couponPriceSatang,hrPriceSatang,bundlePriceSatang,effectiveOn}};
 }
@@ -90,7 +90,7 @@ export function mountSaasPlanManager({root,rpc}){
  extra.append(el('p','ระบบสร้างรหัสใหม่ให้อัตโนมัติ ต้องไม่ซ้ำกับแพ็กเกจอื่น และไม่ควรเปลี่ยนถ้าไม่จำเป็น'));
  basics.append(extra);
  const priceSection=el('fieldset');priceSection.className='os-plan-section';
- priceSection.append(el('legend','2 · กำหนดราคาต่อปั๊ม'));
+ priceSection.append(el('legend','2 · ราคาเป็นบาทต่อปั๊ม / ต่อรอบบิล'));
  const prices=el('div');prices.className='os-price-grid';
  prices.append(inputField('QR Coupon (บาท)','couponBaht',{placeholder:'เช่น 1600.00'}),
  inputField('HR & Payroll (บาท)','hrBaht',{placeholder:'เช่น 1600.00'}),
@@ -227,7 +227,7 @@ export function mountSaasPlanManager({root,rpc}){
  form.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;
   const result=validatePlanDraft(getForm());
-  if(result.error){toggleStatus(formStatus,result.error,'error');form.querySelector(':invalid')?.focus();return;}
+  if(result.error){toggleStatus(formStatus,result.error,'error');if(result.field==='code')extra.open=true;controls(result.field)?.focus();return;}
   busy=true;save.disabled=true;cancel.disabled=true;
   toggleStatus(formStatus,'กำลังบันทึกแพ็กเกจ…');
   try{
