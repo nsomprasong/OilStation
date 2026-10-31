@@ -28,7 +28,7 @@ async function fetchJson(url, init) {
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
       'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH',
-      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED']);
+      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
@@ -37,7 +37,7 @@ async function fetchJson(url, init) {
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
-         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED'].includes(detail.message) ? detail.message :
+         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED'].includes(detail.message) ? detail.message :
         'INVALID_REQUEST';
     }
     throw err;
@@ -77,7 +77,8 @@ export function createSupabaseAdapter(env) {
         (env.OILSTATION_QA_MODE_ENABLED!=='true' ||
          user.app_metadata.oilstation_qa_run_id!==env.OILSTATION_QA_RUN_ID))
         return null;
-      return typeof user.id === 'string' ? { id: user.id } : null;
+      return typeof user.id === 'string' ? { id: user.id,
+       isQa:user.app_metadata?.oilstation_qa===true } : null;
     },
     provisionQaAccount: async ({actorId,qaRunId,alias,password,roleCode,scopeType,scopeId})=>{
       const email='qa-'+alias+'@qa.oilstation.invalid';
@@ -755,6 +756,19 @@ export function createSupabaseAdapter(env) {
           body:JSON.stringify({p_actor_id:actorId}),
         });
       },
+      salesStations: async actorId=>serviceRequest(env,
+        '/rest/v1/rpc/platform_sales_station_overview',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId}),
+        }),
+      salesCreateStation: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_sales_create_station',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_request_id:d.requestId,
+            p_organization_name:d.organizationName,p_station_name:d.stationName,
+            p_brand_code:d.brandCode,p_enable_coupon:d.qrCoupon,
+            p_enable_hr:d.hrPayroll,p_max_stations:d.maxStations}),
+        }),
       createStation: async (data) => {
         return serviceRequest(env, '/rest/v1/rpc/platform_create_station', {
           method:'POST',headers:{'content-type':'application/json'},
