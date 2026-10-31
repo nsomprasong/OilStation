@@ -239,6 +239,7 @@ export function mountSaasPlanManager({root,rpc}){
   const result=validatePlanDraft(getForm());
   if(result.error){toggleStatus(formStatus,result.error,'error');if(result.field==='code')extra.open=true;controls(result.field)?.focus();return;}
   busy=true;form.dataset.osBusy='true';save.disabled=true;cancel.disabled=true;
+  for(const input of form.querySelectorAll('input,select'))input.disabled=true;
   toggleStatus(formStatus,'กำลังบันทึกแพ็กเกจ…');
   try{
    const wasEditing=Boolean(editingId);
@@ -248,7 +249,8 @@ export function mountSaasPlanManager({root,rpc}){
     'บันทึกสำเร็จ แต่โหลดรายการใหม่ไม่สำเร็จ กรุณากดรีเฟรช',refreshed?'success':'warning');
    add.focus();
   }catch(error){toggleStatus(formStatus,errorFor(error.message),'error');}
-  finally{busy=false;form.dataset.osBusy='false';save.disabled=false;cancel.disabled=false;}
+  finally{busy=false;form.dataset.osBusy='false';save.disabled=false;cancel.disabled=false;
+   for(const input of form.querySelectorAll('input,select'))input.disabled=false;}
  });
  prepareCreate();
  load();
