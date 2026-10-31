@@ -70,6 +70,7 @@ export default {
           return createQaAccountsApi({
             env,authenticate:adapter.authenticate,db:adapter.db,
             provisionAccount:adapter.provisionQaAccount,
+            resetQaPassword:adapter.resetQaPassword,
           })(request);
         }catch{
           return new Response(JSON.stringify({error:'qa_service_unavailable'}),{

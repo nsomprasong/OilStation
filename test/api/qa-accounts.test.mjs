@@ -34,9 +34,38 @@ const body=(alias='sales01',more={})=>({
  alias,password:pw,roleCode:'platform_sales',scopeType:'platform',scopeId:null,...more,
 });
 const handler=({settings=env,auth=async()=>({id:actor}),memberships=db.memberships,
- provision=async a=>({id:actor,alias:a.alias,roleCode:a.roleCode})}={})=>
+ provision=async a=>({id:actor,alias:a.alias,roleCode:a.roleCode}),
+ reset=async()=>true}={})=>
  createQaAccountsApi({env:settings,authenticate:auth,
-  db:{...db,memberships},provisionAccount:provision});
+  db:{...db,memberships},provisionAccount:provision,resetQaPassword:reset});
+test('QA password reset requires authenticated active Super Admin, same origin and strong password',async()=>{
+ const called=[];
+ const good=handler({reset:async value=>{called.push(value);return true}});
+ const req=(alias='sales01',password=pw,origin=url.slice(0,url.indexOf('/api/')))=>
+  new Request(url+'reset-password',{method:'POST',headers:{
+   authorization:'Bearer good','content-type':'application/json',origin},
+   body:JSON.stringify({alias,password}),
+  });
+ let res=await good(req());
+ assert.equal(res.status,200);
+ assert.deepEqual(await res.json(),{alias:'sales01',reset:true});
+ assert.equal(called.length,1);
+ assert.equal(called[0].qaRunId,run);
+ assert.equal(called[0].actorId,actor);
+ assert.equal((await good(req('sales01','weak'))).status,400);
+ assert.equal((await good(req('sales01',pw,'https://evil.invalid'))).status,403);
+ assert.equal((await handler({memberships:async()=>[{active:true,scope_type:'platform',role_code:'platform_sales'}]})(req())).status,403);
+ assert.equal((await handler({reset:async()=>false})(req('sales02'))).status,404);
+ assert.equal((await handler({settings:{...env,OILSTATION_QA_MODE_ENABLED:'false'}})(req())).status,404);
+});
+test('QA login and Admin form are always visible while QA mode is active',()=>{
+ const login=readFileSync(new URL('../../src/client/auth-screen.js',import.meta.url),'utf8');
+ const admin=readFileSync(new URL('../../src/client/qa-accounts.js',import.meta.url),'utf8');
+ assert.ok(login.includes('<section class="os-qa-login"'));
+ assert.ok(!login.includes('<details class="os-qa-login"'));
+ assert.ok(admin.includes("'/api/qa/reset-password'"));
+ assert.ok(admin.includes("'ตั้งรหัสผ่าน QA ใหม่'"));
+});
 test('QA mode is fail-closed and requires a run id, preview and disabled finance release',()=>{
  for(const delta of [{OILSTATION_QA_MODE_ENABLED:'false'},{OILSTATION_QA_RUN_ID:''},
   {OILSTATION_API_ENABLED:'true'},{OILSTATION_DEPLOY_TARGET:'uat'},

@@ -51,7 +51,7 @@ export function qaScopeAllowlist(env){
   corporate_company:parseIds(env.OILSTATION_QA_COMPANY_IDS),
  };
 }
-export function createQaAccountsApi({env,authenticate,db,provisionAccount}){
+export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQaPassword}){
  return async function handle(request){
   if(!qaIsEnabled(env))return json(404,{error:'not_found'});
   const url=new URL(request.url);
@@ -76,13 +76,28 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount}){
     const available=await db.qaScopedOptions(permitted);
     return json(200,{runId:env.OILSTATION_QA_RUN_ID,scopes:available});
    }
-   if(url.pathname!=='/api/qa/accounts')return json(404,{error:'not_found'});
+   if(url.pathname!=='/api/qa/accounts'&&url.pathname!=='/api/qa/reset-password')
+    return json(404,{error:'not_found'});
    if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
     return json(415,{error:'unsupported_media_type'});
    const input=await request.text();
    if(input.length>2048)return json(413,{error:'invalid_input'});
    let body;try{body=JSON.parse(input)}catch{return json(400,{error:'invalid_input'})}
    const {alias,password,scopeType,scopeId,roleCode}=body||{};
+   if(url.pathname==='/api/qa/reset-password'){
+    // Existing synthetic account only; never allow a password reset for a
+    // real user, or for a QA user belonging to another run.
+    if(!ALIAS.test(alias||'')||typeof password!=='string'||
+      password.length<16||password.length>128||!/[a-z]/i.test(password)||
+      !/[0-9]/.test(password)||!/[!@#$%^&*()_+=-]/.test(password))
+     return json(400,{error:'invalid_input'});
+    if(typeof resetQaPassword!=='function')return json(503,{error:'qa_reset_unavailable'});
+    const changed=await resetQaPassword({
+      actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,alias,password,
+    });
+    if(!changed)return json(404,{error:'qa_account_not_found'});
+    return json(200,{alias,reset:true});
+   }
    if(!ALIAS.test(alias||'')||typeof password!=='string'||
      password.length<16||password.length>128||!/[a-z]/i.test(password)||
      !/[0-9]/.test(password)||!/[!@#$%^&*()_+\-=]/.test(password)||

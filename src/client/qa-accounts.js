@@ -55,9 +55,10 @@ export function mountQaAccountsAdmin({target,token}){
   const lbl=el('label',name);lbl.append(node);return lbl;
  };
  const send=el('button','สร้างบัญชีทดสอบ','button primary');send.type='submit';
+ const reset=el('button','ตั้งรหัสผ่าน QA ใหม่','button secondary');reset.type='button';
  form.append(label('ชื่อบัญชีทดสอบ',username),label('รหัสผ่านทดสอบ',password),
   label('ประเภทสิทธิ์',scopeType),label('บทบาท',role),
-  label('พื้นที่ที่อนุญาต',scope),send);
+  label('พื้นที่ที่อนุญาต',scope),send,reset);
  const note=el('p','ขอบเขตทดสอบ: Sales 2 คน คนละ 2 ปั๊ม รวม 4 ปั๊ม และลูกค้าปั๊มละ 3 ราย รวม 12 บริษัท แต่ละโหนดใช้บัญชีแยกตามบทบาท รวมบัญชี QA ใหม่สูงสุด 99 บัญชี','os-qa-note');
  details.append(explain,form,note,status);box.append(details);target.append(box);
  let scopes={};
@@ -95,6 +96,28 @@ export function mountQaAccountsAdmin({target,token}){
    refresh();
   }).catch(()=>{status.textContent='ยังเปิดโหมด QA ไม่สำเร็จ หรือไม่มีสิทธิ์จัดการบัญชี';
    send.disabled=true;});
+ reset.addEventListener('click',async()=>{
+  if(!username.checkValidity()||!password.checkValidity()){
+   form.reportValidity();return;
+  }
+  const alias=username.value.trim().toLowerCase();
+  if(!alias)return;
+  reset.disabled=true;status.textContent='กำลังตั้งรหัสผ่าน QA ใหม่…';
+  try{
+   const response=await fetch('/api/qa/reset-password',{
+    method:'POST',cache:'no-store',
+    headers:{authorization:'Bearer '+token,'content-type':'application/json'},
+    body:JSON.stringify({alias,password:password.value}),
+   });
+   const payload=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(payload.error||'request_failed');
+   status.textContent='ตั้งรหัสผ่านใหม่ให้ '+alias+' สำเร็จ สามารถเข้าสู่ระบบ QA ได้ทันที';
+   password.value='';
+  }catch(error){
+   status.textContent='ตั้งรหัสผ่าน QA ไม่สำเร็จ ('+
+    String(error?.message||'request_failed')+')';
+  }finally{reset.disabled=false;}
+ });
  form.addEventListener('submit',async event=>{
   event.preventDefault();
   if(send.disabled)return;

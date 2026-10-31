@@ -25,8 +25,8 @@ export function authMarkup({invited=false,setup=false,qaMode=false}={}){
      <p class="os-auth-note"><i data-ui-icon="shield"></i>
        ไม่มีการสมัครสาธารณะ การเข้าสู่ระบบไม่ใช่การอนุมัติสิทธิ์</p>
      ${setup||invited?'':`<div class="os-auth-actions"><a href="/setup">ตั้งค่าผู้ดูแลครั้งแรก</a></div>`}
-     ${qaMode&&!setup&&!invited?`<details class="os-qa-login">
-       <summary>เข้าสู่ระบบด้วยบัญชีทดสอบ</summary>
+     ${qaMode&&!setup&&!invited?`<section class="os-qa-login" aria-labelledby="os-qa-login-title">
+       <h3 id="os-qa-login-title">เข้าสู่ระบบด้วยบัญชีทดสอบ</h3>
        <form id="qa-login-form" class="os-qa-form" autocomplete="on">
          <label>ชื่อผู้ใช้ทดสอบ<input id="qa-login-alias" name="username" autocomplete="username" required
            pattern="[a-z][a-z0-9-]{2,30}" placeholder="เช่น sales01"></label>
@@ -35,7 +35,7 @@ export function authMarkup({invited=false,setup=false,qaMode=false}={}){
          <button type="submit" class="button primary">เข้าสู่ระบบทดสอบ</button>
        </form>
        <p class="os-qa-note">ใช้ได้เฉพาะบัญชี QA ที่ผู้ดูแลสร้างไว้ ไม่ต้องมีอีเมลจริง</p>
-     </details>`:''}
+     </section>`:''}
      <p id="notice" class="notice" role="status" hidden></p>
    </section>
  </div>`;
