@@ -9,7 +9,7 @@ on:
         description: Run public smoke, Sales, or Platform Support
         required: true
         default: public
-        options: [public, authorized-platform, authorized-support]
+        options: [public, authorized-platform, authorized-qa-finance, authorized-support]
       allow_missing_station_creation:
         type: boolean
         description: Allow Sales02 to create ONLY missing QA-S02-B after DB preflight
@@ -85,6 +85,54 @@ jobs:
         with:
           name: oilstation-protected-playwright-encrypted
           path: qa-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
+
+  authorized-qa-finance:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.suite == 'authorized-qa-finance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_FINANCE_AUTH_RUN: 'true'
+      OILSTATION_QA_C01_ADMIN_PASSWORD: ${{ secrets.OILSTATION_QA_C01_ADMIN_PASSWORD }}
+      OILSTATION_QA_S01A_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S01A_OWNER_PASSWORD }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Fail closed unless both role credentials and artifact key are configured
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OILSTATION_QA_C01_ADMIN_PASSWORD OILSTATION_QA_S01A_OWNER_PASSWORD OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Missing protected QA secret name: $name"; exit 1; }
+          done
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Browser login + real QA request + separate approval + reserve QR
+        run: npm run test:e2e -- --grep '@qa-finance'
+      - name: Encrypt sensitive QA traces BEFORE uploading
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf finance-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output finance-evidence.tar.gz.gpg finance-evidence.tar.gz
+          rm -rf finance-evidence.tar.gz playwright-report test-results
+      - name: Upload encrypted finance UAT evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-qa-finance-protected-playwright
+          path: finance-evidence.tar.gz.gpg
           if-no-files-found: error
           retention-days: 14
 
