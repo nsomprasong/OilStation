@@ -6,6 +6,7 @@ import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
 import { createCommissionPreviewApi } from './api/commission-preview.mjs';
+import { createPlatformSalesApi } from './api/platform-sales.mjs';
 import { createPlatformBillingApi } from './api/platform-billing.mjs';
 import { createStationSaasOnboardingApi } from './api/station-saas-onboarding.mjs';
 import { createBillingInvoiceApi } from './api/billing-invoices.mjs';
@@ -101,6 +102,8 @@ export default {
           env.OILSTATION_PREVIEW_LOGIN_ENABLED==='true' &&
           env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true' &&
           env.OILSTATION_API_ENABLED!=='true') {
+        const salesPages=new Set(['/api/platform/sales/workspace',
+          '/api/platform/sales/transfer']);
         const billingPages=new Set(['/api/platform/billing/overview',
           '/api/platform/billing/tax','/api/platform/billing/flat-plan',
           '/api/platform/billing/bundle-plan','/api/platform/billing/archive-plan',
@@ -111,6 +114,8 @@ export default {
           '/api/invitations/email-challenge','/api/invitations/email-confirm',
           '/api/station-fuels','/api/station-fuel-config']);
         try {
+          if(salesPages.has(url.pathname))
+            return createPlatformSalesApi(createSupabaseAdapter(env))(request);
           if(billingPages.has(url.pathname))
             return createPlatformBillingApi(createSupabaseAdapter(env))(request);
           if(stationPages.has(url.pathname))
@@ -178,6 +183,9 @@ export default {
         }
         if (url.pathname === '/api/fuel/start') {
           return createFuelStartApi(deps)(request);
+        }
+        if (url.pathname.startsWith('/api/platform/sales/')) {
+          return createPlatformSalesApi(deps)(request);
         }
         if (url.pathname === '/api/platform/billing/commission-preview') {
           return createCommissionPreviewApi(deps)(request);
