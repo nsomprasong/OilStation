@@ -9,12 +9,26 @@ export function createPlatformSalesApi({authenticate,db}){
   const url=new URL(request.url);
   const viewing=url.pathname==='/api/platform/sales/workspace';
   const moving=url.pathname==='/api/platform/sales/transfer';
-  if(!viewing&&!moving)return json(404,{error:'not_found'});
-  if(request.method!==(viewing?'GET':'POST'))return json(405,{error:'method_not_allowed'});
+  const inspection=url.pathname==='/api/platform/sales/inspection';
+  const activity=url.pathname==='/api/platform/sales/activity';
+  if(!viewing&&!moving&&!inspection&&!activity)return json(404,{error:'not_found'});
+  if(request.method!==(moving?'POST':'GET'))return json(405,{error:'method_not_allowed'});
   if(moving&&request.headers.get('origin')&&request.headers.get('origin')!==url.origin)
    return json(403,{error:'origin_forbidden'});
   const bearer=/^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization')||'');
   if(!bearer)return json(401,{error:'unauthenticated'});
+  const stationId=url.searchParams.get('stationId');
+  const companyId=url.searchParams.get('companyId');
+  const before=url.searchParams.get('before');
+  if(inspection||activity){
+   const validKeys=inspection?['stationId','companyId']:['stationId','before'];
+   if(!UUID.test(stationId??'')||url.searchParams.size>validKeys.length||
+    [...url.searchParams.keys()].some(k=>!validKeys.includes(k)))return json(400,{error:'invalid_inspection'});
+   if(inspection&&companyId!==null&&!UUID.test(companyId))return json(400,{error:'invalid_inspection'});
+   if(activity&&before!==null&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(before)||
+     !Number.isFinite(Date.parse(before))||new Date(before).toISOString()!==before))
+     return json(400,{error:'invalid_inspection'});
+  }
   let body;
   if(moving){
    if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
@@ -33,6 +47,8 @@ export function createPlatformSalesApi({authenticate,db}){
    const actor=await authenticate(bearer[1]);
    if(!UUID.test(actor?.id??''))return json(401,{error:'unauthenticated'});
    const result=viewing?await db.platformSalesWorkspace({actorId:actor.id}):
+    inspection?await db.platformSalesInspection({actorId:actor.id,stationId,companyId}):
+    activity?await db.platformSalesActivity({actorId:actor.id,stationId,before}):
     await db.platformSalesTransfer({actorId:actor.id,...body,reason:body.reason.trim()});
    return json(200,{result});
   }catch(error){
