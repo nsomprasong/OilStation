@@ -348,8 +348,8 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
         const email = body?.email?.trim().toLowerCase();
         const allowedRoles = {
           platform:['platform_sales','platform_support'],
-          organization:['organization_owner','organization_manager'],
-          station:['station_owner','manager','cashier','pump_staff','attendant'],
+          organization:['organization_owner','organization_manager','billing_manager'],
+          station:['station_owner','manager','cashier','pump_staff','attendant','hr_manager','finance_manager'],
           corporate_company:['corporate_admin','coupon_issuer','accountant','finance_manager','driver'],
         };
         if (typeof email !== 'string' || email.length > 320
