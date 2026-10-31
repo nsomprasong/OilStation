@@ -6,7 +6,7 @@ const member=(scopeType,role,extra={})=>({scopeType,role,...extra});
 const keys=m=>selectWorkspaceScreens(m).map(x=>x.key);
 test('platform superadmin has wide workspace and separate SaaS navigation',()=>{
  const screens=selectWorkspaceScreens([member('platform','platform_superadmin')]);
- assert.deepEqual(keys([member('platform','platform_superadmin')]),['overview','stations','billing']);
+ assert.deepEqual(keys([member('platform','platform_superadmin')]),['overview','sales','stations','billing']);
  const html=renderWorkspaceShell(screens);
  assert.match(html,/data-workspace-shell/);assert.match(html,/id="platform-workspace"/);
  assert.match(html,/id="platform-saas-billing"/);assert.match(html,/data-ws-go="stations"/);
