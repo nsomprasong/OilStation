@@ -12,9 +12,9 @@
 1. **Exactly four QA stations:** Sales01 creates `QA-S01-A` and `QA-S01-B` with its OWN authenticated Sales account; Sales02 creates `QA-S02-A` and `QA-S02-B` with its OWN authenticated Sales account. Every station is associated with precisely its creating Sales as salesperson of record. Do not create a fifth QA station. The previously existing production station is outside the QA fixture unless separately authorized.
 2. **Exactly three corporate test customer relationships per QA station:** `QA-S01-A-C01..03`, `QA-S01-B-C01..03`, `QA-S02-A-C01..03`, `QA-S02-B-C01..03`: **12 station/customer relationships** total. Use at most 12 distinct QA corporate companies; reuse an existing approved company when testing cross-station links without creating a 13th relationship.
 3. **Exactly two QA platform Sales accounts:** `sales01`, `sales02`. Each must LOG IN and CREATE its OWN two station accounts, yielding four one-to-one Sales–Station assignments. Sales01 MUST NOT be assigned to Sales02's new stations (and vice versa). A later reassignment is a separate history/commission test performed only within these same four stations. **Current application gap:** the station creation API/RPC permits Super Admin only; implement a safely permission-scoped Sales self-registration flow with server-side source attribution before this can PASS.
-4. Provision additional QA accounts **only to cover authorized roles** listed in the role matrix below; never create a third Sales or extra QA station/company. One role can use separate users where independence is necessary (e.g. proposer vs approver), but reuse accounts where safe.
+4. Provision exactly **one distinct QA identity for each approved role at EACH actual node**, to prevent privilege contamination between roles. The detailed and mandatory actor manifest is `docs/qa/plans/2026-10-31-oilstation-role-identity-matrix.md`: 99 new QA accounts (3 Platform + 8 Organization + 28 Station + 60 Corporate) and the existing protected Platform Super Admin. Never create a third Sales, fifth QA station, thirteenth company, or an extra QA user beyond this matrix.
 5. Test users are admin-provisioned, password-authenticated Supabase Auth accounts with fictional `qa-<alias>@qa.oilstation.invalid` addresses, `email_confirm=true`, `app_metadata.oilstation_qa_run_id`, and real scoped membership rows. **No real email, OTP, OAuth signup, anonymous role impersonation, forged JWT, service key in browser, or public registration.**
-6. QA identities must be limited to the four approved QA station IDs, approved associated organization ID(s) and at most 12 approved corporate company IDs, except for the two platform Sales accounts. The separate existing bootstrap Super Admin is retained as the trusted QA operator.
+6. QA identities must be tied to their one approved node: four QA station IDs, four corresponding organization IDs and 12 distinct corporate company IDs, except the two Platform Sales and one Platform Support QA account. Existing protected Platform Super Admin retains normal access. No QA account may be given an additional organization/station/company scope just to work around a failed test. The separate existing bootstrap Super Admin is retained as the trusted QA operator.
 7. All created records and derived transaction IDs are added to `docs/qa/runs/<QA_RUN_ID>.md`. No deletion, reset, or automatic cleanup until the owner **explicitly orders it after ALL testing**. At that time, create and approve an enumerated `RESET-PLAN.md`; fresh start may include pre-existing business data only after independent backup, impact and preservation check.
 8. No actual money transfer, payroll payment, outgoing customer emails, SMS, real bank verification, real Stripe charge, or live fuel dispenser action is authorized by this plan. Any financial workflow is test-mode simulation/validation only unless separately approved.
 
@@ -26,21 +26,19 @@
 | Sales 02 | QA-S02-A (created by Sales02) | QA-S02-B (created by Sales02) | Three per station, six total |
 | **Total** | **4 distinct stations** | **1 Sales per own station** | **12 station/customer relations** |
 
-### Role matrix
+### Mandatory role-identity matrix (every node, no pooled Admin)
 
-| Layer | Test role | Minimum identity approach | Test intention |
-|---|---|---|---|
-| Platform | platform_superadmin | Preserve real existing Super Admin; no cloned superadmin | All platform functions and QA account administration |
-| Platform | platform_sales | Exactly 2: sales01, sales02 | Each creates and exclusively owns attribution for two different stations; own commission, isolated records |
-| Platform | platform_support | 1 as necessary | Explicit support permissions and denial of finance |
-| Organization | organization_owner / owner, billing_manager | Reuse scoped QA users where supported | Station owner onboarding per Sales-created organization, SaaS invoices, renewals |
-| Station (all four QA stations) | station_owner, manager | Per station as needed | Permissions, pricing, invitations, approvals |
-| Station (all four QA stations) | cashier, attendant/pump_staff | Per station as needed | QR scan, verification, fueling lifecycle |
-| Station (all four QA stations) | hr_manager, employee / finance_manager | Per station as needed | HR and distinct financial approvals |
-| Corporate (12 QA relationships only) | corporate_admin | Per company as needed | Membership, bank/credit, QR administration |
-| Corporate (12 QA relationships only) | coupon_issuer, accountant/finance_manager, driver | Per company or scoped reuse | Coupon issuance, money view, driver rights |
+See [full role matrix](2026-10-31-oilstation-role-identity-matrix.md) for exact aliases and per-user PASS/FAIL cases. These 99 users do not increase the fixture beyond 4 stations and 12 corporate customers.
 
-**A role is TESTABLE only if it is implemented by the current product; unsupported presets must be recorded as FAIL/GAP, not silently granted extra rights.** No test identity can be given `platform_superadmin` through the test-account creation API.
+| Area | Roles tested at every relevant node | New QA users |
+|---|---|---:|
+| Platform | 2 `platform_sales` + 1 `platform_support`; preserve existing `platform_superadmin` | 3 |
+| Organization × 4 | `organization_owner`, `billing_manager` | 8 |
+| Station × 4 | `station_owner`, `manager`, `cashier`, `attendant`, `pump_staff`, `hr_manager`, `finance_manager` | 28 |
+| Corporate company × 12 | `corporate_admin`, `coupon_issuer`, `accountant`, `finance_manager`, `driver` | 60 |
+| **Total** | **One distinct account per role per node + protected Super Admin** | **99 newly created** |
+
+**Required per-account proof:** actual password login; assigned membership scope and role; allowed-menu and allowed-API check; forbidden-API check; cross-node denial; data persistence/reload; audit and mobile check. A role is TESTABLE only if implemented by the current product; unsupported presets remain FAIL/GAP, not magically granted extra rights.
 
 ## B. Platform — approved-capability checklist (P)
 
@@ -134,7 +132,7 @@
 1. Freeze this Master scope and create a detailed `docs/qa/plans/<module>.md` for each section. Owner approves plan before test writes.
 2. Capture current full baseline, verify backup/restore, and prepare a unique `QA_RUN_ID`.
 3. Turn QA account mode on **only** with explicit Cloudflare server flag and locked run ID/scoped allowlists. Never leave unrestricted sign-up available.
-4. Create Sales01 and Sales02 test accounts first, then have EACH Sales create its OWN two stations through the actual application. Record four unique station IDs and the automatic four Sales assignments. Only then create precisely three corporate accounts per station (12 relationships), without exceeding either count.
+4. Create 2 Sales + 1 Support QA identities first, then have EACH Sales create its OWN two stations through the actual application. Record four unique station IDs and automatic Sales assignments. Provision 8 organization-role users and 28 station-role users tied to those four nodes. Then create exactly three distinct corporate companies per station (12) and their 60 role users. Total new QA identities must match the 99-account manifest without exceeding any fixture count.
 5. Run Browser E2E/SQL/API, log failures, patch, CI, merge, deploy, repeat until each approved case PASS. A BLOCKED or GAP case never counts as PASS.
 6. After **all sections complete** show the owner an inventory. **Do not delete or restart anything** until an explicit separate deletion order; then create an exact `RESET-PLAN.md`, verify recovery, clean approved records, redeploy worker as a serverless reset and recheck first-run login.
 
