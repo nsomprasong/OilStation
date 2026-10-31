@@ -4,6 +4,7 @@ import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountPlatformSaasBilling } from './platform-saas-billing.js';
 import { mountPlatformSales } from './platform-sales.js';
+import {mountSalesActivity} from './platform-sales-readonly.js';
 import {mountStationPlanChoice} from './station-plan-choice.js';
 import { mountBillingWorkspace } from './billing.js';
 import { mountAttendancePayrollPreview } from './attendance-payroll-preview.js';
@@ -1393,6 +1394,8 @@ function dashboard(data, session, publicConfig={}) {
  };
  if(memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')){
   register('stations',()=>platformWorkspace(session.access_token));
+  register('activity',()=>mountSalesActivity({target:document.getElementById('platform-sales-activity'),
+   token:session.access_token}));
   register('sales',()=>mountPlatformSales({target:document.getElementById('platform-sales-workspace'),
    token:session.access_token,inviteControl:()=>createInviteControl(session.access_token,'platform',null,
     [['platform_sales','เซลล์'],['platform_support','ฝ่ายสนับสนุน']])}));
@@ -1402,6 +1405,10 @@ function dashboard(data, session, publicConfig={}) {
  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
     memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales'))
    register('sales',()=>mountPlatformSales({target:document.getElementById('platform-sales-workspace'),
+    token:session.access_token}));
+  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
+     memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales'))
+   register('activity',()=>mountSalesActivity({target:document.getElementById('platform-sales-activity'),
     token:session.access_token}));
  const owner=memberships.find(m=>m.scopeType==='station'&&
   ['station_owner','owner'].includes(m.role)&&m.stationId);

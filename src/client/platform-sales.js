@@ -1,3 +1,4 @@
+import {mountSalesInspection} from './platform-sales-readonly.js';
 /** Sales dashboard. Authorization always enforced by Worker + SQL. */
 const make=(tag,cls='',content)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(content!==undefined)n.textContent=content;return n};
 const dateTime=value=>value?new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(value)):'—';
@@ -17,6 +18,8 @@ export function mountPlatformSales({target,token,inviteControl}){
  const transfer=make('section','os-sales-panel'),commission=make('section','os-sales-panel');
  const collected=make('section','os-sales-panel');
  const history=make('section','os-sales-panel');
+ const inspectionPanel=make('section','os-sales-panel');
+ inspectionPanel.hidden=true;
  const title=(node,title)=>node.append(make('h4','',title));
  title(team,'ทีมขาย');title(assignment,'ปั๊มที่รับผิดชอบ');
  title(transfer,'ย้ายการดูแลปั๊ม');title(collected,'ลูกค้าที่ชำระค่าบริการแล้ว');
@@ -36,7 +39,8 @@ export function mountPlatformSales({target,token,inviteControl}){
  const save=make('button','button primary','ยืนยันการย้ายการดูแล');save.type='submit';
  const outcome=make('p','os-sales-status');outcome.setAttribute('role','status');
  form.append(stationLabel,salesLabel,reasonLabel,transferHint,save,outcome);transfer.append(form);
- root.append(inviteArea,team,assignment,transfer,collected,commission,history);target.append(root);
+ root.append(inviteArea,team,assignment,transfer,inspectionPanel,collected,commission,history);target.append(root);
+ const inspection=mountSalesInspection({target:inspectionPanel,token});
  let data=null,busy=false;
  const card=(title,details=[])=>{
   const node=make('article','os-sales-card');node.append(make('strong','',title));
@@ -68,9 +72,25 @@ export function mountPlatformSales({target,token,inviteControl}){
    }
    if(!assignments.some(a=>a.isCurrent||a.isUpcoming))empty(careList,'ยังไม่มีปั๊มที่มอบหมายให้เซลล์');
    for(const a of assignments.filter(a=>a.isCurrent||a.isUpcoming)){
-    careList.append(card(a.stationName||'ปั๊ม',[a.organization||'',
+    const c=card(a.stationName||'ปั๊ม',[a.organization||'',
      'เซลล์: '+(a.salesName||'—'),'สถานะ: '+(a.isUpcoming?'กำหนดเริ่มในอนาคต':'กำลังดูแล'),
-     'เริ่ม: '+dateTime(a.effectiveFrom)]));
+     'เริ่ม: '+dateTime(a.effectiveFrom)]);
+    if(a.isCurrent){
+      const open=make('button','button secondary','เปิดหน้าปั๊ม');
+      open.type='button';open.setAttribute('aria-label','ตรวจสอบปั๊ม '+a.stationName);
+      open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(a.stationId);});
+      c.append(open);
+    }
+    careList.append(c);
+   }
+   if(isAdmin&&Array.isArray(data.stations)){
+    const known=new Set(assignments.filter(a=>a.isCurrent).map(a=>a.stationId));
+    for(const s of data.stations.filter(s=>!known.has(s.id))){
+     const c=card(s.name||'ปั๊ม',[s.organization||'','ข้อมูลการดำเนินงาน · ดูอย่างเดียว']);
+     const open=make('button','button secondary','เปิดหน้าปั๊ม');
+     open.type='button';open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(s.id);});
+     c.append(open);careList.append(c);
+    }
    }
    const sold=data.collectedCustomers||[];
    if(!sold.length)empty(collectedList,'ยังไม่มีลูกค้าที่มีหลักฐานชำระและรายการค่าคอมมิชชั่นเชื่อมโยง');
