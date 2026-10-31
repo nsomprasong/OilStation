@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/qa-business-uat-one-shot.yml
       - e2e/qa.business-hr.pw.mjs
+      - e2e/qa.business-approvals.pw.mjs
 permissions:
   contents: read
   actions: read
@@ -89,7 +90,7 @@ jobs:
           test -n "$OILSTATION_QA_SALES02_PASSWORD"
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
-      - name: Real station HR creation and separate manager roster and shifts (finance already verified)
+      - name: Real QA HR employees, shift, OT/replacement approvals and nonpayable payroll preview
         run: npm run test:e2e -- --grep '@qa-business-' --reporter=list
   disarm-scoped-qa:
     # Undo temporary Worker variables on success, failure OR skipped tests.
