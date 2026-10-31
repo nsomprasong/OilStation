@@ -88,6 +88,18 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_notification_id:id,p_decision:decision}),
         }),
+      platformSalesInspection: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_sales_station_inspection',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_company_id:d.companyId??null}),
+        }),
+      platformSalesActivity: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_sales_activity_history',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_before:d.before??null}),
+        }),
       platformSalesWorkspace: async d=>serviceRequest(env,
         '/rest/v1/rpc/platform_sales_workspace',{
           method:'POST',headers:{'content-type':'application/json'},
