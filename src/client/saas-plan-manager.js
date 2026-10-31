@@ -111,7 +111,7 @@ export function mountSaasPlanManager({root,rpc}){
  dialogButtons.append(dialogCancel,dialogOK);dialog.append(dialogTitle,dialogText,dialogStatus,dialogButtons);
  root.append(section,form,dialog);
  const controls=name=>form.elements.namedItem(name);
- let plans=[],editingId=null,loading=false,busy=false;
+ let plans=[],editingId=null,loading=false,busy=false,editorEpoch=0;
  const preview=()=>{
   const c=moneyToSatang(controls('couponBaht').value),h=moneyToSatang(controls('hrBaht').value),
    b=moneyToSatang(controls('bundleBaht').value);
@@ -132,10 +132,12 @@ export function mountSaasPlanManager({root,rpc}){
   controls('name').focus();
  };
  const closeEditor=()=>{
+  editorEpoch++;
   form.dispatchEvent(new Event('os:create-hide'));
   form.hidden=true;editingId=null;toggleStatus(formStatus,'');
  };
  const prepareCreate=()=>{
+  editorEpoch++;
   editingId=null;form.reset();extra.open=false;
   controls('code').value=newCode();controls('effectiveOn').value=dateToday();
   formTitle.textContent='เพิ่มแพ็กเกจใหม่';save.textContent='บันทึกแพ็กเกจ';
@@ -179,9 +181,11 @@ export function mountSaasPlanManager({root,rpc}){
    const remove=makeButton('นำออกจากรายการ');remove.classList.add('saas-plan-delete');remove.setAttribute('aria-label','นำแพ็กเกจ '+p.name+' ออกจากรายการ');
    rowActions.append(edit,remove);
    edit.addEventListener('click',async()=>{
-    if(busy)return;edit.disabled=true;toggleStatus(listStatus,'กำลังเปิดข้อมูลสำหรับแก้ไข…');
+    if(busy)return;const requestEpoch=++editorEpoch;
+   edit.disabled=true;toggleStatus(listStatus,'กำลังเปิดข้อมูลสำหรับแก้ไข…');
     try{
      const detail=await rpc('plan-editor?planId='+encodeURIComponent(p.id));
+     if(requestEpoch!==editorEpoch)return;
      prepareCreate();fillForm(detail);
      if(detail.canEdit!==true){
       editingId=null;controls('code').value=newCode();
@@ -195,7 +199,7 @@ export function mountSaasPlanManager({root,rpc}){
       save.textContent='บันทึกการเปลี่ยนแปลง';
      }
      openEditor();toggleStatus(listStatus,'');
-    }catch(e){toggleStatus(listStatus,errorFor(e.message),'error');}
+    }catch(e){if(requestEpoch===editorEpoch)toggleStatus(listStatus,errorFor(e.message),'error');}
     finally{edit.disabled=false;}
    });
    remove.addEventListener('click',()=>{
