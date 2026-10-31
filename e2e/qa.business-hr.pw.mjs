@@ -5,10 +5,10 @@ import {createHmac} from 'node:crypto';
 // Creates at most one fictional QA employee and one assigned shift per fixed station.
 const BASE='https://oilstation.goldensoft.cloud';
 const stations=[
- {code:'s01a',sales:'sales01',id:'e22fb5ff-1878-446f-ab8d-585115e8a1a9'},
- {code:'s01b',sales:'sales01',id:'76388e2c-ef36-4656-808b-7d0fbd1d2c35'},
- {code:'s02a',sales:'sales02',id:'24dc4981-0e6f-4b86-bfd7-03717002d0be'},
- {code:'s02b',sales:'sales02',id:'02183a4e-47b0-4575-9f4f-74cec6553205'},
+ {code:'s01a',sales:'sales01',id:'e22fb5ff-1878-446f-ab8d-585115e8a1a9',hr:true},
+ {code:'s01b',sales:'sales01',id:'76388e2c-ef36-4656-808b-7d0fbd1d2c35',hr:true},
+ {code:'s02a',sales:'sales02',id:'24dc4981-0e6f-4b86-bfd7-03717002d0be',hr:true},
+ {code:'s02b',sales:'sales02',id:'02183a4e-47b0-4575-9f4f-74cec6553205',hr:false},
 ];
 function pwd(station,suffix){
  const key=process.env['OILSTATION_QA_'+station.sales.toUpperCase()+'_PASSWORD'];
@@ -47,7 +47,7 @@ const post=(page,token,path,body)=>page.request.post(BASE+path,{
  data:body,
 });
 test.use({headless:true,trace:'off',screenshot:'off',video:'off'});
-test('QA-HR-01 four real owners create employee, templates and shift; separate HR manager checks scoped data @qa-business-hr',
+test('QA-HR-01 three entitled stations create employee and shift; QR-only station denies HR writes @qa-business-hr',
  async({browser,request})=>{
   test.skip(process.env.OILSTATION_QA_BUSINESS_HR_RUN!=='true',
    'Only protected, same-commit, time-bounded QA UAT is allowed to insert HR fixtures.');
@@ -70,6 +70,18 @@ test('QA-HR-01 four real owners create employee, templates and shift; separate H
     let roster=(await rosterResponse.json()).roster;
     expect(Array.isArray(roster.employees)).toBe(true);
     expect(Array.isArray(roster.shiftTemplates)).toBe(true);
+    // QA-S02-B intentionally has only qr_coupon entitlement. This is a
+    // critical negative test: it must NOT silently create HR fixtures.
+    if(!station.hr){
+     expect(roster.shiftTemplates).toHaveLength(0);
+     const forbidden=await post(owner,ot,'/api/hr/seed-shifts',{stationId:station.id});
+     expect(forbidden.status(),'QR-only station must not enable HR').toBe(503);
+     const verify=await get(owner,ot,'/api/hr/roster?stationId='+station.id);
+     expect(verify.status()).toBe(200);
+     expect((await verify.json()).roster.shiftTemplates).toHaveLength(0);
+     console.log('QA-HR ENTITLEMENT PASS '+station.code+' is QR-only; HR write denied');
+     continue;
+    }
     if(roster.shiftTemplates.length===0){
      const seeded=await post(owner,ot,'/api/hr/seed-shifts',{stationId:station.id});
      expect(seeded.status()).toBe(200);
