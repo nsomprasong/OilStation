@@ -63,6 +63,7 @@ body>.shell>footer{color:var(--lux-subtle)}
 }
 #app.workspace-mode .ws-layout{background:var(--lux-cream)!important}
 #app.workspace-mode .ws-main{
+  background:var(--lux-cream)!important;
   width:100%;max-width:1520px;padding-left:clamp(22px,4vw,72px);
   padding-right:clamp(22px,4vw,72px);padding-bottom:135px;
 }
@@ -76,11 +77,11 @@ body>.shell>footer{color:var(--lux-subtle)}
 #app.workspace-mode .ws-header{
   background:transparent!important;color:var(--lux-primary)!important;
   border:0!important;box-shadow:none!important;
-  padding:0!important;margin:16px 0 36px!important;gap:24px;
+  padding:0!important;margin:12px 0 22px!important;gap:16px;
 }
 #app.workspace-mode .ws-header :is(h1,p,#ws-current){color:var(--lux-primary)!important}
 #app.workspace-mode .ws-header h1{
-  font-family:var(--lux-font-head)!important;font-size:clamp(34px,3vw,48px)!important;
+  font-family:var(--lux-font-head)!important;font-size:clamp(28px,2.6vw,36px)!important;
   line-height:1.15!important;letter-spacing:.01em!important;font-weight:400!important;
 }
 #app.workspace-mode :is(.ws-header p,.ws-screen-head p,.ws-breadcrumb){color:var(--lux-muted)!important}
@@ -93,9 +94,16 @@ body>.shell>footer{color:var(--lux-subtle)}
   padding:0!important;box-shadow:none!important;color:var(--lux-primary)!important;
 }
 #app.workspace-mode .ws-screen-head{
-  padding:0 0 24px!important;margin:0 0 36px!important;
-  border-bottom:1px solid var(--lux-border)!important;
+  /* Explicit reset of the original green desktop header background. */
+  background:transparent!important;color:var(--lux-primary)!important;
+  border-radius:0!important;box-shadow:none!important;
+  padding:0 0 16px!important;margin:0 0 22px!important;
+  border:0!important;border-bottom:1px solid var(--lux-border)!important;
 }
+#app.workspace-mode .ws-screen-head :is(.ws-breadcrumb,.ws-breadcrumb span){
+  color:var(--lux-gold)!important;
+}
+#app.workspace-mode #ws-current{display:none!important}
 #app.workspace-mode .ws-screen-head h2,
 #app.workspace-mode :is(.os-sales-head h3,.os-plan-form-head h3,.os-plan-confirm h3){
   font-family:var(--lux-font-head)!important;font-size:clamp(26px,2.5vw,36px)!important;
@@ -240,7 +248,7 @@ body>.shell>footer{color:var(--lux-subtle)}
 #app.workspace-mode :is(.status-warning,.os-state--warning){color:var(--lux-warning)!important}
 
 /* Navigation semantics stay identical. Decorative glossy teal becomes restrained ink. */
-#app.workspace-mode .ws-context-host{margin-bottom:24px!important}
+#app.workspace-mode .ws-context-host{margin-bottom:12px!important}
 #app.workspace-mode :is(.os-context-orbs,.os-functional-nav){
   gap:clamp(12px,2vw,24px)!important;padding:12px 0 20px!important;
 }
@@ -456,3 +464,19 @@ body>.shell>footer{color:var(--lux-subtle)}
   #app.workspace-mode :is(.ws-quick,.os-nav-orb,.os-add-fab,.button),#app.auth-mode .os-auth-provider{transition:none!important}
   #app.workspace-mode .ws-quick:hover{transform:none!important}
 }
+/* The five-position dock is a dedicated application footer, not a floating
+   popup obscuring station record actions on desktop. */
+@media(min-width:851px){
+  #app.workspace-mode .os-mobile-bottom{
+    width:100%!important;max-width:none!important;left:0!important;right:0!important;
+    bottom:0!important;transform:none!important;border-radius:0!important;
+    border:0!important;border-top:1px solid var(--lux-border)!important;
+    box-shadow:0 -1px 8px rgba(28,25,23,.04)!important;
+    grid-template-columns:repeat(5,minmax(0,118px))!important;
+    justify-content:center!important;
+  }
+  #app.workspace-mode .ws-main{padding-bottom:155px!important}
+}
+/* Old sales-status selectors used teal as decoration rather than a status. */
+#app.workspace-mode .os-sales-status{color:var(--lux-muted)!important}
+#app.workspace-mode .os-sales-secondary{color:var(--lux-muted)!important}
