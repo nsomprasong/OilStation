@@ -22,9 +22,9 @@ test('multi-scope screen mount ids stay unique',()=>{
  assert.equal(ids.length,new Set(ids).size);
 });
 test('desktop width overrides narrow login without breaking sign-in and mobile',()=>{
- const css=readFileSync(new URL('../../public/styles.css',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../../public/oilstation.css',import.meta.url),'utf8');
  assert.match(css,/\.center\{width:min\(100%,540px\)/);
- assert.match(css,/#app\.center\.workspace-mode\{width:min\(100%,1600px\)/);
+ assert.match(css,/#app\.workspace-mode \.ws-main\{/);
  assert.match(css,/@media\(max-width:760px\)/);
  assert.match(css,/\.ws-screen\[hidden\]\{display:none!important\}/);
  const source=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');

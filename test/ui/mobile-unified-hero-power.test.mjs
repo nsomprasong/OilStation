@@ -49,7 +49,7 @@ test('home has an accessible power icon in the top-right corner which uses exist
  assert.match(read('src/client/icons.js'),/power:Power/);
 });
 test('teal full-bleed mobile hero and coherent cards render on every subpage while desktop remains Gentelella',()=>{
- const css=read('public/mobile-app.css');
+ const css=read('public/oilstation.css');
  assert.match(css,/\.os-mobile-page-hero/);
  assert.match(css,/\.os-mobile-page-content/);
  assert.match(css,/\.os-mobile-page-shortcuts/);
@@ -58,5 +58,5 @@ test('teal full-bleed mobile hero and coherent cards render on every subpage whi
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(css,/env\(safe-area-inset-bottom\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(read('public/gentelella-v4-selected.css'),/--gt-sidebar:#1a2332/);
+ assert.match(read('public/oilstation.css'),/--gt-sidebar:#1a2332/);
 });

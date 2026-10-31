@@ -48,15 +48,15 @@ test('scanner stays inside authorized pump module, never as an unauthorized dock
 
 test('bottom bar and screenshot-style home exist only on mobile; desktop Gentelella remains',()=>{
  const html=source('index.html');
- const css=source('public/mobile-app.css');
- assert.match(html,/href="\/mobile-app\.css"/);
+ const css=source('public/oilstation.css');
+ assert.match(html,/href="\/oilstation\.css"/);
  assert.match(css,/\.os-mobile-home,\.os-mobile-bottom\{display:none\}/);
  assert.match(css,/@media\(max-width:850px\)/);
- assert.match(source('public/navigation-standard.css'),/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(source('public/oilstation.css'),/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
  assert.match(css,/\.os-mobile-camera\.is-scanning/);
  assert.match(css,/env\(safe-area-inset-bottom\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(source('public/gentelella-v4-selected.css'),/--gt-sidebar:#1a2332/);
+ assert.match(source('public/oilstation.css'),/--gt-sidebar:#1a2332/);
  assert.match(source('src/client/icons.js'),/home:House/);
  const rendered=renderWorkspaceShell(selectWorkspaceScreens([m('platform','platform_superadmin')]));
  assert.match(rendered,/os-mobile-bottom/);

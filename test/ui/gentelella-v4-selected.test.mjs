@@ -4,12 +4,11 @@ import {readFileSync} from 'node:fs';
 import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/workspace-layout.js';
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const platform={scopeType:'platform',role:'platform_superadmin'};
-test('selected Gentelella v4 loads as the final canonical CSS layer',()=>{
- const html=read('index.html'),css=read('public/gentelella-v4-selected.css');
- const positions=['styles.css','workspace-gentelella.css','impeccable.css','gentelella-v4-selected.css'].map(x=>html.indexOf('href="/'+x+'"'));
- assert.ok(positions.every(x=>x>0));
- assert.deepEqual([...positions].sort((a,b)=>a-b),positions);
- for(const token of ['#1a2332','#1abb9c','#169f85','#f5f7fb','#e6e7eb','252px','68px'])
+test('legacy components retain behavior under the sole LuxCart stylesheet',()=>{
+ const html=read('index.html'),css=read('public/oilstation.css');
+ assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1);
+ assert.match(html,/href="\/oilstation\.css"/);
+ for(const token of ['#1C1917','#FFFBEB','#B8860B','252px','68px'])
   assert.ok(css.includes(token),token);
  assert.match(css,/\.ws-nav\.active/);
  assert.match(css,/\.ws-sidebar/);
@@ -36,10 +35,10 @@ test('Home and a single Header submenu replace legacy drawer on all screen sizes
 test('theme selection preserves Thai workflow and does not add demo or finance endpoints',()=>{
  const design=read('DESIGN.md'),agents=read('AGENTS.md');
  assert.match(design,/Gentelella v4/);
- assert.match(agents,/Gentelella v4/);
+ assert.match(agents,/LuxCart/);
  assert.match(design,/No fake payment success/);
  assert.match(read('src/client/main.js'),/เชิญเจ้าของปั๊ม/);
- const css=read('public/gentelella-v4-selected.css');
+ const css=read('public/oilstation.css');
  assert.doesNotMatch(css,/https?:\/\/(?:cdn|unpkg|fonts)\./);
  assert.doesNotMatch(read('package.json'),/gentelella/);
 });

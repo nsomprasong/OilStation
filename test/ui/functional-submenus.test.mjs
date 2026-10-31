@@ -42,7 +42,7 @@ test('Sales exposes four real tasks and keeps drilldowns / summaries inside the 
  assert.match(ui,/form\.hidden=!canTransfer/);
  assert.match(ui,/team\.insertBefore\(inviteArea,teamList\)/);
  assert.match(ui,/firstLoad&&isAdmin&&!people\.length/);
- const css=read('public/platform-sales-navigation.css');
+ const css=read('public/oilstation.css');
  assert.match(css,/\.os-sales-grid\[hidden\]/);
  assert.match(css,/\.os-sales-transfer\[hidden\]/);
 });
@@ -54,12 +54,12 @@ test('all per-screen functional tabs are exclusive, preserve loaded nodes and re
   'oilstation:open-pane','state.signature'])assert.ok(s.includes(token),token);
  assert.doesNotMatch(s,/replaceChildren\(\).*form/);
  assert.doesNotMatch(s,/data-ws-go=/);
- const css=read('public/functional-submenus.css');
+ const css=read('public/oilstation.css');
  assert.match(css,/\.os-functional-pane\[hidden\]/);
  assert.match(css,/display:none!important/);
  assert.match(css,/flex-flow:row nowrap/);
  assert.match(css,/@media\(max-width:850px\)/);
- assert.ok(read('index.html').lastIndexOf('functional-submenus.css')>read('index.html').lastIndexOf('navigation-standard.css'));
+ assert.match(read('index.html'),/href="\/oilstation\.css"/);
 });
 test('Billing plans, editor and VAT are separate tabs; Add/Edit switches to editor',()=>{
  const s=read('src/client/functional-submenus.js');

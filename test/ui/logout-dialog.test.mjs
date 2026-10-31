@@ -84,7 +84,7 @@ test('logout failure shows inline Thai recovery and permits another attempt',()=
  assert.equal(ui.sent(),2);
 });
 test('dialog styling uses OilStation Teal, responsive widths and top-layer backdrop',()=>{
- const css=read('public/mobile-app.css');
+ const css=read('public/oilstation.css');
  assert.match(css,/\.os-logout-dialog::backdrop/);
  assert.match(css,/\.os-logout-confirm/);
  assert.match(css,/width:min\(400px,calc\(100vw - 32px\)\)/);
