@@ -8,8 +8,8 @@ import {mountPlatformSales} from '../../src/client/platform-sales.js';
 const read=file=>readFileSync(new URL('../../'+file,import.meta.url),'utf8');
 const screens=role=>selectWorkspaceScreens([{scopeType:'platform',role}]);
 test('sales has exactly a private work area while platform superadmin manages the whole sales team',()=>{
- assert.deepEqual(screens('platform_sales').map(s=>s.key),['overview','sales']);
- assert.deepEqual(screens('platform_superadmin').map(s=>s.key),['overview','sales','stations','billing']);
+ assert.deepEqual(screens('platform_sales').map(s=>s.key),['overview','sales','activity']);
+ assert.deepEqual(screens('platform_superadmin').map(s=>s.key),['overview','sales','activity','stations','billing']);
  assert.ok(!screens('platform_support').some(s=>s.key==='sales'));
  assert.match(renderWorkspaceShell(screens('platform_sales')),/id="platform-sales-workspace"/);
  assert.equal(typeof mountPlatformSales,'function');
