@@ -2,9 +2,9 @@
 
 OilStation is a Thai-first, multi-tenant petrol-station SaaS. Preserve authentication, station/company tenant isolation, financial ledgers, coupon locks, HR permissions, and operational clarity in all changes.
 
-## User-selected frontend authority
+## User-selected frontend authority (updated 1 November 2026)
 
-Use **Gentelella v4 (Colorlib, MIT)** for OilStation's canonical color, typography, compact cards, forms and tables; **navigation uses the explicitly approved Home/contextual-orb/frequent-dock standard below, NOT the old sidebar, rail, drawer or hamburger**. The project's existing design-taste and Impeccable guidelines remain for accessibility/UX quality but must not replace the chosen Gentelella v4 identity. Consult `DESIGN.md` and `public/gentelella-v4-selected.css` before changing UI. Keep Thai copy, roles and existing production functionality.
+Use **LuxCart** as the canonical OilStation visual system, per `docs/design/2026-11-01-luxcart.md` and the final `public/luxcart.css` stylesheet. Gentelella v4 CSS remains as legacy scaffolding, but its teal palette and glossy icons are visually superseded by LuxCart charcoal/cream/gold. Maintain all approved navigation and workflow behavior. LuxCart applies to login, Home and every authorized workspace on desktop/mobile. Former guidance (historical): Gentelella v4 was selected for OilStation's color, typography, compact cards, forms and tables; **navigation uses the explicitly approved Home/contextual-orb/frequent-dock standard below, NOT the old sidebar, rail, drawer or hamburger**. The project's existing design-taste and Impeccable guidelines remain for accessibility/UX quality but must not replace the chosen Gentelella v4 identity. Consult `DESIGN.md` and `public/gentelella-v4-selected.css` before changing UI. Keep Thai copy, roles and existing production functionality.
 
 ## Mandatory navigation standard — 31 October 2026 (supersedes legacy navigation guidance)
 
