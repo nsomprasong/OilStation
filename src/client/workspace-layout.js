@@ -9,8 +9,10 @@ export function selectWorkspaceScreens(memberships=[]){
  const p=has('platform',['platform_superadmin']);
  const sales=has('platform',['platform_sales']);
  const support=has('platform',['platform_support']);
- const b=memberships.some(m=>m.scopeType==='organization'&&m.organizationId&&['organization_owner','owner','manager','billing_manager'].includes(m.role));
+ const b=memberships.some(m=>m.scopeType==='organization'&&m.organizationId&&['organization_owner','organization_manager','owner','manager','billing_manager'].includes(m.role));
  const s=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager'].includes(m.role));
+ const finance=memberships.some(m=>m.scopeType==='station'&&m.stationId&&m.role==='finance_manager');
+ const hr=memberships.some(m=>m.scopeType==='station'&&m.stationId&&m.role==='hr_manager');
  const pump=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
  const attendance=memberships.some(m=>m.scopeType==='station'&&m.stationId);
  const review=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager','hr_manager'].includes(m.role));
@@ -29,8 +31,8 @@ export function selectWorkspaceScreens(memberships=[]){
   {key:'fuel',label:'ชนิดและราคาน้ำมัน',icon:'fuel',desc:'กำหนดสินค้าและราคาหน้าปั๊ม',ids:['station-fuel-workspace'],yes:s},
   {key:'pump',label:'งานหน้าลาน',icon:'scan',desc:'จัดการคูปองและรายการเติมน้ำมัน',ids:['station-pump-workspace'],yes:pump},
   {key:'customers',label:'ลูกค้าบริษัท',icon:'building',desc:'บัญชีลูกค้าและวงเงิน',ids:['station-customers-workspace'],yes:s},
-  {key:'finance',label:'การเงิน',icon:'wallet',desc:'รับเงินและตรวจสอบหลักฐาน',ids:['station-finance-workspace'],yes:s},
-  {key:'hr',label:'พนักงานและกะ',icon:'users',desc:'บริหารพนักงานและตารางกะ',ids:['hr-workspace'],yes:s},
+  {key:'finance',label:'การเงิน',icon:'wallet',desc:'รับเงินและตรวจสอบหลักฐาน',ids:['station-finance-workspace'],yes:s||finance},
+  {key:'hr',label:'พนักงานและกะ',icon:'users',desc:'บริหารพนักงานและตารางกะ',ids:['hr-workspace'],yes:s||hr},
   {key:'attendance',label:'ลงเวลา',icon:'calendar',desc:'ลงเวลาทำงาน',ids:['attendance-workspace'],yes:attendance},
   {key:'reviews',label:'อนุมัติลงเวลา',icon:'check',desc:'ตรวจรายการลงเวลา',ids:['attendance-review-workspace'],yes:review},
   {key:'payroll',label:'สรุปเงินเดือน',icon:'receipt',desc:'ตรวจข้อมูลเตรียมจ่าย',ids:['attendance-payroll-preview-workspace'],yes:review},

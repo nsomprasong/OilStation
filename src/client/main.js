@@ -1494,7 +1494,7 @@ function dashboard(data, session, publicConfig={}) {
   target:document.getElementById('station-saas-plan-workspace'),
   token:session.access_token,stationId:owner.stationId}));
  const bill=memberships.find(m=>m.scopeType==='organization'&&
-  ['organization_owner','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
+  ['organization_owner','organization_manager','owner','manager','billing_manager'].includes(m.role)&&m.organizationId);
  if(bill)register('billing',()=>mountBillingWorkspace({
   target:document.getElementById('saas-billing-workspace'),token:session.access_token,
   organizationId:bill.organizationId,publishableKey:publicConfig.stripePublishableKey}));
@@ -1526,10 +1526,20 @@ function dashboard(data, session, publicConfig={}) {
  });
  const station=memberships.find(m=>m.scopeType==='station'&&
   ['station_owner','owner','manager'].includes(m.role)&&m.stationId);
+ const hrManager=memberships.find(m=>m.scopeType==='station'&&
+  m.role==='hr_manager'&&m.stationId);
+ const financeManager=memberships.find(m=>m.scopeType==='station'&&
+  m.role==='finance_manager'&&m.stationId);
+ if(station||hrManager){
+  const stationId=(station||hrManager).stationId;
+  register('hr',()=>hrWorkspace(session.access_token,stationId,document.getElementById('hr-workspace')));
+ }
+ if(station||financeManager){
+  const stationId=(station||financeManager).stationId;
+  register('finance',()=>stationFinanceWorkspace(session.access_token,stationId,document.getElementById('station-finance-workspace')));
+ }
  if(station){
-  register('hr',()=>hrWorkspace(session.access_token,station.stationId,document.getElementById('hr-workspace')));
   register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,document.getElementById('station-fuel-workspace')));
-  register('finance',()=>stationFinanceWorkspace(session.access_token,station.stationId,document.getElementById('station-finance-workspace')));
   register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace')));
   register('invitations',()=>document.getElementById('member-invites')?.appendChild(
    createInviteControl(session.access_token,'station',station.stationId,
