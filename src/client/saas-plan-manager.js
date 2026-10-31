@@ -192,7 +192,7 @@ export function mountSaasPlanManager({root,rpc}){
       editingId=null;controls('code').value=newCode();
       controls('name').value=String(detail.name)+' (ใหม่)';
       formTitle.textContent='คัดลอกเป็นแพ็กเกจใหม่';
-      hint.textContent='แพ็กเกจนี้มีประวัติการใช้งาน ไม่สามารถแก้ราคาย้อนหลังได้ ระบบจึงเตรียมสำเนาใหม่ให้';
+      hint.textContent='แพ็กเกจนี้มีประวัติการใช้งานหรือเป็นรูปแบบราคาเดิม จึงไม่แก้ย้อนหลัง ระบบเตรียมสำเนาใหม่ให้';
       save.textContent='สร้างแพ็กเกจใหม่';toggleStatus(formStatus,'ราคาเดิมของลูกค้าจะไม่ถูกเปลี่ยน','warning');
      }else{
       editingId=p.id;formTitle.textContent='แก้ไขแพ็กเกจ';
@@ -209,7 +209,7 @@ export function mountSaasPlanManager({root,rpc}){
     toggleStatus(dialogStatus,'');dialogOK.disabled=false;
     dialogOK.onclick=async()=>{
      if(busy)return;busy=true;dialogOK.disabled=true;toggleStatus(dialogStatus,'กำลังตรวจสอบและนำออก…');
-     try{await rpc('archive-plan',{planId:p.id});dialog.close();await load();toggleStatus(listStatus,'นำแพ็กเกจออกจากรายการแล้ว','success');}
+     try{await rpc('archive-plan',{planId:p.id});dialog.close();const refreshed=await load();toggleStatus(listStatus,refreshed?'นำแพ็กเกจออกจากรายการแล้ว':'นำออกสำเร็จ แต่โหลดรายการใหม่ไม่สำเร็จ กรุณากดรีเฟรช',refreshed?'success':'warning');}
      catch(e){toggleStatus(dialogStatus,errorFor(e.message),'error');}
      finally{busy=false;dialogOK.disabled=false;}
     };
@@ -219,7 +219,7 @@ export function mountSaasPlanManager({root,rpc}){
   }
  };
  async function load(){
-  if(loading)return;
+  if(loading)return false;
   loading=true;refresh.disabled=true;toggleStatus(listStatus,'กำลังโหลดรายการแพ็กเกจ…');
   try{
    const data=await rpc('overview');plans=Array.isArray(data.plans)?data.plans:[];
@@ -227,8 +227,8 @@ export function mountSaasPlanManager({root,rpc}){
     data.taxPolicy.effectiveOn>dateToday()?'นโยบาย VAT เริ่มมีผลวันที่ '+data.taxPolicy.effectiveOn+' — ราคานี้ยังไม่พร้อมชำระเงิน':
     'นโยบาย VAT กำหนดแล้ว · ลูกค้าจะเห็นราคาพร้อมภาษีตามการตั้งค่าของระบบ';
    vatNotice.dataset.ready=String(Boolean(data.taxPolicy&&data.taxPolicy.effectiveOn<=dateToday()));
-   paint();toggleStatus(listStatus,'ทั้งหมด '+plans.length+' แพ็กเกจ');
-  }catch(e){toggleStatus(listStatus,'โหลดรายการไม่สำเร็จ กรุณากดรีเฟรช','error');}
+   paint();toggleStatus(listStatus,'ทั้งหมด '+plans.length+' แพ็กเกจ');return true;
+  }catch(e){toggleStatus(listStatus,'โหลดรายการไม่สำเร็จ กรุณากดรีเฟรช','error');return false;}
   finally{refresh.disabled=false;loading=false;}
  }
  dialogCancel.addEventListener('click',()=>dialog.close());
@@ -243,7 +243,9 @@ export function mountSaasPlanManager({root,rpc}){
   try{
    const wasEditing=Boolean(editingId);
    await rpc(wasEditing?'edit-plan':'bundle-plan',wasEditing?{planId:editingId,...result.body}:result.body);
-   closeEditor();await load();toggleStatus(listStatus,wasEditing?'บันทึกการแก้ไขแล้ว':'บันทึกแพ็กเกจใหม่เรียบร้อย','success');
+   closeEditor();const refreshed=await load();
+   toggleStatus(listStatus,refreshed?(wasEditing?'บันทึกการแก้ไขแล้ว':'บันทึกแพ็กเกจใหม่เรียบร้อย'):
+    'บันทึกสำเร็จ แต่โหลดรายการใหม่ไม่สำเร็จ กรุณากดรีเฟรช',refreshed?'success':'warning');
    add.focus();
   }catch(error){toggleStatus(formStatus,errorFor(error.message),'error');}
   finally{busy=false;form.dataset.osBusy='false';save.disabled=false;cancel.disabled=false;}
