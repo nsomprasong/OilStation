@@ -47,7 +47,7 @@ export function mountQaAccountsAdmin({target,token}){
  form.append(label('ชื่อบัญชีทดสอบ',username),label('รหัสผ่านทดสอบ',password),
   label('ประเภทสิทธิ์',scopeType),label('บทบาท',role),
   label('พื้นที่ที่อนุญาต',scope),send);
- const note=el('p','QA ต้องกำหนดปั๊มทดสอบเพียง 2 แห่งและบริษัทลูกค้า 6 บัญชีไว้ในสิทธิ์ฝั่งเซิร์ฟเวอร์ก่อนสร้างผู้ใช้ที่เกี่ยวข้อง','os-qa-note');
+ const note=el('p','QA ต้องกำหนดSales 2 คน คนละ 2 ปั๊ม (รวม 4 ปั๊ม) และลูกค้าปั๊มละ 3 ราย (รวม 12 บัญชี)ไว้ในสิทธิ์ฝั่งเซิร์ฟเวอร์ก่อนสร้างผู้ใช้ที่เกี่ยวข้อง','os-qa-note');
  details.append(explain,form,note,status);box.append(details);target.append(box);
  let scopes={};
  const refresh=()=>{

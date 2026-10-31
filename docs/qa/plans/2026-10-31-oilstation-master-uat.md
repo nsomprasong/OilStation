@@ -3,44 +3,42 @@
 **Plan ID:** QA-20261031-MASTER-001  
 **Status:** DRAFT — ready for the owner's per-module approval, NOT an executed test  
 **Environment:** https://oilstation.goldensoft.cloud and the EXISTING Supabase project `cxihsotcpdnalswfoysx`  
-**Run interface:** ChatGPT normal chat with a real Playwright browser runner when connected; NOT ChatGPT Work  
+**Run interface:** ChatGPT normal chat + authorized browser automation plugin (TinyFish or other verified browser runner) or Playwright on GitHub Actions; NOT ChatGPT Work  
 **Source of requirements:** `docs/superpowers/specs/2026-10-29-oilstation-saas-design.md`, `docs/release/2026-10-29-integrated-uat-plan.md`, `AGENTS.md`, current role-selected UI and production API implementation  
 **Important distinction:** A function described in the specification is **not** proof that the currently deployed application implements it. Every item starts NOT TESTED; unsupported/gated items become GAP or BLOCKED with fix/retest work.
 
 ## A. Immutable test-data boundaries
 
-1. **Exactly two QA stations:** `QA-STATION-A` and `QA-STATION-B`; do not create a third QA station. The previously existing production station is outside the QA fixture until separately authorized.
-2. **Exactly three test corporate station accounts per QA station:** `QA-A-C01..03` and `QA-B-C01..03`, **six station/customer relationships** total. Prefer six distinct QA corporate companies for isolation; never create more than six company accounts. If testing one company across stations, reuse a company, replacing—not adding to—the six relationships.
-3. **Exactly two QA platform sales accounts:** `sales01`, `sales02`. **Each Sales must cover BOTH QA stations**: expected four Sales–Station coverage relationships, not four stations. Two concurrent Sales covering the same station is currently a **design/implementation gap**: the existing `platform_transfer_sales_station` effectively treats the station as having one active salesperson. QA must not falsely pass this; add authorized multi-Sales coverage without accidentally duplicating entitlement or payouts.
+1. **Exactly four QA stations:** Sales01 creates `QA-S01-A` and `QA-S01-B` with its OWN authenticated Sales account; Sales02 creates `QA-S02-A` and `QA-S02-B` with its OWN authenticated Sales account. Every station is associated with precisely its creating Sales as salesperson of record. Do not create a fifth QA station. The previously existing production station is outside the QA fixture unless separately authorized.
+2. **Exactly three corporate test customer relationships per QA station:** `QA-S01-A-C01..03`, `QA-S01-B-C01..03`, `QA-S02-A-C01..03`, `QA-S02-B-C01..03`: **12 station/customer relationships** total. Use at most 12 distinct QA corporate companies; reuse an existing approved company when testing cross-station links without creating a 13th relationship.
+3. **Exactly two QA platform Sales accounts:** `sales01`, `sales02`. Each must LOG IN and CREATE its OWN two station accounts, yielding four one-to-one Sales–Station assignments. Sales01 MUST NOT be assigned to Sales02's new stations (and vice versa). A later reassignment is a separate history/commission test performed only within these same four stations. **Current application gap:** the station creation API/RPC permits Super Admin only; implement a safely permission-scoped Sales self-registration flow with server-side source attribution before this can PASS.
 4. Provision additional QA accounts **only to cover authorized roles** listed in the role matrix below; never create a third Sales or extra QA station/company. One role can use separate users where independence is necessary (e.g. proposer vs approver), but reuse accounts where safe.
 5. Test users are admin-provisioned, password-authenticated Supabase Auth accounts with fictional `qa-<alias>@qa.oilstation.invalid` addresses, `email_confirm=true`, `app_metadata.oilstation_qa_run_id`, and real scoped membership rows. **No real email, OTP, OAuth signup, anonymous role impersonation, forged JWT, service key in browser, or public registration.**
-6. QA identities must be limited to the two approved QA station IDs, approved associated organization ID(s) and six approved corporate company IDs, except for the two platform Sales accounts. The separate existing bootstrap Super Admin is retained as the trusted QA operator.
+6. QA identities must be limited to the four approved QA station IDs, approved associated organization ID(s) and at most 12 approved corporate company IDs, except for the two platform Sales accounts. The separate existing bootstrap Super Admin is retained as the trusted QA operator.
 7. All created records and derived transaction IDs are added to `docs/qa/runs/<QA_RUN_ID>.md`. No deletion, reset, or automatic cleanup until the owner **explicitly orders it after ALL testing**. At that time, create and approve an enumerated `RESET-PLAN.md`; fresh start may include pre-existing business data only after independent backup, impact and preservation check.
 8. No actual money transfer, payroll payment, outgoing customer emails, SMS, real bank verification, real Stripe charge, or live fuel dispenser action is authorized by this plan. Any financial workflow is test-mode simulation/validation only unless separately approved.
 
 ### Fixture matrix
 
-| ID | QA Station A | QA Station B |
-|---|---|---|
-| Platform Sales 01 | Must cover A | Must cover B |
-| Platform Sales 02 | Must cover A | Must cover B |
-| Customer 01 | A-C01 | B-C01 |
-| Customer 02 | A-C02 | B-C02 |
-| Customer 03 | A-C03 | B-C03 |
+| Owner / opener | Station 1 | Station 2 | Customer accounts |
+|---|---|---|---|
+| Sales 01 | QA-S01-A (created by Sales01) | QA-S01-B (created by Sales01) | Three per station, six total |
+| Sales 02 | QA-S02-A (created by Sales02) | QA-S02-B (created by Sales02) | Three per station, six total |
+| **Total** | **4 distinct stations** | **1 Sales per own station** | **12 station/customer relations** |
 
 ### Role matrix
 
 | Layer | Test role | Minimum identity approach | Test intention |
 |---|---|---|---|
 | Platform | platform_superadmin | Preserve real existing Super Admin; no cloned superadmin | All platform functions and QA account administration |
-| Platform | platform_sales | Exactly 2: sales01, sales02 | Both cover A+B, own commission, isolated records |
+| Platform | platform_sales | Exactly 2: sales01, sales02 | Each creates and exclusively owns attribution for two different stations; own commission, isolated records |
 | Platform | platform_support | 1 as necessary | Explicit support permissions and denial of finance |
-| Organization | organization_owner / owner, billing_manager | Reuse scoped QA users where supported | Owning two stations, SaaS invoices, renewals |
-| Station (both A+B) | station_owner, manager | Per station as needed | Permissions, pricing, invitations, approvals |
-| Station (both A+B) | cashier, attendant/pump_staff | Per station as needed | QR scan, verification, fueling lifecycle |
-| Station (both A+B) | hr_manager, employee / finance_manager | Per station as needed | HR and distinct financial approvals |
-| Corporate (6 QA relationships only) | corporate_admin | Per company as needed | Membership, bank/credit, QR administration |
-| Corporate (6 QA relationships only) | coupon_issuer, accountant/finance_manager, driver | Per company or scoped reuse | Coupon issuance, money view, driver rights |
+| Organization | organization_owner / owner, billing_manager | Reuse scoped QA users where supported | Station owner onboarding per Sales-created organization, SaaS invoices, renewals |
+| Station (all four QA stations) | station_owner, manager | Per station as needed | Permissions, pricing, invitations, approvals |
+| Station (all four QA stations) | cashier, attendant/pump_staff | Per station as needed | QR scan, verification, fueling lifecycle |
+| Station (all four QA stations) | hr_manager, employee / finance_manager | Per station as needed | HR and distinct financial approvals |
+| Corporate (12 QA relationships only) | corporate_admin | Per company as needed | Membership, bank/credit, QR administration |
+| Corporate (12 QA relationships only) | coupon_issuer, accountant/finance_manager, driver | Per company or scoped reuse | Coupon issuance, money view, driver rights |
 
 **A role is TESTABLE only if it is implemented by the current product; unsupported presets must be recorded as FAIL/GAP, not silently granted extra rights.** No test identity can be given `platform_superadmin` through the test-account creation API.
 
@@ -49,7 +47,7 @@
 | ID | Category | User/business acceptance target |
 |---|---|---|
 | P-01 | Login and Home | Google/Facebook ordinary production auth unchanged; QA account login visible only when server QA mode enabled; 5-slot dock and under-header functional submenu |
-| P-02 | Tenant model | Create/view organization ownership, two QA stations, correct scoped isolation, correct logos and brand |
+| P-02 | Tenant model | Sales01 logs in and creates two stations; Sales02 separately creates two other stations; correct unique organizations/ownership, isolation and brand |
 | P-03 | Station setup | Select brand; custom brand fallback; select QR and/or HR module; prevent invalid station and duplicates |
 | P-04 | Product entitlements | Station-specific QR/HR activation and menu/API enforcement; upgrade module safely |
 | P-05 | SaaS plans | Edit flat monthly/annual plans, bundle pricing, employee tiers/per-station overrides where actually implemented |
@@ -57,7 +55,7 @@
 | P-07 | SaaS billing | Invoice generation, billing group/individual station, snapshots, renewal, arrears/grace status |
 | P-08 | Payments | Stripe **test mode only**, PromptPay discount 2%, card opt-in recurring, signed webhook, idempotency; mark BLOCKED until integration safely operable |
 | P-09 | Sales roster | Exactly two platform_sales accounts, visible status, permissions; manage without real email |
-| P-10 | Sales coverage | BOTH Sales see BOTH stations at once; do not replace one Sales by the other on assignment |
+| P-10 | Sales self-onboarding | Sales01 creates only S01-A/B; Sales02 creates only S02-A/B; each sees precisely own stations, not the other Sales's, without Super Admin creation |
 | P-11 | Transfer/history | Effective dates, reassignment audit, prior entitlement immutable, manager vs co-manager distinction if adopted |
 | P-12 | Recurring commission | Formula from paid SaaS fees, multiple months, prorate transitions, idempotency, no double attribution |
 | P-13 | Commission reporting | Sales01/02 self-only totals; Super Admin combined; trace invoice line → entitlement → ledger; paid ≠ payable |
@@ -68,7 +66,7 @@
 
 | ID | Category | User/business acceptance target |
 |---|---|---|
-| S-01 | Organization/station switch | Two station contexts and correct scoped screens, no cross-station writes |
+| S-01 | Organization/station switch | Four QA stations (two per Sales) and correct scoped screens, no cross-station writes |
 | S-02 | Membership & invitation | Owner, manager, cashier, attendant, HR, finance roles; ordinary invitation still requires email proof |
 | S-03 | Fuel catalog | Brand-specific catalog, enabled products, station public price, fixed corporate / discount pricing |
 | S-04 | QR coupon scan | Scan/upload/manual fallback, signing, expiry, cancellation, replacement and replay prevention |
@@ -96,7 +94,7 @@
 | ID | Category | User/business acceptance target |
 |---|---|---|
 | C-01 | Corporate login | Synthetic QA corporate user logs into real Auth and sees only own company |
-| C-02 | Six fixed QA accounts | Each of A/B has exactly C01–C03; no 7th relation created |
+| C-02 | Twelve fixed QA accounts | Each of the four Sales-created stations has exactly three customers; no 13th relationship created |
 | C-03 | Company profile | Corporate admin views/edits allowed info; other company isolation |
 | C-04 | Company members | Admin invites issuer, accountant and driver (normal mode invites remain strict) |
 | C-05 | Station linking | Existing company requests/approves second QA station when selected as replacement fixture |
@@ -127,8 +125,8 @@
 
 - **QA browser runner is not yet connected**. Existing Node tests are not equivalent to a browser that creates records.
 - **Production preview** currently permits only selected pilot onboarding routes. `OILSTATION_API_ENABLED=false`: most fuel/corporate/HR/finance routes are intentionally blocked and require separate readiness tests before release. Do not quietly change financial gate behavior to force a PASS.
-- **Shared Sales coverage gap:** the current `platform_transfer_sales_station` inserts a sole new salesperson effective next midnight and ends the previous person's period. It does not implement two simultaneous Sales on the same station. Must be redesigned and regression-tested before P-10 can PASS.
-- A commission split between concurrent Sales is **not yet agreed**. Require explicit attribution rule at the product level before calculating and displaying a split; never credit the same subscription invoice line twice.
+- **Sales-created station GAP:** current `/api/platform/create-station` and `platform_create_station` restrict station creation to Super Admin. Actual Sales must be authorized to create their own two stations and automatically become the recorded Sales of record via a transactionally safe server-side assignment. Sales must not become station owner or see the other Sales's stations by mistake.
+- **Commission ownership:** each station has one originating Sales. Reassignment must preserve paid-invoice attribution by service period, not create two entitlements from the same paid invoice line. Test changes on the same four stations, not by creating extra stations.
 - No real email, real bank or real payroll test is needed to exercise QA auth. Production invite/OAuth workflows remain separate tests, marked BLOCKED when provider test access is unavailable.
 
 ## G. Test procedure and go-live policy
@@ -136,7 +134,7 @@
 1. Freeze this Master scope and create a detailed `docs/qa/plans/<module>.md` for each section. Owner approves plan before test writes.
 2. Capture current full baseline, verify backup/restore, and prepare a unique `QA_RUN_ID`.
 3. Turn QA account mode on **only** with explicit Cloudflare server flag and locked run ID/scoped allowlists. Never leave unrestricted sign-up available.
-4. Seed exactly two QA stations and six station/customer relationships; provision test accounts for the role matrix; exactly two Sales with coverage of both stations.
+4. Create Sales01 and Sales02 test accounts first, then have EACH Sales create its OWN two stations through the actual application. Record four unique station IDs and the automatic four Sales assignments. Only then create precisely three corporate accounts per station (12 relationships), without exceeding either count.
 5. Run Browser E2E/SQL/API, log failures, patch, CI, merge, deploy, repeat until each approved case PASS. A BLOCKED or GAP case never counts as PASS.
 6. After **all sections complete** show the owner an inventory. **Do not delete or restart anything** until an explicit separate deletion order; then create an exact `RESET-PLAN.md`, verify recovery, clean approved records, redeploy worker as a serverless reset and recheck first-run login.
 
