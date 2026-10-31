@@ -28,6 +28,7 @@ jobs:
             sh -eu -c '
               export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_admin_scoped
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              psql -v ON_ERROR_STOP=1 -c "CREATE TABLE IF NOT EXISTS public.sales_station_creation_requests(station_id uuid,actor_id uuid); CREATE TABLE IF NOT EXISTS public.sales_assignments(station_id uuid,sales_user_id uuid,effective_from timestamptz,effective_until timestamptz);"
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031190000_sales_owned_account_delegation.sql
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031200000_qa_sales_corporate_role_scopes.sql
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031223000_qa_admin_owned_staff_and_company_bootstrap.sql
