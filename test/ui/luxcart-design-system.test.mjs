@@ -28,3 +28,12 @@ test('both app modes and old navigation visuals are restyled without JS workflow
   assert.match(css,/:focus-visible/);
   assert.match(css,/\[hidden\]/);
 });
+
+test('legacy teal desktop banner removed, LuxCart sets every key Sales surface',()=>{
+ const legacy=read('public/oilstation-unified.css');
+ assert.doesNotMatch(legacy,/background:linear-gradient\(115deg,#077a6f,#12a58b\)/);
+ assert.doesNotMatch(legacy,/#app\.workspace-mode \.ws-main\{background:#f4f8f7\}/);
+ assert.match(css,/#app\.workspace-mode \.ws-screen-head\{[^}]*background:transparent!important/s);
+ assert.match(css,/#app\.workspace-mode \.ws-main\{[^}]*background:var\(--lux-cream\)!important/s);
+ assert.match(css,/@media\(min-width:851px\)\{[^}]*\.os-mobile-bottom/s);
+});

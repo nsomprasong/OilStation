@@ -86,3 +86,75 @@ test('LuxCart role-filtered workspace retains five dock positions and restrained
  expect(desktop.page).toBeLessThanOrEqual(desktop.viewport+2);
  await page.screenshot({path:info.outputPath('luxcart-workspace-desktop.png'),animations:'disabled'});
 });
+
+test('LuxCart Sales desktop and mobile use one coherent non-teal workspace @luxcart',async({page},info)=>{
+ const salesScreens=selectWorkspaceScreens([{scopeType:'platform',role:'platform_sales'}]);
+ await page.setViewportSize({width:1230,height:915});
+ await page.goto('/',{waitUntil:'domcontentloaded'});
+ await page.evaluate(markup=>{
+   const app=document.querySelector('#app');
+   app.className='workspace-mode';
+   app.innerHTML=markup;
+   const shell=app.querySelector('.ws-layout');
+   shell.dataset.activeScreen='sales';
+   app.querySelector('[data-ws-screen="overview"]').hidden=true;
+   app.querySelector('[data-ws-screen="sales"]').hidden=false;
+   app.querySelector('[data-context-for="sales"]').hidden=false;
+   app.querySelector('#platform-sales-workspace').innerHTML=
+    '<div class="os-sales-workspace">'+
+    '<div class="os-sales-head"><h3>ปั๊มที่รับผิดชอบ</h3>'+
+    '<button type="button" class="button secondary">รีเฟรช</button></div>'+
+    '<section class="os-sales-panel"><h4>ปั๊มที่รับผิดชอบ</h4>'+
+    '<div class="os-sales-grid"><article class="os-sales-card"><strong>สถานีทดสอบ 1</strong>'+
+    '<p>สถานะตัวอย่างสำหรับตรวจธีมเท่านั้น</p></article>'+
+    '<article class="os-sales-card"><strong>สถานีทดสอบ 2</strong>'+
+    '<p>ข้อมูลจำลองที่ไม่เชื่อมต่อฐานข้อมูล</p></article></div></section></div>';
+ },renderWorkspaceShell(salesScreens));
+
+ const desktop=await page.evaluate(()=>{
+  const css=(sel)=>getComputedStyle(document.querySelector(sel));
+  const dock=document.querySelector('.os-mobile-bottom').getBoundingClientRect();
+  return {
+   mainBg:css('.ws-main').backgroundColor,
+   headerBg:css('[data-ws-screen="sales"] .ws-screen-head').backgroundColor,
+   headerImage:css('[data-ws-screen="sales"] .ws-screen-head').backgroundImage,
+   headerRadius:css('[data-ws-screen="sales"] .ws-screen-head').borderTopLeftRadius,
+   headingColor:css('[data-ws-screen="sales"] .ws-screen-head h2').color,
+   cardBg:css('.os-sales-card').backgroundColor,
+   dockBg:css('.os-mobile-bottom').backgroundColor,
+   dockLeft:Math.round(dock.left),
+   dockWidth:Math.round(dock.width),
+   viewport:document.documentElement.clientWidth,
+   docWidth:document.documentElement.scrollWidth,
+  };
+ });
+ expect(desktop.mainBg).toBe('rgb(255, 251, 235)');
+ expect(desktop.headerBg).toBe('rgba(0, 0, 0, 0)');
+ expect(desktop.headerImage).toBe('none');
+ expect(desktop.headerRadius).toBe('0px');
+ expect(desktop.headingColor).toBe('rgb(28, 25, 23)');
+ expect(desktop.cardBg).toBe('rgb(255, 255, 255)');
+ expect(desktop.dockBg).toBe('rgb(255, 255, 255)');
+ expect(desktop.dockLeft).toBe(0);
+ expect(desktop.dockWidth).toBe(desktop.viewport);
+ expect(desktop.docWidth).toBeLessThanOrEqual(desktop.viewport+2);
+ await page.screenshot({path:info.outputPath('luxcart-sales-desktop-1230.png'),animations:'disabled'});
+
+ await page.setViewportSize({width:390,height:844});
+ const mobile=await page.evaluate(()=>{
+  const top=document.querySelector('.ws-header');
+  const dock=document.querySelector('.os-mobile-bottom');
+  return {
+   headerBg:getComputedStyle(top).backgroundColor,
+   dockBg:getComputedStyle(dock).backgroundColor,
+   dockSlots:dock.querySelectorAll('.os-mobile-tab').length,
+   viewport:document.documentElement.clientWidth,
+   docWidth:document.documentElement.scrollWidth,
+  };
+ });
+ expect(mobile.headerBg).toBe('rgb(255, 251, 235)');
+ expect(mobile.dockBg).toBe('rgb(255, 255, 255)');
+ expect(mobile.dockSlots).toBe(5);
+ expect(mobile.docWidth).toBeLessThanOrEqual(mobile.viewport+2);
+ await page.screenshot({path:info.outputPath('luxcart-sales-mobile-390.png'),animations:'disabled'});
+});

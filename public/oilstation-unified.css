@@ -132,24 +132,19 @@ body:has(#app.auth-mode)>.shell>footer{display:none}
 }
 #app.workspace-mode .os-add-close svg{width:17px;height:17px;transform:rotate(45deg)}
 #app.workspace-mode .os-add-fab[hidden],#app.workspace-mode .os-add-close[hidden]{display:none!important}
-/* Desktop is an extension of the teal mobile home, not a disconnected white admin. */
+/* Desktop shares the same theme tokens as mobile. The Gentelella-era
+   teal toolbar and banner styling is retired; LuxCart owns surface styling. */
 @media(min-width:851px){
- #app.workspace-mode .ws-layout{background:#f4f8f7}
- #app.workspace-mode .ws-main{background:#f4f8f7}
- #app.workspace-mode .ws-toolbar{
-  background:linear-gradient(110deg,#087c71,#12a88c);color:#fff;border-bottom:0;
+ #app.workspace-mode .ws-layout,
+ #app.workspace-mode .ws-main{background:var(--oil-canvas)}
+ #app.workspace-mode .ws-toolbar{background:var(--oil-paper);color:var(--oil-ink)}
+ #app.workspace-mode .ws-toolbar-title,
+ #app.workspace-mode .ws-toolbar-title span,
+ #app.workspace-mode .ws-toolbar-context{color:var(--oil-ink)}
+ #app.workspace-mode .ws-screen-head{
+  color:var(--oil-ink);background:transparent;border-radius:0;box-shadow:none
  }
- #app.workspace-mode .ws-toolbar-title,#app.workspace-mode .ws-toolbar-title span,
- #app.workspace-mode .ws-toolbar-context,#app.workspace-mode .ws-rail-toggle{color:#fff}
- #app.workspace-mode .ws-rail-toggle:hover{background:#ffffff20;color:#fff;border-color:#ffffff50}
- #app.workspace-mode .ws-screen-head{padding:18px 22px;margin-bottom:17px;border-radius:16px;
-  background:linear-gradient(115deg,#077a6f,#12a58b);color:#fff}
- #app.workspace-mode .ws-screen-head :is(h2,p),#app.workspace-mode .ws-breadcrumb,
- #app.workspace-mode .ws-breadcrumb span{color:#fff}
- #app.workspace-mode .ws-widget>section,
- #app.workspace-mode .os-create-station,
- #app.workspace-mode .os-station-directory,
- #app.workspace-mode :is(.module-item,.fuel-row,.os-station-card){border-radius:15px}
+ #app.workspace-mode .ws-breadcrumb span{color:var(--oil-muted)}
 }
 @media(max-width:850px){
  #app.workspace-mode .os-add-fab{
