@@ -1,0 +1,53 @@
+name: QA 66 existing accounts - read-only browser role verification
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/qa-roles-readonly-on-merge.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: oilstation-qa-66-roles-readonly
+  cancel-in-progress: false
+jobs:
+  authenticated-roles-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_ROLE_READONLY_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Wait for guarded same-commit Cloudflare preview deployment
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            status="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push") | .conclusion' | head -1)"
+            if [ "$status" = success ]; then echo 'Matching preview deployment ready'; exit 0; fi
+            if [ "$status" = failure ] || [ "$status" = cancelled ]; then
+              echo '::error::Deployment failed; skip authenticated browser verification'; exit 1
+            fi
+            sleep 10
+          done
+          echo '::error::Deployment not confirmed'; exit 1
+      - name: Require protected fixed-QA credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD; do
+            test -n "${!key}" || { echo "::error::Missing secret name $key"; exit 1; }
+          done
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Verify 66 actual browser sessions, menu permissions, scoped GET and cross-tenant denials
+        run: npm run test:e2e -- --grep '@qa-role-readonly' --reporter=list
