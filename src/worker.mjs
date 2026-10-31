@@ -103,7 +103,8 @@ export default {
           env.OILSTATION_API_ENABLED!=='true') {
         const billingPages=new Set(['/api/platform/billing/overview',
           '/api/platform/billing/tax','/api/platform/billing/flat-plan',
-          '/api/platform/billing/bundle-plan','/api/platform/billing/archive-plan']);
+          '/api/platform/billing/bundle-plan','/api/platform/billing/archive-plan',
+          '/api/platform/billing/plan-editor','/api/platform/billing/edit-plan']);
         const stationPages=new Set(['/api/fuel-brands',
           '/api/platform/stations','/api/platform/create-station',
           '/api/invitations/create','/api/invitations/accept',

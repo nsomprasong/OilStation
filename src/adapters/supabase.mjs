@@ -27,7 +27,7 @@ async function fetchJson(url, init) {
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
       'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH',
-      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED']);
+      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
@@ -36,7 +36,7 @@ async function fetchJson(url, init) {
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
-         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED'].includes(detail.message) ? detail.message :
+         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE'].includes(detail.message) ? detail.message :
         'INVALID_REQUEST';
     }
     throw err;
@@ -116,6 +116,19 @@ export function createSupabaseAdapter(env) {
           body:JSON.stringify({p_actor_id:d.actorId,p_code:d.code,p_name:d.name,
             p_frequency:d.frequency,p_coupon_price_satang:d.couponPriceSatang,
             p_hr_price_satang:d.hrPriceSatang,
+            p_bundle_price_satang:d.bundlePriceSatang,p_effective_on:d.effectiveOn}),
+        }),
+      platformSaasPlanEditor: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_saas_plan_editor',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_plan_id:d.planId}),
+        }),
+      platformSaasEditBundlePlan: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_edit_saas_bundle_plan',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_plan_id:d.planId,
+            p_code:d.code,p_name:d.name,p_frequency:d.frequency,
+            p_coupon_price_satang:d.couponPriceSatang,p_hr_price_satang:d.hrPriceSatang,
             p_bundle_price_satang:d.bundlePriceSatang,p_effective_on:d.effectiveOn}),
         }),
       platformSaasArchivePlan: async d=>serviceRequest(env,
