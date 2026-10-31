@@ -20,7 +20,7 @@ export function createQaTopupSimulationApi({env,authenticate,db}){
    return json(405,{error:'method_not_allowed'});
   if(operation!=='pending'&&request.headers.get('origin')!==url.origin)
    return json(403,{error:'origin_forbidden'});
-  const token=/^Bearer\\s+(\\S+)$/i.exec(request.headers.get('authorization')||'');
+  const token=/^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization')||'');
   if(!token)return json(401,{error:'unauthenticated'});
   const allow=qaScopeAllowlist(env);
   if(allow.station.length!==4||allow.corporate_company.length!==12||
