@@ -44,7 +44,7 @@ test('six task groups remain permission-filtered and preserve server role bounda
  const html=renderWorkspaceCategories(platform,'billing');
  assert.doesNotMatch(html,/data-task-group="overview"/);
  assert.doesNotMatch(html,/data-task-group="stations"/);
- assert.match(html,/data-task-group="finance"/);
+ assert.equal(html,''); // only one permitted screen in this contextual category
  assert.doesNotMatch(html,/data-ws-go="pump"/);
  assert.doesNotMatch(html,/data-ws-go="hr"/);
  assert.doesNotMatch(html,/data-task-group="people"/);
