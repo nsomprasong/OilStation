@@ -24,8 +24,8 @@ const app=(config={})=>{
  const calls=[];
  return {calls,route:createQaCorporatePreviewApi({
   env:config.env||env,
-  authenticate:config.authenticate||async()=>({id:'11111111-1111-4111-8111-111111111111',isQa:true}),
-  db:{memberships:config.memberships||async()=>[role(stations[0])],
+  authenticate:config.authenticate||(async()=>({id:'11111111-1111-4111-8111-111111111111',isQa:true})),
+  db:{memberships:config.memberships||(async()=>[role(stations[0])]),
    qaCreateCorporateCustomer:async arg=>{calls.push(arg);return {companyId:'safe-company',name:arg.name};}},
  })};
 };
