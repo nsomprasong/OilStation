@@ -46,7 +46,7 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount}){
     return json(403,{error:'permission_denied'});
    const permitted=qaScopeAllowlist(env);
    // No scope IDs are accepted outside a pre-approved server allowlist.
-   if(permitted.station.length>2||permitted.corporate_company.length>6)
+   if(permitted.station.length>4||permitted.corporate_company.length>12)
     return json(503,{error:'qa_scope_misconfigured'});
    if(request.method==='GET'){
     if(url.pathname!=='/api/qa/scopes')return json(404,{error:'not_found'});
@@ -68,7 +68,7 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount}){
    if(scopeType==='platform'){
     if(scopeId!==null && scopeId!==undefined && scopeId!=='')
      return json(400,{error:'invalid_scope'});
-    // Exactly two Sales accounts for the fixed UAT matrix.
+    // Exactly two Sales account aliases, two distinct creator-owned stations per Sales.
     if(roleCode==='platform_sales'&&!['sales01','sales02'].includes(alias))
      return json(400,{error:'sales_limit_two'});
    }else if(!UUID.test(scopeId||'')||!permitted[scopeType].includes(scopeId)){
