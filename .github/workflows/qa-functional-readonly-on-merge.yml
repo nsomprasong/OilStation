@@ -2,7 +2,9 @@ name: QA real functional browser journeys - read-only on fixed QA actors
 on:
   push:
     branches: [main]
-    paths: [.github/workflows/qa-functional-readonly-on-merge.yml]
+    paths:
+      - .github/workflows/qa-functional-readonly-on-merge.yml
+      - e2e/qa.functional-readonly.pw.mjs
 permissions:
   contents: read
   actions: read
