@@ -126,10 +126,23 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
       await expect(page.locator('#new-station-form')).toBeVisible();
       await page.locator('#org-name').fill('QA Organization S02-B');
       await page.locator('#station-name').fill('QA-S02-B');
-      const brands = await page.locator('#brand-select option').evaluateAll(options =>
-        options.filter(x => x.value && !x.disabled).map(x => x.value));
-      expect(brands.length).toBeGreaterThan(0);
-      await page.locator('#brand-select').selectOption(brands[0]);
+      // Brand options load asynchronously after the Sales workspace mounts.
+      // Verify the real authenticated API and wait for UI options to arrive,
+      // without using sleeps, mocks or hardcoded unapproved brand codes.
+      const brandsResponse = await page.request.get(BASE + '/api/fuel-brands', {
+        headers: { authorization: 'Bearer ' + token }
+      });
+      expect(brandsResponse.status()).toBe(200);
+      const brandsPayload = await brandsResponse.json();
+      const allowedBrands = (brandsPayload.brands || []).map(x => x.code);
+      expect(allowedBrands.length).toBeGreaterThan(0);
+      const options = page.locator('#brand-select option:not([disabled])');
+      await expect.poll(async () => options.count(), { timeout: 20_000 }).toBeGreaterThan(0);
+      const visibleBrandOptions = await options.evaluateAll(items =>
+        items.filter(x => x.value).map(x => x.value));
+      expect(visibleBrandOptions.length).toBeGreaterThan(0);
+      expect(allowedBrands).toContain(visibleBrandOptions[0]);
+      await page.locator('#brand-select').selectOption(visibleBrandOptions[0]);
       await page.locator('#module-qr').check();
       const createResponse = page.waitForResponse(r => r.url().endsWith('/api/platform/sales/create-station')
         && r.request().method() === 'POST');
