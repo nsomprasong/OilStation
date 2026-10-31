@@ -41,7 +41,7 @@ test('bottom nav has no hamburger; only Home exposes full menu',()=>{
 });
 test('commission screen uses ledger and entitlement values; no fabricated payout or arbitrary HTML',()=>{
  const ui=read('src/client/platform-sales.js');
- for(const token of ['entitlementSatang','recordedLedgerSatang','assignment','salesId','stationId','reason','pendingInvitations','isAdmin'])
+ for(const token of ['entitlementSatang','recordedLedgerSatang','collectedCustomers','assignment','salesId','stationId','reason','pendingInvitations','isAdmin'])
   assert.ok(ui.includes(token),token);
  assert.doesNotMatch(ui,/innerHTML|document\.write|รายได้ที่จ่ายแล้ว/);
  assert.match(ui,/เชิญเซลล์เข้าสู่ระบบ/);
