@@ -15,14 +15,18 @@ export function mountPlatformSales({target,token,inviteControl}){
  const inviteArea=make('section','os-sales-panel');inviteArea.append(make('h4','','เชิญเซลล์เข้าสู่ระบบ'));
  const team=make('section','os-sales-panel'),assignment=make('section','os-sales-panel');
  const transfer=make('section','os-sales-panel'),commission=make('section','os-sales-panel');
+ const collected=make('section','os-sales-panel');
  const history=make('section','os-sales-panel');
  const title=(node,title)=>node.append(make('h4','',title));
  title(team,'ทีมขาย');title(assignment,'ปั๊มที่รับผิดชอบ');
- title(transfer,'ย้ายการดูแลปั๊ม');title(commission,'รายงานค่าคอมมิชชั่น');title(history,'ประวัติการดูแล');
+ title(transfer,'ย้ายการดูแลปั๊ม');title(collected,'ลูกค้าที่ชำระค่าบริการแล้ว');
+ title(commission,'รายงานค่าคอมมิชชั่น');title(history,'ประวัติการดูแล');
+ addText(collected,'แสดงเฉพาะลูกค้าที่มีใบแจ้งหนี้ชำระแล้วและมีรายการค่าคอมมิชชั่นที่ผูกกับเซลล์');
  const summary=make('p','os-sales-secondary','แสดงยอดตามข้อมูลที่บันทึกจริง ไม่ใช่ยอดอนุมัติจ่าย');
  commission.append(summary);
  const teamList=make('div','os-sales-grid'),careList=make('div','os-sales-grid');
  const moneyList=make('div','os-sales-grid'),historyList=make('div','os-sales-grid');
+ const collectedList=make('div','os-sales-grid');collected.append(collectedList);
  team.append(teamList);assignment.append(careList);commission.append(moneyList);history.append(historyList);
  const form=make('form','os-sales-transfer');
  const stationLabel=make('label','','ปั๊มที่ต้องการย้าย');const station=make('select');station.name='station';station.required=true;stationLabel.append(station);
@@ -32,7 +36,7 @@ export function mountPlatformSales({target,token,inviteControl}){
  const save=make('button','button primary','ยืนยันการย้ายการดูแล');save.type='submit';
  const outcome=make('p','os-sales-status');outcome.setAttribute('role','status');
  form.append(stationLabel,salesLabel,reasonLabel,transferHint,save,outcome);transfer.append(form);
- root.append(inviteArea,team,assignment,transfer,commission,history);target.append(root);
+ root.append(inviteArea,team,assignment,transfer,collected,commission,history);target.append(root);
  let data=null,busy=false;
  const card=(title,details=[])=>{
   const node=make('article','os-sales-card');node.append(make('strong','',title));
@@ -54,7 +58,7 @@ export function mountPlatformSales({target,token,inviteControl}){
    data=payload.result;
    const isAdmin=data.isAdmin===true;
    inviteArea.hidden=!isAdmin;transfer.hidden=!isAdmin;
-   teamList.replaceChildren();careList.replaceChildren();moneyList.replaceChildren();historyList.replaceChildren();
+   teamList.replaceChildren();careList.replaceChildren();moneyList.replaceChildren();historyList.replaceChildren();collectedList.replaceChildren();
    const people=data.people||[], assignments=data.assignments||[],money=data.commissions||[];
    if(!people.length)empty(teamList,isAdmin?'ยังไม่มีเซลล์ที่ยืนยันคำเชิญ':'ยังไม่มีข้อมูลบัญชีเซลล์');
    for(const p of people){
@@ -68,6 +72,11 @@ export function mountPlatformSales({target,token,inviteControl}){
      'เซลล์: '+(a.salesName||'—'),'สถานะ: '+(a.isUpcoming?'กำหนดเริ่มในอนาคต':'กำลังดูแล'),
      'เริ่ม: '+dateTime(a.effectiveFrom)]));
    }
+   const sold=data.collectedCustomers||[];
+   if(!sold.length)empty(collectedList,'ยังไม่มีลูกค้าที่มีหลักฐานชำระและรายการค่าคอมมิชชั่นเชื่อมโยง');
+   for(const c of sold)collectedList.append(card(c.stationName||'ปั๊ม',
+    [c.organization||'', 'จำนวนใบแจ้งหนี้ชำระแล้ว: '+c.paidInvoices,
+     isAdmin?'เซลล์ ID: '+c.salesId:'']));
    if(!money.length)empty(moneyList,'ยังไม่มีรายการค่าคอมมิชชั่นที่บันทึกไว้');
    for(const m of money)moneyList.append(card(m.stationName||'ปั๊ม',
     ['สิทธิค่าคอมมิชชั่นที่บันทึก: '+baht(m.entitlementSatang),
