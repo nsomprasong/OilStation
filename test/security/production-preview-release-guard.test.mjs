@@ -27,8 +27,8 @@ test('preview deploy checks readiness is HTTP 503 and never claims business read
 test('automated preview deploy must verify currently deployed Worker is not live before upload',()=>{
   assert.match(preview,/group: oilstation-customer-facing-worker/);
   assert.match(preview,/Check deployed Worker is still preview-only before deploy/);
-  assert.match(preview,/workers\\/scripts\\/oilstation\\/settings/);
-  assert.match(preview,/\\.name == "OILSTATION_API_ENABLED" and \\.type == "plain_text" and \\.text == "false"/);
-  assert.match(preview,/\\.name == "OILSTATION_DEPLOY_TARGET" and \\.type == "plain_text" and \\.text == "production"/);
+  assert.match(preview,/workers\/scripts\/oilstation\/settings/);
+  assert.match(preview,/\.name == "OILSTATION_API_ENABLED" and \.type == "plain_text" and \.text == "false"/);
+  assert.match(preview,/\.name == "OILSTATION_DEPLOY_TARGET" and \.type == "plain_text" and \.text == "production"/);
   assert.match(preview,/curl --fail --silent --show-error --max-time/);
 });
