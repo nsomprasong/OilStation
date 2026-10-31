@@ -22,8 +22,8 @@ test('Home shows all tasks and the contextual menu never shows other categories'
  const home=renderMobileHome(p);
  for(const key of ['sales','stations','billing'])assert.match(home,new RegExp('data-ws-go="'+key+'"'));
  const contextual=renderWorkspaceCategories(p,'sales');
- assert.match(contextual,/data-ws-go="sales"/);
- assert.doesNotMatch(contextual,/data-ws-go="billing"/);
+ assert.match(contextual,/data-os-functional-menu/);
+ assert.doesNotMatch(contextual,/data-ws-go=/);
  assert.doesNotMatch(renderWorkspaceCategories(p,'overview'),/os-category-nav/);
  const layout=renderWorkspaceShell(p);
  assert.match(layout,/data-mobile-logout/);
