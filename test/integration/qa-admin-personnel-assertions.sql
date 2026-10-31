@@ -1,11 +1,12 @@
 -- Disposable Postgres test. Real functions, imaginary accounts, no persistence.
 BEGIN;
 ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS raw_app_meta_data jsonb DEFAULT '{}'::jsonb;
+ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS email text;
 DO $assert$
 DECLARE
  s1 uuid:=gen_random_uuid();s2 uuid:=gen_random_uuid();
  org uuid:=gen_random_uuid();comp1 uuid:=gen_random_uuid();comp2 uuid:=gen_random_uuid();
- sales uuid:=gen_random_uuid();owner uuid:=gen_random_uuid();corp_admin uuid:=gen_random_uuid();
+ sales uuid:=gen_random_uuid();owner uuid:=gen_random_uuid();owner2 uuid:=gen_random_uuid();corp_admin uuid:=gen_random_uuid();
  other uuid:=gen_random_uuid();target uuid:=gen_random_uuid();newadmin uuid:=gen_random_uuid();
  act jsonb;blocked boolean;v_token text:=repeat('a',64);
  qa jsonb:='{"oilstation_qa":true,"oilstation_qa_run_id":"QA-20261031-PLATFORM-001"}';
@@ -14,14 +15,22 @@ BEGIN
  INSERT INTO public.stations(id,name,organization_id) VALUES(s1,'QA-S01-A',org),(s2,'QA-S01-B',org);
  INSERT INTO public.corporate_companies(id,name) VALUES(comp1,'QA-S01-A-C01'),(comp2,'QA-S01-B-C01');
  INSERT INTO public.corporate_station_accounts(company_id,station_id) VALUES(comp1,s1),(comp2,s2);
- INSERT INTO auth.users(id,raw_app_meta_data) VALUES
-  (sales,qa),(owner,qa),(corp_admin,qa),(other,qa),(target,qa),(newadmin,qa);
+ INSERT INTO auth.users(id,email,raw_app_meta_data) VALUES
+  (sales,'qa-sales@qa.oilstation.invalid',qa),
+  (owner,'qa-owner@qa.oilstation.invalid',qa),
+  (owner2,'qa-owner2@qa.oilstation.invalid',qa),
+  (corp_admin,'qa-c01-admin@qa.oilstation.invalid',qa),
+  (other,'qa-s01a-cashier@qa.oilstation.invalid',qa),
+  (target,'qa-c01-driver@qa.oilstation.invalid',qa),
+  (newadmin,'qa-c02-admin@qa.oilstation.invalid',qa);
  INSERT INTO public.app_users(id,email,display_name,status) VALUES
   (sales,'qa-sales@qa.oilstation.invalid','QA Sales','active'),
   (owner,'qa-owner@qa.oilstation.invalid','QA Station Owner','active'),
+  (owner2,'qa-owner2@qa.oilstation.invalid','QA Station Owner2','active'),
   (corp_admin,'qa-c01-admin@qa.oilstation.invalid','QA Corp Admin','active');
  INSERT INTO public.memberships(user_id,scope_type,role_code,station_id,active)
- VALUES(owner,'station','station_owner',s1,true);
+ VALUES(owner,'station','station_owner',s1,true),
+       (owner2,'station','station_owner',s2,true);
  INSERT INTO public.memberships(user_id,scope_type,role_code,corporate_company_id,active)
  VALUES(corp_admin,'corporate_company','corporate_admin',comp1,true);
  INSERT INTO public.memberships(user_id,scope_type,role_code,active)
@@ -51,14 +60,42 @@ BEGIN
  EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='FORBIDDEN';END;
  IF NOT blocked THEN RAISE EXCEPTION 'Sales invited a duplicate station owner';END IF;
 
- -- Company admin can provision own driver, not a foreign company's driver.
- UPDATE auth.users SET raw_app_meta_data=qa WHERE id=target;
- UPDATE auth.users SET raw_app_meta_data=qa WHERE id=other;
- UPDATE auth.users SET raw_app_meta_data=qa WHERE id=newadmin;
- -- App identity / membership registration is one atomic SQL operation.
- UPDATE auth.users SET raw_app_meta_data=qa WHERE id=target;
- -- Add email to disposable minimal auth fixture via temporary schema column.
- PERFORM 1;
+ -- Existing company admin delegates to its own employee, never another tenant.
+ act:=public.platform_qa_register_account(
+   corp_admin,target,'c01-driver','driver','corporate_company',comp1,
+   'QA-20261031-PLATFORM-001');
+ IF act->>'roleCode'<>'driver' OR NOT EXISTS (
+   SELECT 1 FROM public.memberships WHERE user_id=target AND
+     corporate_company_id=comp1 AND role_code='driver')
+ THEN RAISE EXCEPTION 'Corporate Admin did not create own driver';END IF;
+ blocked:=false;
+ BEGIN PERFORM public.platform_qa_register_account(
+   corp_admin,newadmin,'c02-admin','corporate_admin','corporate_company',comp2,
+   'QA-20261031-PLATFORM-001');
+ EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='FORBIDDEN';END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Corporate Admin created Admin for foreign company';END IF;
+ blocked:=false;
+ BEGIN PERFORM public.platform_qa_register_account(
+   owner,newadmin,'c02-admin','corporate_admin','corporate_company',comp2,
+   'QA-20261031-PLATFORM-001');
+ EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='FORBIDDEN';END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Station Owner created foreign company Admin';END IF;
+
+ act:=public.platform_qa_register_account(
+   owner,other,'s01a-cashier','cashier','station',s1,
+   'QA-20261031-PLATFORM-001');
+ IF act->>'roleCode'<>'cashier' OR NOT EXISTS(
+   SELECT 1 FROM public.memberships WHERE user_id=other
+     AND station_id=s1 AND role_code='cashier')
+ THEN RAISE EXCEPTION 'Station Owner could not add own cashier';END IF;
+ act:=public.platform_qa_register_account(
+   owner2,newadmin,'c02-admin','corporate_admin','corporate_company',comp2,
+   'QA-20261031-PLATFORM-001');
+ IF act->>'roleCode'<>'corporate_admin' THEN
+    RAISE EXCEPTION 'Second station owner could not bootstrap own company';END IF;
+ IF (SELECT count(*) FROM public.memberships WHERE corporate_company_id=comp2
+   AND role_code='corporate_admin')<>1
+ THEN RAISE EXCEPTION 'Bootstrapped duplicate initial company admin';END IF;
  RAISE NOTICE 'QA actor role and real invitation boundary checks PASS';
 END $assert$;
 ROLLBACK;
