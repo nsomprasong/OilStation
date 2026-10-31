@@ -33,7 +33,7 @@ test('Google shows 4 actual brand colors and Facebook shows official blue',()=>{
  }
  assert.match(src,/brand\.path/);
  assert.match(src,/brand-symbol/);
- assert.match(read('src/client/main.js'),/authMarkup\(\{invited\}\)/);
+ assert.match(read('src/client/main.js'),/authMarkup\(\{invited,qaMode\}\)/);
  assert.match(read('src/client/main.js'),/signInWithOAuth/);
 });
 test('main destinations only on Home, per-screen functional placeholder only under Header',()=>{
