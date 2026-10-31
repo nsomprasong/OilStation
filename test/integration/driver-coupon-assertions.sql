@@ -14,6 +14,7 @@ BEGIN
  INSERT INTO public.corporate_companies(id,name) VALUES(company,'QA Transport'),(company_b,'Foreign QA');
  INSERT INTO public.corporate_station_accounts(id,station_id,company_id,prepaid_balance_satang)
  VALUES(a,s,company,10000);
+ INSERT INTO auth.users(id) VALUES(admin),(driver),(other),(foreign_admin);
  INSERT INTO public.app_users(id,display_name,email)
  VALUES(admin,'Dispatcher','dispatcher@qa.invalid'),
   (driver,'Driver A','driver@qa.invalid'),(other,'Driver B','driverb@qa.invalid'),
