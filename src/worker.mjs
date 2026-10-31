@@ -7,6 +7,7 @@ import { createEvidenceApi } from './api/evidence.mjs';
 import { drainLineNotifications } from './notifications/line.mjs';
 import { createCommissionPreviewApi } from './api/commission-preview.mjs';
 import { createPlatformSalesApi } from './api/platform-sales.mjs';
+import { createPlatformSupportApi } from './api/platform-support.mjs';
 import { createPlatformBillingApi } from './api/platform-billing.mjs';
 import { createStationSaasOnboardingApi } from './api/station-saas-onboarding.mjs';
 import { createBillingInvoiceApi } from './api/billing-invoices.mjs';
@@ -122,6 +123,8 @@ export default {
           env.OILSTATION_PREVIEW_LOGIN_ENABLED==='true' &&
           env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true' &&
           env.OILSTATION_API_ENABLED!=='true') {
+        if(url.pathname==='/api/platform/support/overview')
+          return createPlatformSupportApi(createSupabaseAdapter(env))(request);
         const salesPages=new Set(['/api/platform/sales/workspace',
           '/api/platform/sales/transfer',
           '/api/platform/sales/inspection','/api/platform/sales/activity']);
@@ -205,6 +208,9 @@ export default {
         }
         if (url.pathname === '/api/fuel/start') {
           return createFuelStartApi(deps)(request);
+        }
+        if (url.pathname==='/api/platform/support/overview') {
+          return createPlatformSupportApi(deps)(request);
         }
         if (url.pathname.startsWith('/api/platform/sales/')) {
           return createPlatformSalesApi(deps)(request);

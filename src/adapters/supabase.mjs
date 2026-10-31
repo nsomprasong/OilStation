@@ -171,6 +171,11 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_notification_id:id,p_decision:decision}),
         }),
+      platformSupportOverview: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_support_overview',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId}),
+        }),
       platformSalesInspection: async d=>serviceRequest(env,
         '/rest/v1/rpc/platform_sales_station_inspection',{
           method:'POST',headers:{'content-type':'application/json'},

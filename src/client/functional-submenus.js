@@ -2,6 +2,7 @@ import {makeIcon} from './icons.js';
 
 /** One functional task at a time; never promote data-record cards to navigation. */
 const DESCRIPTORS={
+ support:{kind:'single',label:'ตรวจสอบสถานะปั๊ม',icon:'clipboard'},
  sales:{kind:'direct',host:'.os-sales-workspace',selector:':scope > section.os-sales-panel',
   // Only top-level tasks: invite belongs to team, inspection to stations,
   // assignment history to transfer, paid customers to commission.
