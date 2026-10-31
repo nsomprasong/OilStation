@@ -16,6 +16,7 @@ export function selectWorkspaceScreens(memberships=[]){
  return [
   {key:'overview',label:'ภาพรวม',icon:'clipboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
   {key:'sales',label:p?'ทีมขายและค่าคอมมิชชั่น':'งานขายของฉัน',icon:'users',desc:'ปั๊มที่ดูแล ประวัติการย้ายงาน และค่าคอมมิชชั่น',ids:['platform-sales-workspace'],yes:p||sales},
+  {key:'activity',label:'ประวัติการดำเนินการ',icon:'clipboard',desc:'ใครทำอะไร เมื่อไร · ดูย้อนหลังตามปั๊ม',ids:['platform-sales-activity'],yes:p||sales},
   {key:'stations',label:'จัดการปั๊มน้ำมัน',icon:'building',desc:'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล',ids:['platform-workspace'],yes:p},
   {key:'plan',label:'แพ็กเกจและชำระเงิน',icon:'wallet',desc:'เลือกแพ็กเกจและวิธีชำระเงิน',
     ids:['station-saas-plan-workspace'],
@@ -34,7 +35,7 @@ export function selectWorkspaceScreens(memberships=[]){
  ].filter(x=>x.yes);
 }
 
-const NAV_GROUPS=[{"title":"เริ่มต้น","keys":["overview"]},{"title":"จัดการแพลตฟอร์ม","keys":["stations","sales","billing"]},{"title":"งานปั๊มน้ำมัน","keys":["fuel","pump","customers","finance","plan"]},{"title":"ทีมงาน","keys":["hr","attendance","reviews","payroll","invitations"]},{"title":"ลูกค้าบริษัท","keys":["corporate"]}];
+const NAV_GROUPS=[{"title":"เริ่มต้น","keys":["overview"]},{"title":"จัดการแพลตฟอร์ม","keys":["stations","sales","activity","billing"]},{"title":"งานปั๊มน้ำมัน","keys":["fuel","pump","customers","finance","plan"]},{"title":"ทีมงาน","keys":["hr","attendance","reviews","payroll","invitations"]},{"title":"ลูกค้าบริษัท","keys":["corporate"]}];
 const NAV_ICONS=new Set(["fuel","users","wallet","calendar","qr","logout","shield","mail","clipboard","scan","ticket","building","user-plus","receipt","camera","check","settings"]);
 export function navMarkup(screens){
  return NAV_GROUPS.map(group=>{
