@@ -56,7 +56,7 @@ test('production and preview share a deploy lock while UAT remains independent',
  assert.match(wf,/cancel-in-progress: false/);
 });
 test('approved release turns off preview-only routes at the same time as enabling business API',()=>{
- assert.match(wf,/config\\.vars\\.OILSTATION_API_ENABLED = 'true'/);
- assert.match(wf,/config\\.vars\\.OILSTATION_PREVIEW_LOGIN_ENABLED = 'false'/);
- assert.match(wf,/config\\.vars\\.OILSTATION_PREVIEW_OPERATIONS_ENABLED = 'false'/);
+ assert.match(wf,/config\.vars\.OILSTATION_API_ENABLED = 'true'/);
+ assert.match(wf,/config\.vars\.OILSTATION_PREVIEW_LOGIN_ENABLED = 'false'/);
+ assert.match(wf,/config\.vars\.OILSTATION_PREVIEW_OPERATIONS_ENABLED = 'false'/);
 });
