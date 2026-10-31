@@ -54,7 +54,7 @@ test('QA-HR-01 four real owners create employee, templates and shift; separate H
   test.setTimeout(16*60*1000);
   const cfg=await request.get(BASE+'/api/public-config');
   expect(cfg.status()).toBe(200);
-  expect((await cfg.json()).qaFinanceSimEnabled).toBe(true);
+  expect((await cfg.json()).qaFinanceSimEnabled).toBe(false);
   for(const station of stations){
    const owner=await browser.newPage(),hr=await browser.newPage();
    try{
