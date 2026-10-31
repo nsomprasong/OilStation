@@ -14,7 +14,7 @@ export function createQaCorporatePreviewApi({env,authenticate,db}){
   if(!(request.headers.get('content-type')||'').startsWith('application/json'))
     return json(415,{error:'unsupported_media_type'});
   const header=request.headers.get('authorization')||'';
-  if(!/^Bearer [^\\s]{10,}$/.test(header))return json(401,{error:'authentication_required'});
+  if(!/^Bearer [A-Za-z0-9._-]{10,}$/.test(header))return json(401,{error:'authentication_required'});
   const actor=await authenticate(header.slice(7)).catch(()=>null);
   if(!actor?.id||actor.isQa!==true)return json(403,{error:'qa_role_required'});
   let body;
