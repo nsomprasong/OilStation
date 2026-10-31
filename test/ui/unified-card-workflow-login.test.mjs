@@ -66,9 +66,8 @@ test('floating add actions only target supported create flows and never cashier 
  assert.match(src,/form\.querySelector/);
  assert.match(src,/form\.dataset\.osCreateReady/);
  assert.match(src,/installProgressiveWorkspace/);
- assert.match(src,/function secondaryHrTabs/);
- assert.match(src,/งานย่อยด้านบุคลากร/);
- assert.match(src,/hr-ot-request/);
+ assert.doesNotMatch(src,/function secondaryHrTabs|os-local-tabs/);
+ assert.match(read('src/client/functional-submenus.js'),/hr-ot-request/);
  assert.equal(typeof installProgressiveWorkspace,'function');
 });
 test('editable fuel and VAT cards use existing controls, not simulated API actions',()=>{
