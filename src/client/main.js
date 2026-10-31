@@ -1541,11 +1541,7 @@ function dashboard(data, session, publicConfig={}) {
    register('stations',()=>platformWorkspace(session.access_token,{salesMode:true}));
    register('invitations',()=>{
     const host=document.getElementById('member-invites');
-    if(publicConfig.qaModeEnabled===true){
-      mountQaAccountsAdmin({target:host,token:session.access_token,salesMode:true});
-    }else if(host){
-      host.textContent='เชิญสมาชิกจากปั๊มของคุณในเมนูเปิดปั๊มของฉัน';
-    }
+    if(host)host.textContent='Sales เปิดปั๊มและส่งมอบบัญชี Admin เริ่มต้นเท่านั้น การเพิ่มพนักงานต้องทำโดย Admin ของแต่ละปั๊มหรือบริษัท';
    });
   }
  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
@@ -1615,14 +1611,31 @@ function dashboard(data, session, publicConfig={}) {
       qaDemo:publicConfig.qaModeEnabled===true&&session.user?.app_metadata?.oilstation_qa===true,
     }));
   register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace'),{qaMode:publicConfig.qaModeEnabled===true}));
-  register('invitations',()=>document.getElementById('member-invites')?.appendChild(
-   createInviteControl(session.access_token,'station',station.stationId,
-    [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม']])));
+  register('invitations',()=>{
+   const host=document.getElementById('member-invites');
+   host?.appendChild(createInviteControl(session.access_token,'station',station.stationId,
+    [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม'],
+     ['pump_staff','พนักงานหน้าลาน'],['hr_manager','ผู้จัดการ HR'],
+     ['finance_manager','ผู้จัดการการเงิน']]));
+   if(publicConfig.qaModeEnabled===true&&session.user?.app_metadata?.oilstation_qa===true){
+    const qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
+    host?.appendChild(qaHost);
+    mountQaAccountsAdmin({target:qaHost,token:session.access_token,mode:'station_owner'});
+   }
+  });
  }
  const corpAdmin=memberships.find(m=>m.scopeType==='corporate_company'&&m.role==='corporate_admin'&&m.corporateCompanyId);
- if(corpAdmin)register('invitations',()=>document.getElementById('member-invites')?.appendChild(
-  createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
-   [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']])));
+ if(corpAdmin)register('invitations',()=>{
+  const host=document.getElementById('member-invites');
+  host?.appendChild(createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
+   [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],
+    ['finance_manager','ผู้จัดการการเงิน'],['driver','คนขับรถ']]));
+  if(publicConfig.qaModeEnabled===true&&session.user?.app_metadata?.oilstation_qa===true){
+   const qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
+   host?.appendChild(qaHost);
+   mountQaAccountsAdmin({target:qaHost,token:session.access_token,mode:'corporate_admin'});
+  }
+ });
  const corpRoles=memberships.filter(m=>m.scopeType==='corporate_company'&&m.role!=='driver');
  if(corpRoles.length){
   const canIssueCoupon=corpRoles.some(m=>
