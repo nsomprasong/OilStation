@@ -149,7 +149,7 @@ CREATE OR REPLACE FUNCTION public.oilstation_driver_coupon_inbox(
  p_actor_id uuid
 ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
 AS $fn$
-DECLARE v_data jsonb;
+DECLARE v_data jsonb;v_vehicles jsonb;
 BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.memberships m WHERE m.active
    AND m.user_id=p_actor_id AND m.scope_type='corporate_company'
@@ -179,7 +179,17 @@ BEGIN
    AND m.role_code='driver' AND m.corporate_company_id=cd.company_id)
  ORDER BY c.issued_at DESC LIMIT 30
  ) t;
- RETURN v_data;
+ SELECT coalesce(jsonb_agg(jsonb_build_object(
+     'driverName',cd.display_name,'plate',v.plate_number,
+     'province',v.province,'companyId',cd.company_id)
+     ORDER BY cd.display_name),'[]'::jsonb)
+ INTO v_vehicles
+ FROM public.corporate_drivers cd
+ JOIN public.memberships m ON m.user_id=cd.user_id AND m.corporate_company_id=cd.company_id
+ JOIN public.corporate_vehicles v ON v.id=cd.current_vehicle_id
+ WHERE cd.user_id=p_actor_id AND cd.active AND v.active AND m.active
+   AND m.scope_type='corporate_company' AND m.role_code='driver';
+ RETURN jsonb_build_object('vehicles',v_vehicles,'coupons',v_data);
 END $fn$;
 
 REVOKE ALL ON FUNCTION public.oilstation_company_driver_roster(uuid,uuid) FROM PUBLIC,anon,authenticated;
