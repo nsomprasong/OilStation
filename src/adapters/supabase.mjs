@@ -1,4 +1,5 @@
 import { sendInvitationEmail,sendInvitedEmailOtp } from '../notifications/invitation-email.mjs';
+import {createClient} from '@supabase/supabase-js';
 /**
  * All privileged PostgREST operations run on the trusted Worker only.
  * SUPABASE_SERVICE_ROLE_KEY must be configured as an encrypted Worker secret.
@@ -71,9 +72,77 @@ export function createSupabaseAdapter(env) {
       });
       if (!response.ok) return null;
       const user = await response.json();
+      // Disabling QA mode disables every QA access token at the Worker boundary.
+      if(user.app_metadata?.oilstation_qa===true &&
+        (env.OILSTATION_QA_MODE_ENABLED!=='true' ||
+         user.app_metadata.oilstation_qa_run_id!==env.OILSTATION_QA_RUN_ID))
+        return null;
       return typeof user.id === 'string' ? { id: user.id } : null;
     },
+    provisionQaAccount: async ({actorId,qaRunId,alias,password,roleCode,scopeType,scopeId})=>{
+      const email='qa-'+alias+'@qa.oilstation.invalid';
+      const admin=createClient(env.SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,{
+        auth:{persistSession:false,autoRefreshToken:false},
+      });
+      const {data,error}=await admin.auth.admin.createUser({
+        email,password,email_confirm:true,
+        app_metadata:{oilstation_qa:true,oilstation_qa_run_id:qaRunId},
+      });
+      if(error||!data?.user?.id)throw new Error('qa_auth_provision_failed');
+      const id=data.user.id;
+      let membershipWritten=false;
+      try{
+        await serviceRequest(env,'/rest/v1/app_users',{
+          method:'POST',headers:{'content-type':'application/json',prefer:'return=representation'},
+          body:JSON.stringify({id,email,display_name:'QA '+alias,status:'active'}),
+        });
+        const row={user_id:id,role_code:roleCode,scope_type:scopeType,active:true};
+        if(scopeType==='organization')row.organization_id=scopeId;
+        if(scopeType==='station')row.station_id=scopeId;
+        if(scopeType==='corporate_company')row.corporate_company_id=scopeId;
+        await serviceRequest(env,'/rest/v1/memberships',{
+          method:'POST',headers:{'content-type':'application/json',prefer:'return=representation'},
+          body:JSON.stringify(row),
+        });
+        membershipWritten=true;
+        await serviceRequest(env,'/rest/v1/audit_events',{
+          method:'POST',headers:{'content-type':'application/json',prefer:'return=representation'},
+          body:JSON.stringify({actor_id:actorId,entity_type:'qa_account',entity_id:id,
+            action:'qa_account_provisioned',
+            after_state:{qaRunId,alias,roleCode,scopeType,scopeId:scopeId??null}}),
+        });
+        return {id,alias,roleCode,scopeType,scopeId,email};
+      }catch{
+        // Compensate failed multi-service provisioning. Never expose the user
+        // until the Auth user, scoped membership and audit all exist.
+        try{
+          if(membershipWritten)await serviceRequest(env,
+            '/rest/v1/memberships?user_id=eq.'+encodeURIComponent(id),{
+              method:'DELETE',headers:{prefer:'return=representation'},
+            });
+          await serviceRequest(env,'/rest/v1/app_users?id=eq.'+encodeURIComponent(id),{
+            method:'DELETE',headers:{prefer:'return=representation'},
+          });
+        }catch{/* Report a failed provisioning; reconciliation checks detect stragglers. */}
+        await admin.auth.admin.deleteUser(id).catch(()=>{});
+        throw new Error('qa_provision_not_committed');
+      }
+    },
     db: {
+      qaScopedOptions: async allow=>{
+        const list=async(table,ids)=>{
+          if(!ids.length)return [];
+          const rows=await serviceRequest(env,'/rest/v1/'+table+
+            '?select=id,name&id=in.('+ids.join(',')+')',{method:'GET'});
+          return (Array.isArray(rows)?rows:[]).map(x=>({id:x.id,name:x.name}));
+        };
+        return {
+          platform:[{id:null,name:'Platform'}],
+          organization:await list('organizations',allow.organization),
+          station:await list('stations',allow.station),
+          corporate_company:await list('corporate_companies',allow.corporate_company),
+        };
+      },
       releaseStatus: async ()=>serviceRequest(env,
         '/rest/v1/rpc/oilstation_release_status',{
           method:'POST',headers:{'content-type':'application/json'},body:'{}',
