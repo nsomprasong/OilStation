@@ -27,7 +27,7 @@ async function fetchJson(url, init) {
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
       'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH',
-      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE']);
+      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
@@ -36,7 +36,7 @@ async function fetchJson(url, init) {
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
-         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE'].includes(detail.message) ? detail.message :
+         'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED'].includes(detail.message) ? detail.message :
         'INVALID_REQUEST';
     }
     throw err;
@@ -87,6 +87,17 @@ export function createSupabaseAdapter(env) {
         '/rest/v1/rpc/finish_verified_line_notification',{
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_notification_id:id,p_decision:decision}),
+        }),
+      platformSalesWorkspace: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_sales_workspace',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId}),
+        }),
+      platformSalesTransfer: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_transfer_sales_station',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_sales_user_id:d.salesUserId,p_reason:d.reason}),
         }),
       platformPaidSaasCommissionContext: async d=>serviceRequest(env,
         '/rest/v1/rpc/platform_paid_saas_commission_context',{
