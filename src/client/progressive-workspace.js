@@ -84,6 +84,8 @@ function enableCreation(screen,key,task){
  surface.insertBefore(close,surface.firstChild);
  const show=()=>{
   surface.hidden=false;
+  screen.dispatchEvent(new CustomEvent('oilstation:open-pane',{bubbles:true,
+   detail:{element:surface}}));
   fab.setAttribute('aria-expanded','true');
   fab.querySelector('span').textContent='ปิด';
   fab.classList.add('is-open');
@@ -169,7 +171,7 @@ function enhance(root){
   const task=TASKS[key];
   if(task)enableCreation(screen,key,task);
   if(key==='billing')editableTaxCard(screen);
-  if(key==='hr')secondaryHrTabs(screen);
+  // HR tasks now use the one global under-Header functional submenu. Do not add local tabs.
   if(key==='invitations')inviteFab(screen);
   for(const row of screen.querySelectorAll('.fuel-row'))editableFuelRow(row);
  }
