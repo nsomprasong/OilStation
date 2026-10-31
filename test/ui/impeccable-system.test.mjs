@@ -32,7 +32,7 @@ test('shared design language covers every primary operational area and both gues
 });
 test('all navigation actions are permission-filtered; no unsafe stored menu renders',()=>{
  const screens=selectWorkspaceScreens([identity('platform','platform_superadmin')]);
- assert.deepEqual(screens.map(s=>s.key),['overview','stations','billing']);
+ assert.deepEqual(screens.map(s=>s.key),['overview','sales','stations','billing']);
  const nav=renderWorkspaceShell(screens);
  assert.doesNotMatch(nav,/data-ws-go="finance"/);
  const source=read('src/client/main.js');
