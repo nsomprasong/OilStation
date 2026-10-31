@@ -63,9 +63,9 @@ test('cannot create a third Sales, new Super Admin, or unapproved scoped station
  const api=handler();
  assert.equal((await api(account(body('sales03')))).status,400);
  assert.equal((await api(account(body('sales01',{roleCode:'platform_superadmin'})))).status,400);
- assert.equal((await api(account(body('station-a',{roleCode:'manager',scopeType:'station',scopeId:stranger})))).status,403);
- assert.equal((await api(account(body('station-a',{roleCode:'manager',scopeType:'station',scopeId:stationA})))).status,201);
- assert.equal((await api(account(body('customer-a',{roleCode:'corporate_admin',scopeType:'corporate_company',scopeId:company})))).status,201);
+ assert.equal((await api(account(body('s01a-manager',{roleCode:'manager',scopeType:'station',scopeId:stranger})))).status,403);
+ assert.equal((await api(account(body('s01a-manager',{roleCode:'manager',scopeType:'station',scopeId:stationA})))).status,201);
+ assert.equal((await api(account(body('c01-admin',{roleCode:'corporate_admin',scopeType:'corporate_company',scopeId:company})))).status,201);
 });
 test('rejects disabled mode, missing auth, unauthorized role, invalid password and CSRF',async()=>{
  assert.equal((await handler({settings:{...env,OILSTATION_QA_MODE_ENABLED:'false'}})(account(body()))).status,404);
