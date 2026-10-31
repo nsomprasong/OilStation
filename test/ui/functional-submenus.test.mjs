@@ -83,3 +83,32 @@ test('data records, fuel rows, finance items and required Pump verification rema
  assert.match(main,/plate-photo-form|scan-form/);
  assert.doesNotMatch(read('src/client/progressive-workspace.js'),/function secondaryHrTabs/);
 });
+
+
+test('Corporate finance, driver assignment and QR issuance are independent permission-scoped submenus',()=>{
+ const source=read('src/client/functional-submenus.js');
+ const corporate=source.split(" corporate:{kind:'ranges'")[1].split(" fuel:{kind:'single'")[0];
+ const ordered=['id:\'account\'','id:\'topup\'','id:\'qa-topup\'',
+   'id:\'driver\'','id:\'coupon\''];
+ let previous=-1;
+ for(const part of ordered){
+  const position=corporate.indexOf(part);
+  assert.ok(position>previous,'incorrect/absent Corporate task: '+part);
+  previous=position;
+ }
+ for(const id of ['#topup-upload-form','#qa-topup-workspace',
+  '#company-driver-workspace','#coupon-form'])
+   assert.ok(corporate.includes("anchor:'"+id+"'"),id);
+ const main=read('src/client/main.js');
+ assert.match(main,/\$\('qa-topup-workspace'\)\.hidden=!qaFinanceMode/);
+ assert.match(main,/\$\('company-driver-workspace'\)\.hidden=!canIssueCoupon/);
+ assert.match(main,/\$\('coupon-form'\)\.hidden = !canIssueCoupon/);
+ assert.match(main,/if\(canIssueCoupon\)await reloadFuels\(\)/);
+ assert.match(main,/qaTopupEnabled=qaFinanceMode&&corpRoles\.some/);
+ assert.match(main,/canIssueCoupon=corpRoles\.some/);
+ const driverScreen=selectWorkspaceScreens([{
+   scopeType:'corporate_company',role:'driver',corporateCompanyId:'company',
+ }]).map(x=>x.key);
+ assert.ok(driverScreen.includes('driver'));
+ assert.ok(!driverScreen.includes('corporate'));
+});
