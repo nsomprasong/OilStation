@@ -103,7 +103,8 @@ export default {
           env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true' &&
           env.OILSTATION_API_ENABLED!=='true') {
         const salesPages=new Set(['/api/platform/sales/workspace',
-          '/api/platform/sales/transfer']);
+          '/api/platform/sales/transfer',
+          '/api/platform/sales/inspection','/api/platform/sales/activity']);
         const billingPages=new Set(['/api/platform/billing/overview',
           '/api/platform/billing/tax','/api/platform/billing/flat-plan',
           '/api/platform/billing/bundle-plan','/api/platform/billing/archive-plan',
