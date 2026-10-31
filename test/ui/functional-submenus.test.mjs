@@ -40,6 +40,8 @@ test('Sales exposes four real tasks and keeps drilldowns / summaries inside the 
  assert.match(ui,/backToStations\.addEventListener\('click'/);
  assert.match(ui,/team\.hidden=!isAdmin/);
  assert.match(ui,/form\.hidden=!canTransfer/);
+ assert.match(ui,/team\.insertBefore\(inviteArea,teamList\)/);
+ assert.match(ui,/firstLoad&&isAdmin&&!people\.length/);
  const css=read('public/platform-sales-navigation.css');
  assert.match(css,/\.os-sales-grid\[hidden\]/);
  assert.match(css,/\.os-sales-transfer\[hidden\]/);
