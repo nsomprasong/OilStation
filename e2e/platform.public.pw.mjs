@@ -32,3 +32,19 @@ test('P-01 mobile guest login has functional fields @public', async ({ page }, t
   await expect(page.locator('#qa-login-password')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('P-01-mobile.png'), animations: 'disabled' });
 });
+
+test('P-14 anonymous browser cannot inspect Platform Support @public', async ({ page, request }, testInfo) => {
+  // Exercise the deployed Worker from REAL Chromium, not a mocked handler.
+  const response = await page.goto('/api/platform/support/overview', {
+    waitUntil: 'domcontentloaded'
+  });
+  expect(response?.status()).toBe(401);
+  expect(JSON.parse(await page.locator('body').innerText()).error).toBe('unauthenticated');
+  await page.screenshot({ path: testInfo.outputPath('P-14-support-denied.png') });
+
+  // Rejects unknown query selectors and mutations before any data can be read or written.
+  const unsupportedQuery = await request.get('/api/platform/support/overview?stationId=all');
+  expect(unsupportedQuery.status()).toBe(400);
+  const unsupportedMutation = await request.post('/api/platform/support/overview', { data: {} });
+  expect(unsupportedMutation.status()).toBe(405);
+});
