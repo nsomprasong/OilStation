@@ -35,7 +35,7 @@ export function selectWorkspaceScreens(memberships=[]){
   {key:'reviews',label:'อนุมัติลงเวลา',icon:'check',desc:'ตรวจรายการลงเวลา',ids:['attendance-review-workspace'],yes:review},
   {key:'payroll',label:'สรุปเงินเดือน',icon:'receipt',desc:'ตรวจข้อมูลเตรียมจ่าย',ids:['attendance-payroll-preview-workspace'],yes:review},
   {key:'corporate',label:'บัญชีบริษัท',icon:'ticket',desc:'คูปองและประวัติใช้วงเงิน',ids:['corporate-workspace'],yes:corp},
-  {key:'invitations',label:'เชิญสมาชิก',icon:'user-plus',desc:'เชิญและกำหนดสิทธิ์',ids:['member-invites'],yes:s||invite}
+  {key:'invitations',label:'เชิญสมาชิก',icon:'user-plus',desc:'เชิญและกำหนดสิทธิ์',ids:['member-invites'],yes:s||invite||sales}
  ].filter(x=>x.yes);
 }
 

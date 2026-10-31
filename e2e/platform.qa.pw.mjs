@@ -299,7 +299,7 @@ test('P-04/P-15 Sales cannot access Admin/Support APIs on desktop or mobile @sal
      const response=await page.request.get(BASE+path,{headers});
      expect(response.status(),actor.alias+' forbidden '+path).toBe(403);
     }
-    for(const key of ['support','billing','finance','customers','hr','invitations','fuel']){
+    for(const key of ['support','billing','finance','customers','hr','fuel']){
      await expect(page.locator('[data-ws-go="'+key+'"]'),
        actor.alias+' unauthorized UI '+key).toHaveCount(0);
     }
@@ -312,7 +312,7 @@ test('P-04/P-15 Sales cannot access Admin/Support APIs on desktop or mobile @sal
     await page.setViewportSize({width:390,height:844});
     await page.locator('[data-ws-go="overview"]:visible').first().click();
     await expect(page.locator('[data-ws-screen="overview"]')).toBeVisible();
-    for(const key of ['support','billing','finance','customers','hr','invitations','fuel']){
+    for(const key of ['support','billing','finance','customers','hr','fuel']){
      await expect(page.locator('[data-ws-go="'+key+'"]')).toHaveCount(0);
     }
     await page.locator('[data-ws-go="stations"]:visible').first().click();

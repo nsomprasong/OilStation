@@ -1283,9 +1283,9 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         </form>
       </section>
       <section class="os-station-directory" aria-labelledby="os-directory-heading">
-        <span class="os-onboarding-label">${salesMode?'ขั้นตอนที่ 2 / ตรวจสอบปั๊มของฉัน':'ขั้นตอนที่ 2 / เชิญเจ้าของปั๊ม'}</span>
+        <span class="os-onboarding-label">${salesMode?'ขั้นตอนที่ 2 / บัญชีและบทบาทในปั๊มของฉัน':'ขั้นตอนที่ 2 / เชิญเจ้าของปั๊ม'}</span>
         <h3 id="os-directory-heading">${salesMode?'ปั๊มที่ฉันรับผิดชอบ':'ปั๊มที่สร้างแล้ว'}</h3>
-        <p class="os-section-copy">${salesMode?'แต่ละปั๊มเชื่อมกับบัญชี Sales ที่เปิดปั๊มโดยอัตโนมัติ ส่วนการเชิญเจ้าของปั๊มและการตั้งราคาต้องดำเนินการโดยผู้มีสิทธิ์':'เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง'}</p>
+        <p class="os-section-copy">${salesMode?'เชิญเจ้าของกิจการและพนักงานในปั๊มที่คุณเปิดได้ทันที ระบบตรวจขอบเขตสิทธิ์จากฐานข้อมูลทุกครั้ง':'เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง'}</p>
         <p id="station-count" class="os-directory-count" role="status"></p>
         <div id="station-list" class="module-list"><p>กำลังโหลดรายชื่อปั๊ม…</p></div>
       </section>
@@ -1317,8 +1317,19 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         .filter(([,status])=>status==='enabled').map(([module])=>module==='qr_coupon'?'QR Coupon':'HR').join(' + ');
       if(salesMode){
         const hint=document.createElement('p');hint.className='hint';
-        hint.textContent='ผูกกับบัญชี Sales ของคุณแล้ว · ผู้ดูแลสามารถเชิญเจ้าของปั๊มเพื่อเริ่มใช้งาน';
-        node.append(name,detail,hint);list.appendChild(node);continue;
+        hint.textContent='ปั๊มที่คุณขาย · เชิญสมาชิกได้เฉพาะสาขาที่คุณเปิดและยังรับผิดชอบ';
+        const actions=document.createElement('div');actions.className='os-station-actions';
+        actions.append(
+          createInviteControl(accessToken,'organization',s.organizationId,[
+            ['organization_owner','เจ้าขององค์กร'],['organization_manager','ผู้จัดการองค์กร'],
+            ['billing_manager','ผู้ดูแลค่าบริการ']]),
+          createInviteControl(accessToken,'station',s.id,[
+            ['station_owner','เจ้าของปั๊ม'],['manager','ผู้จัดการปั๊ม'],
+            ['cashier','แคชเชียร์'],['attendant','พนักงานเติมน้ำมัน'],
+            ['pump_staff','พนักงานหน้าลาน'],['hr_manager','ผู้จัดการ HR'],
+            ['finance_manager','ผู้จัดการการเงิน']])
+        );
+        node.append(name,detail,hint,actions);list.appendChild(node);continue;
       }
       const manage=document.createElement('button');
       manage.type='button';manage.className='button secondary';
@@ -1458,8 +1469,17 @@ function dashboard(data, session, publicConfig={}) {
    register('support',()=>mountPlatformSupport({target:document.getElementById('platform-support-workspace'),
     token:session.access_token}));
  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
-    memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales'))
+    memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales')){
    register('stations',()=>platformWorkspace(session.access_token,{salesMode:true}));
+   register('invitations',()=>{
+    const host=document.getElementById('member-invites');
+    if(publicConfig.qaModeEnabled===true){
+      mountQaAccountsAdmin({target:host,token:session.access_token,salesMode:true});
+    }else if(host){
+      host.textContent='เชิญสมาชิกจากปั๊มของคุณในเมนูเปิดปั๊มของฉัน';
+    }
+   });
+  }
  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
     memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales'))
    register('sales',()=>mountPlatformSales({target:document.getElementById('platform-sales-workspace'),
