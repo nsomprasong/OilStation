@@ -13,20 +13,20 @@ test('mobile home reflects real allowed modules and does not invent monetary bal
  assert.match(html,/os-mobile-quick-grid/);
  assert.match(html,/os-mobile-summary-grid/);
  assert.match(html,/os-mobile-feature-grid/);
- assert.match(html,/2 รายการ/);
+ assert.match(html,/3 รายการ/);
  assert.match(html,/แพ็กเกจและ VAT/);
  assert.doesNotMatch(html,/อัตราคงเหลือ|ยอดเงินคงเหลือ|฿[\d,]/);
  assert.doesNotMatch(html,/data-ws-go="pump"/);
 });
-test('role-scoped five-tab bottom navigation supports direct scan only for pump role',()=>{
+test('role-scoped four-tab bottom navigation supports direct scan only for pump role',()=>{
  const owner=selectWorkspaceScreens([m('station','station_owner',{stationId:'s'})]);
  const nav=renderMobileNav(owner);
  assert.match(nav,/data-ws-go="overview"/);
  assert.match(nav,/data-ws-scan/);
  assert.match(nav,/เปิดกล้องสแกน QR คูปอง/);
- assert.match(nav,/data-ws-more/);
+ assert.doesNotMatch(nav,/data-ws-more/);
  assert.match(nav,/os-mobile-scan-bubble/);
- assert.equal((nav.match(/class="os-mobile-tab/g)||[]).length,5);
+ assert.equal((nav.match(/class="os-mobile-tab/g)||[]).length,4);
  const platform=renderMobileNav(selectWorkspaceScreens([m('platform','platform_superadmin')]));
  assert.match(platform,/ไม่มีสิทธิ์สแกน QR คูปอง/);
  assert.match(platform,/disabled title="บัญชีนี้ไม่มีสิทธิ์งานหน้าลาน"/);
@@ -52,7 +52,7 @@ test('bottom bar and screenshot-style home exist only on mobile; desktop Gentele
  assert.match(html,/href="\/mobile-app\.css"/);
  assert.match(css,/\.os-mobile-home,\.os-mobile-bottom\{display:none\}/);
  assert.match(css,/@media\(max-width:850px\)/);
- assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(source('public/platform-sales-navigation.css'),/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
  assert.match(css,/\.os-mobile-camera\.is-scanning/);
  assert.match(css,/env\(safe-area-inset-bottom\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
