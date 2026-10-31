@@ -144,10 +144,8 @@ jobs:
     environment: oilstation-qa
     env:
       OILSTATION_QA_PRICE_AUTH_RUN: 'true'
-      OILSTATION_QA_S01A_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S01A_OWNER_PASSWORD }}
-      OILSTATION_QA_S01B_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S01B_OWNER_PASSWORD }}
-      OILSTATION_QA_S02A_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S02A_OWNER_PASSWORD }}
-      OILSTATION_QA_S02B_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S02B_OWNER_PASSWORD }}
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
       OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
     steps:
       - uses: actions/checkout@v4
@@ -160,7 +158,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in OILSTATION_QA_S01A_OWNER_PASSWORD OILSTATION_QA_S01B_OWNER_PASSWORD OILSTATION_QA_S02A_OWNER_PASSWORD OILSTATION_QA_S02B_OWNER_PASSWORD OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+          for name in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD OILSTATION_QA_EVIDENCE_PASSPHRASE; do
             test -n "${!name}" || { echo "::error::Missing QA credential name: $name"; exit 1; }
           done
       - run: npm install --ignore-scripts --no-audit --no-fund
