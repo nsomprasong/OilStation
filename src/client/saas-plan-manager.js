@@ -151,7 +151,7 @@ export function mountSaasPlanManager({root,rpc}){
   controls('hrBaht').value=satangInput(detail.hrPriceSatang);
   controls('bundleBaht').value=satangInput(detail.bundlePriceSatang);preview();
  };
- const startCreate=()=>{prepareCreate();openEditor();};
+ const startCreate=()=>{if(busy)return;prepareCreate();openEditor();};
  form.addEventListener('os:prepare-create',prepareCreate);
  add.addEventListener('click',startCreate);
  cancel.addEventListener('click',()=>{closeEditor();add.focus();});
@@ -203,6 +203,7 @@ export function mountSaasPlanManager({root,rpc}){
     finally{edit.disabled=false;}
    });
    remove.addEventListener('click',()=>{
+    if(busy)return;editorEpoch++;
     dialogText.textContent='นำ “'+p.name+'” ออกจากรายการที่เลือกได้? ประวัติเดิมจะยังอยู่ และถ้ามีลูกค้าเกี่ยวข้อง ระบบจะไม่อนุญาตให้ทำรายการนี้';
     toggleStatus(dialogStatus,'');dialogOK.disabled=false;
     dialogOK.onclick=async()=>{
@@ -232,7 +233,7 @@ export function mountSaasPlanManager({root,rpc}){
   e.preventDefault();if(busy)return;
   const result=validatePlanDraft(getForm());
   if(result.error){toggleStatus(formStatus,result.error,'error');if(result.field==='code')extra.open=true;controls(result.field)?.focus();return;}
-  busy=true;save.disabled=true;cancel.disabled=true;
+  busy=true;form.dataset.osBusy='true';save.disabled=true;cancel.disabled=true;
   toggleStatus(formStatus,'กำลังบันทึกแพ็กเกจ…');
   try{
    const wasEditing=Boolean(editingId);
@@ -240,7 +241,7 @@ export function mountSaasPlanManager({root,rpc}){
    closeEditor();await load();toggleStatus(listStatus,wasEditing?'บันทึกการแก้ไขแล้ว':'บันทึกแพ็กเกจใหม่เรียบร้อย','success');
    add.focus();
   }catch(error){toggleStatus(formStatus,errorFor(error.message),'error');}
-  finally{busy=false;save.disabled=false;cancel.disabled=false;}
+  finally{busy=false;form.dataset.osBusy='false';save.disabled=false;cancel.disabled=false;}
  });
  prepareCreate();
  load();
