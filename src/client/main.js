@@ -13,6 +13,7 @@ import { mountAttendancePayrollPreview } from './attendance-payroll-preview.js';
 import { mountAttendanceReview } from './attendance-review.js';
 import { mountPlateReviewInbox } from './plate-review.js';
 import { mountFuelReviewInbox } from './fuel-review.js';
+import {mountQaTopupRequest,mountQaTopupApprovals} from './qa-finance.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
 import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
@@ -100,7 +101,7 @@ function bahtToSatang(text) {
   if (amount <= 0n || amount > 999_999_999_999_999n) return null;
   return amount.toString();
 }
-async function corporateWorkspace(accessToken) {
+async function corporateWorkspace(accessToken,{qaFinanceMode=false}={}) {
   const target = document.getElementById('corporate-workspace');
   if (!target) return;
   target.innerHTML = `
@@ -122,6 +123,7 @@ async function corporateWorkspace(accessToken) {
       <p id="topup-notice" class="notice" hidden role="status"></p>
       <p class="hint">การส่งสลิปไม่ใช่การเติมเงินสำเร็จ ยอดพร้อมใช้จะเพิ่มหลังจากปั๊มตรวจเงินเข้าจริงและอนุมัติเท่านั้น</p>
     </form>
+    <section id="qa-topup-workspace" class="module-list" aria-label="เติมเงินจำลองสำหรับ QA"></section>
     <form id="coupon-form" class="coupon-form" hidden>
       <label class="field">เลือกปั๊มน้ำมัน <select required id="account-select"></select></label>
       <label class="field">ประเภทน้ำมัน <select required id="fuel-select"></select></label>
@@ -208,6 +210,10 @@ async function corporateWorkspace(accessToken) {
       overview.appendChild(el);
     });
     if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
+    if(qaFinanceMode)mountQaTopupRequest({
+      target:$('qa-topup-workspace'),token:accessToken,accounts,
+      onChanged:async()=>{await reloadAccounts();},
+    });
     $('coupon-form').hidden = !accounts.some(a => a.couponModuleEnabled);
     if (accounts.length) { await reloadFuels(); await reloadBankOptions(); }
   }
@@ -1399,6 +1405,8 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
 
 function dashboard(data, session, publicConfig={}) {
  const memberships=data.memberships||[];
+ const qaFinanceMode=publicConfig.qaFinanceSimEnabled===true&&
+   session.user?.app_metadata?.oilstation_qa===true;
  const scopes={
   platform:{title:'แพลตฟอร์ม',modules:['ปั๊มที่ให้บริการ','พนักงานขาย','การเรียกเก็บเงิน']},
   organization:{title:'เจ้าของกิจการ',modules:['บริหารปั๊ม','สมาชิกและสิทธิ์','การเงิน']},
@@ -1532,7 +1540,10 @@ function dashboard(data, session, publicConfig={}) {
  }
  if(station||financeManager){
   const stationId=(station||financeManager).stationId;
-  register('finance',()=>stationFinanceWorkspace(session.access_token,stationId,document.getElementById('station-finance-workspace')));
+  register('finance',()=>qaFinanceMode?
+    mountQaTopupApprovals({target:document.getElementById('station-finance-workspace'),
+      token:session.access_token,stationId}):
+    stationFinanceWorkspace(session.access_token,stationId,document.getElementById('station-finance-workspace')));
  }
  if(station){
   register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,document.getElementById('station-fuel-workspace')));
@@ -1546,7 +1557,7 @@ function dashboard(data, session, publicConfig={}) {
   createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
    [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],['driver','คนขับรถ']])));
  if(memberships.some(m=>m.scopeType==='corporate_company'))
-  register('corporate',()=>corporateWorkspace(session.access_token));
+  register('corporate',()=>corporateWorkspace(session.access_token,{qaFinanceMode}));
  const shell=root.querySelector('[data-workspace-shell]');
  shell?.addEventListener('oilstation:screenchange',event=>{
   if(event.detail.key!=='pump'){
