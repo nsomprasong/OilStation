@@ -199,3 +199,61 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
   }
   // No destructive cleanup. No third-station create attempt against production.
 });
+
+// P-14/P-10: actual authenticated Chromium proves read-only Sales activity
+// is populated and one Sales cannot read the other Sales' station or audit.
+test('P-14 Sales own-activity and cross-tenant denial @sales-scope', async ({browser}, info)=>{
+  test.skip(process.env.OILSTATION_QA_SALES_SCOPE_RUN!=='true',
+    'Protected owner-triggered read-only QA only on main');
+  required('OILSTATION_QA_SALES01_PASSWORD');
+  required('OILSTATION_QA_SALES02_PASSWORD');
+  const before=await snapshot();
+  validateFixture(before,4);
+  const station01=before.stations.find(x=>x.name==='QA-S01-A');
+  const station02=before.stations.find(x=>x.name==='QA-S02-A');
+  expect(station01?.id).toBeTruthy();
+  expect(station02?.id).toBeTruthy();
+  for(const [alias,own,other] of [['sales01',station01,station02],
+                                  ['sales02',station02,station01]]){
+    const context=await browser.newContext();
+    try{
+      const page=await context.newPage();
+      const token=await login(page,alias);
+      const headers={authorization:'Bearer '+token};
+      const ownQuery=new URLSearchParams({stationId:own.id});
+      const otherQuery=new URLSearchParams({stationId:other.id});
+      const ownInspect=await page.request.get(BASE+'/api/platform/sales/inspection?'+ownQuery,{headers});
+      expect(ownInspect.status()).toBe(200);
+      const ownBody=(await ownInspect.json()).result;
+      expect(ownBody?.readOnly).toBe(true);
+      expect(ownBody?.station?.id).toBe(own.id);
+      const ownActivity=await page.request.get(BASE+'/api/platform/sales/activity?'+ownQuery,{headers});
+      expect(ownActivity.status()).toBe(200);
+      const history=(await ownActivity.json()).result;
+      expect(history?.readOnly).toBe(true);
+      expect(history.events.length).toBeGreaterThan(0);
+      expect(history.events.some(x=>x.what==='สร้างปั๊มน้ำมัน')).toBe(true);
+      const blockedInspect=await page.request.get(BASE+'/api/platform/sales/inspection?'+otherQuery,{headers});
+      expect(blockedInspect.status()).toBe(403);
+      const blockedActivity=await page.request.get(BASE+'/api/platform/sales/activity?'+otherQuery,{headers});
+      expect(blockedActivity.status()).toBe(403);
+      const malformed=await page.request.get(BASE+'/api/platform/sales/activity?stationId=not-a-uuid',{headers});
+      expect(malformed.status()).toBe(400);
+      const wrongMethod=await page.request.post(BASE+'/api/platform/sales/activity?'+ownQuery,{headers,data:{}});
+      expect(wrongMethod.status()).toBe(405);
+      const tab=page.locator('[data-ws-go="activity"]:visible').first();
+      await expect(tab).toBeVisible();
+      await tab.click();
+      const activityStatus=page.locator('#platform-sales-activity .os-activity-status');
+      await expect(activityStatus).toContainText('แสดง');
+      await expect(page.locator('#platform-sales-activity .os-activity-table tbody')).toContainText('สร้างปั๊มน้ำมัน');
+      await page.screenshot({path:info.outputPath('P-14-'+alias+'-audit.png'),animations:'disabled'});
+    }finally{await context.close();}
+  }
+  const after=await snapshot();
+  expect(after.stations).toEqual(before.stations);
+  expect(after.requests).toEqual(before.requests);
+  expect(after.audit).toEqual(before.audit);
+  expect(after.allStationsCount).toBe(5);
+  expect(after.companiesCount).toBe(0);
+});
