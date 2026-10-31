@@ -64,6 +64,17 @@ BEGIN
    v_owner,v_qa,s_ids[1],s_ids,c_ids))<>1
  THEN RAISE EXCEPTION 'approval inbox not populated';END IF;
 
+ -- Even if the requester is also temporarily granted a station review role,
+ -- it may NEVER self-approve the financial topup.
+ INSERT INTO public.memberships(user_id,role_code,scope_type,station_id)
+ VALUES(v_corp,'cashier','station',s_ids[1]);
+ v_failed:=false;
+ BEGIN
+   PERFORM public.oilstation_qa_review_wallet_topup(
+     v_corp,v_qa,v_request,true,s_ids,c_ids);
+ EXCEPTION WHEN OTHERS THEN v_failed:=SQLERRM='FORBIDDEN';END;
+ IF NOT v_failed THEN RAISE EXCEPTION 'requester self approved topup';END IF;
+
  v_failed:=false;
  BEGIN
    PERFORM public.oilstation_qa_review_wallet_topup(
