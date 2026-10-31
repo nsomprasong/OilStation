@@ -45,6 +45,7 @@ async function signIn(page,station){
 }
 test('real QA station-owner web form posts fictional price on four stations @qa-fuel-prices',
  async({browser})=>{
+ test.setTimeout(6*60*1000);
  test.skip(process.env.OILSTATION_QA_PRICE_AUTH_RUN!=='true',
   'Run only via protected workflow_dispatch from deployed main');
  // Fail closed BEFORE first write if one of the four secrets is absent.
@@ -62,6 +63,13 @@ test('real QA station-owner web form posts fictional price on four stations @qa-
    ]){
     const row=fuelPanel.locator('.fuel-row').filter({hasText:chosen.pattern}).first();
     await expect(row).toBeVisible();
+    // Progressive Workspace intentionally collapses data cards; the inputs
+    // are inside .fuel-row-controls[hidden] until the OWNER clicks edit.
+    const controls=row.locator('.fuel-row-controls');
+    const edit=row.getByRole('button',{name:'แก้ไขราคาน้ำมัน'});
+    await expect(edit).toBeVisible();
+    await edit.click();
+    await expect(controls).toBeVisible();
     // The owner is using the real deployed web form. Its QA preset is
     // optional until this PR is deployed, so fill the existing actual fields.
     const preset=row.getByRole('button',{name:'ใช้ราคาทดสอบ '+chosen.rate});
