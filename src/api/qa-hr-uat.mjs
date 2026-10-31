@@ -30,7 +30,7 @@ export function createQaHrUatApi({env,authenticate,db}){
   if(request.method!==method)return reply(405,'method_not_allowed');
   if(method==='POST'&&request.headers.get('origin')!==url.origin)
    return reply(403,'origin_forbidden');
-  const token=/^Bearer\\s+(\\S+)$/i.exec(request.headers.get('authorization')||'')?.[1];
+  const token=/^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization')||'')?.[1];
   if(!token)return reply(401,'unauthenticated');
   const allowed=qaScopeAllowlist(env).station;
   if(allowed.length!==4||new Set(allowed).size!==4)
