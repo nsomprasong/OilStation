@@ -84,7 +84,7 @@ async function ownStations(page, token, expected) {
   });
   expect(result.status()).toBe(200);
   const payload = await result.json();
-  expect((payload.stations || []).map(x => x.name).sort()).toEqual(expected.slice().sort());
+  expect((payload.stations || []).map(x => x.stationName).sort()).toEqual(expected.slice().sort());
   return payload;
 }
 
@@ -127,7 +127,7 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
       const created = await createResponse;
       expect(created.status()).toBe(201);
       const result = await created.json();
-      expect(result.station?.name).toBe('QA-S02-B');
+      expect(result.station?.stationName).toBe('QA-S02-B');
       await expect(page.locator('#station-count')).toContainText('2');
       await expect(page.locator('#station-list')).toContainText('QA-S02-B');
     }
