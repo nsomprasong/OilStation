@@ -1,0 +1,35 @@
+name: QA Admin Own-Staff SQL Integration (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+permissions:
+  contents: read
+jobs:
+  admin-scoped-provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_only
+          POSTGRES_DB: oilstation_admin_scoped
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_admin_scoped"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply real role migration and assert Sales forbidden, Admin-owned staff
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_admin_scoped
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031190000_sales_owned_account_delegation.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031200000_qa_sales_corporate_role_scopes.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031223000_qa_admin_owned_staff_and_company_bootstrap.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/qa-admin-personnel-assertions.sql
+            '
