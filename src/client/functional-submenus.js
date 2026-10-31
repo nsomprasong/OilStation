@@ -52,7 +52,8 @@ function build(screen,key){
  if(!widget)return [];
  if(cfg.kind==='single'){
   if(!widget.childElementCount)return [];
-  return [pane('main',cfg.label,cfg.icon,[widget])]; // existing workspace is the single pane
+  const single=pane('main',cfg.label,cfg.icon,[widget]);single.wrapper=widget;
+  return [single]; // keep the existing safe workflow in one place
  }
  if(cfg.kind==='direct'){
   const host=screen.querySelector(cfg.host);
@@ -110,11 +111,13 @@ export function installFunctionalSubmenus(root){
  const shell=root.querySelector('[data-workspace-shell]');
  if(!shell)return;
  let queued=false,installing=false;
+ const isAvailable=(state,p)=>p.wrapper?.isConnected&&
+  !(state.key==='sales'&&p.nodes[0]?.hidden)&&
+  !(state.key==='stations'&&p.id==='fuel'&&!p.nodes[0]?.childElementCount);
  function show(key,id,{focus=false}={}){
   const state=states.get(key);
   if(!state)return false;
-  const available=state.panes.filter(p=>p.wrapper?.isConnected&&
-    !p.nodes[0]?.hidden&&(p.id!=='fuel'||p.nodes[0]?.childElementCount));
+  const available=state.panes.filter(p=>isAvailable(state,p));
   const found=available.find(p=>p.id===id);
   if(!found)return false;
   state.selected=id;
