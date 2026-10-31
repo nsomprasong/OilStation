@@ -81,7 +81,7 @@ test('QA-HR-02 actual OT partial approval and shift substitution by independent 
   expect(moveData.status).toBe('pending');
   const inbox=await get(owner,ot,'/api/hr/pending-substitutes?stationId='+station);
   expect(inbox.status()).toBe(200);
-  expect((await inbox.json()).requests.some(x=>x.id===moveData.requestId)).toBe(true);
+  expect((await inbox.json()).requests.some(x=>x.requestId===moveData.requestId)).toBe(true);
   const review=await post(owner,ot,'/api/hr/review-substitute',{
    requestId:moveData.requestId,approved:true,
   });
