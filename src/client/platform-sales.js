@@ -78,7 +78,9 @@ export function mountPlatformSales({target,token,inviteControl}){
     if(a.isCurrent){
       const open=make('button','button secondary','เปิดหน้าปั๊ม');
       open.type='button';open.setAttribute('aria-label','ตรวจสอบปั๊ม '+a.stationName);
-      open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(a.stationId);});
+      open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(a.stationId);
+       target.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',
+        {bubbles:true,detail:{key:'inspection'}}));});
       c.append(open);
     }
     careList.append(c);
@@ -88,7 +90,9 @@ export function mountPlatformSales({target,token,inviteControl}){
     for(const s of data.stations.filter(s=>!known.has(s.id))){
      const c=card(s.name||'ปั๊ม',[s.organization||'','ข้อมูลการดำเนินงาน · ดูอย่างเดียว']);
      const open=make('button','button secondary','เปิดหน้าปั๊ม');
-     open.type='button';open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(s.id);});
+     open.type='button';open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(s.id);
+      target.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',
+       {bubbles:true,detail:{key:'inspection'}}));});
      c.append(open);careList.append(c);
     }
    }
