@@ -75,10 +75,10 @@ test('station management is split into creation and existing station tasks witho
  assert.doesNotMatch(section,/planId|paymentMethod/);
 });
 test('plan group presents three separately controlled prices, preserving original payload',()=>{
- const src=file('src/client/platform-saas-billing.js');
+ const src=file('src/client/saas-plan-manager.js');
  for(const expected of ['os-price-grid','couponBaht','hrBaht','bundleBaht',
-  "submit('bundle-plan'", "rpc('archive-plan'"])
+  "'bundle-plan'", "rpc('archive-plan'"])
   assert.ok(src.includes(expected),expected);
  assert.match(src,/bundlePriceSatang/);
- assert.match(src,/เมื่อเปิดทั้ง 2 บริการ/);
+ assert.match(src,/ราคาแพ็กคู่เป็นราคาสุทธิ/);
 });
