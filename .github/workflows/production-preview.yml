@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: oilstation-production-preview
+  group: oilstation-customer-facing-worker
   cancel-in-progress: false
 jobs:
   deploy:
@@ -51,6 +51,20 @@ jobs:
             }
           }
           NODE
+      - name: Check deployed Worker is still preview-only before deploy
+        run: |
+          set -euo pipefail
+          bindings="$(mktemp)"
+          trap 'rm -f "$bindings"' EXIT
+          curl --fail --silent --show-error --max-time 15 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/oilstation/settings" > "$bindings"
+          jq -e '.success == true
+            and any(.result.bindings[]?; .name == "OILSTATION_API_ENABLED" and .type == "plain_text" and .text == "false")
+            and any(.result.bindings[]?; .name == "OILSTATION_DEPLOY_TARGET" and .type == "plain_text" and .text == "production")' "$bindings" >/dev/null || {
+              echo "::error::Production Worker is not in disabled preview mode; refusing automatic preview deployment"
+              exit 1
+            }
       - name: Deploy OilStation frontend and guarded Worker to real domain
         run: npx --yes wrangler@4 deploy
       - name: Verify public preview and disabled financial operations
