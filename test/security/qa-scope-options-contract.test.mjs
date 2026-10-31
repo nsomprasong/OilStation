@@ -1,0 +1,36 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+
+const config=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+const adapter=readFileSync('src/adapters/supabase.mjs','utf8');
+const sql=readFileSync('supabase/migrations/20261031182000_qa_station_scope_options.sql','utf8');
+const stations=[
+ ['e22fb5ff-1878-446f-ab8d-585115e8a1a9','d6f31134-2c74-41d8-8bc3-6d83bb41840b'],
+ ['76388e2c-ef36-4656-808b-7d0fbd1d2c35','948d946d-aa98-4718-b246-991313371ddb'],
+ ['24dc4981-0e6f-4b86-bfd7-03717002d0be','db30c758-533c-463c-a226-d49f032e960a'],
+ ['02183a4e-47b0-4575-9f4f-74cec6553205','e5cb8456-5611-421b-8265-229f6b1daa65']
+];
+test('production preview config pins only the four approved QA station/org pairs in alias order',()=>{
+ assert.equal(config.vars.OILSTATION_API_ENABLED,'false');
+ assert.equal(config.vars.OILSTATION_DEPLOY_TARGET,'production');
+ assert.deepEqual(config.vars.OILSTATION_QA_STATION_IDS.split(','),stations.map(x=>x[0]));
+ assert.deepEqual(config.vars.OILSTATION_QA_ORGANIZATION_IDS.split(','),stations.map(x=>x[1]));
+ assert.equal(config.vars.OILSTATION_QA_COMPANY_IDS,'');
+ assert.ok(!JSON.stringify(config.vars).includes('bde8e062-8ec5-44bd-91c1-9a4711ed25e5'));
+});
+test('QA scope listing never reads tenant tables directly or bypasses permissions',()=>{
+ assert.match(adapter,/rpc\/oilstation_qa_scope_options/);
+ assert.match(adapter,/p_qa_run_id:env\.OILSTATION_QA_RUN_ID/);
+ assert.match(sql,/cardinality\(p_station_ids\)<>4/);
+ assert.match(sql,/cardinality\(p_organization_ids\)<>4/);
+ assert.match(sql,/cardinality\(p_company_ids\)>12/);
+ assert.match(sql,/s\.name=v_expected\[v_idx\]/);
+ assert.match(sql,/s\.organization_id=p_organization_ids\[v_idx\]/);
+ assert.match(sql,/a\.station_id=p_station_ids\[v_company_station_idx\]/);
+ assert.match(sql,/SECURITY DEFINER SET search_path=''/);
+ assert.match(sql,/FROM PUBLIC,anon,authenticated/);
+ assert.match(sql,/TO service_role/);
+ assert.doesNotMatch(sql,/GRANT (?:SELECT|ALL) ON TABLE|INSERT INTO|UPDATE public\.|DELETE FROM/i);
+ assert.doesNotMatch(adapter,/\?select=id,name&id=in\./);
+});
