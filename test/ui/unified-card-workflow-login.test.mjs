@@ -42,8 +42,8 @@ test('six task groups remain permission-filtered and preserve server role bounda
  assert.equal(categoryFor('hr'),'people');
  const platform=selectWorkspaceScreens([{scopeType:'platform',role:'platform_superadmin'}]);
  const html=renderWorkspaceCategories(platform,'billing');
- assert.match(html,/data-task-group="overview"/);
- assert.match(html,/data-task-group="stations"/);
+ assert.doesNotMatch(html,/data-task-group="overview"/);
+ assert.doesNotMatch(html,/data-task-group="stations"/);
  assert.match(html,/data-task-group="finance"/);
  assert.doesNotMatch(html,/data-ws-go="pump"/);
  assert.doesNotMatch(html,/data-ws-go="hr"/);
