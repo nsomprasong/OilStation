@@ -1,0 +1,38 @@
+name: QA Wallet Approval SQL Integration (isolated)
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+permissions:
+  contents: read
+jobs:
+  qa-wallet-postgresql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_qa_wallet_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_qa_wallet_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile QA schema and exercise real finance RPCs against disposable PostgreSQL
+        run: |
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_qa_wallet_test
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              psql -v ON_ERROR_STOP=1 -c "ALTER TABLE auth.users ADD COLUMN raw_app_meta_data jsonb NOT NULL DEFAULT '\''{}'\''::jsonb"
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031203000_photo_only_review_status.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261031204000_qa_simulated_wallet_approval.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/qa-finance-assertions.sql
+            '
