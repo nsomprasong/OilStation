@@ -14,7 +14,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: oilstation-release-${{ inputs.target }}
+  group: ${{ inputs.target == 'production' && 'oilstation-customer-facing-worker' || 'oilstation-uat' }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -121,6 +121,8 @@ jobs:
           // Only the independently approved release job may activate full business APIs.
           // Leave the repository default fail-closed for all normal main pushes.
           config.vars.OILSTATION_API_ENABLED = 'true';
+          config.vars.OILSTATION_PREVIEW_LOGIN_ENABLED = 'false';
+          config.vars.OILSTATION_PREVIEW_OPERATIONS_ENABLED = 'false';
           writeFileSync('wrangler.production-release.json', JSON.stringify(config,null,2));
           NODE
       - name: Deploy production only after preflight
