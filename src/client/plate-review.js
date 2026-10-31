@@ -1,6 +1,6 @@
 /**
- * Authenticated, photo-first manager review inbox; untrusted OCR text never
- * substitutes for the actual private image.
+ * Authenticated, photo-first manager review inbox; the original photo
+ * is inspected by another authorized station employee without OCR.
  */
 export function mountPlateReviewInbox({target,token,stationId}){
  if(!target)return;
