@@ -1,4 +1,4 @@
-name: LuxCart Local Preview Browser
+name: Midnight Banking Local Preview Browser
 on:
   pull_request:
     branches: [main]
@@ -6,9 +6,9 @@ on:
       - 'public/**'
       - 'index.html'
       - 'src/client/**'
-      - 'e2e/luxcart.local.pw.mjs'
-      - 'playwright.luxcart.config.mjs'
-      - '.github/workflows/luxcart-preview.yml'
+      - 'e2e/midnight.local.pw.mjs'
+      - 'playwright.midnight.config.mjs'
+      - '.github/workflows/midnight-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,14 +27,14 @@ jobs:
         run: npm run build
       - name: Install real Chromium
         run: npx playwright install --with-deps chromium
-      - name: Verify local LuxCart login, desktop and mobile role-scoped shell
-        run: npx playwright test --config=playwright.luxcart.config.mjs
+      - name: Verify local Midnight Banking login, desktop and mobile role-scoped shell
+        run: npx playwright test --config=playwright.midnight.config.mjs
       - name: Attach anonymous screenshots and traces only
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: luxcart-anonymous-browser-preview
+          name: midnight-anonymous-browser-preview
           path: |
-            test-results-luxcart/
-            playwright-report-luxcart/
+            test-results-midnight/
+            playwright-report-midnight/
           retention-days: 14

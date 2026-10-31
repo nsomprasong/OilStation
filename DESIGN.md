@@ -1,8 +1,8 @@
 # OilStation Interface System
 
-> **Current visual authority — LuxCart (1 November 2026).** Follow `docs/design/2026-11-01-luxcart.md` and single canonical `public/oilstation.css`. Existing Gentelella color statements below are historical and no longer define the palette, typography, spacing, radius or icon treatment. All 31 October navigation semantics, Thai workflow accessibility, tenancy and financial correctness remain mandatory.
+> **Current visual authority — Midnight Banking (1 November 2026).** Follow `docs/design/2026-11-01-luxcart.md` and single canonical `public/oilstation.css`. Existing Gentelella color statements below are historical and no longer define the palette, typography, spacing, radius or icon treatment. All 31 October navigation semantics, Thai workflow accessibility, tenancy and financial correctness remain mandatory.
 
-> CSS cleanup 1 November 2026: previous teal/Gentelella guidance below is **archival only**. Current colors are charcoal #1C1917, cream #FFFBEB, gold #B8860B. The approved Home/submenu/five-slot dock pattern is retained without visual teal gradients.
+> CSS cleanup 1 November 2026: previous LuxCart, teal and Gentelella guidance below is **archival only**. Current colors are midnight page #040D3F, surface #141C4E, card #1D2552, cyan #0D8091, mint #7FE089 and coral #F97D7D. The approved Home/submenu/five-slot dock pattern is retained without visual teal gradients.
 
 <!-- impeccable:design-system 1 -->
 
