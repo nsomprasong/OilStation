@@ -43,7 +43,8 @@ test('sales SQL is service-role-only, self-scoped, audit logged and never pays c
  const sql=readFileSync(new URL('../../supabase/migrations/20261031120000_platform_sales_workspace.sql',import.meta.url),'utf8');
  for(const piece of ['platform_superadmin','platform_sales','sales_user_id=p_actor_id',
   'TRANSFER_ALREADY_SCHEDULED','FOR UPDATE','audit_events','sales_care_transfer',
-  'commission_entitlements','commission_ledger','AT TIME ZONE','effective_until']){
+  'commission_entitlements','commission_ledger','AT TIME ZONE','effective_until',
+  'collectedCustomers',"i.status='paid'"]){
   assert.ok(sql.includes(piece),piece);
  }
  assert.match(sql,/REVOKE ALL ON FUNCTION public.platform_sales_workspace/);
