@@ -1,7 +1,7 @@
 /** Six task groups. Only available role-issued screens can become links. */
 export const TASK_GROUPS=[
  {key:'overview',label:'ภาพรวม',keys:['overview']},
- {key:'stations',label:'ปั๊มและน้ำมัน',keys:['stations','sales','fuel','pump']},
+ {key:'stations',label:'ปั๊มและน้ำมัน',keys:['stations','sales','activity','fuel','pump']},
  {key:'customers',label:'ลูกค้าและทีมขาย',keys:['customers','corporate']},
  {key:'people',label:'บุคลากร',keys:['hr','attendance','reviews','payroll']},
  {key:'finance',label:'การเงิน',keys:['finance','billing','plan']},
