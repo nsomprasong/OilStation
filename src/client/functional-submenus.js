@@ -81,7 +81,8 @@ function build(screen,key){
   const tax=host?.querySelector(':scope > .os-tax-panel');
   if(!plans||!tax)return [];
   return [
-   pane('plans','รายการและแก้ไขแพ็กเกจ','receipt',editor?[plans,editor]:[plans]),
+   pane('plans','รายการแพ็กเกจ','receipt',[plans]),
+   ...(editor?[pane('editor','เพิ่มหรือแก้ไขแพ็กเกจ','user-plus',[editor])]:[]),
    pane('tax','นโยบาย VAT','wallet',[tax])
   ].map(wrapPane).filter(Boolean);
  }
@@ -162,8 +163,10 @@ export function installFunctionalSubmenus(root){
     button.addEventListener('click',()=>{
       show(state.key,p.id,{focus:true});
       const form=p.wrapper?.querySelector('form[data-os-create-ready="true"]');
-      if(form?.closest('.os-functional-pane')===p.wrapper&&form.hidden)
+      if(form?.closest('.os-functional-pane')===p.wrapper&&form.hidden){
+       form.dispatchEvent(new Event('os:prepare-create'));
        form.dispatchEvent(new Event('os:create-show'));
+      }
     });
     frag.append(button);
    }
