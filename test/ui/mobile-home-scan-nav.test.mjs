@@ -6,11 +6,11 @@ import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/work
 const source=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const m=(scopeType,role,extra={})=>({scopeType,role,...extra});
 
-test('mobile home reflects real allowed modules and does not invent monetary balances',()=>{
+test('mobile Home has exactly one authorized main menu and no duplicate shortcuts',()=>{
  const screens=selectWorkspaceScreens([m('platform','platform_superadmin')]);
  const html=renderMobileHome(screens);
  assert.match(html,/data-mobile-search-input/);
- assert.match(html,/os-mobile-quick-grid/);
+ assert.doesNotMatch(html,/os-mobile-quick-grid/);
  assert.match(html,/os-mobile-summary-grid/);
  assert.match(html,/os-mobile-feature-grid/);
  assert.match(html,/4 รายการ/);
@@ -18,24 +18,23 @@ test('mobile home reflects real allowed modules and does not invent monetary bal
  assert.doesNotMatch(html,/อัตราคงเหลือ|ยอดเงินคงเหลือ|฿[\d,]/);
  assert.doesNotMatch(html,/data-ws-go="pump"/);
 });
-test('role-scoped four-tab bottom navigation supports direct scan only for pump role',()=>{
+
+test('bottom nav always has five positions: Home plus four allowed frequent destinations',()=>{
  const owner=selectWorkspaceScreens([m('station','station_owner',{stationId:'s'})]);
  const nav=renderMobileNav(owner);
  assert.match(nav,/data-ws-go="overview"/);
- assert.match(nav,/data-ws-scan/);
- assert.match(nav,/เปิดกล้องสแกน QR คูปอง/);
- assert.doesNotMatch(nav,/data-ws-more/);
- assert.match(nav,/os-mobile-scan-bubble/);
- assert.equal((nav.match(/class="os-mobile-tab/g)||[]).length,4);
+ assert.doesNotMatch(nav,/data-ws-scan|data-ws-more|disabled title="บัญชีนี้ไม่มีสิทธิ์/);
+ assert.equal((nav.match(/class="os-mobile-tab /g)||[]).length,5);
  const platform=renderMobileNav(selectWorkspaceScreens([m('platform','platform_superadmin')]));
- assert.match(platform,/ไม่มีสิทธิ์สแกน QR คูปอง/);
- assert.match(platform,/disabled title="บัญชีนี้ไม่มีสิทธิ์งานหน้าลาน"/);
+ assert.equal((platform.match(/class="os-mobile-tab /g)||[]).length,5);
+ assert.doesNotMatch(platform,/data-ws-go="pump"|data-ws-scan/);
+ assert.match(nav,/data-ws-go="pump"/);
 });
-test('mobile scan button sends action, lazy mounts pump and starts scanner with one tap',()=>{
+
+test('scanner stays inside authorized pump module, never as an unauthorized dock item',()=>{
  const shell=source('src/client/workspace-layout.js');
  const main=source('src/client/main.js');
- assert.match(shell,/oilstation:scanrequest/);
- assert.match(main,/oilstation:scanrequest/);
+ assert.doesNotMatch(shell,/data-ws-scan|oilstation:scanrequest/);
  assert.match(main,/pendingMobileScan/);
  assert.match(main,/target\.querySelector\('#start-camera'\)\?\.click\(\)/);
  assert.match(main,/oilstation:leave-pump/);
@@ -46,13 +45,14 @@ test('mobile scan button sends action, lazy mounts pump and starts scanner with 
  assert.match(main,/if\(document\.hidden\)stop\(\)/);
  assert.match(main,/เล็งกล้องไปที่ QR/);
 });
+
 test('bottom bar and screenshot-style home exist only on mobile; desktop Gentelella remains',()=>{
  const html=source('index.html');
  const css=source('public/mobile-app.css');
  assert.match(html,/href="\/mobile-app\.css"/);
  assert.match(css,/\.os-mobile-home,\.os-mobile-bottom\{display:none\}/);
  assert.match(css,/@media\(max-width:850px\)/);
- assert.match(source('public/platform-sales-navigation.css'),/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.match(source('public/navigation-standard.css'),/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
  assert.match(css,/\.os-mobile-camera\.is-scanning/);
  assert.match(css,/env\(safe-area-inset-bottom\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
