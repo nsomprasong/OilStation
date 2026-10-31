@@ -114,6 +114,32 @@ export function createSupabaseAdapter(env) {
         throw new Error('qa_provision_not_committed');
       }
     },
+    resetQaPassword: async ({qaRunId,alias,password})=>{
+      // Only called after the Worker authenticated an active Platform Super Admin
+      // and checked the same-origin QA request + strong password.
+      const admin=createClient(env.SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,{
+        auth:{persistSession:false,autoRefreshToken:false},
+      });
+      const wanted='qa-'+alias+'@qa.oilstation.invalid';
+      // This list is not exposed to a client. Restrict to the current QA run
+      // through immutable app_metadata set only by Supabase Auth Admin.
+      for(let page=1;page<=5;page++){
+        const {data,error}=await admin.auth.admin.listUsers({page,perPage:100});
+        if(error)throw new Error('qa_reset_lookup_failed');
+        const users=Array.isArray(data?.users)?data.users:[];
+        const match=users.find(u=>u.email===wanted&&
+          u.app_metadata?.oilstation_qa===true&&
+          u.app_metadata?.oilstation_qa_run_id===qaRunId);
+        if(match){
+          const {error:changeError}=await admin.auth.admin.updateUserById(
+            match.id,{password});
+          if(changeError)throw new Error('qa_reset_update_failed');
+          return true;
+        }
+        if(users.length<100)break;
+      }
+      return false;
+    },
     db: {
       qaScopedOptions: async allow=>{
         const list=async(table,ids)=>{
