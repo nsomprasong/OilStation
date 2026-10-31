@@ -124,46 +124,6 @@ function inviteFab(screen){
  screen.append(fab);
 }
 
-/** Collapse HR's multiple creation forms into task-specific top submenus. */
-function secondaryHrTabs(screen){
- const target=screen.querySelector('#hr-workspace');
- if(!target||target.querySelector('.os-local-tabs'))return;
- const actions=[
-  {id:'hr-schedule',label:'จัดกะ'},
-  {id:'hr-replacement',label:'ทำงานแทน'},
-  {id:'hr-ot-request',label:'ขอ OT'},
- ].map(item=>({...item,form:target.querySelector('#'+item.id)}));
- if(actions.some(item=>!item.form))return;
- const nav=document.createElement('nav');
- nav.className='os-local-tabs';nav.setAttribute('aria-label','งานย่อยด้านบุคลากร');
- for(const action of actions){
-  action.form.hidden=true;
-  const heading=action.form.previousElementSibling;
-  if(heading?.tagName==='H3'){heading.hidden=true;action.heading=heading;}
-  const button=document.createElement('button');
-  button.type='button';button.className='os-local-tab';
-  button.textContent=action.label;button.setAttribute('aria-expanded','false');
-  button.setAttribute('aria-controls',action.id);
-  button.addEventListener('click',()=>{
-   const opening=action.form.hidden;
-   for(const other of actions){
-    other.form.hidden=true;
-    if(other.heading)other.heading.hidden=true;
-    other.button.setAttribute('aria-expanded','false');
-    other.button.classList.remove('active');
-   }
-   if(opening){
-    action.form.hidden=false;
-    if(action.heading)action.heading.hidden=false;
-    button.setAttribute('aria-expanded','true');
-    button.classList.add('active');
-    action.form.querySelector('select,input')?.focus();
-   }
-  });
-  action.button=button;nav.append(button);
- }
- target.insertBefore(nav,actions[0].form);
-}
 
 function enhance(root){
  for(const screen of root.querySelectorAll('[data-ws-screen]')){
@@ -171,7 +131,6 @@ function enhance(root){
   const task=TASKS[key];
   if(task)enableCreation(screen,key,task);
   if(key==='billing')editableTaxCard(screen);
-  // HR tasks now use the one global under-Header functional submenu. Do not add local tabs.
   if(key==='invitations')inviteFab(screen);
   for(const row of screen.querySelectorAll('.fuel-row'))editableFuelRow(row);
  }
