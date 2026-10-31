@@ -59,7 +59,14 @@ test('real QA station-owner web form posts fictional price on four stations @qa-
    ]){
     const row=fuelPanel.locator('.fuel-row').filter({hasText:chosen.pattern}).first();
     await expect(row).toBeVisible();
-    await row.getByRole('button',{name:'ใช้ราคาทดสอบ '+chosen.rate}).click();
+    // The owner is using the real deployed web form. Its QA preset is
+    // optional until this PR is deployed, so fill the existing actual fields.
+    const preset=row.getByRole('button',{name:'ใช้ราคาทดสอบ '+chosen.rate});
+    if(await preset.count())await preset.click();
+    else{
+      await row.locator('input:not([type=checkbox])').fill(chosen.rate);
+      await row.locator('input[type=checkbox]').check();
+    }
     await expect(row.locator('input[type=checkbox]')).toBeChecked();
     await expect(row.locator('input:not([type=checkbox])')).toHaveValue(chosen.rate);
     await row.getByRole('button',{name:'บันทึก',exact:true}).click();
