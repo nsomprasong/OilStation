@@ -9,7 +9,7 @@ on:
         description: Run public smoke, Sales, or Platform Support
         required: true
         default: public
-        options: [public, authorized-platform, authorized-qa-finance, authorized-support]
+        options: [public, authorized-platform, authorized-qa-finance, authorized-qa-fuel-prices, authorized-support]
       allow_missing_station_creation:
         type: boolean
         description: Allow Sales02 to create ONLY missing QA-S02-B after DB preflight
@@ -133,6 +133,56 @@ jobs:
         with:
           name: oilstation-qa-finance-protected-playwright
           path: finance-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
+
+  authorized-qa-fuel-prices:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.suite == 'authorized-qa-fuel-prices'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_PRICE_AUTH_RUN: 'true'
+      OILSTATION_QA_S01A_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S01A_OWNER_PASSWORD }}
+      OILSTATION_QA_S01B_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S01B_OWNER_PASSWORD }}
+      OILSTATION_QA_S02A_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S02A_OWNER_PASSWORD }}
+      OILSTATION_QA_S02B_OWNER_PASSWORD: ${{ secrets.OILSTATION_QA_S02B_OWNER_PASSWORD }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Require four station owner QA credentials and encryption key before any change
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OILSTATION_QA_S01A_OWNER_PASSWORD OILSTATION_QA_S01B_OWNER_PASSWORD OILSTATION_QA_S02A_OWNER_PASSWORD OILSTATION_QA_S02B_OWNER_PASSWORD OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Missing QA credential name: $name"; exit 1; }
+          done
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Set 8 fictional fuel prices ONLY through 4 real QA Owner web forms
+        run: npm run test:e2e -- --grep '@qa-fuel-prices'
+      - name: Encrypt real browser evidence before upload
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf price-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output price-evidence.tar.gz.gpg price-evidence.tar.gz
+          rm -rf price-evidence.tar.gz playwright-report test-results
+      - name: Upload encrypted price entry screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-qa-fuel-prices-protected-playwright
+          path: price-evidence.tar.gz.gpg
           if-no-files-found: error
           retention-days: 14
 
