@@ -168,6 +168,27 @@ export default {
             return createPlatformBillingApi(createSupabaseAdapter(env))(request);
           if(stationPages.has(url.pathname))
             return createApi(createSupabaseAdapter(env))(request);
+          // Public QR link is a signed bearer capability. Only return links
+          // whose underlying coupons belong to approved QA stations/accounts.
+          if(url.pathname==='/api/coupon-view'&&qaFinanceEnabled(env)){
+            if(request.method!=='GET')
+              return new Response(null,{status:405});
+            const token=url.searchParams.get('token');
+            if(!token||token.length>150)
+              return new Response(JSON.stringify({error:'invalid_coupon'}),{
+                status:404,headers:{'content-type':'application/json','cache-control':'no-store'}});
+            const adapter=createSupabaseAdapter(env);
+            const coupon=await adapter.db.couponView(token);
+            const allowed=(await import('./api/qa-accounts.mjs')).qaScopeAllowlist(env);
+            if(!coupon||!coupon.id||allowed.station.length!==4||
+               allowed.corporate_company.length!==12||
+               await adapter.db.qaCouponScope({couponId:coupon.id,allowed})!==true)
+              return new Response(JSON.stringify({error:'invalid_coupon'}),{
+                status:404,headers:{'content-type':'application/json','cache-control':'no-store'}});
+            return new Response(JSON.stringify(coupon),{status:200,headers:{
+              'content-type':'application/json','cache-control':'no-store',
+              'referrer-policy':'no-referrer','x-content-type-options':'nosniff'}});
+          }
           // Only synthetic QA identities on the fixed 4 stations / 12 companies
           // may use real QR reservation and settlement against QA money.
           // Ordinary production finance remains closed in preview.
