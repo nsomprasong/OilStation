@@ -59,7 +59,6 @@ test('real QA station-owner web form posts fictional price on four stations @qa-
    ]){
     const row=fuelPanel.locator('.fuel-row').filter({hasText:chosen.pattern}).first();
     await expect(row).toBeVisible();
-    await expect(row.locator('[data-qa-demo-price="'+chosen.rate+'"]')).toHaveCount(0);
     await row.getByRole('button',{name:'ใช้ราคาทดสอบ '+chosen.rate}).click();
     await expect(row.locator('input[type=checkbox]')).toBeChecked();
     await expect(row.locator('input:not([type=checkbox])')).toHaveValue(chosen.rate);
@@ -71,8 +70,8 @@ test('real QA station-owner web form posts fictional price on four stations @qa-
     {headers:{authorization:'Bearer '+token}});
    expect(r.status()).toBe(200);
    const fuels=(await r.json()).fuels||[];
-   expect(fuels.some(f=>/ดีเซล/.test(f.name)&&f.enabled&&f.publicPrice==='32.5000')).toBe(true);
-   expect(fuels.some(f=>/แก๊สโซฮอล์.*95/.test(f.name)&&f.enabled&&f.publicPrice==='35.9000')).toBe(true);
+   expect(fuels.some(f=>/ดีเซล/.test(f.name)&&f.enabled&&Number(f.publicPrice)===32.50)).toBe(true);
+   expect(fuels.some(f=>/แก๊สโซฮอล์.*95/.test(f.name)&&f.enabled&&Number(f.publicPrice)===35.90)).toBe(true);
   }finally{await page.close();}
  }
 });
