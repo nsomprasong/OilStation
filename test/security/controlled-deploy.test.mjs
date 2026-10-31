@@ -42,3 +42,10 @@ test('production release preflight supports new Supabase sb_secret key without J
  assert.match(wf,/auth_headers\+=\(-H "authorization: Bearer \$RELEASE_SERVICE_ROLE_KEY"\)/);
  assert.match(wf,/"\$\{auth_headers\[@\]\}"/);
 });
+
+test('approved production deploy uses release-only config rather than resetting runtime flag to false',()=>{
+ assert.match(wf,/Prepare explicitly approved production runtime configuration/);
+ assert.match(wf,/OILSTATION_API_ENABLED = 'true'/);
+ assert.match(wf,/wrangler@4 deploy --config wrangler.production-release.json/);
+ assert.match(wf,/wrangler.production-release.json/);
+});
