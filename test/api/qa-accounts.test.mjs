@@ -6,13 +6,16 @@ import {createQaAccountsApi,qaIsEnabled} from '../../src/api/qa-accounts.mjs';
 const actor='11111111-1111-4111-8111-111111111111';
 const stationA='22222222-2222-4222-8222-222222222222';
 const stationB='33333333-3333-4333-8333-333333333333';
+const stationC='66666666-6666-4666-8666-666666666666';
+const stationD='77777777-7777-4777-8777-777777777777';
+const stationE='88888888-8888-4888-8888-888888888888';
 const stranger='44444444-4444-4444-8444-444444444444';
 const company='55555555-5555-4555-8555-555555555555';
 const run='QA-20261031-MASTER-001';
 const env={
  OILSTATION_DEPLOY_TARGET:'production',OILSTATION_PREVIEW_LOGIN_ENABLED:'true',
  OILSTATION_API_ENABLED:'false',OILSTATION_QA_MODE_ENABLED:'true',
- OILSTATION_QA_RUN_ID:run,OILSTATION_QA_STATION_IDS:stationA+','+stationB,
+ OILSTATION_QA_RUN_ID:run,OILSTATION_QA_STATION_IDS:[stationA,stationB,stationC,stationD].join(','),
  OILSTATION_QA_COMPANY_IDS:company,
 };
 const db={
@@ -77,9 +80,9 @@ test('all QA user options must be inside exact pre-approved scope allowlists',as
  const res=await api(new Request(url+'scopes',{headers:{authorization:'Bearer good'}}));
  assert.equal(res.status,200);
  const scopes=(await res.json()).scopes;
- assert.equal(scopes.station.length,2);
+ assert.equal(scopes.station.length,4);
  assert.equal(scopes.corporate_company.length,1);
- const misconfigured=handler({settings:{...env,OILSTATION_QA_STATION_IDS:[stationA,stationB,stranger].join(',')}});
+ const misconfigured=handler({settings:{...env,OILSTATION_QA_STATION_IDS:[stationA,stationB,stationC,stationD,stationE].join(',')}});
  assert.equal((await misconfigured(account(body()))).status,503);
 });
 test('new QA users use confirmed Supabase Auth admin user with real membership, never browser service key',()=>{
@@ -95,7 +98,7 @@ test('new QA users use confirmed Supabase Auth admin user with real membership, 
  assert.ok(worker.includes('qaIsEnabled(env)'));
  assert.ok(client.includes('signInWithPassword'));
  assert.ok(html.includes('qaMode&&!setup&&!invited'));
- assert.match(plan,/Exactly two QA stations/);
- assert.match(plan,/Exactly two QA platform sales accounts/);
+ assert.match(plan,/Exactly four QA stations/);
+ assert.match(plan,/Exactly two QA platform Sales accounts/);
  assert.doesNotMatch(worker,/OILSTATION_QA_MODE_ENABLED\s*=\s*'true'/);
 });
