@@ -45,7 +45,7 @@ BEGIN
  IF NOT blocked THEN RAISE EXCEPTION 'Sales created corporate employee';END IF;
  blocked:=false;
  BEGIN PERFORM public.platform_qa_register_account(
-   sales,target,'s01a-cashier','cashier','station',s1,
+   sales,other,'s01a-cashier','cashier','station',s1,
    'QA-20261031-PLATFORM-001');
  EXCEPTION WHEN OTHERS THEN blocked:=SQLERRM='FORBIDDEN';END;
  IF NOT blocked THEN RAISE EXCEPTION 'Sales created station employee';END IF;
