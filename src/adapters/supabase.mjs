@@ -78,7 +78,7 @@ export function createSupabaseAdapter(env) {
          user.app_metadata.oilstation_qa_run_id!==env.OILSTATION_QA_RUN_ID))
         return null;
       return typeof user.id === 'string' ? { id: user.id,
-       isQa:user.app_metadata?.oilstation_qa===true } : null;
+       ...(user.app_metadata?.oilstation_qa===true?{isQa:true}:{}) } : null;
     },
     provisionQaAccount: async ({actorId,qaRunId,alias,password,roleCode,scopeType,scopeId})=>{
       const email='qa-'+alias+'@qa.oilstation.invalid';
