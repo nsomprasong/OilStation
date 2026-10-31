@@ -39,3 +39,7 @@ For frontend design, layout, styling, accessibility, redesign, or visual QA, use
 ## Workflow and release
 
 Use the project's existing Superpowers workflow, write tests for behavior changes, and verify Build/CI before claiming success. Do not merge or deploy to `oilstation.goldensoft.cloud` without approved release gates and explicit production/test rollout authorization.
+
+## Mandatory ChatGPT live-database browser QA
+
+For menu audits, real browser tests, approved test data creation, cleanup and fresh-start release, read `.agents/skills/oilstation-live-qa/SKILL.md` and use `docs/qa/templates/` before taking action. The owner uses ChatGPT (NOT Work mode) and the existing Supabase project `cxihsotcpdnalswfoysx`; do not require or create a staging branch. Use a real browser runner with evidence, preserve an approved pre-test baseline, tag/track every test record by its ID, verify DB/API results, and clean only the explicitly approved deletion manifest. Do not interpret “delete all” as blanket permission to destroy existing admins, business records, signed evidence, immutable financial/audit rows, database schema or production secrets. Before a full fresh-start reset, require an explicitly approved enumerated reset plan and verified backup/recovery. Cloudflare Worker redeploy is not a Supabase database restart. Finish each functional code fix with the authorized deploy and post-deploy verification; never claim end-to-end browser PASS without an executed browser run.
