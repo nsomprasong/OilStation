@@ -192,7 +192,7 @@ export function mountSaasPlanManager({root,rpc}){
       editingId=null;controls('code').value=newCode();
       controls('name').value=String(detail.name)+' (ใหม่)';
       formTitle.textContent='คัดลอกเป็นแพ็กเกจใหม่';
-      hint.textContent='แพ็กเกจนี้มีประวัติการใช้งานหรือเป็นรูปแบบราคาเดิม จึงไม่แก้ย้อนหลัง ระบบเตรียมสำเนาใหม่ให้';
+      hint.textContent='แพ็กเกจนี้มีประวัติการใช้งานหรือเป็นราคาแบบเดิม ระบบจึงสร้างแพ็กเกจใหม่แทน รายการเดิมยังอยู่และราคาลูกค้าเก่าไม่เปลี่ยน';
       save.textContent='สร้างแพ็กเกจใหม่';toggleStatus(formStatus,'ราคาเดิมของลูกค้าจะไม่ถูกเปลี่ยน','warning');
      }else{
       editingId=p.id;formTitle.textContent='แก้ไขแพ็กเกจ';
