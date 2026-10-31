@@ -9,6 +9,29 @@ const ROLES={
  station:new Set(['station_owner','manager','cashier','attendant','pump_staff','hr_manager','finance_manager']),
  corporate_company:new Set(['corporate_admin','coupon_issuer','accountant','finance_manager','driver']),
 };
+// A frozen alias catalog prevents unbounded test accounts from being created.
+const STATION_CODES=['s01a','s01b','s02a','s02b'];
+const ROLE_SUFFIX={
+ organization:{organization_owner:'owner',billing_manager:'billing'},
+ station:{station_owner:'owner',manager:'manager',cashier:'cashier',
+  attendant:'attendant',pump_staff:'pump',hr_manager:'hr',
+  finance_manager:'finance'},
+ corporate_company:{corporate_admin:'admin',coupon_issuer:'issuer',
+  accountant:'accountant',finance_manager:'finance',driver:'driver'},
+};
+export function qaApprovedAlias({alias,scopeType,roleCode,scopeId},allowed){
+ if(scopeType==='platform'){
+  if(roleCode==='platform_sales')return alias==='sales01'||alias==='sales02';
+  if(roleCode==='platform_support')return alias==='support01';
+  return false;
+ }
+ const i=(allowed[scopeType]||[]).indexOf(scopeId);
+ const suffix=ROLE_SUFFIX[scopeType]?.[roleCode];
+ if(i<0||!suffix)return false;
+ const prefix=scopeType==='organization'?'o'+String(i+1).padStart(2,'0'):
+  scopeType==='station'?STATION_CODES[i]:'c'+String(i+1).padStart(2,'0');
+ return Boolean(prefix)&&alias===prefix+'-'+suffix;
+}
 const json=(code,body)=>new Response(JSON.stringify(body),{status:code,headers:{
  'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',
 }});
@@ -46,7 +69,7 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount}){
     return json(403,{error:'permission_denied'});
    const permitted=qaScopeAllowlist(env);
    // No scope IDs are accepted outside a pre-approved server allowlist.
-   if(permitted.station.length>4||permitted.corporate_company.length>12)
+   if(permitted.organization.length>4||permitted.station.length>4||permitted.corporate_company.length>12)
     return json(503,{error:'qa_scope_misconfigured'});
    if(request.method==='GET'){
     if(url.pathname!=='/api/qa/scopes')return json(404,{error:'not_found'});
@@ -74,6 +97,8 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount}){
    }else if(!UUID.test(scopeId||'')||!permitted[scopeType].includes(scopeId)){
     return json(403,{error:'scope_not_approved'});
    }
+   if(!qaApprovedAlias({alias,scopeType,roleCode,scopeId},permitted))
+    return json(400,{error:'qa_alias_not_in_approved_role_matrix'});
    const result=await provisionAccount({
     actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,
     alias,password,scopeType,scopeId:scopeType==='platform'?null:scopeId,roleCode,

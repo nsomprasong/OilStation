@@ -134,7 +134,9 @@ export function createSupabaseAdapter(env) {
           if(!ids.length)return [];
           const rows=await serviceRequest(env,'/rest/v1/'+table+
             '?select=id,name&id=in.('+ids.join(',')+')',{method:'GET'});
-          return (Array.isArray(rows)?rows:[]).map(x=>({id:x.id,name:x.name}));
+          const byId=new Map((Array.isArray(rows)?rows:[]).map(x=>[x.id,{id:x.id,name:x.name}]));
+          // Preserve approved allowlist order: QA role alias o01/s01a/c01 is position-bound.
+          return ids.map(id=>byId.get(id)).filter(Boolean);
         };
         return {
           platform:[{id:null,name:'Platform'}],
