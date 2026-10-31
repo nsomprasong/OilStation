@@ -4,7 +4,7 @@ const TASKS={
  stations:{title:'สร้างปั๊มน้ำมัน',select:screen=>screen.querySelector('#new-station-form'),container:form=>form.closest('.os-create-station')},
  customers:{title:'เพิ่มลูกค้าบริษัท',select:screen=>screen.querySelector('#customer-create')},
  hr:{title:'เพิ่มพนักงาน',select:screen=>screen.querySelector('#hr-add-employee')},
- billing:{title:'เพิ่มแพ็กเกจ',select:screen=>screen.querySelectorAll('form.saas-simple-card')[1]},
+ billing:{title:'เพิ่มแพ็กเกจ',select:screen=>screen.querySelector('#os-plan-editor')},
 };
 const activeStates=new WeakMap();
 
@@ -50,7 +50,7 @@ function editableFuelRow(row){
 }
 
 function editableTaxCard(screen){
- const form=screen.querySelector('form.saas-simple-card');
+ const form=screen.querySelector('form.os-tax-panel');
  if(!form||form.dataset.osCardReady)return;
  form.dataset.osCardReady='true';form.classList.add('os-editable-card');
  const summary=form.querySelector('.saas-current-summary');
@@ -97,7 +97,12 @@ function enableCreation(screen,key,task){
   fab.classList.remove('is-open');
   fab.focus();
  };
- fab.addEventListener('click',()=>surface.hidden?show():hide());
+ form.addEventListener('os:create-show',show);
+ form.addEventListener('os:create-hide',hide);
+ fab.addEventListener('click',()=>{
+  if(surface.hidden){form.dispatchEvent(new Event('os:prepare-create'));show();}
+  else hide();
+ });
  close.addEventListener('click',hide);
  // Client-side required validation and server feedback stay inside the form;
  // do not auto-close or clear forms after an unconfirmed network request.
