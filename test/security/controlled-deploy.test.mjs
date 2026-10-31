@@ -60,3 +60,12 @@ test('approved release turns off preview-only routes at the same time as enablin
  assert.match(wf,/config\.vars\.OILSTATION_PREVIEW_LOGIN_ENABLED = 'false'/);
  assert.match(wf,/config\.vars\.OILSTATION_PREVIEW_OPERATIONS_ENABLED = 'false'/);
 });
+
+test('untrusted workflow_dispatch approval is passed through env, never inserted into shell source',()=>{
+ assert.ok(wf.includes('RELEASE_APPROVAL_INPUT: ${{ inputs.production_approval }}'));
+ assert.ok(wf.includes('test "$RELEASE_APPROVAL_INPUT" = APPROVED_OILSTATION_PRODUCTION_RELEASE'));
+ assert.ok(!wf.includes('test "${{ inputs.production_approval }}"'));
+});
+test('production release only accepts the configured live Supabase project as readiness target',()=>{
+ assert.ok(wf.includes('test "$RELEASE_SUPABASE_URL" = "https://cxihsotcpdnalswfoysx.supabase.co"'));
+});
