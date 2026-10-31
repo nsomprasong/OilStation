@@ -34,6 +34,14 @@
 #app.workspace-mode .os-sales-transfer select,#app.workspace-mode .os-sales-transfer textarea{min-height:44px;width:100%;border:1px solid #cfdedb;background:#fff;border-radius:10px;padding:10px;font:inherit}
 #app.workspace-mode .os-sales-transfer .button{width:auto;margin:0;justify-self:start}
 #app.workspace-mode .invite-control .invite-form{display:grid;gap:10px;margin-top:11px}
+.os-sales-confirm{width:min(94vw,470px);max-width:470px;background:#fff;color:#23454a;border:1px solid #c6dfd7;border-radius:18px;padding:25px;box-shadow:0 25px 90px #0b2d3a50}
+.os-sales-confirm::backdrop{background:#051c2585}
+.os-sales-confirm h3{font-size:18px;margin:0 0 9px;color:#145f56}
+.os-sales-confirm p{line-height:1.7;font-size:13px}
+.os-sales-confirm-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.os-sales-confirm-actions .button{width:auto;margin:0;min-height:44px}
+@media(max-width:560px){.os-sales-confirm-actions .button{flex:1}}
+
 #app.workspace-mode .invite-control .invite-form[hidden]{display:none}
 @media(max-width:850px){
  #app.workspace-mode .ws-layout,#app.workspace-mode .ws-layout[data-rail="collapsed"]{display:block}
