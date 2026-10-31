@@ -7,8 +7,8 @@ export function chooseMobileActions(screens){
  const pick=(order,used)=>order.find(key=>keys.has(key)&&!used.has(key))||null;
  const used=new Set(['overview']);
  const work=pick(['fuel','stations','sales','customers','corporate','hr','attendance','billing','plan','pump','finance','invitations'],used);if(work)used.add(work);
- const history=pick(['reviews','finance','sales','payroll','attendance','billing','corporate','plan','stations','pump','hr','invitations','customers'],used);if(history)used.add(history);
- const headline=['pump','fuel','stations','sales','corporate','billing','plan','finance','attendance','hr','customers','reviews','invitations','payroll']
+ const history=pick(['reviews','activity','finance','sales','payroll','attendance','billing','corporate','plan','stations','pump','hr','invitations','customers'],used);if(history)used.add(history);
+ const headline=['pump','fuel','stations','sales','activity','corporate','billing','plan','finance','attendance','hr','customers','reviews','invitations','payroll']
   .filter(key=>keys.has(key)).slice(0,4);
  return {work,history,headline,canScan:keys.has('pump')};
 }
@@ -82,7 +82,7 @@ export function renderMobileNav(screens){
 export function renderMobileScreenHero(screen,screens=[]){
  if(!screen||screen.key==='overview')return '';
  const suggestions={
-  stations:['sales','billing','invitations'],sales:['stations','billing','invitations'],fuel:['pump','customers','finance'],
+  stations:['sales','billing','invitations'],sales:['stations','activity','billing'],activity:['sales','stations'],fuel:['pump','customers','finance'],
   pump:['fuel','customers','reviews'],customers:['finance','pump','fuel'],
   finance:['customers','billing','pump'],plan:['billing','pump','fuel'],
   billing:['stations','plan','finance'],hr:['attendance','reviews','payroll'],
