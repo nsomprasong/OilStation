@@ -1,5 +1,7 @@
 # OilStation Interface System
 
+> **Current visual authority — LuxCart (1 November 2026).** Follow `docs/design/2026-11-01-luxcart.md` and last-loaded `public/luxcart.css`. Existing Gentelella color statements below are historical and no longer define the palette, typography, spacing, radius or icon treatment. All 31 October navigation semantics, Thai workflow accessibility, tenancy and financial correctness remain mandatory.
+
 <!-- impeccable:design-system 1 -->
 
 **Mode:** Operate. This is a work surface for station staff, not a promotional dashboard.

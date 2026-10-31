@@ -1,0 +1,40 @@
+name: LuxCart Local Preview Browser
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'index.html'
+      - 'src/client/**'
+      - 'e2e/luxcart.local.pw.mjs'
+      - 'playwright.luxcart.config.mjs'
+      - '.github/workflows/luxcart-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visual-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install dependencies without lifecycle scripts
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Bundle the branch being reviewed
+        run: npm run build
+      - name: Install real Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify local LuxCart login, desktop and mobile role-scoped shell
+        run: npx playwright test --config=playwright.luxcart.config.mjs
+      - name: Attach anonymous screenshots and traces only
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: luxcart-anonymous-browser-preview
+          path: |
+            test-results-luxcart/
+            playwright-report-luxcart/
+          retention-days: 14
