@@ -180,8 +180,9 @@ export default {
           // Ordinary production finance remains closed in preview.
           if(qaFinanceEnabled(env)||(
             qaIsEnabled(env)&&
-            ['/api/corporate/drivers','/api/corporate/driver-vehicle',
-             '/api/driver/coupons'].includes(url.pathname))){
+            (['/api/corporate/drivers','/api/corporate/driver-vehicle',
+             '/api/driver/coupons','/api/my-accounts'].includes(url.pathname)||
+             /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(url.pathname)))){
             const result=await createQaOperationsApi({
               env,...createSupabaseAdapter(env)})(request);
             if(result.status!==404)return result;
