@@ -32,6 +32,20 @@ export function qaApprovedAlias({alias,scopeType,roleCode,scopeId},allowed){
   scopeType==='station'?STATION_CODES[i]:'c'+String(i+1).padStart(2,'0');
  return Boolean(prefix)&&alias===prefix+'-'+suffix;
 }
+// Preserve global alias numbering when filtering to a Sales' own branches.
+export function qaVisibleScopes(available,salesIds=null){
+ const prefixes={station:STATION_CODES,organization:['o01','o02','o03','o04']};
+ const visible={};
+ for(const kind of ['platform','organization','station','corporate_company']){
+  const options=(available?.[kind]||[]).map((item,index)=>({
+    ...item,...(prefixes[kind]?.[index]?{aliasPrefix:prefixes[kind][index]}:{})
+  }));
+  visible[kind]=salesIds===null?options:
+    ['station','organization'].includes(kind)?
+    options.filter(x=>(salesIds[kind]||[]).includes(x.id)):[];
+ }
+ return visible;
+}
 const json=(code,body)=>new Response(JSON.stringify(body),{status:code,headers:{
  'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',
 }});
@@ -64,17 +78,25 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
    const user=await authenticate(token);
    if(!UUID.test(user?.id||''))return json(401,{error:'unauthenticated'});
    const memberships=await db.memberships(user.id);
-   if(!memberships?.some(m=>m.active===true&&m.scope_type==='platform'&&
-     m.role_code==='platform_superadmin'))
-    return json(403,{error:'permission_denied'});
+   const isAdmin=memberships?.some(m=>m.active===true&&m.scope_type==='platform'&&
+     m.role_code==='platform_superadmin')===true;
+   const isSales=!isAdmin&&user.isQa===true&&memberships?.some(m=>m.active===true&&
+     m.scope_type==='platform'&&m.role_code==='platform_sales')===true;
+   if(!isAdmin&&!isSales)return json(403,{error:'permission_denied'});
    const permitted=qaScopeAllowlist(env);
    // No scope IDs are accepted outside a pre-approved server allowlist.
    if(permitted.organization.length>4||permitted.station.length>4||permitted.corporate_company.length>12)
     return json(503,{error:'qa_scope_misconfigured'});
+   const salesIds=isSales?await db.qaSalesScopes({
+     actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,allowed:permitted}):null;
+   if(isSales&&(!Array.isArray(salesIds?.station)||
+       !Array.isArray(salesIds?.organization)))
+     return json(503,{error:'qa_scope_unavailable'});
    if(request.method==='GET'){
     if(url.pathname!=='/api/qa/scopes')return json(404,{error:'not_found'});
     const available=await db.qaScopedOptions(permitted);
-    return json(200,{runId:env.OILSTATION_QA_RUN_ID,scopes:available});
+    return json(200,{runId:env.OILSTATION_QA_RUN_ID,
+      scopes:qaVisibleScopes(available,salesIds)});
    }
    if(url.pathname!=='/api/qa/accounts'&&url.pathname!=='/api/qa/reset-password')
     return json(404,{error:'not_found'});
@@ -85,6 +107,7 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
    let body;try{body=JSON.parse(input)}catch{return json(400,{error:'invalid_input'})}
    const {alias,password,scopeType,scopeId,roleCode}=body||{};
    if(url.pathname==='/api/qa/reset-password'){
+    if(!isAdmin)return json(403,{error:'permission_denied'});
     // Existing synthetic account only; never allow a password reset for a
     // real user, or for a QA user belonging to another run.
     if(!ALIAS.test(alias||'')||typeof password!=='string'||
@@ -114,6 +137,9 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
    }
    if(!qaApprovedAlias({alias,scopeType,roleCode,scopeId},permitted))
     return json(400,{error:'qa_alias_not_in_approved_role_matrix'});
+   if(isSales&&(!['station','organization'].includes(scopeType)||
+     !salesIds[scopeType].includes(scopeId)))
+    return json(403,{error:'scope_not_owned_by_sales'});
    const result=await provisionAccount({
     actorId:user.id,qaRunId:env.OILSTATION_QA_RUN_ID,
     alias,password,scopeType,scopeId:scopeType==='platform'?null:scopeId,roleCode,

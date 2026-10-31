@@ -28,7 +28,7 @@ const option=(value,label)=>{
  const node=el('option',label);
  node.value=value;return node;
 };
-export function mountQaAccountsAdmin({target,token}){
+export function mountQaAccountsAdmin({target,token,salesMode=false}){
  if(!target)return;
  target.replaceChildren();
  const box=el('section',null,'os-qa-admin');
@@ -36,7 +36,7 @@ export function mountQaAccountsAdmin({target,token}){
  // The native <details> collapsed during automated/keyboard interaction,
  // leaving test users unable to focus or submit the protected fields.
  const details=el('div',null,'os-qa-expanded');
- details.append(el('h3','บัญชีทดสอบ (เฉพาะผู้ดูแลระบบ)'));
+ details.append(el('h3',salesMode?'สร้างบัญชีทดสอบในปั๊มของฉัน':'บัญชีทดสอบ (เฉพาะผู้ดูแลระบบ)'));
  const explain=el('p','สร้างบัญชีที่ใช้ชื่อผู้ใช้และรหัสผ่านแทนอีเมลจริง พร้อมกำหนดสิทธิ์ตามขอบเขตที่อนุมัติ ไม่มีการส่งคำเชิญหรือยืนยันอีเมล','os-qa-note');
  const status=el('p','','os-qa-status');status.setAttribute('role','status');
  const form=el('form',null,'os-qa-form');
@@ -47,7 +47,9 @@ export function mountQaAccountsAdmin({target,token}){
  password.required=true;password.minLength=16;password.maxLength=128;
  password.autocomplete='new-password';password.placeholder='อย่างน้อย 16 ตัว พร้อมตัวเลขและสัญลักษณ์';
  const scopeType=el('select');scopeType.required=true;scopeType.id='qa-create-scope-type';
- for(const [key,name] of Object.entries({platform:'Platform',organization:'เจ้าของกิจการ',
+ for(const [key,name] of Object.entries(salesMode?
+  {organization:'เจ้าของกิจการ',station:'ปั๊ม'}:
+  {platform:'Platform',organization:'เจ้าของกิจการ',
    station:'ปั๊ม',corporate_company:'บริษัทลูกค้า'}))scopeType.append(option(key,name));
  const role=el('select');role.required=true;role.id='qa-create-role';
  const scope=el('select');scope.required=true;scope.id='qa-create-scope';
@@ -58,8 +60,11 @@ export function mountQaAccountsAdmin({target,token}){
  const reset=el('button','ตั้งรหัสผ่าน QA ใหม่','button secondary');reset.type='button';
  form.append(label('ชื่อบัญชีทดสอบ',username),label('รหัสผ่านทดสอบ',password),
   label('ประเภทสิทธิ์',scopeType),label('บทบาท',role),
-  label('พื้นที่ที่อนุญาต',scope),send,reset);
- const note=el('p','ขอบเขตทดสอบ: Sales 2 คน คนละ 2 ปั๊ม รวม 4 ปั๊ม และลูกค้าปั๊มละ 3 ราย รวม 12 บริษัท แต่ละโหนดใช้บัญชีแยกตามบทบาท รวมบัญชี QA ใหม่สูงสุด 99 บัญชี','os-qa-note');
+  label('พื้นที่ที่อนุญาต',scope),send);
+ if(!salesMode)form.append(reset);
+ const note=el('p',salesMode?
+  'สร้างบัญชีทดสอบได้เฉพาะองค์กรและปั๊มที่ตัวเองเปิดและยังรับผิดชอบ ไม่มีสิทธิ์สร้าง Sales, Support หรือบัญชีบริษัท':
+  'ขอบเขตทดสอบ Sales 2 คน ปั๊มรวม 4 แห่ง บริษัท 12 ราย ข้ามบทบาท Support ตามคำสั่งเจ้าของโครงการ','os-qa-note');
  details.append(explain,form,note,status);box.append(details);target.append(box);
  let scopes={};
  const aliasForSelection=()=>{
@@ -67,8 +72,9 @@ export function mountQaAccountsAdmin({target,token}){
   if(kind==='platform')return role.value==='platform_sales'?'sales01':'support01';
   const idx=(scopes[kind]||[]).findIndex(x=>String(x.id)===scope.value);
   if(idx<0)return '';
-  const prefix=kind==='organization'?'o'+String(idx+1).padStart(2,'0'):
-   kind==='station'?stationCodes[idx]:'c'+String(idx+1).padStart(2,'0');
+  const prefix=(scopes[kind]||[])[idx]?.aliasPrefix||
+   (kind==='organization'?'o'+String(idx+1).padStart(2,'0'):
+    kind==='station'?stationCodes[idx]:'c'+String(idx+1).padStart(2,'0'));
   return prefix&&qaRoleSuffix[kind]?.[role.value]?prefix+'-'+qaRoleSuffix[kind][role.value]:'';
  };
  const suggestAlias=()=>{username.value=aliasForSelection();};
@@ -76,7 +82,11 @@ export function mountQaAccountsAdmin({target,token}){
   const kind=scopeType.value;
   role.replaceChildren(...(roles[kind]||[]).map(([value,name])=>option(value,name)));
   scope.replaceChildren();
-  for(const entry of scopes[kind]||[])scope.append(option(entry.id||'',entry.name));
+  for(const entry of scopes[kind]||[]){
+    const item=option(entry.id||'',entry.name);
+    if(entry.aliasPrefix)item.dataset.aliasPrefix=entry.aliasPrefix;
+    scope.append(item);
+  }
   // Platform has no subordinate UUID: no scope selection is required.
   const available=kind==='platform'||(scopes[kind]||[]).length>0;
   scope.disabled=kind==='platform'||!available;
