@@ -1,4 +1,4 @@
-/** Private 5 MiB evidence intake. Neither photo nor OCR moves any money. */
+/** Private 5 MiB evidence intake. Photos are manually reviewed; upload never moves money. */
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX=5*1024*1024;
 const json=(status,body)=>new Response(JSON.stringify(body),{status,headers:{
@@ -55,7 +55,7 @@ export function createFuelPhotoApi({authenticate,db}){
      contentType:mime,bytes});
    const evidence=await db.recordFuelPhoto({actorId:user.id,sessionId,kind,path});
    // Do not expose a private object path to an unprivileged response.
-   return json(201,{evidence:{evidenceId:evidence.evidenceId,status:'pending_ocr',verified:false}});
+   return json(201,{evidence:{evidenceId:evidence.evidenceId,status:'pending_review',verified:false}});
   }catch(e){
    if(e?.code==='FORBIDDEN')return json(403,{error:'permission_denied'});
    if(e?.code==='INVALID_REQUEST')return json(409,{error:'session_not_fueling'});
