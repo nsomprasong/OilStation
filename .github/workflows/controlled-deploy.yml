@@ -30,12 +30,16 @@ jobs:
       - run: npm test
       - run: npx --yes wrangler@4 deploy --dry-run --outdir .wrangler-dry-run
       - name: Enforce release marker and production approval from main
+        env:
+          RELEASE_TARGET: ${{ inputs.target }}
+          RELEASE_APPROVAL_INPUT: ${{ inputs.production_approval }}
         run: |
+          set -e
           test -f supabase/migrations/20261029215000_release_readiness.sql
           test -f docs/release/2026-10-30-controlled-deploy.md
-          if [ "${{ inputs.target }}" = production ]; then
-            test "${{ github.ref }}" = refs/heads/main
-            test "${{ inputs.production_approval }}" = APPROVED_OILSTATION_PRODUCTION_RELEASE
+          if [ "$RELEASE_TARGET" = production ]; then
+            test "$GITHUB_REF" = refs/heads/main
+            test "$RELEASE_APPROVAL_INPUT" = APPROVED_OILSTATION_PRODUCTION_RELEASE
           fi
   deploy:
     needs: verify
@@ -65,6 +69,10 @@ jobs:
           set -eu
           test -n "$RELEASE_SUPABASE_URL" && test -n "$RELEASE_SERVICE_ROLE_KEY" || {
             echo "::error::Production DB preflight credentials are missing"
+            exit 1
+          }
+          test "$RELEASE_SUPABASE_URL" = "https://cxihsotcpdnalswfoysx.supabase.co" || {
+            echo "::error::Release readiness key must target OilStation production Supabase project"
             exit 1
           }
           case "$RELEASE_SUPABASE_URL" in https://*.supabase.co) ;; *)
