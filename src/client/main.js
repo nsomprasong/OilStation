@@ -15,6 +15,7 @@ import { mountFuelReviewInbox } from './fuel-review.js';
 import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} from './workspace-layout.js';
 import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
+import {mountQaAccountsAdmin} from './qa-accounts.js';
 import {canonicalLandingAfterOAuth} from './oauth-landing.js';
 import {installProgressiveWorkspace} from './progressive-workspace.js';
 
@@ -44,10 +45,28 @@ function platformSetupView(){
  document.getElementById('google').addEventListener('click',()=>login('google'));
  document.getElementById('facebook').addEventListener('click',()=>login('facebook'));
 }
-function guestView(invited){
- show(authMarkup({invited}));
+function guestView(invited,qaMode=false){
+ show(authMarkup({invited,qaMode}));
  document.getElementById('google').addEventListener('click',()=>login('google'));
  document.getElementById('facebook').addEventListener('click',()=>login('facebook'));
+ document.getElementById('qa-login-form')?.addEventListener('submit',async event=>{
+   event.preventDefault();
+   if(!authClient)return message('การเข้าสู่ระบบยังไม่ได้ตั้งค่า','error');
+   const form=event.currentTarget;
+   const alias=document.getElementById('qa-login-alias')?.value?.trim().toLowerCase();
+   const password=document.getElementById('qa-login-password')?.value;
+   if(!/^[a-z][a-z0-9-]{2,30}$/.test(alias||''))return message('กรุณาระบุชื่อบัญชีทดสอบที่ถูกต้อง','error');
+   const button=form.querySelector('button[type="submit"]');
+   button.disabled=true;
+   try{
+     const {error}=await authClient.auth.signInWithPassword({
+       email:'qa-'+alias+'@qa.oilstation.invalid',password,
+     });
+     if(error)return message('ชื่อผู้ใช้หรือรหัสผ่านทดสอบไม่ถูกต้อง','error');
+     location.replace('/');
+   }catch{message('เข้าสู่ระบบทดสอบไม่ได้ กรุณาลองใหม่','error');}
+   finally{button.disabled=false;}
+ });
 }
 async function login(provider) {
   if (!authClient) return message('การเข้าสู่ระบบยังไม่ได้ตั้งค่า', 'error');
@@ -1395,6 +1414,11 @@ function dashboard(data, session, publicConfig={}) {
   }
  };
  if(memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')){
+  if(publicConfig.qaModeEnabled===true){
+    const host=document.createElement('div');host.className='os-qa-admin-host';
+    root.querySelector('.ws-overview-primary')?.prepend(host);
+    mountQaAccountsAdmin({target:host,token:session.access_token});
+  }
   register('stations',()=>platformWorkspace(session.access_token));
   register('activity',()=>mountSalesActivity({target:document.getElementById('platform-sales-activity'),
    token:session.access_token}));
@@ -1623,7 +1647,7 @@ async function boot() {
   } catch { return guestView(false); }
   const { data: {session}, error } = await authClient.auth.getSession();
   if (error) return showError('เข้าสู่ระบบไม่สำเร็จ');
-  if (!session) return setup ? platformSetupView() : guestView(Boolean(invite));
+  if (!session) return setup ? platformSetupView() : guestView(Boolean(invite),cfg.qaModeEnabled===true);
   // The PKCE session is now persisted. A new same-origin document after
   // Google's OAuth callback resets mobile Chrome Custom Tab viewport scaling,
   // which can otherwise show the desktop shell until a manual refresh.
@@ -1661,7 +1685,7 @@ async function boot() {
   if (result.ok) return dashboard(result.data,session,cfg);
   if (result.status===403) {
     await authClient.auth.signOut();
-    return guestView(false);
+    return guestView(false,cfg.qaModeEnabled===true);
   }
   return showError('ไม่สามารถโหลดสิทธิ์ผู้ใช้ได้');
 }

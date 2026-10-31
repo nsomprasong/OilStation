@@ -1,0 +1,101 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createQaAccountsApi,qaIsEnabled} from '../../src/api/qa-accounts.mjs';
+
+const actor='11111111-1111-4111-8111-111111111111';
+const stationA='22222222-2222-4222-8222-222222222222';
+const stationB='33333333-3333-4333-8333-333333333333';
+const stranger='44444444-4444-4444-8444-444444444444';
+const company='55555555-5555-4555-8555-555555555555';
+const run='QA-20261031-MASTER-001';
+const env={
+ OILSTATION_DEPLOY_TARGET:'production',OILSTATION_PREVIEW_LOGIN_ENABLED:'true',
+ OILSTATION_API_ENABLED:'false',OILSTATION_QA_MODE_ENABLED:'true',
+ OILSTATION_QA_RUN_ID:run,OILSTATION_QA_STATION_IDS:stationA+','+stationB,
+ OILSTATION_QA_COMPANY_IDS:company,
+};
+const db={
+ memberships:async()=>[{active:true,scope_type:'platform',role_code:'platform_superadmin'}],
+ qaScopedOptions:async allowed=>Object.fromEntries(Object.entries(allowed).map(([name,ids])=>[
+  name,ids.map(id=>({id,name:'QA '+name})),
+ ])),
+};
+const url='https://oilstation.goldensoft.cloud/api/qa/';
+const pw='StrongQaPassword!123456';
+const account=(body,options={})=>new Request(url+'accounts',{method:'POST',headers:{
+ 'content-type':'application/json',authorization:'Bearer good',
+ origin:options.origin||'https://oilstation.goldensoft.cloud',
+ },body:JSON.stringify(body)});
+const body=(alias='sales01',more={})=>({
+ alias,password:pw,roleCode:'platform_sales',scopeType:'platform',scopeId:null,...more,
+});
+const handler=({settings=env,auth=async()=>({id:actor}),memberships=db.memberships,
+ provision=async a=>({id:actor,alias:a.alias,roleCode:a.roleCode})}={})=>
+ createQaAccountsApi({env:settings,authenticate:auth,
+  db:{...db,memberships},provisionAccount:provision});
+test('QA mode is fail-closed and requires a run id, preview and disabled finance release',()=>{
+ for(const delta of [{OILSTATION_QA_MODE_ENABLED:'false'},{OILSTATION_QA_RUN_ID:''},
+  {OILSTATION_API_ENABLED:'true'},{OILSTATION_DEPLOY_TARGET:'uat'},
+  {OILSTATION_PREVIEW_LOGIN_ENABLED:'false'}]){
+  assert.equal(qaIsEnabled({...env,...delta}),false);
+ }
+ assert.equal(qaIsEnabled(env),true);
+});
+test('Super Admin can create two Sales accounts without public signup/OTP',async()=>{
+ const logged=[];
+ const api=handler({provision:async a=>{logged.push(a);return {alias:a.alias}}});
+ for(const alias of ['sales01','sales02']){
+  const res=await api(account(body(alias)));
+  assert.equal(res.status,201);
+  assert.equal((await res.json()).account.alias,alias);
+ }
+ assert.equal(logged.length,2);
+ assert.equal(logged[0].qaRunId,run);
+ assert.equal(logged[0].actorId,actor);
+ assert.equal(logged[0].password,pw);
+ assert.equal(logged[0].scopeId,null);
+});
+test('cannot create a third Sales, new Super Admin, or unapproved scoped station account',async()=>{
+ const api=handler();
+ assert.equal((await api(account(body('sales03')))).status,400);
+ assert.equal((await api(account(body('sales01',{roleCode:'platform_superadmin'})))).status,400);
+ assert.equal((await api(account(body('station-a',{roleCode:'manager',scopeType:'station',scopeId:stranger})))).status,403);
+ assert.equal((await api(account(body('station-a',{roleCode:'manager',scopeType:'station',scopeId:stationA})))).status,201);
+ assert.equal((await api(account(body('customer-a',{roleCode:'corporate_admin',scopeType:'corporate_company',scopeId:company})))).status,201);
+});
+test('rejects disabled mode, missing auth, unauthorized role, invalid password and CSRF',async()=>{
+ assert.equal((await handler({settings:{...env,OILSTATION_QA_MODE_ENABLED:'false'}})(account(body()))).status,404);
+ const api=handler();
+ assert.equal((await api(new Request(url+'scopes'))).status,401);
+ assert.equal((await handler({memberships:async()=>[{scope_type:'platform',role_code:'platform_sales',active:true}]})(account(body()))).status,403);
+ assert.equal((await api(account(body('sales01',{password:'weak'})))).status,400);
+ assert.equal((await api(account(body(),{origin:'https://evil.invalid'}))).status,403);
+});
+test('all QA user options must be inside exact pre-approved scope allowlists',async()=>{
+ const api=handler();
+ const res=await api(new Request(url+'scopes',{headers:{authorization:'Bearer good'}}));
+ assert.equal(res.status,200);
+ const scopes=(await res.json()).scopes;
+ assert.equal(scopes.station.length,2);
+ assert.equal(scopes.corporate_company.length,1);
+ const misconfigured=handler({settings:{...env,OILSTATION_QA_STATION_IDS:[stationA,stationB,stranger].join(',')}});
+ assert.equal((await misconfigured(account(body()))).status,503);
+});
+test('new QA users use confirmed Supabase Auth admin user with real membership, never browser service key',()=>{
+ const adapter=readFileSync(new URL('../../src/adapters/supabase.mjs',import.meta.url),'utf8');
+ const worker=readFileSync(new URL('../../src/worker.mjs',import.meta.url),'utf8');
+ const client=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../../src/client/auth-screen.js',import.meta.url),'utf8');
+ const plan=readFileSync(new URL('../../docs/qa/plans/2026-10-31-oilstation-master-uat.md',import.meta.url),'utf8');
+ for(const term of ['auth.admin.createUser','email_confirm:true',
+   'oilstation_qa_run_id','auth.admin.deleteUser','/rest/v1/memberships',
+   '/rest/v1/app_users','/rest/v1/audit_events','user.app_metadata?.oilstation_qa===true'])
+  assert.ok(adapter.includes(term),term);
+ assert.ok(worker.includes('qaIsEnabled(env)'));
+ assert.ok(client.includes('signInWithPassword'));
+ assert.ok(html.includes('qaMode&&!setup&&!invited'));
+ assert.match(plan,/Exactly two QA stations/);
+ assert.match(plan,/Exactly two QA platform sales accounts/);
+ assert.doesNotMatch(worker,/OILSTATION_QA_MODE_ENABLED\s*=\s*'true'/);
+});

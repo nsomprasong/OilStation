@@ -1,0 +1,17 @@
+/* Only visible when the trusted Worker explicitly enables QA mode. */
+.os-qa-login,.os-qa-admin{margin-top:14px;padding:13px 14px;border:1px solid #c6ddd7;
+ border-radius:14px;background:#f7fbf9;color:#174d49}
+.os-qa-login summary,.os-qa-admin summary{cursor:pointer;font-weight:750;font-size:14px;
+ padding:7px 2px;min-height:38px}
+.os-qa-login summary:focus-visible,.os-qa-admin summary:focus-visible{outline:3px solid #048a70;outline-offset:2px}
+.os-qa-form{display:grid;gap:12px;margin:12px 0;min-width:0}
+.os-qa-form label{display:grid;gap:5px;font-size:13px;font-weight:650;color:#285c57}
+.os-qa-form input,.os-qa-form select{width:100%;min-width:0;border:1px solid #91b6ae;
+ background:#fff;border-radius:10px;min-height:44px;padding:9px 12px;
+ color:#162f2d;font:inherit}
+.os-qa-form button{min-height:44px}
+.os-qa-note,.os-qa-status{font-size:12px;line-height:1.55;color:#54736f;margin:8px 0}
+.os-qa-admin-host{width:100%;max-width:760px}
+.os-qa-admin-host .os-qa-form{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.os-qa-admin-host .os-qa-form button{align-self:end}
+@media(max-width:540px){.os-qa-login,.os-qa-admin{padding:10px}.os-qa-admin-host .os-qa-form{grid-template-columns:1fr}}

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {authMarkup} from '../../src/client/auth-screen.js';
 const source=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');
-const guest=source.slice(source.indexOf('function guestView(invited)'),source.indexOf('async function login(provider)'));
+const guest=source.slice(source.indexOf('function guestView(invited,qaMode=false)'),source.indexOf('async function login(provider)'));
 test('login OAuth actions and first-admin link remain visible without an invitation',()=>{
  const html=authMarkup();
  assert.match(html,/id="google"/);
