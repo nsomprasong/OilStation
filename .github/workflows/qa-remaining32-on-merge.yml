@@ -1,0 +1,52 @@
+name: QA 32 remaining Station and Organization roles - read-only Chrome
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/qa-remaining32-on-merge.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: oilstation-qa-32-remaining-roles-readonly
+  cancel-in-progress: false
+jobs:
+  station-organization-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_REMAINING32_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Wait for exact main commit to deploy to locked production preview
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push") | .conclusion' | head -1)"
+            if [ "$result" = success ]; then echo 'Same-commit preview deployed'; exit 0; fi
+            if [ "$result" = failure ] || [ "$result" = cancelled ]; then
+              echo '::error::Preview deploy failed'; exit 1
+            fi
+            sleep 10
+          done
+          echo '::error::Matching preview deploy unconfirmed'; exit 1
+      - name: Fail closed without both fixed QA credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OILSTATION_QA_SALES01_PASSWORD" || { echo '::error::Missing Sales01 QA secret'; exit 1; }
+          test -n "$OILSTATION_QA_SALES02_PASSWORD" || { echo '::error::Missing Sales02 QA secret'; exit 1; }
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Real Chromium authentication and role read-only checks for 32 QA accounts
+        run: npm run test:e2e -- --grep '@qa-remaining32' --reporter=list
