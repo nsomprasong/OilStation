@@ -35,6 +35,13 @@ BEGIN
  VALUES(corp_admin,'corporate_company','corporate_admin',comp1,true);
  INSERT INTO public.memberships(user_id,scope_type,role_code,active)
  VALUES(sales,'platform','platform_sales',true);
+ INSERT INTO public.sales_station_creation_requests(station_id,actor_id)
+ VALUES(s1,sales),(s2,sales);
+ INSERT INTO public.sales_assignments(station_id,sales_user_id,effective_from,effective_until)
+ VALUES(s1,sales,clock_timestamp()-interval '1 day',NULL),
+       (s2,sales,clock_timestamp()-interval '1 day',NULL);
+ IF NOT public.oilstation_sales_owns_scope(sales,'station',s1)
+ THEN RAISE EXCEPTION 'Sales ownership fixture missing';END IF;
 
  -- Neither a real invitation nor synthetic QA account may be created by Sales.
  blocked:=false;
