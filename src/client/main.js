@@ -771,7 +771,7 @@ async function stationFinanceWorkspace(token,stationId,target) {
   await load();
 }
 
-async function stationCorporateWorkspace(accessToken,stationId,target) {
+async function stationCorporateWorkspace(accessToken,stationId,target,{qaMode=false}={}) {
   if (!target) return;
   target.innerHTML = `
     <div class="divider"></div><h2>ลูกค้าบริษัท</h2>
@@ -780,7 +780,7 @@ async function stationCorporateWorkspace(accessToken,stationId,target) {
       <label class="field">ชื่อบริษัทลูกค้า <input id="customer-name" maxlength="200" required placeholder="เช่น บริษัท ขนส่ง จำกัด"></label>
       <label class="field">เลขประจำตัวผู้เสียภาษี (ถ้ามี) <input id="customer-tax" inputmode="numeric" maxlength="13" placeholder="13 หลัก"></label>
       <label class="field">อีเมลผู้ดูแลคนแรก <input id="customer-email" type="email" required maxlength="320" placeholder="admin@company.com"></label>
-      <label class="field">เครดิตเทอม (วัน) <input id="customer-terms" type="number" min="0" max="365" value="30" required></label>
+      <label class="field">เครดิตเทอม (วัน) <input id="customer-terms" type="number" min="0" max="365" value="${qaMode?'0':'30'}" required></label>
       <label class="field">กำหนดวันครบกำหนด <select id="customer-due">
         <option value="per_fill">นับจากแต่ละรายการเติม</option>
         <option value="statement">สรุปยอดตามรอบบิล</option>
@@ -1540,7 +1540,7 @@ function dashboard(data, session, publicConfig={}) {
  }
  if(station){
   register('fuel',()=>fuelPriceEditor(session.access_token,station.stationId,document.getElementById('station-fuel-workspace')));
-  register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace')));
+  register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace'),{qaMode:publicConfig.qaModeEnabled===true}));
   register('invitations',()=>document.getElementById('member-invites')?.appendChild(
    createInviteControl(session.access_token,'station',station.stationId,
     [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม']])));

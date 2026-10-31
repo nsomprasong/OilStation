@@ -25,6 +25,7 @@ import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 import { createSupabaseConnectivityProbe } from './api/supabase-connectivity.mjs';
 import {createQaAccountsApi,qaIsEnabled} from './api/qa-accounts.mjs';
+import {createQaCorporatePreviewApi} from './api/qa-corporate-preview.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -132,6 +133,18 @@ export default {
           '/api/platform/billing/tax','/api/platform/billing/flat-plan',
           '/api/platform/billing/bundle-plan','/api/platform/billing/archive-plan',
           '/api/platform/billing/plan-editor','/api/platform/billing/edit-plan']);
+        if(url.pathname==='/api/station/customers' && qaIsEnabled(env)){
+          try{
+            const adapter=createSupabaseAdapter(env);
+            return createQaCorporatePreviewApi({
+              env,authenticate:adapter.authenticate,db:adapter.db,
+            })(request);
+          }catch{
+            return new Response(JSON.stringify({error:'qa_company_unavailable'}),{
+              status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+            });
+          }
+        }
         const stationPages=new Set(['/api/fuel-brands',
           '/api/platform/stations','/api/platform/create-station',
           '/api/platform/sales/stations','/api/platform/sales/create-station',
