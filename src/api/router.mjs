@@ -5,6 +5,7 @@ const LIMIT_BYTES = 16_384;
 const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST',
   '/api/invitations/email-challenge':'POST', '/api/invitations/email-confirm':'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
   '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST',
+  '/api/platform/sales/stations': 'GET', '/api/platform/sales/create-station': 'POST',
   '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST',
   '/api/invitations/create': 'POST',
   '/api/station/customers': 'POST', '/api/station/link-company': 'POST',
@@ -370,12 +371,19 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       if (path === '/api/fuel-brands') {
         return json(200, { brands: await db.fuelBrands() });
       }
-      if (path === '/api/platform/stations' || path === '/api/platform/create-station') {
+      if (['/api/platform/stations','/api/platform/create-station',
+            '/api/platform/sales/stations','/api/platform/sales/create-station'].includes(path)) {
+        const forSales=path.startsWith('/api/platform/sales/');
         const platformAdmin = active.some(m => m.scope_type === 'platform'
           && m.role_code === 'platform_superadmin');
-        if (!platformAdmin) return fail(403, 'permission_denied');
-        if (path === '/api/platform/stations') {
-          return json(200, { stations: await db.platformStations(user.id) });
+        const platformSales = active.some(m => m.scope_type === 'platform'
+          && m.role_code === 'platform_sales');
+        // Sales self-onboarding is NOT a shortcut to the Super Admin API.
+        if(forSales?!platformSales:!platformAdmin) return fail(403,'permission_denied');
+        if(path==='/api/platform/stations'||path==='/api/platform/sales/stations'){
+          const stations=forSales?await db.salesStations(user.id):
+            await db.platformStations(user.id);
+          return json(200,{stations});
         }
         if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) {
           return fail(415, 'unsupported_media_type');
@@ -390,6 +398,22 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           || typeof body.modules?.hrPayroll !== 'boolean'
           || (!body.modules.qrCoupon && !body.modules.hrPayroll)) {
           return fail(400, 'invalid_station');
+        }
+        if(forSales){
+          if(typeof body.requestId!=='string'||!UUID.test(body.requestId))
+            return fail(400,'invalid_request_id');
+          if(Object.keys(body).some(k=>!['organizationName','stationName',
+           'brandCode','modules','requestId'].includes(k)) ||
+           Object.keys(body.modules).some(k=>!['qrCoupon','hrPayroll'].includes(k)))
+            return fail(400,'invalid_station');
+          const station=await db.salesCreateStation({
+            actorId:user.id,requestId:body.requestId,
+            organizationName:body.organizationName.trim(),
+            stationName:body.stationName.trim(),brandCode:body.brandCode,
+            qrCoupon:body.modules.qrCoupon,hrPayroll:body.modules.hrPayroll,
+            maxStations:user.isQa===true?2:null,
+          });
+          return json(station.replayed===true?200:201,{station});
         }
         return json(201, { station: await db.createStation({
           actorId: user.id, organizationName: body.organizationName.trim(),
@@ -499,6 +523,7 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       // Do not leak SQL details, bank/account references, keys, or stack traces.
       if (error && typeof error === 'object' && error.code === 'INSUFFICIENT_FUNDS') return fail(409, 'insufficient_funds');
       if (error && typeof error === 'object' && error.code === 'FORBIDDEN') return fail(403, 'permission_denied');
+      if (error?.code==='SALES_STATION_LIMIT_REACHED') return fail(409,'sales_station_limit_reached');
       if (error && typeof error === 'object' && error.code === 'INVALID_REQUEST') return fail(400, 'invalid_coupon_request');
       if (error && typeof error === 'object' && error.code === 'INVITE_INVALID') return fail(400, 'invalid_or_expired_invitation');
       if (error && typeof error === 'object' && error.code === 'EMAIL_PROVIDER_UNAVAILABLE') return fail(503, 'email_provider_unavailable');

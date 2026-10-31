@@ -130,6 +130,7 @@ export default {
           '/api/platform/billing/plan-editor','/api/platform/billing/edit-plan']);
         const stationPages=new Set(['/api/fuel-brands',
           '/api/platform/stations','/api/platform/create-station',
+          '/api/platform/sales/stations','/api/platform/sales/create-station',
           '/api/invitations/create','/api/invitations/accept',
           '/api/invitations/email-challenge','/api/invitations/email-confirm',
           '/api/station-fuels','/api/station-fuel-config']);

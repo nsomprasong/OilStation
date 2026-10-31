@@ -1255,7 +1255,7 @@ async function stationPumpWorkspace(token,stationId,target,canReview=false) {
 
 }
 
-async function platformWorkspace(accessToken) {
+async function platformWorkspace(accessToken,{salesMode=false}={}) {
   const target=document.getElementById('platform-workspace');
   if (!target) return;
 
@@ -1263,8 +1263,8 @@ async function platformWorkspace(accessToken) {
     <div class="os-station-layout">
       <section class="os-create-station" aria-labelledby="os-create-heading">
         <span class="os-onboarding-label">ขั้นตอนที่ 1 / ข้อมูลปั๊ม</span>
-        <h3 id="os-create-heading">สร้างปั๊มน้ำมัน</h3>
-        <p class="os-section-copy">กรอกข้อมูลสาขาและเลือกบริการ ยังไม่ต้องเลือกแพ็กเกจราคา</p>
+        <h3 id="os-create-heading">${salesMode?'เปิดปั๊มใหม่ของฉัน':'สร้างปั๊มน้ำมัน'}</h3>
+        <p class="os-section-copy">${salesMode?'ระบบจะบันทึกคุณเป็น Sales ผู้เปิดปั๊มและเริ่มรับผิดชอบค่าคอมมิชชั่นทันที โดยยังไม่ให้สิทธิ์เป็นเจ้าของปั๊ม':'กรอกข้อมูลสาขาและเลือกบริการ ยังไม่ต้องเลือกแพ็กเกจราคา'}</p>
         <form class="coupon-form" id="new-station-form">
           <label class="field">ชื่อองค์กร / เจ้าของกิจการ
             <input id="org-name" autocomplete="organization" maxlength="160" required placeholder="เช่น บริษัท ตัวอย่าง จำกัด"></label>
@@ -1282,9 +1282,9 @@ async function platformWorkspace(accessToken) {
         </form>
       </section>
       <section class="os-station-directory" aria-labelledby="os-directory-heading">
-        <span class="os-onboarding-label">ขั้นตอนที่ 2 / เชิญเจ้าของปั๊ม</span>
-        <h3 id="os-directory-heading">ปั๊มที่สร้างแล้ว</h3>
-        <p class="os-section-copy">เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง</p>
+        <span class="os-onboarding-label">${salesMode?'ขั้นตอนที่ 2 / ตรวจสอบปั๊มของฉัน':'ขั้นตอนที่ 2 / เชิญเจ้าของปั๊ม'}</span>
+        <h3 id="os-directory-heading">${salesMode?'ปั๊มที่ฉันรับผิดชอบ':'ปั๊มที่สร้างแล้ว'}</h3>
+        <p class="os-section-copy">${salesMode?'แต่ละปั๊มเชื่อมกับบัญชี Sales ที่เปิดปั๊มโดยอัตโนมัติ ส่วนการเชิญเจ้าของปั๊มและการตั้งราคาต้องดำเนินการโดยผู้มีสิทธิ์':'เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง'}</p>
         <p id="station-count" class="os-directory-count" role="status"></p>
         <div id="station-list" class="module-list"><p>กำลังโหลดรายชื่อปั๊ม…</p></div>
       </section>
@@ -1298,7 +1298,7 @@ async function platformWorkspace(accessToken) {
     el('platform-notice').dataset.tone=error?'error':'neutral';
   };
   async function loadStations(){
-    const r=await getApi('/api/platform/stations',accessToken);
+    const r=await getApi(salesMode?'/api/platform/sales/stations':'/api/platform/stations',accessToken);
     if (!r.ok) throw new Error('station_list_failed');
     const list=el('station-list');
     list.replaceChildren();
@@ -1314,6 +1314,11 @@ async function platformWorkspace(accessToken) {
       detail.classList.add('os-station-card-meta');
       detail.textContent=s.organizationName+' · '+s.brandName+' · '+Object.entries(s.modules||{})
         .filter(([,status])=>status==='enabled').map(([module])=>module==='qr_coupon'?'QR Coupon':'HR').join(' + ');
+      if(salesMode){
+        const hint=document.createElement('p');hint.className='hint';
+        hint.textContent='ผูกกับบัญชี Sales ของคุณแล้ว · ผู้ดูแลสามารถเชิญเจ้าของปั๊มเพื่อเริ่มใช้งาน';
+        node.append(name,detail,hint);list.appendChild(node);continue;
+      }
       const manage=document.createElement('button');
       manage.type='button';manage.className='button secondary';
       manage.textContent='จัดการน้ำมัน';
@@ -1344,7 +1349,11 @@ async function platformWorkspace(accessToken) {
     });
     await loadStations();
   } catch { notice('เชื่อมต่อข้อมูลปั๊มไม่สำเร็จ',true); }
-  el('new-station-form').addEventListener('submit',async(e)=>{
+  let creationRequestId=null;
+  const newStationForm=el('new-station-form');
+  newStationForm.addEventListener('input',()=>{creationRequestId=null;});
+  newStationForm.addEventListener('change',()=>{creationRequestId=null;});
+  newStationForm.addEventListener('submit',async(e)=>{
     e.preventDefault();
     const data={organizationName:el('org-name').value.trim(),
       stationName:el('station-name').value.trim(),
@@ -1353,10 +1362,16 @@ async function platformWorkspace(accessToken) {
     if (!data.modules.qrCoupon&&!data.modules.hrPayroll) return notice('เลือกเปิดใช้งานอย่างน้อยหนึ่งโมดูล',true);
     const btn=el('new-station-submit');btn.disabled=true;notice('กำลังสร้างปั๊ม…');
     try{
-      const r=await getApi('/api/platform/create-station',accessToken,
+      if(salesMode){
+        creationRequestId ||= crypto.randomUUID();
+        data.requestId=creationRequestId;
+      }
+      const endpoint=salesMode?'/api/platform/sales/create-station':'/api/platform/create-station';
+      const r=await getApi(endpoint,accessToken,
         {method:'POST',body:JSON.stringify(data)});
       if(!r.ok) return notice('ไม่สามารถสร้างปั๊มได้ ('+responseError(r.data)+')',true);
-      notice('สร้างปั๊มเรียบร้อย เตรียมรายการน้ำมัน '+r.data.station.fuelProductsStaged+' รายการ (ยังไม่เปิดขาย)');
+      notice((salesMode?'เปิดปั๊มและผูกสิทธิค่าคอมมิชชั่นกับบัญชีของคุณแล้ว':'สร้างปั๊มเรียบร้อย')+' เตรียมรายการน้ำมัน '+r.data.station.fuelProductsStaged+' รายการ (ยังไม่เปิดขาย)');
+      creationRequestId=null;
       el('new-station-form').reset();
       await loadStations();
     }catch{notice('ขัดข้องระหว่างสร้างปั๊ม กรุณาตรวจสอบรายการก่อนกดซ้ำ',true);}
@@ -1428,6 +1443,9 @@ function dashboard(data, session, publicConfig={}) {
   register('billing',()=>mountPlatformSaasBilling({
    target:document.getElementById('platform-saas-billing'),token:session.access_token}));
  }
+ if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
+    memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales'))
+   register('stations',()=>platformWorkspace(session.access_token,{salesMode:true}));
  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
     memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_sales'))
    register('sales',()=>mountPlatformSales({target:document.getElementById('platform-sales-workspace'),

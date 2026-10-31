@@ -73,7 +73,7 @@ test('Sales inspection is not impersonation and displays no financial controls',
  const main=file('src/client/main.js');
  assert.match(main,/register\('activity'/);
  const screens=selectWorkspaceScreens([{scopeType:'platform',role:'platform_sales'}]).map(s=>s.key);
- assert.deepEqual(screens,['overview','sales','activity']);
+ assert.deepEqual(screens,['overview','sales','activity','stations']);
  assert.doesNotMatch(JSON.stringify(screens),/billing|finance/);
 });
 test('audit is dense 3-column table with compact mobile rows and no raw JSON diff',()=>{
