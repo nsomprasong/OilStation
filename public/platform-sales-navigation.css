@@ -20,7 +20,19 @@
 #app.workspace-mode .os-sales-head p{margin:0;color:#658189;font-size:13px}
 #app.workspace-mode .os-sales-head .button{width:auto;margin:0}
 #app.workspace-mode .os-sales-panel{background:#fff;border:1px solid #d9e8e5;border-radius:16px;padding:clamp(15px,2.5vw,23px);min-width:0}
-#app.workspace-mode .os-sales-panel[hidden]{display:none!important}
+#app.workspace-mode .os-sales-panel[hidden],
+#app.workspace-mode .os-sales-subsection[hidden],
+#app.workspace-mode .os-sales-grid[hidden],
+#app.workspace-mode .os-sales-transfer[hidden],
+#app.workspace-mode .os-sales-secondary[hidden]{display:none!important}
+#app.workspace-mode .os-sales-subsection{margin-top:14px;min-width:0}
+#app.workspace-mode .os-sales-subsection>h4{color:#1b5050;font-size:14px;margin:0 0 10px}
+#app.workspace-mode .os-sales-disclosure{margin-top:16px;border-top:1px solid #e2ece9;padding-top:12px}
+#app.workspace-mode .os-sales-disclosure summary{cursor:pointer;min-height:44px;display:flex;align-items:center;
+ color:#145e57;font-size:13px;font-weight:750;list-style-position:inside}
+#app.workspace-mode .os-sales-disclosure summary:focus-visible{outline:3px solid #0c977e;outline-offset:2px}
+#app.workspace-mode .os-sales-back{width:auto!important;max-width:100%;margin:0 0 12px!important;min-height:40px}
+#app.workspace-mode .os-sales-subsection .os-inspection{margin-top:0}
 #app.workspace-mode .os-sales-panel>h4{color:#1b5050;font-size:16px;margin:0 0 13px}
 #app.workspace-mode .os-sales-secondary{font-size:12px;color:#617e86;line-height:1.7}
 #app.workspace-mode .os-sales-status{font-size:13px;color:#147467;min-height:20px;margin:3px 0}

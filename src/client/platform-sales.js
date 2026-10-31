@@ -10,20 +10,22 @@ export function mountPlatformSales({target,token,inviteControl}){
  const root=make('div','os-sales-workspace');
  const head=make('div','os-sales-head');
  head.append(make('h3','ทีมขายและการดูแลลูกค้า'),
-  make('p','ดูปั๊มที่ดูแล รายงานค่าคอมมิชชั่นที่บันทึกไว้ และประวัติการโอนงาน'));
+  make('p','จัดการทีมขายและผู้ดูแลปั๊ม พร้อมดูยอดค่าคอมมิชชั่นที่บันทึกจริง (ยังไม่ใช่ยอดอนุมัติจ่าย)'));
  const reload=make('button','button secondary','รีเฟรช');reload.type='button';head.append(reload);root.append(head);
  const status=make('p','os-sales-status');status.setAttribute('role','status');root.append(status);
- const inviteArea=make('section','os-sales-panel');inviteArea.append(make('h4','','เชิญเซลล์เข้าสู่ระบบ'));
+ const inviteArea=make('section','os-sales-subsection');inviteArea.hidden=true;inviteArea.append(make('h4','','เชิญเซลล์เข้าสู่ระบบ'));
  const team=make('section','os-sales-panel'),assignment=make('section','os-sales-panel');
  const transfer=make('section','os-sales-panel'),commission=make('section','os-sales-panel');
- const collected=make('section','os-sales-panel');
- const history=make('section','os-sales-panel');
- const inspectionPanel=make('section','os-sales-panel');
+ // Do not show admin-only controls while workspace authorization is loading.
+ team.hidden=true;transfer.hidden=true;
+ const collected=make('section','os-sales-subsection');
+ const history=make('section','os-sales-subsection');
+ const inspectionPanel=make('section','os-sales-subsection');
  inspectionPanel.hidden=true;
  const title=(node,title)=>node.append(make('h4','',title));
  title(team,'ทีมขาย');title(assignment,'ปั๊มที่รับผิดชอบ');
- title(transfer,'ย้ายการดูแลปั๊ม');title(collected,'ลูกค้าที่ชำระค่าบริการแล้ว');
- title(commission,'รายงานค่าคอมมิชชั่น');title(history,'ประวัติการดูแล');
+ title(transfer,'ย้ายการดูแลปั๊ม');
+ title(commission,'ค่าคอมมิชชั่นที่บันทึกจริง');
  addText(collected,'แสดงเฉพาะลูกค้าที่มีใบแจ้งหนี้ชำระแล้วและมีรายการค่าคอมมิชชั่นที่ผูกกับเซลล์');
  const summary=make('p','os-sales-secondary','แสดงยอดตามข้อมูลที่บันทึกจริง ไม่ใช่ยอดอนุมัติจ่าย');
  commission.append(summary);
@@ -38,10 +40,30 @@ export function mountPlatformSales({target,token,inviteControl}){
  const transferHint=make('p','os-sales-secondary','การเปลี่ยนผู้ดูแลมีผลเที่ยงคืนวันถัดไปตามเวลาของปั๊ม ไม่แก้ค่าคอมมิชชั่นย้อนหลัง');
  const save=make('button','button primary','ยืนยันการย้ายการดูแล');save.type='submit';
  const outcome=make('p','os-sales-status');outcome.setAttribute('role','status');
- form.append(stationLabel,salesLabel,reasonLabel,transferHint,save,outcome);transfer.append(form);
- root.append(inviteArea,team,assignment,transfer,inspectionPanel,collected,commission,history);target.append(root);
+ const noTransfer=make('p','os-sales-secondary');noTransfer.hidden=true;
+ form.append(stationLabel,salesLabel,reasonLabel,transferHint,save,outcome);transfer.append(noTransfer,form);
+ const soldDetails=make('details','os-sales-disclosure');
+ soldDetails.append(make('summary','','ลูกค้าที่มีการชำระค่าบริการแล้ว'),collected);
+ const historyDetails=make('details','os-sales-disclosure');
+ historyDetails.append(make('summary','','ดูประวัติการมอบหมายและโอนงาน'),history);
+ team.insertBefore(inviteArea,teamList);
+ assignment.append(inspectionPanel);
+ transfer.append(historyDetails);
+ commission.append(soldDetails);
+ // Four task panes only; subordinate details and inspection stay inside their parent task.
+ root.append(team,assignment,transfer,commission);target.append(root);
  const inspection=mountSalesInspection({target:inspectionPanel,token});
- let data=null,busy=false;
+ const backToStations=make('button','button secondary os-sales-back','กลับรายการปั๊ม');
+ backToStations.type='button';inspectionPanel.prepend(backToStations);
+ const openStation=id=>{
+  careList.hidden=true;inspectionPanel.hidden=false;
+  inspection.openStation(id);
+ };
+ backToStations.addEventListener('click',()=>{
+  inspection.close();inspectionPanel.hidden=true;careList.hidden=false;
+  assignment.querySelector('h4')?.focus?.();
+ });
+ let data=null,busy=false,firstLoad=true;
  const card=(title,details=[])=>{
   const node=make('article','os-sales-card');node.append(make('strong','',title));
   for(const detail of details)node.append(make('p','',detail));
@@ -61,10 +83,10 @@ export function mountPlatformSales({target,token,inviteControl}){
    if(!response.ok)throw new Error(payload.error||'unknown');
    data=payload.result;
    const isAdmin=data.isAdmin===true;
-   inviteArea.hidden=!isAdmin;transfer.hidden=!isAdmin;
+   team.hidden=!isAdmin;inviteArea.hidden=!isAdmin;transfer.hidden=!isAdmin;
    teamList.replaceChildren();careList.replaceChildren();moneyList.replaceChildren();historyList.replaceChildren();collectedList.replaceChildren();
    const people=data.people||[], assignments=data.assignments||[],money=data.commissions||[];
-   if(!people.length)empty(teamList,isAdmin?'ยังไม่มีเซลล์ที่ยืนยันคำเชิญ':'ยังไม่มีข้อมูลบัญชีเซลล์');
+   if(!people.length)empty(teamList,isAdmin?'ยังไม่มีเซลล์ที่ตอบรับคำเชิญ กรุณาใช้ปุ่มเชิญสมาชิกด้านบน เมื่อเซลล์ตอบรับแล้วจึงมอบหมายปั๊มได้':'คุณยังไม่ได้รับงานที่มอบหมาย');
    for(const p of people){
     const active=assignments.filter(a=>a.salesId===p.id&&a.isCurrent).length;
     const upcoming=assignments.filter(a=>a.salesId===p.id&&a.isUpcoming).length;
@@ -78,9 +100,7 @@ export function mountPlatformSales({target,token,inviteControl}){
     if(a.isCurrent){
       const open=make('button','button secondary','เปิดหน้าปั๊ม');
       open.type='button';open.setAttribute('aria-label','ตรวจสอบปั๊ม '+a.stationName);
-      open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(a.stationId);
-       target.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',
-        {bubbles:true,detail:{key:'inspection'}}));});
+      open.addEventListener('click',()=>openStation(a.stationId));
       c.append(open);
     }
     careList.append(c);
@@ -90,9 +110,7 @@ export function mountPlatformSales({target,token,inviteControl}){
     for(const s of data.stations.filter(s=>!known.has(s.id))){
      const c=card(s.name||'ปั๊ม',[s.organization||'','ข้อมูลการดำเนินงาน · ดูอย่างเดียว']);
      const open=make('button','button secondary','เปิดหน้าปั๊ม');
-     open.type='button';open.addEventListener('click',()=>{inspectionPanel.hidden=false;inspection.openStation(s.id);
-      target.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',
-       {bubbles:true,detail:{key:'inspection'}}));});
+     open.type='button';open.addEventListener('click',()=>openStation(s.id));
      c.append(open);careList.append(c);
     }
    }
@@ -100,20 +118,29 @@ export function mountPlatformSales({target,token,inviteControl}){
    if(!sold.length)empty(collectedList,'ยังไม่มีลูกค้าที่มีหลักฐานชำระและรายการค่าคอมมิชชั่นเชื่อมโยง');
    for(const c of sold)collectedList.append(card(c.stationName||'ปั๊ม',
     [c.organization||'', 'จำนวนใบแจ้งหนี้ชำระแล้ว: '+c.paidInvoices,
-     isAdmin?'เซลล์ ID: '+c.salesId:'']));
+     isAdmin?'ผู้ดูแล: '+(people.find(p=>p.id===c.salesId)?.name||people.find(p=>p.id===c.salesId)?.email||'ไม่พบชื่อ'):'']));
    if(!money.length)empty(moneyList,'ยังไม่มีรายการค่าคอมมิชชั่นที่บันทึกไว้');
    for(const m of money)moneyList.append(card(m.stationName||'ปั๊ม',
     ['สิทธิค่าคอมมิชชั่นที่บันทึก: '+baht(m.entitlementSatang),
      'ยอดรายการในบัญชีค่าคอมมิชชั่น: '+baht(m.recordedLedgerSatang),
      'จำนวนรายการสิทธิ: '+m.entitlementCount,
-     isAdmin?'เซลล์ ID: '+m.salesId:'']));
+     isAdmin?'ผู้ดูแล: '+(people.find(p=>p.id===m.salesId)?.name||people.find(p=>p.id===m.salesId)?.email||'ไม่พบชื่อ'):'']));
    if(!assignments.length)empty(historyList,'ยังไม่มีประวัติการมอบหมาย');
    for(const a of assignments)historyList.append(card(a.stationName||'ปั๊ม',
     ['ผู้ดูแล: '+(a.salesName||'—'),'เริ่ม: '+dateTime(a.effectiveFrom),
      'สิ้นสุด: '+(a.effectiveUntil?dateTime(a.effectiveUntil):'ยังไม่กำหนด')]));
    if(isAdmin){
+    const selectedStation=station.value,selectedSales=sales.value;
     options(station,(data.stations||[]).map(s=>[s.id,(s.organization||'')+' / '+s.name]),'เลือกปั๊ม');
     options(sales,people.map(p=>[p.id,p.name||p.email||p.id]),'เลือกเซลล์');
+    if([...station.options].some(o=>o.value===selectedStation))station.value=selectedStation;
+    if([...sales.options].some(o=>o.value===selectedSales))sales.value=selectedSales;
+    const canTransfer=people.length>0&&(data.stations||[]).length>0;
+    form.hidden=!canTransfer;noTransfer.hidden=canTransfer;
+    noTransfer.textContent=people.length===0?
+      'ยังไม่มีเซลล์ที่ตอบรับคำเชิญ: เชิญเซลล์ในเมนูทีมขายก่อนจึงจะย้ายงานได้':
+      'ยังไม่มีปั๊มให้มอบหมาย โปรดสร้างปั๊มก่อน';
+    save.disabled=!canTransfer;
     const pending=data.pendingInvitations||[];
     if(!inviteArea.dataset.initialized){
      inviteArea.dataset.initialized='true';
@@ -126,6 +153,14 @@ export function mountPlatformSales({target,token,inviteControl}){
     if(!pendingLine.isConnected)inviteArea.append(pendingLine);
    }
    status.textContent=isAdmin?'แสดงข้อมูลทีมขายทั้งหมด':'แสดงเฉพาะข้อมูลที่คุณมีสิทธิ์ดู';
+   // First-run onboarding: do not land new platform admins on an empty station list.
+   // Never redirect on refresh, so user's current task and form remain in place.
+   if(firstLoad&&isAdmin&&!people.length){
+    target.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',{
+     bubbles:true,detail:{key:'team'}
+    }));
+   }
+   firstLoad=false;
   }catch{status.textContent='โหลดข้อมูลไม่ได้ กรุณากดรีเฟรช';}
   finally{reload.disabled=false;}
  }
@@ -162,6 +197,7 @@ export function mountPlatformSales({target,token,inviteControl}){
    if(!res.ok){
     outcome.textContent=payload.error==='transfer_already_scheduled'?
      'ปั๊มนี้มีการย้ายงานที่ตั้งเวลาไว้แล้ว โปรดตรวจสอบประวัติก่อน':
+     payload.error==='invalid_sales_transfer'?'ไม่สามารถย้ายให้ผู้ดูแลเดิมหรือข้อมูลไม่ถูกต้อง กรุณาเลือกเซลล์อื่น':
      'โอนงานไม่สำเร็จ กรุณาตรวจสอบสิทธิ์หรือข้อมูล';return;
    }
    reason.value='';outcome.textContent='ตั้งเวลาย้ายงานสำเร็จ มีผลวันที่ '+dateTime(payload.result.effectiveFrom);
