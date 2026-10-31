@@ -1,0 +1,74 @@
+name: OilStation Owner-Triggered Platform QA (temporary)
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-playwright-live-db
+  cancel-in-progress: false
+jobs:
+  authenticated-platform:
+    # Only the repo owner can issue this exact command on the already-merged
+    # PR #34. GitHub runs issue_comment workflows from default branch (main).
+    # Ignore all other issues, PRs, actors, comments and event types.
+    if: >-
+      github.repository == 'nsomprasong/OilStation' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.issue.number == 34 &&
+      github.event.issue.pull_request != null &&
+      github.actor == 'nsomprasong' &&
+      github.event.comment.user.login == 'nsomprasong' &&
+      github.event.comment.author_association == 'OWNER' &&
+      github.event.comment.body == '/qa-playwright-platform-20261031-once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_AUTH_RUN: 'true'
+      OILSTATION_QA_ALLOW_CREATE: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+      OILSTATION_QA_DB_KEY: ${{ secrets.OILSTATION_QA_DB_KEY }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - name: Checkout trusted main only
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Require protected QA runner secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD OILSTATION_QA_DB_KEY OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Missing protected secret: $name"; exit 1; }
+          done
+      - name: Install pinned Node packages and actual Chromium
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Test actual Sales login, browser, API, Supabase and audit
+        run: npm run test:e2e -- --grep '@auth'
+      - name: Encrypt ALL traces/screenshots before uploading artifacts
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf qa-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output qa-evidence.tar.gz.gpg qa-evidence.tar.gz
+          rm -rf qa-evidence.tar.gz playwright-report test-results
+      - name: Store ENCRYPTED QA evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-owner-triggered-platform-qa-encrypted
+          path: qa-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
