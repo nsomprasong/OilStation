@@ -1,4 +1,4 @@
-name: QA fictional pump prices — one-shot web entry on main
+name: QA fictional pump prices — web-entry retry (open editable cards)
 on:
   push:
     branches: [main]
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: oilstation-qa-web-prices-main-once
+  group: oilstation-qa-web-prices-main-retry
   cancel-in-progress: false
 jobs:
   real-qa-station-price-entry:
@@ -51,7 +51,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: oilstation-qa-fuel-prices-main-encrypted
+          name: oilstation-qa-fuel-prices-retry-encrypted
           path: qa-prices-evidence.tar.gz.gpg
           if-no-files-found: error
           retention-days: 14
