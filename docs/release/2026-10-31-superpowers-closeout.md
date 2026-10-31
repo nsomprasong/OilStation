@@ -12,13 +12,15 @@ This closeout checks the existing **Production Preview** and hardens its deploym
 - External HTTP GET from the available read-only browser failed to establish live `/api/health` and `/api/ready`; use the GitHub runner's actual deployment smoke output for the preview. Do not claim a passing direct browser check.
 
 ## Seven Superpowers phases — this *increment* only
-1. **Brainstorm:** identified release bypass risk in auto-deployed preview without a readiness-negative assertion.
-2. **Plan:** add a non-mutating preview config guard, a negative `/api/ready` HTTP check, and regression coverage.
-3. **TDD RED:** added `test/security/production-preview-release-guard.test.mjs`; GitHub Checks [41162792381](https://github.com/nsomprasong/OilStation/actions/runs/41162792381) failed with new expectations prior to implementation.
-4. **Implementation:** validate four preview flags before Wrangler deploy; after deployment, require readiness status 503 and JSON `ready:false`.
+1. **Brainstorm:** identified preview readiness gap, and a controlled-release defect: `wrangler.jsonc` defaults `OILSTATION_API_ENABLED=false`, so an approved production Wrangler deploy using that file would reset the flag back to false (per Cloudflare Wrangler config semantics).
+2. **Plan:** add a non-mutating preview config guard, a negative `/api/ready` HTTP check, regression coverage, and a release-only temporary Wrangler config generated after production approval and preflight.
+3. **TDD RED:** preview regression: GitHub Checks [41162792381](https://github.com/nsomprasong/OilStation/actions/runs/41162792381) failed with new expectations before implementation. Controlled release regression: [41162996926](https://github.com/nsomprasong/OilStation/actions/runs/41162996926) failed on `test/security/controlled-deploy.test.mjs` before the dedicated runtime-config fix.
+4. **Implementation:** validate four preview flags before Preview Wrangler deploy; after Preview deployment, require readiness status 503 and JSON `ready:false`. For independently approved full production release ONLY, generate `wrangler.production-release.json` in CI with `OILSTATION_API_ENABLED=true` and pass it explicitly with `wrangler deploy --config`; leave tracked `wrangler.jsonc` false.
 5. **Debugging:** no real money or customer data used; review any CI issues and correct only proven failures.
 6. **Verification:** requires successful new branch Checks + the seven isolated SQL workflows. A real production-preview smoke run occurs only after reviewed merge and will itself trigger a preview redeployment; record its exact URL and conclusion then.
-7. **Code review:** verify the diff is limited to regression test and preview workflow, with a human PR review before merge. Do not self-certify independent approval.
+7. **Code review:** verify diff only covers regression tests, the two deployment workflows, and this release record, with a human PR review before merge. Do not self-certify independent approval.
+
+The production release config correction is code-only. Neither an actual production release nor the real-world provider gates have been run by this change. Source reference: [Cloudflare Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/) (dashboard vars are overwritten by config on deploy).
 
 ## Gates still requiring external evidence before full go-live
 - **Auth:** invite-only Google/Facebook real logins, invited-email OTP when provider email differs, successful inbox receipt/bounce processing, tenant A/B and revoked-user negative tests.
