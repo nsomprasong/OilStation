@@ -91,40 +91,25 @@ export function createSupabaseAdapter(env) {
       });
       if(error||!data?.user?.id)throw new Error('qa_auth_provision_failed');
       const id=data.user.id;
-      let membershipWritten=false;
       try{
-        await serviceRequest(env,'/rest/v1/app_users',{
-          method:'POST',headers:{'content-type':'application/json',prefer:'return=representation'},
-          body:JSON.stringify({id,email,display_name:'QA '+alias,status:'active'}),
-        });
-        const row={user_id:id,role_code:roleCode,scope_type:scopeType,active:true};
-        if(scopeType==='organization')row.organization_id=scopeId;
-        if(scopeType==='station')row.station_id=scopeId;
-        if(scopeType==='corporate_company')row.corporate_company_id=scopeId;
-        await serviceRequest(env,'/rest/v1/memberships',{
-          method:'POST',headers:{'content-type':'application/json',prefer:'return=representation'},
-          body:JSON.stringify(row),
-        });
-        membershipWritten=true;
-        await serviceRequest(env,'/rest/v1/audit_events',{
-          method:'POST',headers:{'content-type':'application/json',prefer:'return=representation'},
-          body:JSON.stringify({actor_id:actorId,entity_type:'qa_account',entity_id:id,
-            action:'qa_account_provisioned',
-            after_state:{qaRunId,alias,roleCode,scopeType,scopeId:scopeId??null}}),
-        });
-        return {id,alias,roleCode,scopeType,scopeId,email};
-      }catch{
-        // Compensate failed multi-service provisioning. Never expose the user
-        // until the Auth user, scoped membership and audit all exist.
-        try{
-          if(membershipWritten)await serviceRequest(env,
-            '/rest/v1/memberships?user_id=eq.'+encodeURIComponent(id),{
-              method:'DELETE',headers:{prefer:'return=representation'},
-            });
-          await serviceRequest(env,'/rest/v1/app_users?id=eq.'+encodeURIComponent(id),{
-            method:'DELETE',headers:{prefer:'return=representation'},
+        // app_users, memberships and audit_events are deliberately not writable
+        // over PostgREST, even by service_role. Use the narrowly scoped,
+        // service-role-only SECURITY DEFINER RPC to commit them atomically.
+        const registered=await serviceRequest(env,
+          '/rest/v1/rpc/platform_qa_register_account',{
+            method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({
+              p_actor_id:actorId,p_user_id:id,p_alias:alias,
+              p_role_code:roleCode,p_scope_type:scopeType,
+              p_scope_id:scopeId,p_qa_run_id:qaRunId,
+            }),
           });
-        }catch{/* Report a failed provisioning; reconciliation checks detect stragglers. */}
+        return {id,alias,roleCode,scopeType,scopeId,email,
+          membershipId:registered.membershipId};
+      }catch{
+        // The Postgres RPC is atomic: a rejected invocation leaves no
+        // app_users/membership/audit rows behind. Auth is a separate service.
+        // Delete only the new Auth account; never delete other existing data.
         await admin.auth.admin.deleteUser(id).catch(()=>{});
         throw new Error('qa_provision_not_committed');
       }
