@@ -840,6 +840,28 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_account_id:d.accountId}),
         }),
+      qaRequestTopup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_request_wallet_topup',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_qa_run_id:d.qaRunId,
+            p_account_id:d.accountId,p_amount_satang:d.amountSatang,
+            p_request_key:d.requestKey,p_station_ids:d.allowed.station,
+            p_company_ids:d.allowed.corporate_company}),
+        }),
+      qaPendingTopups: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_pending_wallet_topups',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_qa_run_id:d.qaRunId,
+            p_station_id:d.stationId,p_station_ids:d.allowed.station,
+            p_company_ids:d.allowed.corporate_company}),
+        }),
+      qaReviewTopup: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_review_wallet_topup',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_qa_run_id:d.qaRunId,
+            p_request_id:d.requestId,p_approved:d.approved,
+            p_station_ids:d.allowed.station,p_company_ids:d.allowed.corporate_company}),
+        }),
       reviewTopup: async d=>serviceRequest(env,
         '/rest/v1/rpc/review_verified_corporate_topup',{
           method:'POST',headers:{'content-type':'application/json'},
