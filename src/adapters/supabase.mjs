@@ -694,6 +694,13 @@ export function createSupabaseAdapter(env) {
           }),
         });
       },
+      qaCouponScope: async ({couponId,allowed})=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_qa_coupon_link_scope',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_coupon_id:couponId,
+            p_station_ids:allowed.station,
+            p_company_ids:allowed.corporate_company}),
+        }),
       couponView: async (token) => {
         const match = /^([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\.([a-f0-9]{64})$/i.exec(token || '');
         if (!match) return null;
