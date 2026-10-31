@@ -13,16 +13,18 @@ export function categoryFor(screenKey){
 /** Context-only quick links. Full authorized catalogue lives on Home. */
 export function renderWorkspaceCategories(screens,activeKey){
  if(activeKey==='overview')return '';
- const byKey=new Map(screens.map(item=>[item.key,item]));
- const group=TASK_GROUPS.find(item=>item.keys.includes(activeKey));
- const allowed=(group?.keys||[]).filter(key=>byKey.has(key));
- if(allowed.length<2)return '';
- return `<nav class="os-category-nav" aria-label="เมนูที่เกี่ยวข้อง">
-  ${allowed.map(key=>{
-    const item=byKey.get(key),current=key===activeKey;
-    return `<button type="button" data-ws-go="${key}"
-      data-task-group="${group.key}" class="os-category-tab${current?' active':''}"
-      aria-label="${item.label}" ${current?'aria-current="page"':''}>${item.label}</button>`;
-   }).join('')}
+ const byKey=new Map(screens.map(s=>[s.key,s]));
+ const group=TASK_GROUPS.find(g=>g.keys.includes(activeKey));
+ const items=(group?.keys||[activeKey]).filter(key=>byKey.has(key));
+ if(!items.length)return '';
+ return `<nav class="os-category-nav os-context-orbs" aria-label="เมนูย่อยที่เกี่ยวข้อง">
+  ${items.map(key=>{
+   const s=byKey.get(key),active=key===activeKey;
+   return `<button type="button" class="os-category-tab os-nav-orb-item${active?' active':''}"
+     data-ws-go="${s.key}" aria-label="${s.label}" title="${s.label}"
+     ${active?'aria-current="page"':''}>
+     <span class="os-nav-orb"><i data-ui-icon="${s.icon}"></i></span>
+     <span class="os-nav-caption">${s.label}</span></button>`;
+  }).join('')}
  </nav>`;
 }

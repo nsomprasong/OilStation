@@ -5,31 +5,32 @@ import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/work
 const file=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const member=(scopeType,role,extra={})=>({scopeType,role,...extra});
 
-test('Gentelella-inspired workspace groups navigation by task and never exposes hidden roles',()=>{
+test('Home holds all authorized modules; non-Home group navigation is contextual only',()=>{
  const html=renderWorkspaceShell(selectWorkspaceScreens([member('platform','platform_superadmin')]));
- assert.match(html,/ws-nav-heading">จัดการแพลตฟอร์ม/);
+ assert.match(html,/ws-context-host/);
+ assert.match(html,/data-context-for="sales"/);
  assert.match(html,/data-ws-go="stations"/);
  assert.match(html,/data-ws-go="billing"/);
- assert.doesNotMatch(html,/data-ws-go="pump"/);
- assert.doesNotMatch(html,/data-ws-go="hr"/);
- assert.match(html,/ws-section-heading/);
- assert.match(html,/ws-overview-columns/);
+ assert.doesNotMatch(html,/data-ws-go="pump"|data-ws-go="hr"/);
+ assert.doesNotMatch(html,/ws-nav-heading|ws-sidebar/);
+ assert.match(html,/ws-section-heading|ws-overview-columns/);
  assert.match(html,/id="scopes"/);
  assert.match(html,/id="modules"/);
- assert.match(html,/id="logout"/);
+ assert.match(html,/os-toolbar-logout/);
 });
-test('mobile drawer has valid toggles and keyboard dismissal',()=>{
+
+test('mobile uses Home, a horizontal submenu and a 5-slot dock instead of duplicate drawers',()=>{
  const source=file('src/client/workspace-layout.js');
  const html=renderWorkspaceShell(selectWorkspaceScreens([]));
- assert.match(html,/data-ws-menu-toggle/);
- assert.match(html,/aria-controls="ws-sidebar" aria-expanded="false"/);
- assert.match(html,/data-ws-menu-close/);
- assert.match(html,/aria-label="เมนูหลัก"/);
- assert.match(source,/event\.key==="Escape"/);
- assert.match(source,/closeMenu\(\)/);
+ assert.doesNotMatch(html,/data-ws-menu-toggle|data-ws-menu-close|aria-controls="ws-sidebar"/);
+ assert.match(html,/os-mobile-bottom/);
+ assert.match(html,/ws-context-host/);
+ assert.match(source,/navigateTo/);
+ assert.match(source,/allowed\.has\(key\)/);
  assert.match(source,/aria-current/);
  assert.doesNotMatch(html,/<main class="ws-content"/);
 });
+
 test('all navigation SVG placeholders are supported by the existing Lucide allowlist',()=>{
  const icons=file('src/client/icons.js');
  const map=icons.slice(icons.indexOf('const UI = Object.freeze({'),icons.indexOf('const BRANDS ='));

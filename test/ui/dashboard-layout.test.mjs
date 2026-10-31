@@ -10,7 +10,7 @@ test('platform superadmin has wide workspace and separate SaaS navigation',()=>{
  const html=renderWorkspaceShell(screens);
  assert.match(html,/data-workspace-shell/);assert.match(html,/id="platform-workspace"/);
  assert.match(html,/id="platform-saas-billing"/);assert.match(html,/data-ws-go="stations"/);
- assert.equal((html.match(/id="logout"/g)||[]).length,1);
+ assert.equal((html.match(/class="os-toolbar-logout"/g)||[]).length,1);
 });
 test('scoped workers see only their available modules',()=>{
  assert.deepEqual(keys([member('station','cashier',{stationId:'s'})]),['overview','pump','attendance']);
@@ -29,5 +29,5 @@ test('desktop width overrides narrow login without breaking sign-in and mobile',
  assert.match(css,/\.ws-screen\[hidden\]\{display:none!important\}/);
  const source=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');
  assert.match(source,/show\(renderWorkspaceShell\(screens\)\)/);
- assert.match(source,/wireWorkspaceNavigation\(root\)/);
+ assert.match(source,/wireWorkspaceNavigation\(root,\{screens,userId:session\.user\?\.id\}\)/);
 });

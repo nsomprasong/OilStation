@@ -4,37 +4,27 @@ import {readFileSync} from 'node:fs';
 import {renderWorkspaceShell,selectWorkspaceScreens} from '../../src/client/workspace-layout.js';
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 
-test('open mobile sidebar is above overlay and bottom tabs, so taps reach the menu',()=>{
- const css=read('public/mobile-app.css');
- const patch=css.slice(css.lastIndexOf('/* Mobile drawer must sit ABOVE'));
- assert.ok(patch.includes('@media(max-width:850px)'), 'fix must only apply on small screens');
- const drawer=patch.match(/\.ws-sidebar\{[\s\S]*?z-index:(\d+)/);
- const backdrop=patch.match(/\.ws-menu-backdrop:not\(\[hidden\]\)\{[\s\S]*?z-index:(\d+)/);
- const tabs=patch.match(/\.os-mobile-bottom\{[\s\S]*?z-index:(\d+)/);
- assert.ok(drawer&&backdrop&&tabs,'drawer/backdrop/bottom tabs each need explicit stacking');
- assert.ok(Number(drawer[1])>Number(backdrop[1]),'drawer MUST be above backdrop');
- assert.ok(Number(backdrop[1])>Number(tabs[1]),'backdrop MUST cover bottom navigation when drawer opens');
- assert.match(patch,/pointer-events:auto/);
- assert.match(patch,/\.ws-layout\[data-rail="collapsed"\] \.ws-sidebar/);
+test('one mobile bottom dock sits above content and the old drawer is disabled',()=>{
+ const css=read('public/navigation-standard.css');
+ assert.match(css,/@media\(max-width:850px\)/);
+ assert.match(css,/\.os-mobile-bottom/);
+ assert.match(css,/z-index:70/);
+ assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.ws-sidebar/);
+ assert.match(css,/display:none!important/);
 });
 
-test('Home opens all permitted screens without an extra hamburger at the bottom',()=>{
+test('Home exposes allowed destinations and no sidebar or hamburger is rendered',()=>{
  const source=read('src/client/workspace-layout.js');
  const html=renderWorkspaceShell(selectWorkspaceScreens([
   {scopeType:'station',role:'station_owner',stationId:'station-a'},
  ]));
- assert.doesNotMatch(html,/data-ws-more/);
- assert.match(read('public/platform-sales-navigation.css'),/display:none!important/);
- assert.match(html,/data-ws-menu-close/);
+ assert.doesNotMatch(html,/data-ws-more|ws-sidebar|data-ws-menu-close|data-ws-menu-toggle/);
  assert.match(html,/data-ws-go="pump"/);
  assert.match(html,/data-ws-go="fuel"/);
  assert.match(html,/data-ws-go="overview"/);
- assert.doesNotMatch(source,/const mobileMore=root\.querySelector/);
- assert.match(source,/menu\?\.classList\.toggle\("is-open",active\)/);
- assert.match(source,/menu\.inert=Boolean\(mobile\?\.matches&&!active\)/);
- assert.match(source,/if\(backdrop\)backdrop\.hidden=!active/);
- assert.match(source,/button\.addEventListener\("click"/);
- assert.match(source,/closeMenu\(\)/);
+ assert.match(source,/allowed\.has\(key\)/);
+ assert.match(source,/root\.addEventListener\('click'/);
 });
 
 test('fix is last stylesheet and does not change desktop Gentelella design',()=>{

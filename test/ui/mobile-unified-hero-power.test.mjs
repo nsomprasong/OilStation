@@ -3,29 +3,34 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {renderMobileScreenHero,renderMobileHome} from '../../src/client/mobile-home.js';
 import {renderWorkspaceShell,selectWorkspaceScreens} from '../../src/client/workspace-layout.js';
+import {renderWorkspaceCategories} from '../../src/client/workspace-categories.js';
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const station={scopeType:'station',role:'station_owner',stationId:'s'};
-test('every authorized non-home mobile screen gets the same teal hero, related quick actions and operational card area',()=>{
+test('every authorized screen shares one Header submenu outside its content',()=>{
  const screens=selectWorkspaceScreens([station]);
  const html=renderWorkspaceShell(screens);
+ assert.match(html,/ws-context-host/);
  for(const screen of screens.filter(s=>s.key!=='overview')){
-  const fragment=html.slice(html.indexOf('id="ws-'+screen.key+'"'),html.indexOf('</section>',html.indexOf('id="ws-'+screen.key+'"')));
-  assert.match(fragment,/os-mobile-page-hero/,screen.key);
+  assert.match(html,new RegExp('data-context-for="'+screen.key+'"'));
+  const pos=html.indexOf('id="ws-'+screen.key+'"');
+  const fragment=html.slice(pos,html.indexOf('</section>',pos));
   assert.match(fragment,/os-mobile-page-content/,screen.key);
-  assert.match(fragment,/os-mobile-page-heading/,screen.key);
-  assert.match(fragment,/data-ws-go="overview"/,screen.key);
   assert.match(fragment,/ws-widget/,screen.key);
+  assert.doesNotMatch(fragment,/os-mobile-page-shortcuts|os-category-nav|os-mobile-page-hero/,screen.key);
  }
- assert.doesNotMatch(renderMobileScreenHero(screens.find(s=>s.key==='pump'),screens),/wallet balance|ยืนยันชำระเงินแล้ว/);
+ assert.doesNotMatch(html,/ws-sidebar|data-ws-menu-toggle/);
 });
-test('mobile page shortcuts and icons are limited to screens granted by current memberships',()=>{
+
+test('under-header submenu shows only role-allowed related icons and labels',()=>{
  const screens=selectWorkspaceScreens([{scopeType:'platform',role:'platform_superadmin'}]);
- const hero=renderMobileScreenHero(screens.find(x=>x.key==='stations'),screens);
- assert.match(hero,/จัดการปั๊มน้ำมัน/);
- assert.doesNotMatch(hero,/data-ws-go="pump"/);
- assert.doesNotMatch(hero,/data-ws-go="fuel"/);
- assert.match(hero,/data-ws-go="billing"/);
+ const shell=renderWorkspaceShell(screens);
+ assert.match(renderWorkspaceCategories(screens,'stations'),/os-context-orbs/);
+ assert.match(shell,/data-context-for="stations"/);
+ assert.match(shell,/os-context-orbs/);
+ assert.doesNotMatch(shell,/data-ws-go="pump"|data-ws-go="fuel"/);
+ assert.match(shell,/data-ws-go="billing"/);
 });
+
 test('home has an accessible power icon in the top-right corner which uses existing sign-out action',()=>{
  const screens=selectWorkspaceScreens([station]);
  const home=renderMobileHome(screens);

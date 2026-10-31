@@ -22,21 +22,17 @@ test('selected Gentelella v4 loads as the final canonical CSS layer',()=>{
  assert.match(css,/\.ws-layout\[data-rail="collapsed"\] \.ws-sidebar\.is-open/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
-test('desktop rail is keyboard-usable and mobile drawer retains accessibility',()=>{
+test('Home and a single Header submenu replace legacy drawer on all screen sizes',()=>{
  const html=renderWorkspaceShell(selectWorkspaceScreens([platform]));
  const source=read('src/client/workspace-layout.js');
- assert.match(html,/data-ws-rail-toggle/);
- assert.match(html,/aria-label="ย่อเมนูด้านข้าง"/);
- assert.match(html,/aria-pressed="false"/);
- assert.match(html,/data-ws-menu-toggle/);
- assert.match(source,/oilstation_sidebar_rail/);
- assert.match(source,/sessionStorage\.setItem\('oilstation_sidebar_rail',rail\)/);
- assert.match(source,/menu\.inert=Boolean\(mobile\?\.matches&&!active\)/);
- assert.match(source,/event\.key==="Escape"/);
- assert.match(source,/event\.key==="Tab"/);
+ assert.doesNotMatch(html,/data-ws-rail-toggle|data-ws-menu-toggle|data-ws-menu-close|ws-sidebar/);
+ assert.doesNotMatch(source,/oilstation_sidebar_rail|openMenu\(/);
+ assert.match(html,/ws-context-host/);
+ assert.match(html,/data-context-for="sales"/);
  assert.match(html,/data-ws-go="stations"/);
  assert.doesNotMatch(html,/data-ws-go="fuel"/);
 });
+
 test('theme selection preserves Thai workflow and does not add demo or finance endpoints',()=>{
  const design=read('DESIGN.md'),agents=read('AGENTS.md');
  assert.match(design,/Gentelella v4/);
@@ -47,11 +43,13 @@ test('theme selection preserves Thai workflow and does not add demo or finance e
  assert.doesNotMatch(css,/https?:\/\/(?:cdn|unpkg|fonts)\./);
  assert.doesNotMatch(read('package.json'),/gentelella/);
 });
-test('new menu icon belongs to pinned Lucide allowlist, no duplicate logos',()=>{
+test('Home and contextual orb icons use the pinned Lucide allowlist, not hamburger buttons',()=>{
  const icons=read('src/client/icons.js');
- assert.match(icons,/\bMenu\b/);
- assert.match(icons,/menu:Menu/);
+ assert.match(icons,/home:House/);
+ assert.match(icons,/users:UsersRound/);
  const shell=renderWorkspaceShell(selectWorkspaceScreens([platform]));
- assert.match(shell,/data-ui-icon="menu"/);
- assert.equal((shell.match(/id="logout"/g)||[]).length,1);
+ assert.match(shell,/data-ui-icon="home"/);
+ assert.match(shell,/os-nav-orb/);
+ assert.doesNotMatch(shell,/data-ui-icon="menu"|id="logout"/);
+ assert.equal((shell.match(/class="os-toolbar-logout"/g)||[]).length,1);
 });

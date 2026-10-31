@@ -44,13 +44,13 @@ test('six task groups remain permission-filtered and preserve server role bounda
  const html=renderWorkspaceCategories(platform,'billing');
  assert.doesNotMatch(html,/data-task-group="overview"/);
  assert.doesNotMatch(html,/data-task-group="stations"/);
- assert.equal(html,''); // only one permitted screen in this contextual category
+ assert.match(html,/os-context-orbs/); // the only authorized item is rendered once
  assert.doesNotMatch(html,/data-ws-go="pump"/);
  assert.doesNotMatch(html,/data-ws-go="hr"/);
  assert.doesNotMatch(html,/data-task-group="people"/);
  const stationHtml=renderWorkspaceShell(selectWorkspaceScreens([station]));
- assert.match(stationHtml,/class="os-category-nav"/);
- assert.match(stationHtml,/data-task-group="people"/);
+ assert.match(stationHtml,/class="os-category-nav os-context-orbs"/);
+ assert.match(stationHtml,/os-context-orbs/);
  assert.match(stationHtml,/data-ws-go="fuel"/);
 });
 test('floating add actions only target supported create flows and never cashier verification or finance approval',()=>{

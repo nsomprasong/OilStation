@@ -1,27 +1,17 @@
+import {selectFrequentScreens} from './nav-preferences.js';
 /** Mobile-first OilStation presentation, modeled on the user's reference layout.
  * All features are filtered from server-issued membership screens.
  * No wallet amount or transaction state is fabricated for the home cards.
  */
-export function chooseMobileActions(screens){
- const keys=new Set(screens.map(s=>s.key));
- const pick=(order,used)=>order.find(key=>keys.has(key)&&!used.has(key))||null;
- const used=new Set(['overview']);
- const work=pick(['fuel','stations','sales','customers','corporate','hr','attendance','billing','plan','pump','finance','invitations'],used);if(work)used.add(work);
- const history=pick(['reviews','activity','finance','sales','payroll','attendance','billing','corporate','plan','stations','pump','hr','invitations','customers'],used);if(history)used.add(history);
- const headline=['pump','fuel','stations','sales','activity','corporate','billing','plan','finance','attendance','hr','customers','reviews','invitations','payroll']
-  .filter(key=>keys.has(key)).slice(0,4);
- return {work,history,headline,canScan:keys.has('pump')};
+export function chooseMobileActions(screens,counts={}){
+ const frequent=selectFrequentScreens(screens,counts,4);
+ const headline=frequent.map(x=>x.key);
+ return {work:headline[0]||null,history:headline[1]||null,
+  headline,canScan:screens.some(s=>s.key==='pump')};
 }
 
 export function renderMobileHome(screens){
- const {headline}=chooseMobileActions(screens);
  const available=screens.filter(s=>s.key!=='overview');
- const headlineMarkup=headline.map(key=>{
-  const s=screens.find(x=>x.key===key);
-  return `<button class="os-mobile-quick" type="button" data-ws-go="${s.key}" data-mobile-feature
-    data-mobile-search="${s.label} ${s.desc}"><span class="os-mobile-quick-icon"><i data-ui-icon="${s.icon}"></i></span>
-    <span>${s.label}</span></button>`;
- }).join('');
  const features=available.map(s=>`<button class="os-mobile-feature" type="button"
    data-ws-go="${s.key}" data-mobile-feature data-mobile-search="${s.label} ${s.desc}">
    <span class="os-mobile-feature-icon"><i data-ui-icon="${s.icon}"></i></span>
@@ -30,7 +20,7 @@ export function renderMobileHome(screens){
    <section class="os-mobile-hero" aria-label="พื้นที่ทำงาน OilStation">
      <div class="os-mobile-hero-title">
        <div><div class="os-mobile-brandline"><img class="os-mobile-brandmark" src="/oilstation-gold-logo.png?v=2" width="40" height="40" alt="" aria-hidden="true"><span class="os-mobile-eyebrow">OILSTATION</span></div>
-         <h3>พร้อมเริ่มงานวันนี้</h3><p>เลือกบริการหรือสแกน QR คูปองได้จากหน้าแรก</p></div>
+         <h3>พร้อมเริ่มงานวันนี้</h3><p>เลือกบริการทั้งหมดได้จากหน้าแรก ตามสิทธิ์ของบัญชี</p></div>
        <button class="os-mobile-power" type="button" data-mobile-logout
          aria-label="ออกจากระบบ" title="ออกจากระบบ">
          <i data-ui-icon="power"></i>
@@ -39,7 +29,6 @@ export function renderMobileHome(screens){
      <label class="os-mobile-search"><i data-ui-icon="scan"></i>
        <input type="search" data-mobile-search-input autocomplete="off"
           placeholder="ค้นหาบริการ" aria-label="ค้นหาบริการของ OilStation"></label>
-     <div class="os-mobile-quick-grid" aria-label="ทางลัดใช้งาน">${headlineMarkup}</div>
      <div class="os-mobile-summary-grid">
        <article class="os-mobile-summary-card"><span class="os-mobile-summary-icon"><i data-ui-icon="shield"></i></span>
          <h4>พื้นที่ทำงานของคุณ</h4><p>แสดงเฉพาะบริการที่บัญชีได้รับสิทธิ์</p></article>
@@ -56,26 +45,18 @@ export function renderMobileHome(screens){
  </div>`;
 }
 
-export function renderMobileNav(screens){
- const {work,history,canScan}=chooseMobileActions(screens);
- const s=k=>screens.find(x=>x.key===k);
- const entry=(key,icon,label)=>{
-  if(!key)return `<span class="os-mobile-tab os-mobile-tab-placeholder" aria-hidden="true"></span>`;
-  const screen=s(key);
-  return `<button type="button" class="os-mobile-tab" data-ws-go="${key}"
-     aria-label="${screen.label}" title="${screen.label}">
-     <i data-ui-icon="${icon}"></i><span>${label}</span></button>`;
- };
- return `<nav class="os-mobile-bottom" aria-label="เมนูมือถือ">
-  <button class="os-mobile-tab is-current" type="button" data-ws-go="overview" aria-current="page">
-    <i data-ui-icon="home"></i><span>หน้าแรก</span></button>
-  ${entry(work,s(work)?.icon||'clipboard','งาน')}
-  <button class="os-mobile-tab os-mobile-scan" type="button"
-    data-ws-scan aria-label="${canScan?'เปิดกล้องสแกน QR คูปอง':'ไม่มีสิทธิ์สแกน QR คูปอง'}"
-    ${canScan?'':'disabled title="บัญชีนี้ไม่มีสิทธิ์งานหน้าลาน"'}>
-    <span class="os-mobile-scan-bubble"><i data-ui-icon="scan"></i></span><span>สแกน</span>
-  </button>
-  ${entry(history,s(history)?.icon||'receipt','รายการ')}
+export function renderMobileNav(screens,counts={}){
+ const frequent=selectFrequentScreens(screens,counts,4);
+ const item=s=>`<button class="os-mobile-tab os-nav-orb-item" type="button" data-ws-go="${s.key}"
+   aria-label="${s.label}" title="${s.label}">
+   <span class="os-nav-orb"><i data-ui-icon="${s.icon}"></i></span>
+   <span class="os-nav-caption">${s.label}</span></button>`;
+ const placeholders=Array.from({length:4-frequent.length},()=>
+   '<span class="os-mobile-tab os-nav-orb-placeholder" aria-hidden="true"></span>').join('');
+ return `<nav class="os-mobile-bottom" aria-label="เมนูนำทางที่ใช้บ่อย">
+   <button class="os-mobile-tab os-nav-orb-item is-current" type="button" data-ws-go="overview" aria-current="page">
+     <span class="os-nav-orb"><i data-ui-icon="home"></i></span><span class="os-nav-caption">Home</span></button>
+   ${frequent.map(item).join('')}${placeholders}
  </nav>`;
 }
 

@@ -33,10 +33,10 @@ test('bottom nav has no hamburger; only Home exposes full menu',()=>{
  const nav=renderMobileNav(screens('platform_superadmin'));
  assert.doesNotMatch(nav,/data-ws-more|data-ws-menu-toggle/);
  assert.match(nav,/data-ws-go="overview"/);
- assert.equal((nav.match(/class="os-mobile-tab/g)||[]).length,4);
+ assert.equal((nav.match(/class="os-mobile-tab /g)||[]).length,5);
  const css=read('public/platform-sales-navigation.css');
  assert.match(css,/display:none!important/);
- assert.match(css,/grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+ assert.match(read('public/navigation-standard.css'),/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
  assert.match(read('index.html'),/platform-sales-navigation\.css/);
 });
 test('commission screen uses ledger and entitlement values; no fabricated payout or arbitrary HTML',()=>{
