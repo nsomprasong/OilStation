@@ -19,7 +19,7 @@ export function selectWorkspaceScreens(memberships=[]){
   {key:'overview',label:'ภาพรวม',icon:'clipboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
   {key:'sales',label:p?'ทีมขายและค่าคอมมิชชั่น':'งานขายของฉัน',icon:'users',desc:'ปั๊มที่ดูแล ประวัติการย้ายงาน และค่าคอมมิชชั่น',ids:['platform-sales-workspace'],yes:p||sales},
   {key:'activity',label:'ประวัติการดำเนินการ',icon:'clipboard',desc:'ใครทำอะไร เมื่อไร · ดูย้อนหลังตามปั๊ม',ids:['platform-sales-activity'],yes:p||sales},
-  {key:'stations',label:'จัดการปั๊มน้ำมัน',icon:'building',desc:'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล',ids:['platform-workspace'],yes:p},
+  {key:'stations',label:p?'จัดการปั๊มน้ำมัน':'เปิดปั๊มของฉัน',icon:'building',desc:p?'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล':'สร้างปั๊มด้วยบัญชี Sales และดูปั๊มที่รับผิดชอบ',ids:['platform-workspace'],yes:p||sales},
   {key:'plan',label:'แพ็กเกจและชำระเงิน',icon:'wallet',desc:'เลือกแพ็กเกจและวิธีชำระเงิน',
     ids:['station-saas-plan-workspace'],
     yes:memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner'].includes(m.role))},
