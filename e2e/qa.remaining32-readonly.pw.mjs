@@ -103,6 +103,10 @@ for(const identity of identities){
     await nav.click();
     await expect(page.locator('[data-ws-screen="'+key+'"]:visible'),
       identity.alias+' functional page '+key).toBeVisible();
+    // Only Home lists all top-level authorized modules. Return there before
+    // testing the next module; the contextual submenu is NOT a main menu.
+    await page.locator('[data-ws-go="overview"]:visible').first().click();
+    await expect(page.locator('[data-ws-screen="overview"]:visible')).toBeVisible();
    }
    console.log('PASS '+identity.alias+' role='+identity.role+' scope='+identity.scope);
   }finally{await context.close();}
