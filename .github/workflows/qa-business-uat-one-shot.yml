@@ -1,0 +1,127 @@
+name: QA real business UAT - bounded synthetic HR and QR
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/qa-business-uat-one-shot.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  # Serialize with production-preview deploys; never race a Worker release.
+  group: oilstation-customer-facing-worker
+  cancel-in-progress: false
+jobs:
+  arm-scoped-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Fail closed unless existing guarded Worker and credentials are verified
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const c=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          if(c.vars?.OILSTATION_API_ENABLED!=='false'||
+             c.vars?.OILSTATION_DEPLOY_TARGET!=='production'||
+             c.vars?.OILSTATION_QA_FINANCE_SIM_ENABLED!=='false'||
+             c.vars?.OILSTATION_QA_HR_UAT_ENABLED==='true')
+           throw Error('Refuse to arm non-preview or already-armed business operation');
+          if(c.vars?.OILSTATION_QA_STATION_IDS?.split(',').length!==4||
+             c.vars?.OILSTATION_QA_COMPANY_IDS?.split(',').length!==12)
+           throw Error('Frozen QA scope not satisfied');
+          NODE
+      - name: Build identical reviewed app assets
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run check
+          npm test
+          npm run build
+      - name: Arm ONLY synthetic QA operations for 45 minutes
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const p='wrangler.jsonc',c=JSON.parse(readFileSync(p,'utf8'));
+          c.vars.OILSTATION_QA_FINANCE_SIM_ENABLED='true';
+          c.vars.OILSTATION_QA_HR_UAT_ENABLED='true';
+          c.vars.OILSTATION_QA_BUSINESS_UAT_TEMP='true';
+          c.vars.OILSTATION_QA_UAT_EXPIRES_EPOCH=String(Math.floor(Date.now()/1000)+2700);
+          writeFileSync(p,JSON.stringify(c,null,2));
+          NODE
+          npx --yes wrangler@4 deploy
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            https://oilstation.goldensoft.cloud/api/public-config |
+            jq -e '.qaModeEnabled == true and .qaFinanceSimEnabled == true'
+          test "$(curl -s -o /tmp/qa-ready -w '%{http_code}' https://oilstation.goldensoft.cloud/api/ready)" = 503
+  live-qa-business:
+    needs: arm-scoped-qa
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_BUSINESS_HR_RUN: 'true'
+      OILSTATION_QA_BUSINESS_FINANCE_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Require both existing QA account secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OILSTATION_QA_SALES01_PASSWORD"
+          test -n "$OILSTATION_QA_SALES02_PASSWORD"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Real station HR creation, separate HR user shift approval and QA simulated QR reserve + scan
+        run: npm run test:e2e -- --grep '@qa-business-' --reporter=list
+  disarm-scoped-qa:
+    # Undo temporary Worker variables on success, failure OR skipped tests.
+    if: ${{ always() }}
+    needs: [arm-scoped-qa, live-qa-business]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Deploy default disabled finance and QA HR config, regardless of test result
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const c=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          if(c.vars.OILSTATION_API_ENABLED!=='false'||
+             c.vars.OILSTATION_QA_FINANCE_SIM_ENABLED!=='false'||
+             c.vars.OILSTATION_QA_HR_UAT_ENABLED==='true')
+           throw Error('Baseline config must keep all live business operations off');
+          NODE
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          npx --yes wrangler@4 deploy
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            https://oilstation.goldensoft.cloud/api/public-config |
+            jq -e '.qaFinanceSimEnabled == false'
+          test "$(curl -s -o /tmp/qa-closed -w '%{http_code}' https://oilstation.goldensoft.cloud/api/coupons)" = 503

@@ -28,6 +28,7 @@ import {createQaTopupSimulationApi,qaFinanceEnabled} from './api/qa-topup-simula
 import {createQaOperationsApi} from './api/qa-operations.mjs';
 import {createQaCouponViewApi} from './api/qa-coupon-view.mjs';
 import {createDriverWorkspaceApi} from './api/driver-workspace.mjs';
+import {createQaHrUatApi} from './api/qa-hr-uat.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -187,7 +188,13 @@ export default {
               env,...createSupabaseAdapter(env)})(request);
             if(result.status!==404)return result;
           }
-          if(url.pathname==='/api/station/billing/options' ||
+          // Dedicated QA-only HR lane: regular production API remains disabled.
+        // The QA HR handler requires an active QA Auth user, one of the frozen
+        // four station memberships, and a separately enabled UAT flag.
+        if(url.pathname.startsWith('/api/hr/') &&
+           env.OILSTATION_QA_HR_UAT_ENABLED==='true' && qaIsEnabled(env))
+          return createQaHrUatApi({env,...createSupabaseAdapter(env)})(request);
+        if(url.pathname==='/api/station/billing/options' ||
              url.pathname==='/api/station/billing/select')
             return createStationSaasOnboardingApi(createSupabaseAdapter(env))(request);
         } catch {

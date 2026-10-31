@@ -1,4 +1,5 @@
 import {qaIsEnabled,qaScopeAllowlist} from './qa-accounts.mjs';
+import {qaUatWindowOpen} from './qa-uat-window.mjs';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MONEY=/^[1-9][0-9]{1,6}$/;
 const json=(status,data)=>new Response(JSON.stringify(data),{status,headers:{
@@ -7,7 +8,7 @@ const json=(status,data)=>new Response(JSON.stringify(data),{status,headers:{
 }});
 const PREFIX='/api/qa/finance/topup/';
 export function qaFinanceEnabled(env){
- return qaIsEnabled(env)&&env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true'&&
+ return qaIsEnabled(env)&&qaUatWindowOpen(env)&&env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true'&&
    env.OILSTATION_QA_FINANCE_SIM_ENABLED==='true';
 }
 export function createQaTopupSimulationApi({env,authenticate,db}){
