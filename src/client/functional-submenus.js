@@ -3,9 +3,11 @@ import {makeIcon} from './icons.js';
 /** One functional task at a time; never promote data-record cards to navigation. */
 const DESCRIPTORS={
  sales:{kind:'direct',host:'.os-sales-workspace',selector:':scope > section.os-sales-panel',
-  names:['เชิญเซลล์','ทีมขาย','ปั๊มที่รับผิดชอบ','ย้ายการดูแล','ตรวจสอบปั๊ม','ลูกค้าที่ชำระแล้ว','ค่าคอมมิชชั่น','ประวัติการดูแล'],
-  ids:['invite','team','assignment','transfer','inspection','collected','commission','history'],
-  icons:['user-plus','users','building','settings','shield','check','receipt','clipboard'],start:'assignment'},
+  // Only top-level tasks: invite belongs to team, inspection to stations,
+  // assignment history to transfer, paid customers to commission.
+  names:['ทีมขาย','ปั๊มที่รับผิดชอบ','ย้ายการดูแล','ค่าคอมมิชชั่น'],
+  ids:['team','assignment','transfer','commission'],
+  icons:['users','building','settings','receipt'],start:'assignment'},
  stations:{kind:'stations',start:'directory'},
  billing:{kind:'billing',start:'plans'},
  customers:{kind:'ranges',host:'#station-customers-workspace',
