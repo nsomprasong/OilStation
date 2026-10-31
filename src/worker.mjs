@@ -107,6 +107,7 @@ export default {
         return new Response(JSON.stringify({
           supabaseUrl:env.SUPABASE_URL,supabaseAnonKey:env.SUPABASE_ANON_KEY,
           stripePublishableKey:null,qaModeEnabled:qaIsEnabled(env),
+          qaFinanceSimEnabled:qaFinanceEnabled(env),
         }),{status:200,headers:{'content-type':'application/json; charset=utf-8',
            'cache-control':'no-store','x-content-type-options':'nosniff'}});
       }
