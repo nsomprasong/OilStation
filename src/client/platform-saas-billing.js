@@ -54,7 +54,7 @@ export function mountPlatformSaasBilling({target,token}){
   return result.result;
  }
 
- mountSaasPlanManager({root,rpc});
+ const planManager=mountSaasPlanManager({root,rpc});
  root.append(tax);
  async function loadTax(){
   try{const data=await rpc('overview');taxCurrent.textContent=policySummary(data.taxPolicy);}
@@ -71,7 +71,7 @@ export function mountPlatformSaasBilling({target,token}){
   }
   saveTax.disabled=true;taxStatus.textContent='กำลังบันทึก…';
   try{await rpc('tax',{vatMode:d.get('vatMode'),rateBasisPoints,effectiveOn:d.get('effectiveOn')});
-   await loadTax();taxStatus.textContent='บันทึกนโยบาย VAT สำเร็จ';
+   await loadTax();await planManager.load();taxStatus.textContent='บันทึกนโยบาย VAT สำเร็จ';
   }catch{taxStatus.textContent='บันทึกไม่สำเร็จ กรุณาตรวจข้อมูลและสิทธิ์ของบัญชี';}
   finally{saveTax.disabled=false;}
  });
