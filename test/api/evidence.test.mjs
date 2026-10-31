@@ -14,7 +14,7 @@ function app({loggedIn=true,allowed=true}={}){
   db:{
    canUploadPlate:async d=>{calls.push(['allow',d]);if(!allowed)throw {code:'FORBIDDEN'};},
    uploadPlate:async d=>{calls.push(['upload',d]);return 'stations/'+STATION+'/plate/'+COUPON+'/image.jpg';},
-   recordPlate:async d=>{calls.push(['record',d]);return {status:'pending_ocr'};},
+   recordPlate:async d=>{calls.push(['record',d]);return {status:'pending_review'};},
   },
  });
  return {handler,calls};
@@ -24,13 +24,13 @@ function req(bytes=jpg,{authorization='Bearer good',mime='image/jpeg',origin=nul
  if(origin)headers.origin=origin;
  return new Request(uri,{method:'POST',headers,body:bytes});
 }
-test('verified same-station staff can upload private plate proof, not self-approve OCR',async()=>{
+test('verified same-station staff can upload private plate proof, requires independent manual review',async()=>{
  const a=app();
  const r=await a.handler(req());
  assert.equal(r.status,201);
  const body=await r.json();
  assert.equal(body.evidence.verified,false);
- assert.equal(body.evidence.status,'pending_ocr');
+ assert.equal(body.evidence.status,'pending_review');
  assert.deepEqual(a.calls.map(c=>c[0]),['allow','upload','record']);
  assert.equal(a.calls[0][1].actorId,USER);
 });
