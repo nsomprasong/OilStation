@@ -27,6 +27,7 @@ import {createQaCorporatePreviewApi} from './api/qa-corporate-preview.mjs';
 import {createQaTopupSimulationApi,qaFinanceEnabled} from './api/qa-topup-simulation.mjs';
 import {createQaOperationsApi} from './api/qa-operations.mjs';
 import {createQaCouponViewApi} from './api/qa-coupon-view.mjs';
+import {createDriverWorkspaceApi} from './api/driver-workspace.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -281,6 +282,9 @@ export default {
         if (url.pathname === '/api/hr/attendance/gps') {
           return createGpsAttendanceApi(deps)(request);
         }
+        if (['/api/corporate/drivers','/api/corporate/driver-vehicle',
+             '/api/driver/coupons'].includes(url.pathname))
+          return createDriverWorkspaceApi(deps)(request);
         if (url.pathname === '/api/corporate/wallet-integrity') {
           return createWalletIntegrityApi(deps)(request);
         }
