@@ -65,7 +65,8 @@ test('only Home has a complete menu; contextual one is under Header and exactly 
  assert.doesNotMatch(shell,/ws-sidebar|data-ws-menu-toggle|data-ws-rail-toggle|ws-nav-list/);
  const context=renderWorkspaceCategories(platform,'sales');
  assert.match(context,/os-context-orbs/);
- for(const name of ['sales','activity','stations'])assert.ok(context.includes('data-ws-go="'+name+'"'));
+ assert.match(context,/data-os-functional-menu/);
+ assert.doesNotMatch(context,/data-ws-go=/);
  assert.doesNotMatch(context,/data-ws-go="billing"/);
  assert.equal(renderWorkspaceCategories(platform,'overview'),'');
 });

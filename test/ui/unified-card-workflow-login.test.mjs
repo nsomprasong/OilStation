@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {authMarkup} from '../../src/client/auth-screen.js';
-import {TASK_GROUPS,categoryFor,renderWorkspaceCategories} from '../../src/client/workspace-categories.js';
+import {renderWorkspaceCategories} from '../../src/client/workspace-categories.js';
 import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/workspace-layout.js';
 import {installProgressiveWorkspace} from '../../src/client/progressive-workspace.js';
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
@@ -36,23 +36,18 @@ test('Google shows 4 actual brand colors and Facebook shows official blue',()=>{
  assert.match(read('src/client/main.js'),/authMarkup\(\{invited\}\)/);
  assert.match(read('src/client/main.js'),/signInWithOAuth/);
 });
-test('six task groups remain permission-filtered and preserve server role boundaries',()=>{
- assert.equal(TASK_GROUPS.length,6);
- assert.equal(categoryFor('fuel'),'stations');
- assert.equal(categoryFor('hr'),'people');
+test('main destinations only on Home, per-screen functional placeholder only under Header',()=>{
  const platform=selectWorkspaceScreens([{scopeType:'platform',role:'platform_superadmin'}]);
- const html=renderWorkspaceCategories(platform,'billing');
- assert.doesNotMatch(html,/data-task-group="overview"/);
- assert.doesNotMatch(html,/data-task-group="stations"/);
- assert.match(html,/os-context-orbs/); // the only authorized item is rendered once
- assert.doesNotMatch(html,/data-ws-go="pump"/);
- assert.doesNotMatch(html,/data-ws-go="hr"/);
- assert.doesNotMatch(html,/data-task-group="people"/);
+ const top=renderWorkspaceCategories(platform,'billing');
+ assert.match(top,/data-os-functional-menu/);
+ assert.doesNotMatch(top,/data-ws-go=|data-task-group=/);
+ assert.equal(renderWorkspaceCategories(platform,'overview'),'');
  const stationHtml=renderWorkspaceShell(selectWorkspaceScreens([station]));
- assert.match(stationHtml,/class="os-category-nav os-context-orbs"/);
- assert.match(stationHtml,/os-context-orbs/);
+ assert.match(stationHtml,/data-os-functional-menu/);
  assert.match(stationHtml,/data-ws-go="fuel"/);
+ assert.doesNotMatch(stationHtml,/ws-nav-list|ws-sidebar/);
 });
+
 test('floating add actions only target supported create flows and never cashier verification or finance approval',()=>{
  const src=read('src/client/progressive-workspace.js');
  assert.match(src,/stations:\{title:/);
@@ -66,9 +61,8 @@ test('floating add actions only target supported create flows and never cashier 
  assert.match(src,/form\.querySelector/);
  assert.match(src,/form\.dataset\.osCreateReady/);
  assert.match(src,/installProgressiveWorkspace/);
- assert.match(src,/function secondaryHrTabs/);
- assert.match(src,/งานย่อยด้านบุคลากร/);
- assert.match(src,/hr-ot-request/);
+ assert.doesNotMatch(src,/function secondaryHrTabs|os-local-tabs/);
+ assert.match(read('src/client/functional-submenus.js'),/hr-ot-request/);
  assert.equal(typeof installProgressiveWorkspace,'function');
 });
 test('editable fuel and VAT cards use existing controls, not simulated API actions',()=>{

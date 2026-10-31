@@ -24,11 +24,11 @@ test('every authorized screen shares one Header submenu outside its content',()=
 test('under-header submenu shows only role-allowed related icons and labels',()=>{
  const screens=selectWorkspaceScreens([{scopeType:'platform',role:'platform_superadmin'}]);
  const shell=renderWorkspaceShell(screens);
- assert.match(renderWorkspaceCategories(screens,'stations'),/os-context-orbs/);
+ assert.match(renderWorkspaceCategories(screens,'stations'),/data-os-functional-menu/);
  assert.match(shell,/data-context-for="stations"/);
  assert.match(shell,/os-context-orbs/);
  assert.doesNotMatch(shell,/data-ws-go="pump"|data-ws-go="fuel"/);
- assert.match(shell,/data-ws-go="billing"/);
+ assert.doesNotMatch(renderWorkspaceCategories(screens,'stations'),/data-ws-go=/);
 });
 
 test('home has an accessible power icon in the top-right corner which uses existing sign-out action',()=>{

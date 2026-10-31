@@ -4,6 +4,7 @@ import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountPlatformSaasBilling } from './platform-saas-billing.js';
 import { mountPlatformSales } from './platform-sales.js';
+import {installFunctionalSubmenus} from './functional-submenus.js';
 import {mountSalesActivity} from './platform-sales-readonly.js';
 import {mountStationPlanChoice} from './station-plan-choice.js';
 import { mountBillingWorkspace } from './billing.js';
@@ -1356,6 +1357,7 @@ function dashboard(data, session, publicConfig={}) {
  const screens=selectWorkspaceScreens(memberships);
  show(renderWorkspaceShell(screens));root.classList.add('workspace-mode');
  installProgressiveWorkspace(root);
+ installFunctionalSubmenus(root);
  document.getElementById('scope-title').textContent=active.title;
  const scopesNode=document.getElementById('scopes');
  for(const m of memberships){

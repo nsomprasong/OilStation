@@ -128,12 +128,16 @@ export function mountSaasPlanManager({root,rpc}){
  };
  const openEditor=()=>{
   form.hidden=false;
+  root.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',
+   {bubbles:true,detail:{key:'editor'}}));
   form.dispatchEvent(new Event('os:create-show'));
   form.scrollIntoView?.({block:'start',behavior:'smooth'});
   controls('name').focus();
  };
  const closeEditor=()=>{
   editorEpoch++;
+  root.closest('[data-ws-screen]')?.dispatchEvent(new CustomEvent('oilstation:open-pane',
+   {bubbles:true,detail:{key:'plans'}}));
   form.dispatchEvent(new Event('os:create-hide'));
   form.hidden=true;editingId=null;toggleStatus(formStatus,'');
  };

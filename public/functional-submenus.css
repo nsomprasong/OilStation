@@ -1,0 +1,50 @@
+/* OilStation 2026-10-31: functional cards become mutually exclusive top submenus. */
+#app.workspace-mode .os-functional-pane[hidden],
+#app.workspace-mode .os-functional-nav:empty,
+#app.workspace-mode .os-functional-nav button[hidden]{display:none!important}
+#app.workspace-mode .os-functional-pane{min-width:0;width:100%;max-width:100%}
+#app.workspace-mode .os-functional-nav{display:flex!important;flex-flow:row nowrap!important;justify-content:flex-start!important;
+ gap:clamp(7px,1.5vw,15px)!important;align-items:flex-start!important;max-width:100%;
+ overflow-x:auto!important;overscroll-behavior-x:contain;scrollbar-width:thin;
+ padding:10px 3px 15px!important;margin:0!important;border:0!important;box-shadow:none!important;
+ background:transparent!important;-webkit-overflow-scrolling:touch}
+#app.workspace-mode .os-functional-nav .os-nav-orb-item{flex:0 0 90px!important;width:90px!important;max-width:90px!important;
+ min-width:90px!important;padding:0 3px!important;gap:7px!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;
+ border:0!important;background:transparent!important;box-shadow:none!important;min-height:95px!important}
+#app.workspace-mode .os-functional-nav .os-nav-caption{font-size:11px!important;max-height:3.8em;
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;
+ white-space:normal!important;line-height:1.27!important}
+#app.workspace-mode .os-functional-nav [aria-pressed="true"] .os-nav-orb{
+ outline:2px solid #0d9f85;outline-offset:3px}
+#app.workspace-mode .os-functional-nav [aria-pressed="true"] .os-nav-caption{color:#087c6c!important}
+#app.workspace-mode .ws-context-host{padding-top:0!important;margin-bottom:2px!important}
+#app.workspace-mode .ws-context-group[hidden]{display:none!important}
+#app.workspace-mode .os-station-layout:has(>.os-functional-pane),
+#app.workspace-mode .saas-simple-layout:has(>.os-functional-pane){display:block!important}
+#app.workspace-mode .os-station-layout>.os-functional-pane,
+#app.workspace-mode .saas-simple-layout>.os-functional-pane{margin-bottom:0!important}
+#app.workspace-mode .os-functional-pane>.os-sales-panel,
+#app.workspace-mode .os-functional-pane>.os-create-station,
+#app.workspace-mode .os-functional-pane>.os-station-directory,
+#app.workspace-mode .os-functional-pane>.os-tax-panel,
+#app.workspace-mode .os-functional-pane>.os-plan-manager{width:100%;max-width:none;margin-bottom:0!important}
+#app.workspace-mode [data-ws-screen="sales"] .os-sales-workspace{display:block}
+#app.workspace-mode [data-ws-screen="sales"] .os-sales-head{margin-bottom:8px}
+#app.workspace-mode [data-ws-screen="sales"] .os-functional-pane{margin-top:8px}
+#app.workspace-mode [data-ws-screen="sales"] .os-sales-status{margin-bottom:8px}
+#app.workspace-mode .os-functional-pane>.divider:first-child{display:none!important}
+#app.workspace-mode .os-functional-pane>.divider:last-child{display:none!important}
+#app.workspace-mode .os-functional-pane>form.coupon-form,
+#app.workspace-mode .os-functional-pane>section{max-width:100%}
+@media(max-width:850px){
+ #app.workspace-mode .os-functional-nav{gap:7px!important;padding:10px 1px 12px!important}
+ #app.workspace-mode .os-functional-nav .os-nav-orb-item{flex-basis:79px!important;width:79px!important;
+ min-width:79px!important;max-width:79px!important;min-height:94px!important}
+ #app.workspace-mode .os-functional-nav .os-nav-orb{width:53px;height:53px}
+ #app.workspace-mode .os-functional-nav .os-nav-caption{font-size:10px!important;line-height:1.3!important}
+ #app.workspace-mode .os-functional-pane{padding:0!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #app.workspace-mode .os-functional-nav *{scroll-behavior:auto!important}
+}
