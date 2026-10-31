@@ -8,6 +8,7 @@ import {createPlateReviewInboxApi} from './plate-review-inbox.mjs';
 import {createPlateVerificationApi} from './plate-verification.mjs';
 import {createEvidenceApi} from './evidence.mjs';
 import {createWalletIntegrityApi} from './wallet-integrity.mjs';
+import {createDriverWorkspaceApi} from './driver-workspace.mjs';
 
 const json=(status,error)=>new Response(JSON.stringify({error}),{
  status,headers:{'content-type':'application/json','cache-control':'no-store'},
@@ -18,7 +19,9 @@ export function createQaOperationsApi({env,authenticate,db}){
   const path=new URL(request.url).pathname;
   const corp=path==='/api/my-accounts'||path==='/api/coupons'||
     /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path)||
-    path==='/api/corporate/wallet-integrity';
+    path==='/api/corporate/wallet-integrity'||
+    ['/api/corporate/drivers','/api/corporate/driver-vehicle'].includes(path);
+  const driver=path==='/api/driver/coupons';
   const station=path==='/api/station/scan-qr'||
     ['/api/evidence/plate','/api/evidence/plate/reviews',
      '/api/evidence/plate/photo','/api/evidence/plate/status',
@@ -26,7 +29,7 @@ export function createQaOperationsApi({env,authenticate,db}){
      '/api/evidence/fuel','/api/evidence/fuel/reviews',
      '/api/evidence/fuel/photo','/api/evidence/fuel/review',
      '/api/fuel/finish'].includes(path);
-  if(!corp&&!station)return json(404,'not_found');
+  if(!corp&&!station&&!driver)return json(404,'not_found');
   const token=/^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization')||'');
   if(!token)return json(401,'unauthenticated');
   try{
@@ -43,7 +46,12 @@ export function createQaOperationsApi({env,authenticate,db}){
    if(station&&!memberships.some(m=>m.scope_type==='station'&&
         allow.station.includes(m.station_id)))
     return json(403,'qa_station_only');
+   if(driver&&!memberships.some(m=>m.scope_type==='corporate_company'&&
+       m.role_code==='driver'&&allow.corporate_company.includes(m.corporate_company_id)))
+    return json(403,'qa_driver_only');
    const deps={authenticate,db};
+   if(driver||['/api/corporate/drivers','/api/corporate/driver-vehicle'].includes(path))
+    return createDriverWorkspaceApi(deps)(request);
    if(path==='/api/evidence/plate')return createEvidenceApi(deps)(request);
    if(['/api/evidence/plate/reviews','/api/evidence/plate/photo'].includes(path))
     return createPlateReviewInboxApi(deps)(request);
