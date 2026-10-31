@@ -142,20 +142,23 @@ export function createSupabaseAdapter(env) {
     },
     db: {
       qaScopedOptions: async allow=>{
-        const list=async(table,ids)=>{
-          if(!ids.length)return [];
-          const rows=await serviceRequest(env,'/rest/v1/'+table+
-            '?select=id,name&id=in.('+ids.join(',')+')',{method:'GET'});
-          const byId=new Map((Array.isArray(rows)?rows:[]).map(x=>[x.id,{id:x.id,name:x.name}]));
-          // Preserve approved allowlist order: QA role alias o01/s01a/c01 is position-bound.
-          return ids.map(id=>byId.get(id)).filter(Boolean);
-        };
-        return {
-          platform:[{id:null,name:'Platform'}],
-          organization:await list('organizations',allow.organization),
-          station:await list('stations',allow.station),
-          corporate_company:await list('corporate_companies',allow.corporate_company),
-        };
+        // Direct REST SELECT is intentionally unavailable on tenant tables,
+        // even to service_role. A read-only QA-run-locked RPC validates every
+        // approved station/org mapping and maintains alias order.
+        const data=await serviceRequest(env,
+          '/rest/v1/rpc/oilstation_qa_scope_options',{
+            method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({
+              p_qa_run_id:env.OILSTATION_QA_RUN_ID,
+              p_organization_ids:allow.organization,
+              p_station_ids:allow.station,
+              p_company_ids:allow.corporate_company,
+            }),
+          });
+        if(!data||!Array.isArray(data.organization)||
+          !Array.isArray(data.station)||!Array.isArray(data.corporate_company)||
+          !Array.isArray(data.platform))throw Error('qa_scope_unavailable');
+        return data;
       },
       releaseStatus: async ()=>serviceRequest(env,
         '/rest/v1/rpc/oilstation_release_status',{
