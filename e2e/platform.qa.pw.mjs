@@ -11,35 +11,39 @@ function required(name) {
   return value;
 }
 
-// Privileged DB evidence is fetched ONLY by the Node.js CI worker, never sent to Chromium.
-// Read-only REST SELECTs; no use of the service key in page.evaluate, browser headers,
-// screenshots, Playwright log output or the client application.
-async function readRows(table, query) {
-  const key = required('OILSTATION_QA_DB_KEY');
-  const headers = { apikey: key };
-  if (!key.startsWith('sb_secret_')) headers.authorization = 'Bearer ' + key;
-  const response = await fetch(DB + '/rest/v1/' + table + '?' + query, { headers });
-  if (!response.ok) throw Error('DB evidence unavailable: ' + table + ' HTTP ' + response.status);
-  return response.json();
-}
-
+// Database evidence is fetched by the protected Node CI worker, NEVER Chromium.
+// Business tables intentionally deny direct SELECT even to service_role; a
+// read-only, QA-run-locked SECURITY DEFINER RPC exposes only the frozen fixtures.
+// This function cannot create, update or delete any records.
 async function snapshot() {
-  const [stations, users, assignments, audit, requests, companies] = await Promise.all([
-    readRows('stations', 'select=id,name,organization_id'),
-    readRows('app_users', 'select=id,email'),
-    readRows('sales_assignments', 'select=station_id,sales_user_id,effective_until'),
-    readRows('audit_events', 'select=action,station_id,actor_id&action=eq.sales_station_created'),
-    readRows('sales_station_creation_requests', 'select=actor_id,station_id,request_id'),
-    readRows('corporate_companies', 'select=id'),
-  ]);
-  return { stations, users, assignments, audit, requests, companies };
+  const key = required('OILSTATION_QA_DB_KEY');
+  if (!key.startsWith('sb_secret_') && key.split('.').length !== 3) {
+    throw Error('QA DB credential must be a Supabase secret/service role key');
+  }
+  const headers = { 'apikey': key, 'content-type': 'application/json' };
+  if (!key.startsWith('sb_secret_')) headers.authorization = 'Bearer ' + key;
+  const response = await fetch(DB + '/rest/v1/rpc/oilstation_qa_platform_evidence', {
+    method: 'POST', headers,
+    body: JSON.stringify({ p_qa_run_id: 'QA-20261031-PLATFORM-001' }),
+  });
+  if (!response.ok) {
+    // Never include response body, credential, JWT or user data in CI logs.
+    throw Error('QA-scoped evidence RPC unavailable: HTTP ' + response.status);
+  }
+  const evidence = await response.json();
+  if (!evidence || !Array.isArray(evidence.stations) || !Array.isArray(evidence.users)) {
+    throw Error('QA-scoped evidence RPC returned an invalid result');
+  }
+  return evidence;
 }
 
 function validateFixture(state, expectedCount) {
-  const qaStations = state.stations.filter(s => s.name.startsWith('QA-'));
+  const qaStations = state.stations;
+  expect(state.unapprovedQaCount).toBe(0);
+  expect(state.protectedStationCount).toBe(1);
+  expect(state.allStationsCount).toBe(expectedCount + 1);
   expect(qaStations.length).toBe(expectedCount);
-  expect(state.stations.length).toBe(expectedCount + 1); // existing production station is protected
-  expect(state.companies.length).toBe(0); // Platform phase; never silently create customers
+  expect(state.companiesCount).toBe(0); // Platform phase; never silently create customers
   const names = qaStations.map(s => s.name).sort();
   expect(names).toEqual(FIXTURES.slice(0, expectedCount).sort());
   const a = state.users.find(u => u.email === QA_ALIAS('sales01'));
@@ -139,16 +143,16 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
 
   const after = await snapshot();
   validateFixture(after, 4);
-  expect(after.stations.length).toBe(5);
+  expect(after.allStationsCount).toBe(5);
   expect(after.requests.length).toBe(4);
   const s02b = after.stations.find(x => x.name === 'QA-S02-B');
   expect(s02b?.id).toBeTruthy();
   if (expected.length === 3) {
     expect(after.audit.filter(x => x.station_id === s02b.id)).toHaveLength(1);
-    expect(after.stations.length - before.stations.length).toBe(1);
+    expect(after.allStationsCount - before.allStationsCount).toBe(1);
     expect(after.audit.length - before.audit.length).toBe(1);
   } else {
-    expect(after.stations.length - before.stations.length).toBe(0);
+    expect(after.allStationsCount - before.allStationsCount).toBe(0);
   }
 
   const s01Context = await browser.newContext();
