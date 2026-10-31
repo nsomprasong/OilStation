@@ -32,7 +32,7 @@ test('workflow is manual with pre-deployment production SQL and bindings gates',
  assert.match(wf,/\.name == "OILSTATION_API_ENABLED" and \.type == "plain_text" and \.text == "true"/);
  assert.match(wf,/Production OILSTATION_API_ENABLED must be an explicit plain-text true/);
  assert.match(wf,/wrangler@4 deploy --env uat/);
- assert.match(wf,/wrangler@4 deploy\s*$/m);
+ assert.match(wf,/wrangler@4 deploy --config wrangler\.production-release\.json/);
  assert.match(wf,/oilstation\.goldensoft\.cloud\/api\/ready/);
 });
 
