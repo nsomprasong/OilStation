@@ -24,6 +24,8 @@ import { createSupabaseAdapter } from './adapters/supabase.mjs';
 import { createSupabaseConnectivityProbe } from './api/supabase-connectivity.mjs';
 import {createQaAccountsApi,qaIsEnabled} from './api/qa-accounts.mjs';
 import {createQaCorporatePreviewApi} from './api/qa-corporate-preview.mjs';
+import {createQaTopupSimulationApi,qaFinanceEnabled} from './api/qa-topup-simulation.mjs';
+import {createQaOperationsApi} from './api/qa-operations.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -61,6 +63,15 @@ export default {
       }
       // Explicit server-only QA switch. Never expose account creation just
       // because the production preview login is enabled.
+      if(url.pathname.startsWith('/api/qa/finance/topup/')){
+        try {
+          return createQaTopupSimulationApi({env,...createSupabaseAdapter(env)})(request);
+        }catch{
+          return new Response(JSON.stringify({error:'qa_finance_unavailable'}),{
+            status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
+        }
+      }
       if(url.pathname.startsWith('/api/qa/')){
         if(!qaIsEnabled(env))return new Response(JSON.stringify({error:'not_found'}),{
           status:404,headers:{'content-type':'application/json','cache-control':'no-store'},
@@ -156,6 +167,14 @@ export default {
             return createPlatformBillingApi(createSupabaseAdapter(env))(request);
           if(stationPages.has(url.pathname))
             return createApi(createSupabaseAdapter(env))(request);
+          // Only synthetic QA identities on the fixed 4 stations / 12 companies
+          // may use real QR reservation and settlement against QA money.
+          // Ordinary production finance remains closed in preview.
+          if(qaFinanceEnabled(env)){
+            const result=await createQaOperationsApi({
+              env,...createSupabaseAdapter(env)})(request);
+            if(result.status!==404)return result;
+          }
           if(url.pathname==='/api/station/billing/options' ||
              url.pathname==='/api/station/billing/select')
             return createStationSaasOnboardingApi(createSupabaseAdapter(env))(request);
