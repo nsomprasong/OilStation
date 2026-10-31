@@ -144,6 +144,13 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
       expect(allowedBrands).toContain(visibleBrandOptions[0]);
       await page.locator('#brand-select').selectOption(visibleBrandOptions[0]);
       await page.locator('#module-qr').check();
+      await expect(page.locator('#new-station-form'))
+        .toHaveAttribute('data-os-station-submit-ready', 'true');
+      await expect(page.locator('#new-station-submit')).toBeEnabled();
+      const invalidControls = await page.locator('#new-station-form').evaluate(form =>
+        [...form.elements].filter(element => element.willValidate && !element.checkValidity())
+          .map(element => element.id || element.name || 'unknown'));
+      expect(invalidControls).toEqual([]);
       const createResponse = page.waitForResponse(r => r.url().endsWith('/api/platform/sales/create-station')
         && r.request().method() === 'POST');
       await page.locator('#new-station-submit').click();
