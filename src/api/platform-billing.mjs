@@ -16,6 +16,8 @@ const name=v=>typeof v==='string'&&v.trim().length>=2&&v.trim().length<=120;
 const time=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(v)&&Number.isFinite(Date.parse(v));
 const routes={
  '/api/platform/billing/overview':'GET',
+ '/api/platform/billing/plan-editor':'GET',
+ '/api/platform/billing/edit-plan':'POST',
  '/api/platform/billing/flat-plan':'POST',
  '/api/platform/billing/bundle-plan':'POST',
  '/api/platform/billing/archive-plan':'POST',
@@ -27,6 +29,14 @@ const routes={
 };
 function valid(path,d){
  switch(path){
+ case '/api/platform/billing/edit-plan':
+  return UUID.test(d?.planId) && exact(d,['planId','code','name','frequency','couponPriceSatang','hrPriceSatang','bundlePriceSatang','effectiveOn']) &&
+    code(d.code)&&name(d.name)&&['monthly','yearly'].includes(d.frequency)&&
+    MONEY.test(d.couponPriceSatang)&&MONEY.test(d.hrPriceSatang)&&
+    MONEY.test(d.bundlePriceSatang)&&BigInt(d.bundlePriceSatang)>=1000n&&
+    BigInt(d.bundlePriceSatang)<=99999999n&&
+    BigInt(d.couponPriceSatang)+BigInt(d.hrPriceSatang)>=1000n&&
+    isDate(d.effectiveOn);
  case '/api/platform/billing/bundle-plan':
   return exact(d,['code','name','frequency','couponPriceSatang','hrPriceSatang','bundlePriceSatang','effectiveOn'])&&
     code(d.code)&&name(d.name)&&
@@ -70,6 +80,9 @@ export function createPlatformBillingApi({authenticate,db}){
   if(request.method==='POST'&&request.headers.get('origin')&&
     request.headers.get('origin')!==new URL(request.url).origin)
    return json(403,{error:'origin_forbidden'});
+  const url=new URL(request.url);
+  if(path==='/api/platform/billing/plan-editor'&&!UUID.test(url.searchParams.get('planId')??''))
+   return json(400,{error:'invalid_platform_billing'});
   const token=/^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization')||'');
   if(!token)return json(401,{error:'unauthenticated'});
   let data=null;
@@ -87,6 +100,10 @@ export function createPlatformBillingApi({authenticate,db}){
    if(!UUID.test(actor?.id??''))return json(401,{error:'unauthenticated'});
    let result;
    switch(path){
+    case '/api/platform/billing/plan-editor':
+     result=await db.platformSaasPlanEditor({actorId:actor.id,planId:url.searchParams.get('planId')});break;
+    case '/api/platform/billing/edit-plan':
+     result=await db.platformSaasEditBundlePlan({actorId:actor.id,...data});break;
     case '/api/platform/billing/overview':
      result=await db.platformSaasBillingOverview({actorId:actor.id});break;
     case '/api/platform/billing/flat-plan':
