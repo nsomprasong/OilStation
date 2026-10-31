@@ -1,6 +1,5 @@
 import { createApi } from './api/router.mjs';
 import { createFuelReviewApi } from './api/fuel-review.mjs';
-import { createFuelOcrApi } from './api/fuel-ocr.mjs';
 import { createFuelPhotoApi } from './api/fuel-photo.mjs';
 import { createFuelStartApi } from './api/fuel-start.mjs';
 import { createEvidenceApi } from './api/evidence.mjs';
@@ -19,7 +18,6 @@ import { createAttendancePayrollPreviewApi } from './api/attendance-payroll-prev
 import { createAttendanceReviewApi } from './api/attendance-review.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
-import { createGoogleVisionRecognizer } from './adapters/google-vision.mjs';
 import { createWalletIntegrityApi } from './api/wallet-integrity.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
@@ -213,8 +211,9 @@ export default {
           return createFuelReviewApi(deps)(request);
         }
         if (url.pathname === '/api/evidence/fuel/ocr') {
-          return createFuelOcrApi({...deps,
-            recognize:createGoogleVisionRecognizer(env.GOOGLE_VISION_API_KEY)})(request);
+          return new Response(JSON.stringify({error:'ocr_removed_use_photo_review'}),{
+            status:410,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
         }
         if (url.pathname === '/api/evidence/fuel') {
           return createFuelPhotoApi(deps)(request);
@@ -265,10 +264,9 @@ export default {
         if (url.pathname === '/api/evidence/plate/reviews' || url.pathname === '/api/evidence/plate/photo') {
           return createPlateReviewInboxApi(deps)(request);
         }
-        if (url.pathname === '/api/evidence/plate/ocr' || url.pathname === '/api/evidence/plate/review') {
-          return createPlateVerificationApi({ ...deps,
-            recognize: createGoogleVisionRecognizer(env.GOOGLE_VISION_API_KEY),
-          })(request);
+        if (['/api/evidence/plate/ocr','/api/evidence/plate/review',
+             '/api/evidence/plate/status'].includes(url.pathname)) {
+          return createPlateVerificationApi(deps)(request);
         }
         if (url.pathname === '/api/evidence/plate') {
           return createEvidenceApi(deps)(request);
