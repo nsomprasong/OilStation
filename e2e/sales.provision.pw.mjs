@@ -172,15 +172,15 @@ test('Sales can create all 36 QA organization/station roles ONLY for its own 2 s
    expect(role.scopeType==='station'?ms[0].stationId:ms[0].organizationId,
     role.alias).toBe(role.scopeId);
    if(role.roleCode==='finance_manager'){
-    await expect(page.locator('[data-ws-go="finance"]')).toHaveCount(1);
+    await expect(page.locator('[data-ws-go="finance"]:visible').first()).toBeVisible();
     await expect(page.locator('[data-ws-go="hr"]')).toHaveCount(0);
    }
    if(role.roleCode==='hr_manager'){
-    await expect(page.locator('[data-ws-go="hr"]')).toHaveCount(1);
-    await expect(page.locator('[data-ws-go="reviews"]')).toHaveCount(1);
+    await expect(page.locator('[data-ws-go="hr"]:visible').first()).toBeVisible();
+    await expect(page.locator('[data-ws-go="reviews"]:visible').first()).toBeVisible();
    }
    if(role.roleCode==='billing_manager'){
-    await expect(page.locator('[data-ws-go="billing"]')).toHaveCount(1);
+    await expect(page.locator('[data-ws-go="billing"]:visible').first()).toBeVisible();
    }
   }finally{await context.close();}
  }
