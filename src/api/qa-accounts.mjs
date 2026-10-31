@@ -89,7 +89,7 @@ export function createQaAccountsApi({env,authenticate,db,provisionAccount,resetQ
     // real user, or for a QA user belonging to another run.
     if(!ALIAS.test(alias||'')||typeof password!=='string'||
       password.length<16||password.length>128||!/[a-z]/i.test(password)||
-      !/[0-9]/.test(password)||!/[!@#$%^&*()_+\\-=]/.test(password))
+      !/[0-9]/.test(password)||!/[!@#$%^&*()_+=-]/.test(password))
      return json(400,{error:'invalid_input'});
     if(typeof resetQaPassword!=='function')return json(503,{error:'qa_reset_unavailable'});
     const changed=await resetQaPassword({
