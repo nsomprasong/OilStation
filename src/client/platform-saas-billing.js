@@ -36,7 +36,7 @@ export function mountPlatformSaasBilling({target,token}){
  intro.append(el('h3','จัดการแพ็กเกจและราคา'),
    el('p','จัดการราคาและแพ็กเกจที่เจ้าของปั๊มเลือกใช้ พร้อมรักษาประวัติของลูกค้า'));
  root.append(intro);
- const tax=el('form');tax.className='coupon-form saas-simple-card';
+ const tax=el('form');tax.className='coupon-form saas-simple-card os-tax-panel';
  tax.append(el('h3','1. นโยบายภาษีมูลค่าเพิ่ม'));
  const taxCurrent=el('p','กำลังโหลดนโยบาย…');taxCurrent.className='saas-current-summary';tax.append(taxCurrent);
  tax.append(field('วิธีคำนวณ VAT','vatMode',{options:[['exclusive','ราคาไม่รวม VAT'],['inclusive','ราคารวม VAT']]}),
