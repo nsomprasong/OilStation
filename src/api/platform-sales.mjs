@@ -23,6 +23,7 @@ export function createPlatformSalesApi({authenticate,db}){
   if(inspection||activity){
    const validKeys=inspection?['stationId','companyId']:['stationId','before'];
    if(!UUID.test(stationId??'')||url.searchParams.size>validKeys.length||
+    new Set(url.searchParams.keys()).size!==url.searchParams.size||
     [...url.searchParams.keys()].some(k=>!validKeys.includes(k)))return json(400,{error:'invalid_inspection'});
    if(inspection&&companyId!==null&&!UUID.test(companyId))return json(400,{error:'invalid_inspection'});
    if(activity&&before!==null&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(before)||
