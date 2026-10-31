@@ -48,7 +48,7 @@ export function mountQaAccountsAdmin({target,token,salesMode=false}){
  password.autocomplete='new-password';password.placeholder='อย่างน้อย 16 ตัว พร้อมตัวเลขและสัญลักษณ์';
  const scopeType=el('select');scopeType.required=true;scopeType.id='qa-create-scope-type';
  for(const [key,name] of Object.entries(salesMode?
-  {organization:'เจ้าของกิจการ',station:'ปั๊ม'}:
+  {organization:'เจ้าของกิจการ',station:'ปั๊ม',corporate_company:'บริษัทลูกค้าของปั๊ม'}:
   {platform:'Platform',organization:'เจ้าของกิจการ',
    station:'ปั๊ม',corporate_company:'บริษัทลูกค้า'}))scopeType.append(option(key,name));
  const role=el('select');role.required=true;role.id='qa-create-role';
@@ -63,7 +63,7 @@ export function mountQaAccountsAdmin({target,token,salesMode=false}){
   label('พื้นที่ที่อนุญาต',scope),send);
  if(!salesMode)form.append(reset);
  const note=el('p',salesMode?
-  'สร้างบัญชีทดสอบได้เฉพาะองค์กรและปั๊มที่ตัวเองเปิดและยังรับผิดชอบ ไม่มีสิทธิ์สร้าง Sales, Support หรือบัญชีบริษัท':
+  'สร้างบัญชี QA ได้เฉพาะองค์กร ปั๊ม และบริษัทลูกค้าที่เชื่อมกับปั๊มที่ตนเองเปิดและยังดูแลทั้งหมด ไม่มีสิทธิ์สร้าง Sales หรือ Support':
   'ขอบเขตทดสอบ Sales 2 คน ปั๊มรวม 4 แห่ง บริษัท 12 ราย ข้ามบทบาท Support ตามคำสั่งเจ้าของโครงการ','os-qa-note');
  details.append(explain,form,note,status);box.append(details);target.append(box);
  let scopes={};
