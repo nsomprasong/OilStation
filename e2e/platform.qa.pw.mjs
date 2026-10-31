@@ -117,11 +117,12 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
         throw Error('QA-S02-B missing: authorized workflow must explicitly opt in to the one missing station creation');
       }
       await page.locator('[data-ws-go="stations"]:visible').first().click();
-      // The approved Navigation Standard starts stations on the directory tab.
-      // Open the functional Create submenu before interacting with the form.
-      const createTab = page.locator('[data-context-for="stations"] [data-os-pane-key="create"]');
-      await expect(createTab).toBeVisible();
-      await createTab.click();
+      // Progressive Workspace intentionally hides its create form and its
+      // functional tab until the user presses the visible "+" action.
+      // Follow the real UI, never force DOM visibility or dispatch fake events.
+      const addStation = page.locator('[data-ws-screen="stations"] > .os-add-fab');
+      await expect(addStation).toBeVisible();
+      await addStation.click();
       await expect(page.locator('#new-station-form')).toBeVisible();
       await page.locator('#org-name').fill('QA Organization S02-B');
       await page.locator('#station-name').fill('QA-S02-B');
