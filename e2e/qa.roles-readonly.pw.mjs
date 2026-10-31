@@ -88,7 +88,7 @@ test('R-01 both Sales accounts see only their two stations @qa-role-readonly',as
    expect(response.status()).toBe(200);
    const list=(await response.json()).stations||[];
    expect(list.map(s=>s.stationName).sort()).toEqual(stations.filter(s=>s.sales===alias)
-    .map(s=>'QA-'+s.code.toUpperCase().replace(/^S0([12])([AB])$/,'S$1-$2')).sort());
+    .map(s=>'QA-'+s.code.slice(0,3).toUpperCase()+'-'+s.code.slice(3).toUpperCase()).sort());
    const noPersonnel=await get(page,token,'/api/qa/scopes');
    expect(noPersonnel.status()).toBe(403);
   });
