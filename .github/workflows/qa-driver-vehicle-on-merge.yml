@@ -1,0 +1,71 @@
+name: QA 12 company driver-vehicle assignments — real Admin browser
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/qa-driver-vehicle-on-merge.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: oilstation-qa-driver-assignment-20261031-one-shot
+  cancel-in-progress: false
+jobs:
+  own-company-driver-assignment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_DRIVER_ASSIGNMENT_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Wait for matching main commit to finish guarded Cloudflare Production Preview deploy
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push") | .conclusion' | head -1)"
+            if [ "$result" = "success" ]; then echo "Matching guarded preview deployed"; exit 0; fi
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then echo "::error::Production deploy failed"; exit 1; fi
+            sleep 10
+          done
+          echo "::error::Matching Production Preview deployment did not finish"; exit 1
+      - name: Fail closed without protected QA secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Missing protected QA secret name $name"; exit 1; }
+          done
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Twelve Corporate Admin real-browser own-driver assignments + driver logins + no-finance proof
+        run: npm run test:e2e -- --grep '@qa-driver-assignment'
+      - name: Encrypt all browser traces and screenshots before artifact upload
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf qa-driver-assignment-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output qa-driver-assignment-evidence.tar.gz.gpg qa-driver-assignment-evidence.tar.gz
+          rm -rf qa-driver-assignment-evidence.tar.gz playwright-report test-results
+      - name: Upload encrypted QA evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-qa-12-company-driver-assignments-encrypted
+          path: qa-driver-assignment-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
