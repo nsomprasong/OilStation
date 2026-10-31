@@ -60,6 +60,12 @@ async function get(page,token,path){
  return page.request.get(BASE+path,{headers:{authorization:'Bearer '+token}});
 }
 async function visit(page,key){
+ // Main modules appear on Home only; contextual tabs are functional submenus.
+ const active=await page.locator('[data-workspace-shell]').getAttribute('data-active-screen');
+ if(active&&active!=='overview'){
+  await page.locator('[data-ws-go="overview"]:visible').first().click();
+  await expect(page.locator('[data-ws-screen="overview"]:visible')).toBeVisible();
+ }
  const link=page.locator('[data-ws-go="'+key+'"]:visible').first();
  await expect(link,'authorized module '+key).toBeVisible();
  await link.click();
