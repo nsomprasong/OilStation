@@ -1,8 +1,8 @@
 /** Six task groups. Only available role-issued screens can become links. */
 export const TASK_GROUPS=[
  {key:'overview',label:'ภาพรวม',keys:['overview']},
- {key:'stations',label:'ปั๊มและน้ำมัน',keys:['stations','fuel','pump']},
- {key:'customers',label:'ลูกค้าบริษัท',keys:['customers','corporate']},
+ {key:'stations',label:'ปั๊มและน้ำมัน',keys:['stations','sales','fuel','pump']},
+ {key:'customers',label:'ลูกค้าและทีมขาย',keys:['customers','corporate']},
  {key:'people',label:'บุคลากร',keys:['hr','attendance','reviews','payroll']},
  {key:'finance',label:'การเงิน',keys:['finance','billing','plan']},
  {key:'settings',label:'จัดการสิทธิ์',keys:['invitations']},
@@ -10,16 +10,19 @@ export const TASK_GROUPS=[
 export function categoryFor(screenKey){
  return TASK_GROUPS.find(g=>g.keys.includes(screenKey))?.key||'overview';
 }
+/** Context-only quick links. Full authorized catalogue lives on Home. */
 export function renderWorkspaceCategories(screens,activeKey){
- const byKey=new Map(screens.map(s=>[s.key,s]));
- return `<nav class="os-category-nav" aria-label="หมวดเมนูหลัก">
-  ${TASK_GROUPS.map(group=>{
-   const allowed=group.keys.filter(k=>byKey.has(k));
-   if(!allowed.length)return '';
-   const active=group.keys.includes(activeKey);
-   return `<button type="button" data-ws-go="${activeKey&&active?activeKey:allowed[0]}"
-    class="os-category-tab${active?' active':''}" data-task-group="${group.key}"
-    aria-label="${group.label}" ${active?'aria-current="page"':''}>${group.label}</button>`;
-  }).join('')}
+ if(activeKey==='overview')return '';
+ const byKey=new Map(screens.map(item=>[item.key,item]));
+ const group=TASK_GROUPS.find(item=>item.keys.includes(activeKey));
+ const allowed=(group?.keys||[]).filter(key=>byKey.has(key));
+ if(allowed.length<2)return '';
+ return `<nav class="os-category-nav" aria-label="เมนูที่เกี่ยวข้อง">
+  ${allowed.map(key=>{
+    const item=byKey.get(key),current=key===activeKey;
+    return `<button type="button" data-ws-go="${key}"
+      data-task-group="${group.key}" class="os-category-tab${current?' active':''}"
+      aria-label="${item.label}" ${current?'aria-current="page"':''}>${item.label}</button>`;
+   }).join('')}
  </nav>`;
 }

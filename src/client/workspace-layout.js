@@ -5,6 +5,7 @@ import {categoryFor,renderWorkspaceCategories} from './workspace-categories.js';
 export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
  const p=has('platform',['platform_superadmin']);
+ const sales=has('platform',['platform_sales']);
  const b=memberships.some(m=>m.scopeType==='organization'&&m.organizationId&&['organization_owner','owner','manager','billing_manager'].includes(m.role));
  const s=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager'].includes(m.role));
  const pump=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
@@ -14,6 +15,7 @@ export function selectWorkspaceScreens(memberships=[]){
  const invite=memberships.some(m=>m.scopeType==='corporate_company'&&m.corporateCompanyId&&m.role==='corporate_admin');
  return [
   {key:'overview',label:'ภาพรวม',icon:'clipboard',desc:'สิทธิ์และทางลัด',ids:[],yes:true},
+  {key:'sales',label:p?'ทีมขายและค่าคอมมิชชั่น':'งานขายของฉัน',icon:'users',desc:'ปั๊มที่ดูแล ประวัติการย้ายงาน และค่าคอมมิชชั่น',ids:['platform-sales-workspace'],yes:p||sales},
   {key:'stations',label:'จัดการปั๊มน้ำมัน',icon:'building',desc:'สร้างปั๊ม เลือกแบรนด์และเปิดโมดูล',ids:['platform-workspace'],yes:p},
   {key:'plan',label:'แพ็กเกจและชำระเงิน',icon:'wallet',desc:'เลือกแพ็กเกจและวิธีชำระเงิน',
     ids:['station-saas-plan-workspace'],
@@ -32,7 +34,7 @@ export function selectWorkspaceScreens(memberships=[]){
  ].filter(x=>x.yes);
 }
 
-const NAV_GROUPS=[{"title":"เริ่มต้น","keys":["overview"]},{"title":"จัดการแพลตฟอร์ม","keys":["stations","billing"]},{"title":"งานปั๊มน้ำมัน","keys":["fuel","pump","customers","finance","plan"]},{"title":"ทีมงาน","keys":["hr","attendance","reviews","payroll","invitations"]},{"title":"ลูกค้าบริษัท","keys":["corporate"]}];
+const NAV_GROUPS=[{"title":"เริ่มต้น","keys":["overview"]},{"title":"จัดการแพลตฟอร์ม","keys":["stations","sales","billing"]},{"title":"งานปั๊มน้ำมัน","keys":["fuel","pump","customers","finance","plan"]},{"title":"ทีมงาน","keys":["hr","attendance","reviews","payroll","invitations"]},{"title":"ลูกค้าบริษัท","keys":["corporate"]}];
 const NAV_ICONS=new Set(["fuel","users","wallet","calendar","qr","logout","shield","mail","clipboard","scan","ticket","building","user-plus","receipt","camera","check","settings"]);
 export function navMarkup(screens){
  return NAV_GROUPS.map(group=>{
@@ -47,7 +49,7 @@ export function navMarkup(screens){
 }
 
 export function renderWorkspaceShell(screens){
- const quick=screens.filter(s=>s.key!=="overview").slice(0,6).map(s=>`
+ const quick=screens.filter(s=>s.key!=="overview").map(s=>`
  <button class="ws-quick" type="button" data-ws-go="${s.key}">
   <span class="ws-quick-copy"><strong>${s.label}</strong><small>${s.desc}</small></span>
   <span class="ws-quick-arrow" aria-hidden="true">›</span>
@@ -62,7 +64,6 @@ export function renderWorkspaceShell(screens){
    </div>
    ${s.key==="overview"?`
      ${renderMobileHome(screens)}
-     ${renderWorkspaceCategories(screens,s.key)}
      <div class="ws-overview-columns">
        <div class="ws-overview-primary">
          <div class="ws-section-heading"><h3>เริ่มทำงาน</h3>
@@ -100,7 +101,7 @@ export function renderWorkspaceShell(screens){
          <i data-ui-icon="menu"></i>
        </button>
        <span class="ws-toolbar-title"><img class="ws-toolbar-brand" src="/oilstation-gold-logo.png?v=2" width="28" height="28" alt="" aria-hidden="true">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
-       <span class="ws-toolbar-context" aria-hidden="true">WORKSPACE</span>
+       <button type="button" class="os-toolbar-logout" data-mobile-logout aria-label="ออกจากระบบ">ออกจากระบบ</button>
      </div>
      <header class="ws-header">
        <button class="ws-mobile-toggle" type="button" aria-label="เปิดเมนู"
@@ -137,7 +138,7 @@ export function wireWorkspaceNavigation(root){
   if(empty)empty.hidden=matches>0;
  });
  const menuToggle=root.querySelector("[data-ws-menu-toggle]");
- const mobileMore=root.querySelector("[data-ws-more]");
+ const mobileMore=null; // Home replaces duplicate mobile drawer entry.
  const scanButton=root.querySelector("[data-ws-scan]");
  wireLogoutDialog(root);
  const backdrop=root.querySelector(".ws-menu-backdrop");
@@ -218,8 +219,7 @@ export function wireWorkspaceNavigation(root){
     else link.removeAttribute("aria-current");
    });
    if(shell)shell.dataset.activeScreen=key;
-   const moreCurrent=!root.querySelector('.os-mobile-bottom [data-ws-go="'+key+'"]');
-   mobileMore?.classList.toggle('is-current',moreCurrent);
+   // Non-pinned screens remain available from Home.
    const heading=view.querySelector("h2");
    const current=root.querySelector("#ws-current");
    if(current&&heading)current.textContent=heading.textContent;
@@ -228,7 +228,7 @@ export function wireWorkspaceNavigation(root){
    if(mobile?.matches){
     const tab=root.querySelector('.os-mobile-bottom [data-ws-go="'+key+'"]');
     if(tab)tab.focus({preventScroll:true});
-    else mobileMore?.focus({preventScroll:true});
+    else root.querySelector('.os-mobile-bottom [data-ws-go="overview"]')?.focus({preventScroll:true});
    }else heading?.focus({preventScroll:true});
    root.querySelector('[data-workspace-shell]')?.dispatchEvent(
      new CustomEvent('oilstation:screenchange',{detail:{key}}));

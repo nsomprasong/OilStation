@@ -18,17 +18,18 @@ test('open mobile sidebar is above overlay and bottom tabs, so taps reach the me
  assert.match(patch,/\.ws-layout\[data-rail="collapsed"\] \.ws-sidebar/);
 });
 
-test('mobile drawer opens accessibly, passes taps to an authorized menu and closes',()=>{
+test('Home opens all permitted screens without an extra hamburger at the bottom',()=>{
  const source=read('src/client/workspace-layout.js');
  const html=renderWorkspaceShell(selectWorkspaceScreens([
   {scopeType:'station',role:'station_owner',stationId:'station-a'},
  ]));
- assert.match(html,/data-ws-more/);
+ assert.doesNotMatch(html,/data-ws-more/);
+ assert.match(read('public/platform-sales-navigation.css'),/display:none!important/);
  assert.match(html,/data-ws-menu-close/);
  assert.match(html,/data-ws-go="pump"/);
  assert.match(html,/data-ws-go="fuel"/);
  assert.match(html,/data-ws-go="overview"/);
- assert.match(source,/mobileMore\?\.addEventListener\("click"/);
+ assert.doesNotMatch(source,/const mobileMore=root\.querySelector/);
  assert.match(source,/menu\?\.classList\.toggle\("is-open",active\)/);
  assert.match(source,/menu\.inert=Boolean\(mobile\?\.matches&&!active\)/);
  assert.match(source,/if\(backdrop\)backdrop\.hidden=!active/);

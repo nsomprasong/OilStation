@@ -6,9 +6,9 @@ export function chooseMobileActions(screens){
  const keys=new Set(screens.map(s=>s.key));
  const pick=(order,used)=>order.find(key=>keys.has(key)&&!used.has(key))||null;
  const used=new Set(['overview']);
- const work=pick(['fuel','stations','customers','corporate','hr','attendance','billing','plan','pump','finance','invitations'],used);if(work)used.add(work);
- const history=pick(['reviews','finance','payroll','attendance','billing','corporate','plan','stations','pump','hr','invitations','customers'],used);if(history)used.add(history);
- const headline=['pump','fuel','stations','corporate','billing','plan','finance','attendance','hr','customers','reviews','invitations','payroll']
+ const work=pick(['fuel','stations','sales','customers','corporate','hr','attendance','billing','plan','pump','finance','invitations'],used);if(work)used.add(work);
+ const history=pick(['reviews','finance','sales','payroll','attendance','billing','corporate','plan','stations','pump','hr','invitations','customers'],used);if(history)used.add(history);
+ const headline=['pump','fuel','stations','sales','corporate','billing','plan','finance','attendance','hr','customers','reviews','invitations','payroll']
   .filter(key=>keys.has(key)).slice(0,4);
  return {work,history,headline,canScan:keys.has('pump')};
 }
@@ -45,7 +45,7 @@ export function renderMobileHome(screens){
          <h4>พื้นที่ทำงานของคุณ</h4><p>แสดงเฉพาะบริการที่บัญชีได้รับสิทธิ์</p></article>
        <article class="os-mobile-summary-card"><span class="os-mobile-summary-icon"><i data-ui-icon="clipboard"></i></span>
          <h4>บริการที่เข้าถึงได้</h4><strong class="os-mobile-summary-number">${available.length} รายการ</strong>
-         <p>เลือกบริการได้จากเมนูด้านล่าง</p></article>
+         <p>ดูทุกบริการได้จากหน้าแรก</p></article>
      </div>
    </section>
    <section class="os-mobile-features" aria-label="บริการทั้งหมด">
@@ -76,21 +76,19 @@ export function renderMobileNav(screens){
     <span class="os-mobile-scan-bubble"><i data-ui-icon="scan"></i></span><span>สแกน</span>
   </button>
   ${entry(history,s(history)?.icon||'receipt','รายการ')}
-  <button class="os-mobile-tab" type="button" data-ws-more aria-label="เปิดเมนูทั้งหมด"
-    aria-controls="ws-sidebar" aria-expanded="false"><i data-ui-icon="menu"></i><span>เมนู</span></button>
  </nav>`;
 }
 
 export function renderMobileScreenHero(screen,screens=[]){
  if(!screen||screen.key==='overview')return '';
  const suggestions={
-  stations:['billing','invitations','fuel'],fuel:['pump','customers','finance'],
+  stations:['sales','billing','invitations'],sales:['stations','billing','invitations'],fuel:['pump','customers','finance'],
   pump:['fuel','customers','reviews'],customers:['finance','pump','fuel'],
   finance:['customers','billing','pump'],plan:['billing','pump','fuel'],
   billing:['stations','plan','finance'],hr:['attendance','reviews','payroll'],
   attendance:['reviews','hr','payroll'],reviews:['attendance','payroll','hr'],
   payroll:['reviews','attendance','hr'],corporate:['billing','invitations','finance'],
-  invitations:['stations','hr','corporate'],
+  invitations:['stations','sales','hr'],
  };
  const eligible=new Set(screens.map(item=>item.key));
  const related=(suggestions[screen.key]||[]).filter(key=>eligible.has(key)&&key!==screen.key)
