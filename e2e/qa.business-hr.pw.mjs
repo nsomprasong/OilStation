@@ -69,14 +69,14 @@ test('QA-HR-01 four real owners create employee, templates and shift; separate H
     expect(rosterResponse.status()).toBe(200);
     let roster=(await rosterResponse.json()).roster;
     expect(Array.isArray(roster.employees)).toBe(true);
-    expect(Array.isArray(roster.templates)).toBe(true);
-    if(roster.templates.length===0){
+    expect(Array.isArray(roster.shiftTemplates)).toBe(true);
+    if(roster.shiftTemplates.length===0){
      const seeded=await post(owner,ot,'/api/hr/seed-shifts',{stationId:station.id});
      expect(seeded.status()).toBe(200);
     }
     rosterResponse=await get(owner,ot,'/api/hr/roster?stationId='+station.id);
     roster=(await rosterResponse.json()).roster;
-    expect(roster.templates.length).toBeGreaterThanOrEqual(3);
+    expect(roster.shiftTemplates.length).toBeGreaterThanOrEqual(3);
     const code='QA261101'+station.code.toUpperCase();
     let employee=roster.employees.find(e=>e.code===code);
     if(!employee){
@@ -96,7 +96,7 @@ test('QA-HR-01 four real owners create employee, templates and shift; separate H
     if(!data.assignments.some(a=>a.employeeId===employee.id&&a.date==='2026-11-15')){
      const assigned=await post(hr,ht,'/api/hr/assign-shift',{
       stationId:station.id,employeeId:employee.id,
-      templateId:data.templates[0].id,date:'2026-11-15',
+      templateId:data.shiftTemplates[0].id,date:'2026-11-15',
      });
      expect(assigned.status()).toBe(201);
     }
