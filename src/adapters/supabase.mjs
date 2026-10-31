@@ -963,6 +963,27 @@ export function createSupabaseAdapter(env) {
         const rows = await serviceRequest(env, '/rest/v1/brand_fuel_products?' + params);
         return rows.map(({ fuel_brands, ...row }) => ({ ...row, brand_code: fuel_brands.code }));
       },
+      companyDriverRoster: async (actorId,companyId)=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_company_driver_roster',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_company_id:companyId}),
+        }),
+      assignDriverVehicle: async d=>serviceRequest(env,
+        '/rest/v1/rpc/oilstation_assign_driver_vehicle',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_company_id:d.companyId,
+            p_driver_user_id:d.driverUserId,p_plate:d.plate}),
+        }),
+      driverCouponInbox: async actorId=>{
+        const rows=await serviceRequest(env,
+          '/rest/v1/rpc/oilstation_driver_coupon_inbox',{
+            method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({p_actor_id:actorId}),
+          });
+        return rows.map(c=>({...c,qrPayload:
+          ['reserved','verified'].includes(c.status)&&Date.parse(c.expiresAt)>Date.now()
+            ?c.id+'.'+await hmac(env.COUPON_SIGNING_KEY,c.id+':qr'):null}));
+      },
       issueCoupon: async (input) => {
         const id = crypto.randomUUID();
         const linkSig = await hmac(env.COUPON_SIGNING_KEY, id + ':link');
@@ -976,12 +997,13 @@ export function createSupabaseAdapter(env) {
           p_station_fuel_id: input.stationFuelId,
           p_amount_satang: input.amountSatang,
           p_expires_at: input.expiresAt,
-          p_plate: input.plate,
+          ...(input.driverId?{p_driver_id:input.driverId}:{p_plate:input.plate}),
           p_secret_hash: await digest(linkToken),
           p_qr_hash: await digest(qrToken),
           p_idempotency_key: input.idempotencyKey,
         };
-        const result = await serviceRequest(env, '/rest/v1/rpc/issue_reserved_coupon', {
+        const result = await serviceRequest(env, input.driverId?
+          '/rest/v1/rpc/oilstation_issue_driver_coupon':'/rest/v1/rpc/issue_reserved_coupon', {
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
         });
         // Idempotency replay can return an existing coupon ID; recalculate tokens.
