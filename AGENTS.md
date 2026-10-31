@@ -4,7 +4,17 @@ OilStation is a Thai-first, multi-tenant petrol-station SaaS. Preserve authentic
 
 ## User-selected frontend authority
 
-Use **Gentelella v4 (Colorlib, MIT)** as the canonical visual style for all OilStation screens: navy sidebar, teal active state, compact light workspace, reusable card/form/table vocabulary, and responsive rail/drawer behavior. The project's existing design-taste and Impeccable guidelines remain for accessibility/UX quality but must not replace the chosen Gentelella v4 identity. Consult `DESIGN.md` and `public/gentelella-v4-selected.css` before changing UI. Keep Thai copy, roles and existing production functionality.
+Use **Gentelella v4 (Colorlib, MIT)** for OilStation's canonical color, typography, compact cards, forms and tables; **navigation uses the explicitly approved Home/contextual-orb/frequent-dock standard below, NOT the old sidebar, rail, drawer or hamburger**. The project's existing design-taste and Impeccable guidelines remain for accessibility/UX quality but must not replace the chosen Gentelella v4 identity. Consult `DESIGN.md` and `public/gentelella-v4-selected.css` before changing UI. Keep Thai copy, roles and existing production functionality.
+
+## Mandatory navigation standard — 31 October 2026 (supersedes legacy navigation guidance)
+
+- **Home** is the only screen that presents the entire role-authorized catalogue; do not add another full-menu column, sidebar, drawer or duplicated shortcuts.
+- **Every non-Home screen** has one horizontal, compact, horizontally scrollable group of related submenus **directly beneath the Header**. The shortcuts use glossy circular 3D Lucide icons, light/shadow and short text beneath; hide this group on Home.
+- **Bottom navigator:** exactly 5 visual positions on mobile and desktop: **Home** first, then the four most frequently opened authorized destinations. Only authenticated role-filtered screen keys from `selectWorkspaceScreens` may appear. When the user has fewer than 4 other permitted screens, leave the unused slots inert rather than inventing unauthorized menu items. Do not display an unconditional Scan button; authorized pump access is through its normal module.
+- Frequency counts are browser-local and per-user (`nav-preferences.js`); sort most-used first but update the dock ordering when returning Home to avoid touch targets shifting while working. Stored preferences never grant permissions.
+- Exactly **two persistent navigation surfaces**: contextual shortcuts after the Header and the five-slot bottom navigator. Full menu inside Home only. Internal task forms may still have necessary functional controls, not duplicate cross-screen navigation.
+- Code authority: `src/client/workspace-layout.js`, `src/client/workspace-categories.js`, `src/client/mobile-home.js`, `src/client/nav-preferences.js`, `public/navigation-standard.css`. Preserve the code-level/CI assertions in `test/ui/navigation-standard.test.mjs`.
+- No changes to customer money, invitation, authorization, or workflow API behavior while adjusting navigation. Do not resurrect old sidebar/floating hamburger markup to make obsolete tests pass.
 
 ## Frontend skill
 
