@@ -1,0 +1,57 @@
+name: QA fictional pump prices — one-shot web entry on main
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/qa-fuel-prices-on-merge.yml]
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-qa-web-prices-main-once
+  cancel-in-progress: false
+jobs:
+  real-qa-station-price-entry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_PRICE_AUTH_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Verify existing protected Sales credentials and evidence key
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD OILSTATION_QA_EVIDENCE_PASSPHRASE; do
+            test -n "${!name}" || { echo "::error::Missing protected QA secret: $name"; exit 1; }
+          done
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Use real owner logins and station web forms for four QA stations only
+        run: npm run test:e2e -- --grep '@qa-fuel-prices'
+      - name: Encrypt screenshots and traces; remove all plaintext
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p playwright-report test-results
+          tar -czf price-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 --output qa-prices-evidence.tar.gz.gpg price-evidence.tar.gz
+          rm -rf price-evidence.tar.gz playwright-report test-results
+      - name: Upload encrypted proof only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-qa-fuel-prices-main-encrypted
+          path: qa-prices-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
