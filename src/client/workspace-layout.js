@@ -1,5 +1,7 @@
 import {renderMobileHome,renderMobileNav,renderMobileScreenHero} from './mobile-home.js';
 import {renderLogoutDialog,wireLogoutDialog} from './logout-dialog.js';
+import {readNavUsage,saveNavUsage,incrementNavUsage} from './nav-preferences.js';
+import {decorateIcons} from './icons.js';
 import {categoryFor,renderWorkspaceCategories} from './workspace-categories.js';
 
 export function selectWorkspaceScreens(memberships=[]){
@@ -35,19 +37,6 @@ export function selectWorkspaceScreens(memberships=[]){
  ].filter(x=>x.yes);
 }
 
-const NAV_GROUPS=[{"title":"เริ่มต้น","keys":["overview"]},{"title":"จัดการแพลตฟอร์ม","keys":["stations","sales","activity","billing"]},{"title":"งานปั๊มน้ำมัน","keys":["fuel","pump","customers","finance","plan"]},{"title":"ทีมงาน","keys":["hr","attendance","reviews","payroll","invitations"]},{"title":"ลูกค้าบริษัท","keys":["corporate"]}];
-const NAV_ICONS=new Set(["fuel","users","wallet","calendar","qr","logout","shield","mail","clipboard","scan","ticket","building","user-plus","receipt","camera","check","settings"]);
-export function navMarkup(screens){
- return NAV_GROUPS.map(group=>{
-  const items=group.keys.map(key=>screens.find(s=>s.key===key)).filter(Boolean);
-  if(!items.length)return "";
-  return `<div class="ws-nav-group"><div class="ws-nav-heading">${group.title}</div>
-   ${items.map(s=>`<button type="button" class="ws-nav${s.key==="overview"?" active":""}"
-    data-ws-go="${s.key}" aria-controls="ws-${s.key}" title="${s.label}" aria-label="${s.label}" ${s.key==="overview"?'aria-current="page"':""}>
-    <i data-ui-icon="${NAV_ICONS.has(s.icon)?s.icon:"clipboard"}"></i><span>${s.label}</span>
-    </button>`).join("")}</div>`;
- }).join("");
-}
 
 export function renderWorkspaceShell(screens){
  const quick=screens.filter(s=>s.key!=="overview").map(s=>`
@@ -78,37 +67,17 @@ export function renderWorkspaceShell(screens){
          <div class="module-list" id="modules"></div>
        </aside>
      </div>`:
-     `${renderMobileScreenHero(s,screens)}${renderWorkspaceCategories(screens,s.key)}<div class="os-mobile-page-content">${s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join("")}</div>`}
+     `<div class="os-mobile-page-content">${s.ids.map(id=>`<div class="ws-widget" id="${id}"></div>`).join("")}</div>`}
  </section>`).join("");
- return `<div class="ws-layout" data-workspace-shell>
-   <button class="ws-menu-backdrop" type="button" data-ws-menu-close hidden
-     aria-label="ปิดเมนูนำทาง"></button>
-   <aside class="ws-sidebar" id="ws-sidebar" aria-label="เมนูพื้นที่ทำงาน">
-     <div class="ws-side-head">
-       <img class="ws-logo" src="/oilstation-gold-logo.png?v=2" width="38" height="38" alt="" aria-hidden="true">
-       <div class="ws-brand-copy"><strong>OilStation</strong><small>OPERATIONS</small></div>
-       <button type="button" class="ws-mobile-close" data-ws-menu-close aria-label="ปิดเมนู">×</button>
-     </div>
-     <nav class="ws-nav-list" aria-label="เมนูหลัก">${navMarkup(screens)}</nav>
-     <div class="ws-sidebar-bottom">
-       <span class="ws-sidebar-caption">ระบบบริหารจัดการสถานีบริการน้ำมัน</span>
-       <button class="ws-signout" id="logout" type="button" title="ออกจากระบบ" aria-label="ออกจากระบบ"><i data-ui-icon="logout"></i><span>ออกจากระบบ</span></button>
-     </div>
-   </aside>
+ const context=screens.filter(item=>item.key!=='overview').map(item=>
+  `<div class="ws-context-group" data-context-for="${item.key}" hidden>${renderWorkspaceCategories(screens,item.key)}</div>`).join('');
+ return `<div class="ws-layout" data-workspace-shell data-active-screen="overview">
    <div class="ws-main">
      <div class="ws-toolbar">
-       <button class="ws-rail-toggle" type="button" data-ws-rail-toggle
-         aria-label="ย่อเมนูด้านข้าง" aria-pressed="false" title="ย่อหรือขยายเมนู">
-         <i data-ui-icon="menu"></i>
-       </button>
        <span class="ws-toolbar-title"><img class="ws-toolbar-brand" src="/oilstation-gold-logo.png?v=2" width="28" height="28" alt="" aria-hidden="true">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
        <button type="button" class="os-toolbar-logout" data-mobile-logout aria-label="ออกจากระบบ">ออกจากระบบ</button>
      </div>
      <header class="ws-header">
-       <button class="ws-mobile-toggle" type="button" aria-label="เปิดเมนู"
-         aria-controls="ws-sidebar" aria-expanded="false" data-ws-menu-toggle>
-         <span aria-hidden="true">☰</span><span>เมนู</span>
-       </button>
        <div class="ws-header-copy">
          <p class="ws-overline">OILSTATION / WORKSPACE</p>
          <h1 id="scope-title"></h1>
@@ -116,6 +85,7 @@ export function renderWorkspaceShell(screens){
        </div>
        <span class="ws-current" id="ws-current">ภาพรวม</span>
      </header>
+     <div class="ws-context-host" data-context-host>${context}</div>
      <div class="ws-content" id="ws-content">${panels}</div>
    </div>
    ${renderMobileNav(screens)}
@@ -123,117 +93,67 @@ export function renderWorkspaceShell(screens){
  </div>`;
 }
 
-export function wireWorkspaceNavigation(root){
- const views=[...root.querySelectorAll("[data-ws-screen]")];
- const links=[...root.querySelectorAll("[data-ws-go]")];
- const mobileSearch=root.querySelector('[data-mobile-search-input]');
- mobileSearch?.addEventListener('input',()=>{
-  const query=mobileSearch.value.trim().toLocaleLowerCase('th');
+export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
+ const views=[...root.querySelectorAll('[data-ws-screen]')];
+ const allowed=new Set(views.map(v=>v.dataset.wsScreen));
+ const shell=root.querySelector('[data-workspace-shell]');
+ const current=root.querySelector('#ws-current');
+ const groups=[...root.querySelectorAll('[data-context-for]')];
+ const homeSearch=root.querySelector('[data-mobile-search-input]');
+ wireLogoutDialog(root);
+ homeSearch?.addEventListener('input',()=>{
+  const query=homeSearch.value.trim().toLocaleLowerCase('th');
   let matches=0;
   for(const item of root.querySelectorAll('[data-mobile-feature]')){
    const match=item.dataset.mobileSearch?.toLocaleLowerCase('th').includes(query);
-   item.hidden=!match;
-   if(match)matches++;
+   item.hidden=!match;if(match)matches++;
   }
   const empty=root.querySelector('[data-mobile-no-results]');
   if(empty)empty.hidden=matches>0;
  });
- const menuToggle=root.querySelector("[data-ws-menu-toggle]");
- const mobileMore=null; // Home replaces duplicate mobile drawer entry.
- const scanButton=root.querySelector("[data-ws-scan]");
- wireLogoutDialog(root);
- const backdrop=root.querySelector(".ws-menu-backdrop");
- const menu=root.querySelector(".ws-sidebar");
- const mobile=typeof matchMedia==="function"?matchMedia("(max-width:850px)"):null;
- const shell=root.querySelector('[data-workspace-shell]');
- const railToggle=root.querySelector('[data-ws-rail-toggle]');
- let rail='expanded';
- try{rail=sessionStorage.getItem('oilstation_sidebar_rail')==='collapsed'?'collapsed':'expanded';}catch{}
- const syncRail=()=>{
-  if(shell)shell.dataset.rail=rail;
-  railToggle?.setAttribute('aria-pressed',String(rail==='collapsed'));
-  railToggle?.setAttribute('aria-label',rail==='collapsed'?'ขยายเมนูด้านข้าง':'ย่อเมนูด้านข้าง');
+ let counts=readNavUsage(userId);
+ const bottom=()=>{
+  const nav=root.querySelector('.os-mobile-bottom');
+  if(!nav)return;
+  nav.outerHTML=renderMobileNav(screens,counts);
+  decorateIcons(root.querySelector('.os-mobile-bottom'));
  };
- syncRail();
- railToggle?.addEventListener('click',()=>{
-  rail=rail==='collapsed'?'expanded':'collapsed';
-  try{sessionStorage.setItem('oilstation_sidebar_rail',rail);}catch{}
-  syncRail();
- });
- let open=false,opener=null;
- const focusable=()=>[...menu.querySelectorAll("button:not([disabled]),a[href],input:not([disabled]),select:not([disabled])")]
-   .filter(node=>!node.hidden&&node.getClientRects().length>0);
- const syncMenu=()=>{
-  const active=Boolean(mobile?.matches&&open);
-  menu?.classList.toggle("is-open",active);
-  if(menu)menu.inert=Boolean(mobile?.matches&&!active);
-  if(backdrop)backdrop.hidden=!active;
-  menuToggle?.setAttribute("aria-expanded",String(active));
-  mobileMore?.setAttribute("aria-expanded",String(active));
- };
- const closeMenu=()=>{
-  open=false;syncMenu();
- };
- const openMenu=(trigger=menuToggle)=>{
-  opener=trigger;
-  open=true;syncMenu();
-  focusable()[0]?.focus();
- };
- syncMenu();
- mobile?.addEventListener?.("change",()=>{open=false;syncMenu();});
- menuToggle?.addEventListener("click",()=>{
-  if(open)closeMenu();else openMenu(menuToggle);
- });
- mobileMore?.addEventListener("click",()=>{if(open)closeMenu();else openMenu(mobileMore);});
- scanButton?.addEventListener("click",()=>{
-  if(scanButton.disabled)return;
-  shell?.dispatchEvent(new CustomEvent('oilstation:scanrequest'));
- });
- root.querySelectorAll("[data-ws-menu-close]").forEach(button=>
-  button.addEventListener("click",()=>{closeMenu();(opener||menuToggle)?.focus();}));
- menu?.addEventListener("keydown",event=>{
-  if(event.key==="Escape"&&open){
-   event.preventDefault();closeMenu();(opener||menuToggle)?.focus();return;
+ const navigateTo=(key,{track=false}={})=>{
+  if(!allowed.has(key))return false;
+  const view=views.find(v=>v.dataset.wsScreen===key);
+  views.forEach(v=>{v.hidden=v!==view;});
+  for(const g of groups)g.hidden=g.dataset.contextFor!==key;
+  if(shell)shell.dataset.activeScreen=key;
+  const heading=view.querySelector('h2');
+  if(current)current.textContent=heading?.textContent||'OilStation';
+  if(track&&key!=='overview'){
+   counts=incrementNavUsage(counts,key);saveNavUsage(userId,counts);
   }
-  if(event.key==="Tab"&&open){
-   const all=focusable();
-   if(!all.length)return;
-   const first=all[0],last=all[all.length-1];
-   if(event.shiftKey&&document.activeElement===first){
-    event.preventDefault();last.focus();
-   }else if(!event.shiftKey&&document.activeElement===last){
-    event.preventDefault();first.focus();
-   }
-  }
- });
- for(const button of links){
-  button.addEventListener("click",()=>{
-   const key=button.dataset.wsGo;
-   const view=views.find(x=>x.dataset.wsScreen===key);
-   if(!view)return;
-   views.forEach(v=>{v.hidden=v!==view;});
-   links.forEach(link=>{
-    const active=link.dataset.wsGo===key;
-    link.classList.toggle("active",active||Boolean(link.dataset.taskGroup&&link.dataset.taskGroup===categoryFor(key)));
-    link.classList.toggle("is-current",active&&Boolean(link.closest(".os-mobile-bottom")));
-    if(active&&link.closest("nav"))link.setAttribute("aria-current","page");
-    else link.removeAttribute("aria-current");
-   });
-   if(shell)shell.dataset.activeScreen=key;
-   // Non-pinned screens remain available from Home.
-   const heading=view.querySelector("h2");
-   const current=root.querySelector("#ws-current");
-   if(current&&heading)current.textContent=heading.textContent;
-   try{sessionStorage.setItem("oilstation_last_workspace",key);}catch{}
-   closeMenu();
-   if(mobile?.matches){
-    const tab=root.querySelector('.os-mobile-bottom [data-ws-go="'+key+'"]');
-    if(tab)tab.focus({preventScroll:true});
-    else root.querySelector('.os-mobile-bottom [data-ws-go="overview"]')?.focus({preventScroll:true});
-   }else heading?.focus({preventScroll:true});
-   root.querySelector('[data-workspace-shell]')?.dispatchEvent(
-     new CustomEvent('oilstation:screenchange',{detail:{key}}));
-   root.querySelector(".ws-main")?.scrollIntoView({block:"start",behavior:"auto"});
+  // Keep a stable dock during work; update frequency order only on Home.
+  if(key==='overview')bottom();
+  root.querySelectorAll('[data-ws-go]').forEach(button=>{
+   const active=button.dataset.wsGo===key;
+   button.classList.toggle('active',active);
+   button.classList.toggle('is-current',active);
+   if(active)button.setAttribute('aria-current','page');
+   else button.removeAttribute('aria-current');
   });
- }
+  try{sessionStorage.setItem('oilstation_last_workspace',key);}catch{}
+  shell?.dispatchEvent(new CustomEvent('oilstation:screenchange',{detail:{key}}));
+  root.querySelector('.ws-main')?.scrollIntoView?.({block:'start',behavior:'auto'});
+  if(track){
+   const focusTarget=root.querySelector('.os-mobile-bottom [data-ws-go="'+key+'"]');
+   if(typeof matchMedia==='function'&&matchMedia('(max-width:850px)').matches){
+    (focusTarget||view.querySelector('h2'))?.focus?.({preventScroll:true});
+   }else view.querySelector('h2')?.focus?.({preventScroll:true});
+  }
+  return true;
+ };
+ root.addEventListener('click',event=>{
+  const link=event.target.closest?.('[data-ws-go]');
+  if(link&&root.contains(link))navigateTo(link.dataset.wsGo,{track:true});
+ });
+ bottom();
+ navigateTo('overview');
+ return {navigateTo};
 }
