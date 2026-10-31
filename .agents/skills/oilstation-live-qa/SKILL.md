@@ -9,9 +9,9 @@ description: "ChatGPT-driven, plan-first end-to-end browser QA for OilStation ag
 
 - The owner uses **ChatGPT in the normal chat**; **do not require ChatGPT Work**.
 - Target web app: `https://oilstation.goldensoft.cloud`; existing Supabase project: `cxihsotcpdnalswfoysx`. The owner does **not** want a separate staging database.
-- Browser automation: actual Playwright/Chromium, preferably executed in an authorized GitHub Actions browser runner or connected authorized computer. The ChatGPT assistant coordinates the runner through available tools. **Do not claim you clicked a browser** unless a browser run actually executed and returned observable evidence. Existing Node/SQL tests and worker health checks are not substitutes for browser E2E.
+- Browser automation: use an **actually connected and tool-accessible browser operator** (e.g. TinyFish `run_web_automation`, if installed and authorized, or Playwright/Chromium on an authorized GitHub Actions/connected computer). ChatGPT coordinates runs and collects observable evidence. **Do not claim you clicked a browser** unless an actual browser run executed and returned results. Existing Node/SQL tests and worker health checks are not substitutes for real browser E2E. Do not require Playwright as a ChatGPT plugin.
 - Plan FIRST. Before first data mutation in any test run, agree the exact menus, role matrix, test IDs, expected results, permitted real-world side effects, test records, cleanup inventory, and deployment expectations in an approved `docs/qa/plans/<date>-<scope>.md`. Use `docs/qa/templates/TEST-PLAN.template.md`.
-- No Work mode, paid Supabase staging branch, or unspecified services are prerequisites. If authenticated browser automation is unavailable, mark browser items BLOCKED and report the prerequisite; never simulate PASS.
+- No Work mode, paid Supabase staging branch, or unspecified services are prerequisites. For QA-20261031-MASTER-001 the fixed fixture is two Sales identities, **two distinct stations created by each Sales (four total)**, and **three corporate customer relationships per station (twelve total)**; do not use an earlier shared-two-station matrix. If authenticated browser automation is unavailable, mark browser items BLOCKED and report the prerequisite; never simulate PASS.
 
 ## Preparation — read-only
 
