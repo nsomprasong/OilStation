@@ -236,8 +236,7 @@ BEGIN
   v_allowed:=v_platform_admin OR EXISTS(
     SELECT 1 FROM public.memberships m WHERE m.user_id=p_actor_id AND m.active
     AND m.scope_type='corporate_company' AND m.corporate_company_id=p_company_id
-    AND (m.role_code='corporate_admin'
-      OR m.extra_permissions->>'invite_company_staff'='true')
+    AND m.role_code='corporate_admin'
   );
  ELSIF p_scope_type='organization' THEN
   IF p_organization_id IS NULL OR p_station_id IS NOT NULL OR p_company_id IS NOT NULL
