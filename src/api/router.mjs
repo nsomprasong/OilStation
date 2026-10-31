@@ -38,7 +38,7 @@ function canIssue(m, companyId) {
 }
 function parseCouponInput(data, now, idkey) {
   if (!data || Array.isArray(data) || typeof data !== 'object') return null;
-  const { accountId, stationFuelId, amountSatang, expiresAt } = data;
+  const { accountId, stationFuelId, amountSatang, expiresAt,driverId } = data;
   if (!UUID.test(accountId ?? '') || !UUID.test(stationFuelId ?? '')) return null;
   // The wire contract uses strings to avoid loss of integer precision in JSON.
   if (typeof amountSatang !== 'string' || !/^[1-9][0-9]{0,14}$/.test(amountSatang)) return null;
@@ -46,9 +46,11 @@ function parseCouponInput(data, now, idkey) {
   const exp = Date.parse(expiresAt);
   if (!Number.isFinite(exp) || exp <= now.getTime()) return null;
   if (typeof data.plate !== 'undefined' && (typeof data.plate !== 'string' || data.plate.length > 40)) return null;
+  if (typeof driverId!=='undefined' && !UUID.test(driverId)) return null;
+  if(driverId&&data.plate) return null; // driver plate comes only from DB assignment
   if (!IDKEY.test(idkey ?? '')) return null;
   return { accountId, stationFuelId, amountSatang, expiresAt: new Date(exp).toISOString(),
-    plate: data.plate?.trim() || null, idempotencyKey: idkey };
+    plate: data.plate?.trim() || null,driverId:driverId||null,idempotencyKey: idkey };
 }
 async function readBody(request) {
   const header = request.headers.get('content-length');
