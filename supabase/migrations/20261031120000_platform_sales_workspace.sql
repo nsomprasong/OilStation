@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION public.platform_sales_workspace(p_actor_id uuid)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
 AS $fn$
 DECLARE v_admin boolean;v_sales boolean;v_people jsonb;v_invitations jsonb;
- v_stations jsonb;v_assignments jsonb;v_commissions jsonb;
+ v_stations jsonb;v_assignments jsonb;v_commissions jsonb;v_collected jsonb;
 BEGIN
  SELECT EXISTS(SELECT 1 FROM public.memberships m
    WHERE m.user_id=p_actor_id AND m.scope_type='platform'
@@ -84,9 +84,30 @@ BEGIN
   ORDER BY s.name LIMIT 300
  ) q;
 
+ -- Proven collected customers require a paid invoice AND an attributed entitlement.
+ -- A future transfer never changes this historical paid sale attribution.
+ SELECT coalesce(jsonb_agg(jsonb_build_object(
+  'salesId',q.sales_user_id,'stationId',q.station_id,'stationName',q.station_name,
+  'organization',q.organization_name,'paidInvoices',q.paid_invoices)
+  ORDER BY q.organization_name,q.station_name),'[]'::jsonb)
+ INTO v_collected FROM (
+  SELECT e.sales_user_id,e.station_id,s.name AS station_name,o.name AS organization_name,
+   count(DISTINCT i.id) AS paid_invoices
+  FROM public.commission_entitlements e
+  JOIN public.saas_invoice_lines l ON l.id=e.invoice_line_id AND l.station_id=e.station_id
+  JOIN public.saas_invoices i ON i.id=l.invoice_id
+   AND i.status='paid' AND i.paid_at IS NOT NULL
+  JOIN public.stations s ON s.id=e.station_id
+  JOIN public.organizations o ON o.id=s.organization_id
+  WHERE v_admin OR e.sales_user_id=p_actor_id
+  GROUP BY e.sales_user_id,e.station_id,s.name,o.name
+  ORDER BY o.name,s.name LIMIT 300
+ ) q;
+
  RETURN jsonb_build_object('isAdmin',v_admin,'people',v_people,
   'pendingInvitations',v_invitations,'stations',v_stations,
   'assignments',v_assignments,'commissions',v_commissions,
+  'collectedCustomers',v_collected,
   'commissionNote','Recorded entitlement/ledger only. Not a payout authorization.');
 END $fn$;
 
