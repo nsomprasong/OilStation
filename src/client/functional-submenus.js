@@ -24,6 +24,8 @@ const DESCRIPTORS={
  corporate:{kind:'ranges',host:'#corporate-workspace',breaks:[
   {id:'account',label:'บัญชีบริษัท',icon:'building'},
   {id:'topup',label:'แจ้งเติมเงิน',icon:'receipt',anchor:'#topup-upload-form'},
+  {id:'qa-topup',label:'เติมเงินทดสอบ',icon:'wallet',anchor:'#qa-topup-workspace'},
+  {id:'driver',label:'รถและคนขับ',icon:'users',anchor:'#company-driver-workspace'},
   {id:'coupon',label:'ออกคูปอง',icon:'ticket',anchor:'#coupon-form'}]},
  fuel:{kind:'single',label:'ชนิดและราคาน้ำมัน',icon:'fuel'},
  pump:{kind:'single',label:'สแกนและตรวจคูปอง',icon:'scan'},
