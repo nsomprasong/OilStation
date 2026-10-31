@@ -23,6 +23,7 @@ import { createWalletIntegrityApi } from './api/wallet-integrity.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 import { createSupabaseConnectivityProbe } from './api/supabase-connectivity.mjs';
+import {createQaAccountsApi,qaIsEnabled} from './api/qa-accounts.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -58,6 +59,24 @@ export default {
       if (url.pathname === '/api/internal/supabase-connectivity') {
         return createSupabaseConnectivityProbe(env)(request);
       }
+      // Explicit server-only QA switch. Never expose account creation just
+      // because the production preview login is enabled.
+      if(url.pathname.startsWith('/api/qa/')){
+        if(!qaIsEnabled(env))return new Response(JSON.stringify({error:'not_found'}),{
+          status:404,headers:{'content-type':'application/json','cache-control':'no-store'},
+        });
+        try{
+          const adapter=createSupabaseAdapter(env);
+          return createQaAccountsApi({
+            env,authenticate:adapter.authenticate,db:adapter.db,
+            provisionAccount:adapter.provisionQaAccount,
+          })(request);
+        }catch{
+          return new Response(JSON.stringify({error:'qa_service_unavailable'}),{
+            status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
+        }
+      }
       if (url.pathname === '/api/health') {
         return new Response(JSON.stringify({ service: 'oilstation', status: 'ok' }), {
           status: request.method === 'GET' ? 200 : 405,
@@ -75,7 +94,7 @@ export default {
           });
         return new Response(JSON.stringify({
           supabaseUrl:env.SUPABASE_URL,supabaseAnonKey:env.SUPABASE_ANON_KEY,
-          stripePublishableKey:null,
+          stripePublishableKey:null,qaModeEnabled:qaIsEnabled(env),
         }),{status:200,headers:{'content-type':'application/json; charset=utf-8',
            'cache-control':'no-store','x-content-type-options':'nosniff'}});
       }
