@@ -136,7 +136,7 @@ export function installFunctionalSubmenus(root){
   for(const button of state.nav.querySelectorAll('button[data-os-pane-key]')){
    const active=button.dataset.osPaneKey===id;
    button.classList.toggle('active',active);
-   button.setAttribute('aria-selected',String(active));
+   button.setAttribute('aria-pressed',String(active));
    if(active)button.setAttribute('aria-current','true');
    else button.removeAttribute('aria-current');
   }
@@ -176,7 +176,15 @@ export function installFunctionalSubmenus(root){
    const preferred=available.find(p=>p.id===state.start)||available[0];
    state.selected=preferred?.id||null;
   }
-  if(state.selected)show(state.key,state.selected);
+  if(state.selected){
+   show(state.key,state.selected);
+   // The initial creation pane must contain its actual form, not an empty card.
+   if(state.key==='customers'||state.key==='hr'){
+    const active=available.find(p=>p.id===state.selected);
+    const form=active?.wrapper?.querySelector('form[data-os-create-ready="true"]');
+    if(form?.hidden)form.dispatchEvent(new Event('os:create-show'));
+   }
+  }
  }
  function reconcile(){
   if(installing)return;
