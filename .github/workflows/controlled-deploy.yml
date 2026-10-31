@@ -107,9 +107,25 @@ jobs:
       - name: Deploy safe isolated UAT Worker (no production route or cron)
         if: inputs.target == 'uat'
         run: npx --yes wrangler@4 deploy --env uat
+      - name: Prepare explicitly approved production runtime configuration
+        if: inputs.target == 'production'
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          if (config.name !== 'oilstation'
+            || config.vars?.OILSTATION_API_ENABLED !== 'false'
+            || config.vars?.OILSTATION_DEPLOY_TARGET !== 'production') {
+            throw new Error('Production release must originate from fail-closed preview config');
+          }
+          // Only the independently approved release job may activate full business APIs.
+          // Leave the repository default fail-closed for all normal main pushes.
+          config.vars.OILSTATION_API_ENABLED = 'true';
+          writeFileSync('wrangler.production-release.json', JSON.stringify(config,null,2));
+          NODE
       - name: Deploy production only after preflight
         if: inputs.target == 'production'
-        run: npx --yes wrangler@4 deploy
+        run: npx --yes wrangler@4 deploy --config wrangler.production-release.json
       - name: Verify isolated UAT liveness
         if: inputs.target == 'uat'
         run: |
