@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createQaAccountsApi,qaIsEnabled} from '../../src/api/qa-accounts.mjs';
+import {createQaAccountsApi,qaIsEnabled,qaApprovedAlias} from '../../src/api/qa-accounts.mjs';
 
 const actor='11111111-1111-4111-8111-111111111111';
 const stationA='22222222-2222-4222-8222-222222222222';
@@ -91,6 +91,23 @@ test('all QA user options must be inside exact pre-approved scope allowlists',as
  assert.equal((await accepted.json()).scopes.corporate_company.length,12);
  const thirteen=handler({settings:{...env,OILSTATION_QA_COMPANY_IDS:companies.concat('99999999-9999-4999-8999-999999999999').join(',')}});
  assert.equal((await thirteen(account(body()))).status,503);
+});
+test('per-node QA usernames require matching role and scope, no impersonation',()=>{
+ const allowed={organization:[stationA],station:[stationB],corporate_company:[company]};
+ const check=(alias,scopeType,scopeId,roleCode)=>qaApprovedAlias({
+  alias,scopeType,scopeId,roleCode},allowed);
+ assert.equal(check('sales01','platform',null,'platform_sales'),true);
+ assert.equal(check('sales02','platform',null,'platform_sales'),true);
+ assert.equal(check('support01','platform',null,'platform_support'),true);
+ assert.equal(check('support02','platform',null,'platform_support'),false);
+ assert.equal(check('o01-owner','organization',stationA,'organization_owner'),true);
+ assert.equal(check('s01a-manager','station',stationB,'manager'),true);
+ assert.equal(check('s01a-pump','station',stationB,'pump_staff'),true);
+ assert.equal(check('c01-accountant','corporate_company',company,'accountant'),true);
+ assert.equal(check('c01-driver','corporate_company',company,'driver'),true);
+ assert.equal(check('s01b-manager','station',stationB,'manager'),false);
+ assert.equal(check('c02-driver','corporate_company',company,'driver'),false);
+ assert.equal(check('s01a-owner','station',stationB,'manager'),false);
 });
 test('new QA users use confirmed Supabase Auth admin user with real membership, never browser service key',()=>{
  const adapter=readFileSync(new URL('../../src/adapters/supabase.mjs',import.meta.url),'utf8');
