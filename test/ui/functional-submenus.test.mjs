@@ -33,7 +33,7 @@ test('Sales exposes four real tasks and keeps drilldowns / summaries inside the 
  assert.doesNotMatch(s,/ids:\[[^\]]*'invite'/);
  assert.doesNotMatch(s,/selector:'.*os-sales-card/);
  assert.match(ui,/root\.append\(team,assignment,transfer,commission\)/);
- assert.match(ui,/team\.append\(inviteArea\)/);
+ assert.match(ui,/team\.insertBefore\(inviteArea,teamList\)/);
  assert.match(ui,/assignment\.append\(inspectionPanel\)/);
  assert.match(ui,/transfer\.append\(historyDetails\)/);
  assert.match(ui,/commission\.append\(soldDetails\)/);
