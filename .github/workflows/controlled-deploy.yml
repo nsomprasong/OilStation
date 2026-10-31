@@ -84,7 +84,7 @@ jobs:
             "$RELEASE_SUPABASE_URL/rest/v1/rpc/oilstation_release_status" > "$tmp"
           jq -e '.ready == true and .schemaVersion == "20261029215000"' "$tmp" >/dev/null || {
             echo "::error::Production Supabase readiness failed"; exit 1; }
-      - name: Check encrypted secrets and explicitly enabled production flag
+      - name: Check encrypted secrets and fail-closed existing production flag
         if: inputs.target == 'production'
         run: |
           set -eu
@@ -101,9 +101,9 @@ jobs:
           curl --fail --silent --show-error --max-time 12 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/oilstation/settings" > "$settings_file"
-          jq -e '.success == true and any(.result.bindings[]?; .name == "OILSTATION_API_ENABLED" and .type == "plain_text" and .text == "true")' \
+          jq -e '.success == true and any(.result.bindings[]?; .name == "OILSTATION_API_ENABLED" and .type == "plain_text" and .text == "false")' \
             "$settings_file" >/dev/null || {
-              echo "::error::Production OILSTATION_API_ENABLED must be an explicit plain-text true before deploying"; exit 1; }
+              echo "::error::Production OILSTATION_API_ENABLED must remain false before release"; exit 1; }
       - name: Deploy safe isolated UAT Worker (no production route or cron)
         if: inputs.target == 'uat'
         run: npx --yes wrangler@4 deploy --env uat
