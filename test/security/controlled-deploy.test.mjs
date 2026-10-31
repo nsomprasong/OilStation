@@ -49,3 +49,14 @@ test('approved production deploy uses release-only config rather than resetting 
  assert.match(wf,/wrangler@4 deploy --config wrangler.production-release.json/);
  assert.match(wf,/wrangler.production-release.json/);
 });
+
+test('production and preview share a deploy lock while UAT remains independent',()=>{
+ assert.match(wf,/oilstation-customer-facing-worker/);
+ assert.match(wf,/oilstation-uat/);
+ assert.match(wf,/cancel-in-progress: false/);
+});
+test('approved release turns off preview-only routes at the same time as enabling business API',()=>{
+ assert.match(wf,/config\\.vars\\.OILSTATION_API_ENABLED = 'true'/);
+ assert.match(wf,/config\\.vars\\.OILSTATION_PREVIEW_LOGIN_ENABLED = 'false'/);
+ assert.match(wf,/config\\.vars\\.OILSTATION_PREVIEW_OPERATIONS_ENABLED = 'false'/);
+});
