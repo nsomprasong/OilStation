@@ -44,11 +44,32 @@ test('QA-HR-02 actual OT partial approval and shift substitution by independent 
   const roster=(await r.json()).roster;
   const employee=roster.employees.find(e=>e.code===employeeCode);
   expect(employee,'Existing QA employee from prior protected UAT').toBeTruthy();
-  const original=roster.assignments.find(a=>a.employeeId===employee.id&&a.date==='2026-11-15');
-  expect(original,'Existing QA scheduled shift').toBeTruthy();
-  expect(['scheduled','absence_review']).toContain(original.status);
-  const replacement=roster.shiftTemplates.find(t=>t.id!==original.templateId);
-  expect(replacement,'Alternative shift template').toBeTruthy();
+  // Every QA run must use a fresh future shift date. The original Nov 15
+  // fixture was already replaced by a previous successful run and cannot
+  // legally be substituted a second time.
+  const taken=new Set(roster.assignments
+   .filter(a=>a.employeeId===employee.id).map(a=>a.date));
+  const testDates=Array.from({length:45},(_,i)=>{
+   const d=new Date(Date.UTC(2026,10,16+i));
+   return d.toISOString().slice(0,10);
+  });
+  const shiftDate=testDates.find(d=>!taken.has(d));
+  expect(shiftDate,'available synthetic QA date in fixed November-December window').toBeTruthy();
+  const primary=roster.shiftTemplates.find(t=>t.id);
+  const replacement=roster.shiftTemplates.find(t=>t.id&&t.id!==primary?.id);
+  expect(primary,'QA primary shift template').toBeTruthy();
+  expect(replacement,'QA alternative shift template').toBeTruthy();
+  const assigned=await post(hr,ht,'/api/hr/assign-shift',{
+   stationId:station,employeeId:employee.id,templateId:primary.id,date:shiftDate,
+  });
+  expect(assigned.status(),await assigned.text()).toBe(201);
+  const updatedRosterRes=await get(hr,ht,'/api/hr/roster?stationId='+station);
+  expect(updatedRosterRes.status()).toBe(200);
+  const newRoster=(await updatedRosterRes.json()).roster;
+  const original=newRoster.assignments.find(a=>
+   a.employeeId===employee.id&&a.date===shiftDate&&a.templateId===primary.id);
+  expect(original,'fresh QA scheduled shift').toBeTruthy();
+  expect(original.status).toBe('scheduled');
 
   // Real overtime request: 60 minutes, second account approves 45.
   const requested=await post(hr,ht,'/api/hr/request-ot',{
