@@ -8,7 +8,7 @@ const employee='aaaaaaaa-5555-4555-8555-aaaaaaaaaaaa';
 const user='55555555-5555-4555-8555-555555555555';
 async function setup(page){
  await page.goto('/');
- await page.addScriptTag({content:clientSource+'\\nwindow.__mountHrAccessSetup=mountHrAccessSetup;'});
+ await page.addScriptTag({content:clientSource+';window.__mountHrAccessSetup=mountHrAccessSetup;'});
  await page.evaluate(async ({station,employee,user})=>{
   const app=document.querySelector('#app');
   app.className='workspace-mode';
