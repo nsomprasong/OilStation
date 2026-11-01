@@ -8,7 +8,7 @@ CREATE TABLE public.stations(
  id uuid PRIMARY KEY,latitude numeric,longitude numeric,timezone text NOT NULL DEFAULT 'Asia/Bangkok');
 CREATE TABLE public.employees(
  id uuid PRIMARY KEY,station_id uuid NOT NULL REFERENCES public.stations(id),
- user_id uuid REFERENCES public.app_users(id),display_name text NOT NULL,
+ user_id uuid REFERENCES public.app_users(id),employee_code text,display_name text NOT NULL,
  employment_status text NOT NULL DEFAULT 'active');
 CREATE TABLE public.memberships(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
