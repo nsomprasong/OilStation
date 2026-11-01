@@ -4,21 +4,21 @@ import {readFileSync} from 'node:fs';
 import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/workspace-layout.js';
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const platform={scopeType:'platform',role:'platform_superadmin'};
-test('legacy components retain behavior under the sole LuxCart stylesheet',()=>{
+test('legacy components retain behavior under the sole CSS v2 stylesheet',()=>{
  const html=read('index.html'),css=read('public/oilstation.css');
  assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1);
  assert.match(html,/href="\/oilstation\.css"/);
- for(const token of ['#040D3F','#141C4E','#1D2552','252px','68px'])
+ for(const token of ['#060F33','#040B28','#0E1B47','248px','72px'])
   assert.ok(css.includes(token),token);
- assert.match(css,/\.ws-nav\.active/);
- assert.match(css,/\.ws-sidebar/);
+ assert.match(css,/\.os-desktop-side-link/);
+ assert.match(css,/\.os-desktop-sidebar/);
  assert.match(css,/\.ws-toolbar/);
  assert.match(css,/\.saas-simple-card/);
  assert.match(css,/\.fuel-row/);
  assert.match(css,/\.owner-plan-card/);
  assert.match(css,/\.attendance-workspace|\.ws-widget>section/);
  assert.match(css,/@media\(max-width:850px\)/);
- assert.match(css,/\.ws-layout\[data-rail="collapsed"\] \.ws-sidebar\.is-open/);
+ assert.match(css,/\.ws-layout\{min-height:100dvh;display:grid/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
 test('Home and a single Header submenu replace legacy drawer on all screen sizes',()=>{
