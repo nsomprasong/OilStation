@@ -48,8 +48,9 @@ test('QA-HR-04 independent leave UI and payroll-safe labels @qa-business-leave',
   await policies.locator('summary').click();
   await expect(policies).toContainText('กำหนดนโยบายตามเอกสารของสถานีเอง');
   await expect(policies.getByRole('button',{name:'ส่งนโยบายให้ผู้มีสิทธิ์อีกคนตรวจ'})).toBeVisible();
-  await expect(policies).toContainText('ภาษีและประกันสังคม');
-  console.log('QA-HR POLICY UI PASS: station-specific rules require independent verification');
+  await expect(policies).toContainText('ยังไม่มีนโยบายอนุมัติ');
+  await expect(owner.locator('.attendance-payroll-preview')).toContainText('รอตรวจภาษีและประกันสังคม');
+  console.log('QA-HR POLICY UI PASS: no approved policy, independent approval required and statutory remains blocked');
  }finally{
   await Promise.all([hr.close(),owner.close()]);
  }
