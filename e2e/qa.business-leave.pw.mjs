@@ -33,6 +33,15 @@ test('QA-HR-04 independent leave UI and payroll-safe labels @qa-business-leave',
    await expect(section.locator('select')).toHaveCount(2);
   }
   console.log('QA-HR LEAVE UI PASS: HR & Owner see request/review workflow, no payroll claims');
+  await owner.locator('[data-ws-go="payroll"]:visible').first().click();
+  await expect(owner.locator('.attendance-payroll-preview')).toContainText('ตรวจความพร้อมก่อนปิดงวด HR');
+  const readiness=owner.getByRole('button',{name:'ตรวจรายการค้างก่อนปิดงวด'});
+  await expect(readiness).toBeEnabled();
+  await readiness.click();
+  await expect(owner.locator('.attendance-payroll-preview')).toContainText(
+   'ยังไม่อนุญาตให้จ่ายหรือปิดงวด',{timeout:20000});
+  await expect(owner.locator('.attendance-payroll-preview')).toContainText('รอตรวจภาษีและประกันสังคม');
+  console.log('QA-HR PAYROLL READINESS PASS: live scoped evidence, review blockers, no payout');
  }finally{
   await Promise.all([hr.close(),owner.close()]);
  }
