@@ -119,7 +119,7 @@ test('refund reconciliation stays OFF by default; opt-in accepts only signed suc
  const A='22222222-2222-4222-8222-222222222222';
  const valid={id:'evt_RefundSuccess123456',type:'refund.updated',livemode:false,
   data:{object:{id:'re_RefundSuccess123456',object:'refund',
-   livemode:false,status:'succeeded',currency:'thb',amount:10000,
+   status:'succeeded',currency:'thb',amount:10000,
    charge:'ch_RefundSuccess123456',payment_intent:'pi_RefundSuccess123456',
    metadata:{saas_invoice_id:I,saas_payment_attempt_id:A}}}};
  let inbox=0,settlements=0;
