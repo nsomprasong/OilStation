@@ -113,3 +113,40 @@ test('unsigned refund event still fails signature before inbox',async()=>{
   body:JSON.stringify({...event,type:'charge.refunded'})}));
  assert.equal(res.status,400);assert.equal(called,0);
 });
+
+test('refund reconciliation stays OFF by default; opt-in accepts only signed successful refunds',async()=>{
+ const I='11111111-1111-4111-8111-111111111111';
+ const A='22222222-2222-4222-8222-222222222222';
+ const valid={id:'evt_RefundSuccess123456',type:'refund.updated',livemode:false,
+  data:{object:{id:'re_RefundSuccess123456',object:'refund',
+   livemode:false,status:'succeeded',currency:'thb',amount:10000,
+   charge:'ch_RefundSuccess123456',payment_intent:'pi_RefundSuccess123456',
+   metadata:{saas_invoice_id:I,saas_payment_attempt_id:A}}}};
+ let inbox=0,settlements=0;
+ const db={recordStripeEvent:async()=>{inbox++;return {replayed:false};},
+  reconcileSaasRefund:async proof=>{settlements++;assert.equal(proof.refundId,
+   're_RefundSuccess123456');return {status:'paid',replayed:false};}};
+ const disabled=createStripeWebhookApi({db,secret,nowSeconds:()=>now,
+  processTestPayments:true});
+ let res=await disabled(await make(valid));
+ assert.equal(res.status,503);assert.equal(settlements,0);
+ const enabled=createStripeWebhookApi({db,secret,nowSeconds:()=>now,
+  processTestPayments:true,processTestRefunds:true});
+ res=await enabled(await make(valid));
+ assert.equal(res.status,200);
+ assert.deepEqual(await res.json(),{received:true,replayed:false,invoiceStatus:'paid'});
+ assert.equal(settlements,1);
+ const pending={...valid,data:{object:{...valid.data.object,status:'pending'}}};
+ res=await enabled(await make(pending));
+ assert.equal(res.status,503);
+ assert.equal(settlements,1);
+ const mismatched={...valid,data:{object:{...valid.data.object,currency:'usd'}}};
+ res=await enabled(await make(mismatched));
+ assert.equal(res.status,422);
+ assert.equal(settlements,1);
+ res=await enabled(new Request(endpoint,{method:'POST',headers:{
+  'content-type':'application/json'},body:JSON.stringify(valid)}));
+ assert.equal(res.status,400);
+ assert.equal(settlements,1);
+ assert.equal(inbox,4);
+});
