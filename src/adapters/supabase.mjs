@@ -28,12 +28,17 @@ async function fetchJson(url, init) {
       'NOT_CANCELLABLE', 'INVALID_RESERVATION', 'INVALID_INVITATION',
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
       'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH',
+      'SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
+      'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE','PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED',
       'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
       err.code = detail.message === 'INSUFFICIENT_FUNDS' ? 'INSUFFICIENT_FUNDS' :
         detail.message === 'FORBIDDEN' ? 'FORBIDDEN' :
+        ['SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
+         'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE',
+         'PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED'].includes(detail.message) ? detail.message :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
@@ -516,6 +521,40 @@ export function createSupabaseAdapter(env) {
             p_actor_id:d.actorId,p_request_id:d.requestId,p_approved:d.approved,
           }),
         }),
+      hrRegisterPayee: async d=>serviceRequest(env,'/rest/v1/rpc/hr_register_employee_payee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,p_type:d.type,
+          p_reference:d.reference,p_bank_code:d.bankCode}),
+      }),
+      hrListPayees: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_employee_payees',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
+      }),
+      hrReviewPayee: async d=>serviceRequest(env,'/rest/v1/rpc/hr_review_employee_payee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_method_id:d.methodId,
+          p_approved:d.approved,p_verified_name:d.verifiedName}),
+      }),
+      hrRevealPayee: async d=>serviceRequest(env,'/rest/v1/rpc/hr_reveal_approved_payee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_method_id:d.methodId}),
+      }),
+      hrRequestAdvance: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_request_salary_advance_installments',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
+          p_amount_satang:d.amountSatang,p_installments:d.installments,
+          p_first_date:d.firstDeductionDate}),
+      }),
+      hrListAdvances: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_salary_advances',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
+      }),
+      hrReviewAdvance: async d=>serviceRequest(env,'/rest/v1/rpc/hr_review_salary_advance',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_advance_id:d.advanceId,
+          p_approved:d.approved}),
+      }),
       hrRoster: async d => serviceRequest(env,'/rest/v1/rpc/hr_station_roster',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),

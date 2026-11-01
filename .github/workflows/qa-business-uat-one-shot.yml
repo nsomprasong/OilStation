@@ -7,6 +7,7 @@ on:
       - .github/workflows/qa-business-uat-one-shot.yml
       - e2e/qa.business-hr.pw.mjs
       - e2e/qa.business-approvals.pw.mjs
+      - e2e/qa.business-payees.pw.mjs
 permissions:
   contents: read
   actions: read

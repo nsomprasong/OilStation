@@ -4,11 +4,16 @@ import {createApi} from './router.mjs';
 import {createAttendanceReviewApi} from './attendance-review.mjs';
 import {createAttendancePayrollPreviewApi} from './attendance-payroll-preview.mjs';
 import {createGpsAttendanceApi} from './attendance.mjs';
+import {createHrPaymentApi,HR_PAYMENT_ROUTES} from './hr-payments.mjs';
 
 // Fixed QA actor + four-station boundary while all general production APIs stay OFF.
 // Never accept real employee/payroll actors, cross-station writes or real payments.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const paths=new Map([
+ ['/api/hr/payees','GET'],['/api/hr/payees/register','POST'],
+ ['/api/hr/payees/review','POST'],['/api/hr/payees/instruction','POST'],
+ ['/api/hr/advances','GET'],['/api/hr/advances/request','POST'],
+ ['/api/hr/advances/review','POST'],
  ['/api/hr/link-setup','GET'],
  ['/api/hr/roster','GET'],['/api/hr/employees','POST'],
  ['/api/hr/employee-link','POST'],['/api/hr/geofence','POST'],
@@ -66,6 +71,8 @@ export function createQaHrUatApi({env,authenticate,db}){
     return createAttendancePayrollPreviewApi(deps)(request);
    if(url.pathname==='/api/hr/attendance/gps')
     return createGpsAttendanceApi(deps)(request);
+   if(HR_PAYMENT_ROUTES.includes(url.pathname))
+    return createHrPaymentApi(deps)(request);
    return createApi(deps)(request);
   }catch{
    return reply(503,'qa_hr_unavailable');

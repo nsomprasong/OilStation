@@ -33,6 +33,7 @@ import {createQaOperationsApi} from './api/qa-operations.mjs';
 import {createQaCouponViewApi} from './api/qa-coupon-view.mjs';
 import {createDriverWorkspaceApi} from './api/driver-workspace.mjs';
 import {createQaHrUatApi} from './api/qa-hr-uat.mjs';
+import {createHrPaymentApi,HR_PAYMENT_ROUTES} from './api/hr-payments.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -310,6 +311,9 @@ export default {
             processTestPayments:stripeTestReconciliationEligible(env),
              processTestRefunds:stripeTestRefundReconciliationEligible(env),
              processTestDisputes:stripeTestDisputeReviewEligible(env)})(request);
+        }
+        if (HR_PAYMENT_ROUTES.includes(url.pathname)) {
+          return createHrPaymentApi(deps)(request);
         }
         if (url.pathname === '/api/hr/attendance/payroll-preview') {
           return createAttendancePayrollPreviewApi(deps)(request);
