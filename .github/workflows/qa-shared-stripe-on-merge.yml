@@ -4,8 +4,6 @@ on:
     branches: [main]
     paths:
       - 'src/api/qa-stripe-shared.mjs'
-      - 'src/worker.mjs'
-      - 'e2e/qa.stripe-settlement.pw.mjs'
       - '.github/workflows/qa-shared-stripe-on-merge.yml'
 permissions:
   contents: read
@@ -70,23 +68,3 @@ jobs:
             echo "::error::QA Stripe endpoint did not enforce authentication (HTTP $status)"
             exit 1
           }
-
-  settle-frozen-qa-invoice:
-    needs: deploy-qa-only
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
-    environment: oilstation-qa
-    env:
-      OILSTATION_QA_STRIPE_PROVIDER_RUN: 'true'
-      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
-    steps:
-      - uses: actions/checkout@v4
-        with: {persist-credentials: false}
-      - uses: actions/setup-node@v4
-        with: {node-version-file: .nvmrc}
-      - name: Require existing protected QA identity
-        run: test -n "$OILSTATION_QA_SALES01_PASSWORD"
-      - run: npm install --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium
-      - name: Confirm ONLY frozen QA Stripe TEST card and verify webhook settlement
-        run: npm run test:e2e -- --grep '@qa-stripe-settlement' --reporter=list

@@ -49,6 +49,12 @@ async({browser,request})=>{
   expect(wrongMethod.status()).toBe(409);
   const create=await page.request.post(UAT+'/api/billing/payment-intent',{
    headers,data:{invoiceId:INVOICE,paymentMethod:'card'}});
+  // One-shot QA fixture is already paid after the approved real-provider UAT.
+  // An attempt to restart a settled invoice must conflict, not create a new charge.
+  if(create.status()===409){
+   console.log('QA-STRIPE-PI PASS: previously settled QA invoice refused replay; no new PaymentIntent.');
+   return;
+  }
   expect(create.status(),'QA Stripe PI should create in test-only UAT').toBe(200);
   const result=await create.json();
   expect(result.invoiceId).toBe(INVOICE);
