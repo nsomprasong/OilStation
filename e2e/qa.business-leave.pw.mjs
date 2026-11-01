@@ -51,6 +51,13 @@ test('QA-HR-04 independent leave UI and payroll-safe labels @qa-business-leave',
   await expect(policies).toContainText('ยังไม่มีนโยบายอนุมัติ');
   await expect(owner.locator('.attendance-payroll-preview')).toContainText('รอตรวจภาษีและประกันสังคม');
   console.log('QA-HR POLICY UI PASS: no approved policy, independent approval required and statutory remains blocked');
+  const drafts=owner.locator('.attendance-payroll-preview details').filter({
+   hasText:'ร่างและตรวจยอดเงินเดือน'});
+  await drafts.locator('summary').click();
+  await expect(drafts).toContainText('ยังไม่จ่ายเงิน ไม่ส่งธนาคาร');
+  await expect(drafts.getByRole('button',{name:'สร้างร่างเงินเดือนส่งให้ฝ่ายบัญชีตรวจ'})).toBeVisible();
+  await expect(drafts).toContainText('ยังไม่มีร่างเงินเดือน');
+  console.log('QA-HR DRAFT UI PASS: manual statutory review visible, no automatic payroll payout');
  }finally{
   await Promise.all([hr.close(),owner.close()]);
  }
