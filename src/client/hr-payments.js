@@ -99,7 +99,7 @@ export async function mountHrPayeeAdvance({target,token,stationId}){
     approve.addEventListener('click',()=>decide(true));
     reject.addEventListener('click',()=>decide(false));
     row.append(name.wrap,approve,reject);
-   }else if(p.status==='approved'){
+   }else if(p.status==='approved'&&p.isPrimary===true){
     const instruction=el('button','สร้างรายการจ่าย / QR','button secondary');instruction.type='button';
     const transferAmount=field('ยอดที่ต้องการจ่าย (บาท)','text','500.00');
     transferAmount.input.inputMode='decimal';
