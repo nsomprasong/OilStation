@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {succeededTestRefundEvidence} from '../../src/domain/stripe-refund-evidence.mjs';
 const event={id:'evt_QARfValid123456',type:'refund.updated',livemode:false,
- data:{object:{id:'re_QARfValid123456',object:'refund',livemode:false,
+ data:{object:{id:'re_QARfValid123456',object:'refund',
   status:'succeeded',amount:12345,currency:'thb',
   payment_intent:'pi_QARfValid123456',charge:'ch_QARfValid123456'}}};
 test('only confirmed Stripe TEST refunds produce evidence for existing PI binding',()=>{
@@ -12,6 +12,8 @@ test('only confirmed Stripe TEST refunds produce evidence for existing PI bindin
   amountSatang:12345,currency:'thb',status:'succeeded',livemode:false,
  });
  assert.equal(succeededTestRefundEvidence({...event,type:'refund.created'})?.amountSatang,12345);
+ // Official Stripe Refund sample omits livemode; the signed Event carries it.
+ assert.equal(succeededTestRefundEvidence({...event,data:{object:{...event.data.object,livemode:false}}})?.amountSatang,12345);
  for(const type of ['refund.failed','charge.refunded','charge.dispute.created',
    'payment_intent.succeeded']){
   assert.equal(succeededTestRefundEvidence({...event,type}),null);

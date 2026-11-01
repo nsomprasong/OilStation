@@ -119,7 +119,7 @@ test('refund reconciliation stays OFF by default; opt-in accepts only signed suc
  const A='22222222-2222-4222-8222-222222222222';
  const valid={id:'evt_RefundSuccess123456',type:'refund.updated',livemode:false,
   data:{object:{id:'re_RefundSuccess123456',object:'refund',
-   livemode:false,status:'succeeded',currency:'thb',amount:10000,
+   status:'succeeded',currency:'thb',amount:10000,
    charge:'ch_RefundSuccess123456',payment_intent:'pi_RefundSuccess123456',
    metadata:{saas_invoice_id:I,saas_payment_attempt_id:A}}}};
  let inbox=0,settlements=0;
@@ -149,4 +149,42 @@ test('refund reconciliation stays OFF by default; opt-in accepts only signed suc
  assert.equal(res.status,400);
  assert.equal(settlements,1);
  assert.equal(inbox,4);
+});
+
+test('dispute review is OFF by default; opt-in stores signed TEST snapshot but never changes invoice',async()=>{
+ const valid={id:'evt_DisputeReview123456',type:'charge.dispute.created',livemode:false,
+  created:1793500000,data:{object:{
+   id:'du_DisputeReview123456',object:'dispute',livemode:false,
+   charge:'ch_DisputeReview123456',payment_intent:'pi_DisputeReview123456',
+   amount:10000,currency:'thb',status:'needs_response'}}};
+ const writes=[];let paidChanges=0;
+ const db={
+  recordStripeEvent:async d=>{writes.push(['inbox',d]);return {replayed:false};},
+  recordSaasDisputeReview:async d=>{writes.push(['review',d]);
+   return {replayed:false,status:d.status};},
+  reconcileSaasPaid:async()=>{paidChanges++;throw Error('dispute must not pay');},
+  reconcileSaasRefund:async()=>{paidChanges++;throw Error('dispute must not refund');},
+ };
+ const disabled=createStripeWebhookApi({db,secret,nowSeconds:()=>now});
+ let r=await disabled(await make(valid));
+ assert.equal(r.status,503);
+ assert.deepEqual(writes.map(x=>x[0]),['inbox']);
+ const enabled=createStripeWebhookApi({db,secret,nowSeconds:()=>now,
+  processTestDisputes:true});
+ r=await enabled(await make(valid));
+ assert.equal(r.status,200);
+ assert.deepEqual(await r.json(),{received:true,replayed:false,
+  disputeStatus:'needs_response',reviewOnly:true});
+ assert.deepEqual(writes.map(x=>x[0]),['inbox','inbox','review']);
+ assert.equal(writes[2][1].paymentIntentId,'pi_DisputeReview123456');
+ r=await enabled(await make({...valid,id:'evt_DisputeClosed123456',
+  type:'charge.dispute.closed',created:1793500100,data:{object:{
+   ...valid.data.object,status:'lost'}}}));
+ assert.equal(r.status,200);
+ assert.equal((await r.json()).disputeStatus,'lost');
+ r=await enabled(await make({...valid,id:'evt_DisputeNullPi1234',
+  data:{object:{...valid.data.object,payment_intent:null}}}));
+ assert.equal(r.status,422);
+ assert.equal((await r.json()).error,'dispute_evidence_invalid');
+ assert.equal(paidChanges,0);
 });

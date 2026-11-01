@@ -1,5 +1,6 @@
 import { paidStripeEvidence } from '../domain/stripe-reconciliation.mjs';
 import { succeededTestRefundEvidence } from '../domain/stripe-refund-evidence.mjs';
+import { testDisputeReviewEvidence } from '../domain/stripe-dispute-evidence.mjs';
 /** Stripe raw-byte webhook inbox. No event here credits wallets or invoices. */
 const json=(status,body)=>new Response(JSON.stringify(body),{status,headers:{
  'content-type':'application/json; charset=utf-8','cache-control':'no-store',
@@ -47,7 +48,7 @@ export async function verifyStripeSignature(raw,header,secret,nowSeconds=Math.fl
  }
  return false;
 }
-export function createStripeWebhookApi({db,secret,processTestPayments=false,processTestRefunds=false,verifyEventScope=null,nowSeconds=()=>Math.floor(Date.now()/1000)}){
+export function createStripeWebhookApi({db,secret,processTestPayments=false,processTestRefunds=false,processTestDisputes=false,verifyEventScope=null,nowSeconds=()=>Math.floor(Date.now()/1000)}){
  return async request=>{
   if(new URL(request.url).pathname!=='/api/webhooks/stripe')return json(404,{error:'not_found'});
   if(request.method!=='POST')return json(405,{error:'method_not_allowed'});
@@ -92,6 +93,21 @@ export function createStripeWebhookApi({db,secret,processTestPayments=false,proc
      const result=await db.reconcileSaasRefund(refund);
      return json(200,{received:true,replayed:result?.replayed===true,
        invoiceStatus:result?.status});
+   }
+   // TEST-only dispute review: a signed event is audit evidence, NOT
+   // evidence of a bank debit or reinstatement. No automatic chargeback.
+   if (['charge.dispute.created','charge.dispute.updated',
+         'charge.dispute.closed'].includes(event.type) && processTestDisputes){
+     let dispute;
+     try{dispute=testDisputeReviewEvidence(event);}catch{
+       return json(422,{error:'dispute_evidence_invalid'});
+     }
+     if(!dispute)return json(422,{error:'dispute_evidence_invalid'});
+     if(typeof db.recordSaasDisputeReview!=='function')
+       return json(503,{error:'dispute_review_unavailable'});
+     const recorded=await db.recordSaasDisputeReview(dispute);
+     return json(200,{received:true,replayed:recorded?.replayed===true,
+       disputeStatus:recorded?.status,reviewOnly:true});
    }
    if (['charge.refunded','refund.created','refund.updated','refund.failed',
       'charge.dispute.created','charge.dispute.updated','charge.dispute.closed',

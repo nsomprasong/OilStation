@@ -316,6 +316,18 @@ export function createSupabaseAdapter(env) {
         }),
       // Never invoked unless the isolated TEST refund feature gate is
       // explicitly enabled and an authenticated Stripe webhook is checked.
+      // TEST review-only RPC. No production webhook route enables this gate.
+      recordSaasDisputeReview: async d=>serviceRequest(env,
+        '/rest/v1/rpc/record_saas_test_dispute_review',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_event_id:d.eventId,p_dispute_id:d.disputeId,
+            p_payment_intent_id:d.paymentIntentId,p_charge_id:d.chargeId,
+            p_amount_satang:d.amountSatang,p_currency:d.currency,
+            p_dispute_status:d.status,p_event_type:d.eventType,
+            p_event_created:d.eventCreated,p_livemode:d.livemode,
+          }),
+        }),
       reconcileSaasRefund: async d=>serviceRequest(env,
         '/rest/v1/rpc/reconcile_saas_test_succeeded_refund',{
           method:'POST',headers:{'content-type':'application/json'},
