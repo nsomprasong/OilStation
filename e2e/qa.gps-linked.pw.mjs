@@ -108,7 +108,7 @@ test('QA-GPS-01 linked existing attendant, synthetic geofence GPS, independent r
 
    const pending=await get(owner,own.token,'/api/hr/attendance/pending?stationId='+STATION);
    expect(pending.status()).toBe(200);
-   const ids=(await pending.json()).events.map(e=>e.id);
+   const ids=(await pending.json()).events.map(e=>e.eventId);
    expect(ids).toContain(first.id);
    expect(ids).toContain(second.id);
    for(const eventId of [first.id,second.id]){
