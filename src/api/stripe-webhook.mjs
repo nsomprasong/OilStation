@@ -1,4 +1,5 @@
 import { paidStripeEvidence } from '../domain/stripe-reconciliation.mjs';
+import { succeededTestRefundEvidence } from '../domain/stripe-refund-evidence.mjs';
 /** Stripe raw-byte webhook inbox. No event here credits wallets or invoices. */
 const json=(status,body)=>new Response(JSON.stringify(body),{status,headers:{
  'content-type':'application/json; charset=utf-8','cache-control':'no-store',
@@ -46,7 +47,7 @@ export async function verifyStripeSignature(raw,header,secret,nowSeconds=Math.fl
  }
  return false;
 }
-export function createStripeWebhookApi({db,secret,processTestPayments=false,verifyEventScope=null,nowSeconds=()=>Math.floor(Date.now()/1000)}){
+export function createStripeWebhookApi({db,secret,processTestPayments=false,processTestRefunds=false,verifyEventScope=null,nowSeconds=()=>Math.floor(Date.now()/1000)}){
  return async request=>{
   if(new URL(request.url).pathname!=='/api/webhooks/stripe')return json(404,{error:'not_found'});
   if(request.method!=='POST')return json(405,{error:'method_not_allowed'});
@@ -76,10 +77,22 @@ export function createStripeWebhookApi({db,secret,processTestPayments=false,veri
   try{
    const result=await db.recordStripeEvent({eventId:event.id,eventType:event.type,
       hash,livemode:event.livemode});
-   // Payment reversal events are not yet journalled into SaaS invoice and
-   // commission recovery. Never 2xx-ACK a refund/dispute without a reviewed
-   // reconciliation handler: retain the signed event and request Stripe retry.
-   // This is deliberate test-mode quarantine, NOT completed refund support.
+   // Provider-confirmed refund processing is opt-in and NEVER enabled in
+   // the shared production-backed QA Worker. Disputes and charge.refunded
+   // still quarantine: a refund cannot be inferred from a charge summary.
+   if (['refund.created','refund.updated'].includes(event.type) &&
+       processTestRefunds){
+     let refund;
+     try{refund=succeededTestRefundEvidence(event);}catch{
+       return json(422,{error:'refund_evidence_invalid'});
+     }
+     if(!refund)return json(503,{error:'refund_not_succeeded'});
+     if(typeof db.reconcileSaasRefund!=='function')
+       return json(503,{error:'refund_reconciliation_unavailable'});
+     const result=await db.reconcileSaasRefund(refund);
+     return json(200,{received:true,replayed:result?.replayed===true,
+       invoiceStatus:result?.status});
+   }
    if (['charge.refunded','refund.created','refund.updated','refund.failed',
       'charge.dispute.created','charge.dispute.updated','charge.dispute.closed',
       'payment_intent.canceled'].includes(event.type))
