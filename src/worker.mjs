@@ -68,7 +68,7 @@ export default {
       // Supabase project. Never enable all business APIs to use this exception.
       // Both routes require frozen QA station + invoice SQL attestation.
       if(env.OILSTATION_DEPLOY_TARGET==='uat' &&
-         ['/api/billing/payment-intent','/api/webhooks/stripe'].includes(url.pathname) &&
+         ['/api/billing/payment-intent','/api/webhooks/stripe','/api/qa/stripe/public-key'].includes(url.pathname) &&
          env.OILSTATION_SHARED_QA_BILLING_ENABLED==='true'){
         if(!sharedProjectQaStripeEligible(env))
           return new Response(JSON.stringify({error:'qa_stripe_not_ready'}),{
