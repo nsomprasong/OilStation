@@ -11,7 +11,9 @@ export function succeededTestRefundEvidence(event){
     event?.livemode!==false)return null;
  const refund=event?.data?.object;
  if(refund?.status!=='succeeded')return null; // Pending or failed is NOT money returned.
- if(refund.object!=='refund'||refund.livemode!==false||
+ // Stripe Refund objects do not always include livemode (unlike Events).
+ // The signed event is authoritative; reject an explicitly contradictory field.
+ if(refund.object!=='refund'||(refund.livemode!==undefined&&refund.livemode!==false)||
     !REFUND.test(refund.id??'')||!PI.test(refund.payment_intent??'')||
     !CHARGE.test(refund.charge??'')||refund.currency!=='thb'||
     !Number.isSafeInteger(refund.amount)||refund.amount<1||
