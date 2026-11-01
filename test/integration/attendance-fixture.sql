@@ -22,9 +22,6 @@ CREATE TABLE public.audit_events(
  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,actor_id uuid,
  station_id uuid,entity_type text,entity_id text,action text,
  before_state jsonb,after_state jsonb);
-INSERT INTO public.station_modules(station_id,module_code,status) VALUES
- ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','hr_payroll','enabled'),
- ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','hr_payroll','disabled');
 CREATE TABLE public.attendance_events(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  employee_id uuid NOT NULL REFERENCES public.employees(id),
@@ -42,6 +39,9 @@ INSERT INTO public.app_users(id) VALUES
 INSERT INTO public.stations(id) VALUES
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+INSERT INTO public.station_modules(station_id,module_code,status) VALUES
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','hr_payroll','enabled'),
+ ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','hr_payroll','disabled');
 INSERT INTO public.employees(id,station_id,user_id,display_name,employment_status) VALUES
  ('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   '22222222-2222-4222-8222-222222222222','Employee A','active'),
