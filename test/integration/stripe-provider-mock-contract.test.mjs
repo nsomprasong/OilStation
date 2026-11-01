@@ -119,3 +119,63 @@ test('simulated Stripe provider: locked invoice -> one PI -> signed webhook -> p
  assert.equal(refund.status,503);
  assert.equal(paidTransitions,1);
 });
+
+test('declined Stripe TEST payment never settles a SaaS invoice, and replay reuses the same PI',async()=>{
+ let events=0,settlements=0,reads=0,creates=0,attached=0;
+ const original={
+  id:'evt_QADeclined123456',type:'payment_intent.payment_failed',livemode:false,
+  data:{object:{id:PI,object:'payment_intent',status:'requires_payment_method',
+   livemode:false,currency:'thb',amount:AMOUNT,amount_received:0,
+   metadata:{saas_invoice_id:INVOICE,saas_payment_attempt_id:ATTEMPT}}},
+ };
+ const db={
+  recordStripeEvent:async()=>{events++;return {replayed:false};},
+  reconcileSaasPaid:async()=>{settlements++;throw Error('failed payment must not settle');},
+  prepareSaasPayment:async()=>({attemptId:ATTEMPT,amountSatang:AMOUNT,
+   paymentIntentId:PI,idempotencyKey:'oilstation-pi-'+ATTEMPT}),
+  attachSaasPaymentIntent:async d=>{attached++;return {paymentIntentId:d.paymentIntentId};},
+ };
+ const hook=createStripeWebhookApi({db,secret:WEBHOOK_SECRET,nowSeconds:()=>ts,
+  processTestPayments:true});
+ const rejected=await hook(await signed(original));
+ assert.equal(rejected.status,200);
+ assert.equal((await rejected.json()).received,true);
+ assert.equal(events,1);
+ assert.equal(settlements,0);
+ const provider={
+  create:async()=>{creates++;throw Error('unexpected new PI');},
+  retrieve:async d=>{reads++;assert.equal(d.paymentIntentId,PI);return {
+   id:PI,clientSecret:PI+'_secret_mock',status:'requires_payment_method'};},
+ };
+ const billing=createBillingPaymentApi({db,payments:provider,enabled:true,
+  authenticate:async()=>({id:ID})});
+ const retry=await billing(request('/api/billing/payment-intent',{
+  invoiceId:INVOICE,paymentMethod:'card'}));
+ assert.equal(retry.status,200);
+ assert.equal((await retry.json()).status,'requires_payment_method');
+ assert.equal(creates,0);
+ assert.equal(reads,1);
+ assert.equal(attached,1);
+ assert.equal(settlements,0);
+});
+
+test('Stripe provider HTTP decline never attaches an untrusted payment reference',async()=>{
+ let attaches=0;
+ const provider=createStripeTestPaymentIntents('sk_test_abcdefghijklmnop0123456789',{
+  fetchImpl:async()=>new Response(JSON.stringify({error:{
+   type:'card_error',code:'card_declined'}}),{status:402,
+   headers:{'content-type':'application/json'}}),
+ });
+ const db={
+  prepareSaasPayment:async()=>({attemptId:ATTEMPT,amountSatang:AMOUNT,
+   idempotencyKey:'oilstation-pi-'+ATTEMPT}),
+  attachSaasPaymentIntent:async()=>{attaches++;throw Error('must not attach');},
+ };
+ const billing=createBillingPaymentApi({db,payments:provider,enabled:true,
+  authenticate:async()=>({id:ID})});
+ const res=await billing(request('/api/billing/payment-intent',{
+  invoiceId:INVOICE,paymentMethod:'card'}));
+ assert.equal(res.status,503);
+ assert.equal((await res.json()).error,'payment_provider_unavailable');
+ assert.equal(attaches,0);
+});
