@@ -161,6 +161,7 @@ BEGIN
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
  IF p_amount_satang IS NULL OR p_amount_satang<1 OR p_amount_satang>999999999999
  OR p_installments IS NULL OR p_installments NOT BETWEEN 1 AND 24
+ OR p_amount_satang<p_installments
  OR p_first_date IS NULL OR p_first_date<current_date
  OR p_first_date>current_date+730
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_ADVANCE_PLAN';END IF;
