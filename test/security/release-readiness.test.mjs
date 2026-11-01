@@ -19,3 +19,10 @@ test('release probe is read-only, service-role only, fixed search path',()=>{
  assert.match(s,/REVOKE ALL ON FUNCTION public\.oilstation_release_status\(\)/);
  assert.match(s,/TO service_role/);
 });
+
+test('Sales station idempotency table forces RLS as required by readiness',()=>{
+ const m=readFileSync(new URL('../../supabase/migrations/20261031143000_sales_station_self_onboarding.sql',import.meta.url),'utf8');
+ assert.match(m,/ALTER TABLE public\.sales_station_creation_requests ENABLE ROW LEVEL SECURITY;/);
+ assert.match(m,/ALTER TABLE public\.sales_station_creation_requests FORCE ROW LEVEL SECURITY;/);
+ assert.match(m,/REVOKE ALL ON public\.sales_station_creation_requests FROM PUBLIC,anon,authenticated;/);
+});
