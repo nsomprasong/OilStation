@@ -15,10 +15,11 @@ test('distance and uncertainty must consider GPS accuracy',()=>{
  assert.equal(evaluateGeofence({...base,latitude:13.7563,longitude:100.5018,accuracyMeters:250}).status,'uncertain');
  assert.equal(evaluateGeofence({...base,stationLatitude:null,latitude:13.7563,longitude:100.5018,accuracyMeters:10}).status,'unconfigured');
 });
-function app(){
+function app(memberships=[{active:true,scope_type:'station',station_id:STATION}]){
  const calls=[];
  const handler=createGpsAttendanceApi({authenticate:async t=>t==='good'?{id:USER}:null,
- db:{hrRecordGps:async d=>{calls.push(d);return {id:USER,status:'pending',faceVerified:false};}}});
+ db:{memberships:async()=>memberships,
+  hrRecordGps:async d=>{calls.push(d);return {id:USER,status:'pending',faceVerified:false};}}});
  return {calls,handler};
 }
 const request=(data=payload,extra={})=>new Request(URL,{method:'POST',headers:{
@@ -36,4 +37,19 @@ test('reject invalid GPS, missing auth, invalid retry key and cross-origin',asyn
  assert.equal((await a.handler(request(payload,{authorization:'Bearer bad'}))).status,401);
  assert.equal((await a.handler(request(payload,{origin:'https://evil.invalid'}))).status,403);
  assert.equal(a.calls.length,0);
+});
+
+test('revoked, foreign and missing station memberships cannot clock in',async()=>{
+ for(const memberships of [
+  [],
+  [{active:false,scope_type:'station',station_id:STATION}],
+  [{active:true,scope_type:'station',station_id:'33333333-3333-4333-8333-333333333333'}],
+  [{active:true,scope_type:'organization',station_id:STATION}],
+ ]){
+  const a=app(memberships);
+  const result=await a.handler(request());
+  assert.equal(result.status,403);
+  assert.equal((await result.json()).error,'permission_denied');
+  assert.equal(a.calls.length,0,'a denied actor must never reach GPS RPC');
+ }
 });
