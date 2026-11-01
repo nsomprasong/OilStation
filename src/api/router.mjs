@@ -13,6 +13,7 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/corporate/pending-links': 'GET',
   '/api/station/invite-first-admin': 'POST',
   '/api/hr/roster': 'GET', '/api/hr/employees': 'POST',
+  '/api/hr/employee-link':'POST', '/api/hr/geofence':'POST',
   '/api/hr/seed-shifts': 'POST', '/api/hr/assign-shift': 'POST',
   '/api/hr/request-substitute': 'POST', '/api/hr/review-substitute': 'POST',
   '/api/hr/pending-substitutes': 'GET', '/api/station/scan-qr': 'POST',
@@ -180,6 +181,24 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
         }
         if (!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json')) {
           return fail(415,'unsupported_media_type');
+        }
+        if (path==='/api/hr/employee-link') {
+          if(!UUID.test(body?.employeeId??'')||!UUID.test(body?.userId??''))
+            return fail(400,'invalid_employee_link');
+          return json(200,{result:await db.hrLinkEmployee({
+            actorId:user.id,stationId,employeeId:body.employeeId,userId:body.userId,
+          })});
+        }
+        if (path==='/api/hr/geofence') {
+          const validNumber=(n,min,max)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;
+          if(!validNumber(body?.latitude,-90,90)||!validNumber(body?.longitude,-180,180)
+           ||!Number.isInteger(body?.radiusMeters)||body.radiusMeters<50||body.radiusMeters>1500
+           ||!Number.isInteger(body?.maxAccuracyMeters)||body.maxAccuracyMeters<5||body.maxAccuracyMeters>500)
+            return fail(400,'invalid_geofence');
+          return json(200,{result:await db.hrConfigureGeofence({
+            actorId:user.id,stationId,latitude:body.latitude,longitude:body.longitude,
+            radiusMeters:body.radiusMeters,maxAccuracyMeters:body.maxAccuracyMeters,
+          })});
         }
         if (path==='/api/hr/seed-shifts') {
           return json(200,{result:await db.hrSeedTemplates({actorId:user.id,stationId})});

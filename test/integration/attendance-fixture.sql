@@ -3,7 +3,7 @@
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN;
-CREATE TABLE public.app_users(id uuid PRIMARY KEY);
+CREATE TABLE public.app_users(id uuid PRIMARY KEY,status text NOT NULL DEFAULT 'active');
 CREATE TABLE public.stations(
  id uuid PRIMARY KEY,latitude numeric,longitude numeric,timezone text NOT NULL DEFAULT 'Asia/Bangkok');
 CREATE TABLE public.employees(
@@ -15,6 +15,13 @@ CREATE TABLE public.memberships(
  user_id uuid NOT NULL REFERENCES public.app_users(id),
  station_id uuid,scope_type text NOT NULL,role_code text NOT NULL,
  active boolean NOT NULL DEFAULT true);
+CREATE TABLE public.station_modules(
+ station_id uuid REFERENCES public.stations(id),module_code text NOT NULL,
+ status text NOT NULL,PRIMARY KEY(station_id,module_code));
+CREATE TABLE public.audit_events(
+ id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,actor_id uuid,
+ station_id uuid,entity_type text,entity_id text,action text,
+ before_state jsonb,after_state jsonb);
 CREATE TABLE public.attendance_events(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  employee_id uuid NOT NULL REFERENCES public.employees(id),
@@ -32,6 +39,9 @@ INSERT INTO public.app_users(id) VALUES
 INSERT INTO public.stations(id) VALUES
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+INSERT INTO public.station_modules(station_id,module_code,status) VALUES
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','hr_payroll','enabled'),
+ ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','hr_payroll','disabled');
 INSERT INTO public.employees(id,station_id,user_id,display_name,employment_status) VALUES
  ('aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   '22222222-2222-4222-8222-222222222222','Employee A','active'),
