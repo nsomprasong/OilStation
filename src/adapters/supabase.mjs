@@ -564,6 +564,21 @@ export function createSupabaseAdapter(env) {
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_claim_id:d.claimId,p_verified:d.verified}),
       }),
+      hrLeaveList: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_leave_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
+      }),
+      hrLeaveRequest: async d=>serviceRequest(env,'/rest/v1/rpc/hr_request_leave_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
+          p_leave_type:d.leaveType,p_start_date:d.startDate,p_end_date:d.endDate,
+          p_reason:d.reason}),
+      }),
+      hrLeaveReview: async d=>serviceRequest(env,'/rest/v1/rpc/hr_review_leave_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_request_id:d.requestId,
+          p_approved:d.approved}),
+      }),
       hrListAdvances: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_salary_advances',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
