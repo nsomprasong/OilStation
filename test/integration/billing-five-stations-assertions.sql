@@ -12,7 +12,7 @@ DECLARE
   'aaaaa003-1111-4111-8111-aaaaaaaaaaaa'::uuid,
   'aaaaa004-1111-4111-8111-aaaaaaaaaaaa'::uuid,
   'aaaaa005-1111-4111-8111-aaaaaaaaaaaa'::uuid];
- id uuid;plan uuid;group_id uuid;invoice_id uuid;attempt_id uuid;line_id uuid;
+ id uuid;plan uuid;group_id uuid;v_invoice_id uuid;attempt_id uuid;line_id uuid;
  d jsonb;v_count int;failed boolean;total bigint;
 BEGIN
  FOR n IN 1..5 LOOP
@@ -35,7 +35,7 @@ BEGIN
  END LOOP;
  d:=public.platform_draft_saas_flat_invoice(admin,group_id,'promptpay',
       '2026-10-01','2026-11-01');
- invoice_id:=(d->>'invoiceId')::uuid;
+ v_invoice_id:=(d->>'invoiceId')::uuid;
  -- 4 x QR 50000 + 1 x (QR 50000 + HR 70000) = 320000 satang.
  -- PromptPay 2% = 6400, VAT exclusive 7% of 313600 = 21952.
  IF d->>'status'<>'draft' OR (d->>'lineCount')::int<>6
@@ -44,18 +44,18 @@ BEGIN
    OR (d->>'taxSatang')::bigint<>21952
    OR (d->>'totalSatang')::bigint<>335552
  THEN RAISE EXCEPTION 'five_station_invoice_incorrect %',d; END IF;
- SELECT count(*) INTO v_count FROM public.saas_invoice_lines WHERE invoice_id=invoice_id;
+ SELECT count(*) INTO v_count FROM public.saas_invoice_lines WHERE invoice_id=v_invoice_id;
  IF v_count<>6 THEN RAISE EXCEPTION 'consolidated_invoice_missing_lines';END IF;
  IF (SELECT count(distinct station_id) FROM public.saas_invoice_lines
-      WHERE invoice_id=invoice_id)<>5
+      WHERE invoice_id=v_invoice_id)<>5
    OR (SELECT sum(discount_satang) FROM public.saas_invoice_lines
-      WHERE invoice_id=invoice_id)<>6400
+      WHERE invoice_id=v_invoice_id)<>6400
    OR (SELECT sum((price_snapshot->>'allocatedTaxSatang')::bigint)
-      FROM public.saas_invoice_lines WHERE invoice_id=invoice_id)<>21952
+      FROM public.saas_invoice_lines WHERE invoice_id=v_invoice_id)<>21952
  THEN RAISE EXCEPTION 'five_station_lines_discount_vat_inconsistent';END IF;
  d:=public.platform_draft_saas_flat_invoice(admin,group_id,'promptpay',
      '2026-10-01','2026-11-01');
- IF d->>'replayed'<>'true' OR (d->>'invoiceId')::uuid<>invoice_id
+ IF d->>'replayed'<>'true' OR (d->>'invoiceId')::uuid<>v_invoice_id
  THEN RAISE EXCEPTION 'duplicate_five_station_invoice';END IF;
  failed:=false;
  BEGIN
@@ -63,8 +63,8 @@ BEGIN
      '2026-10-01','2026-11-01');
  EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
  IF NOT failed THEN RAISE EXCEPTION 'payment_method_repriced_issued_snapshot';END IF;
- PERFORM public.platform_issue_saas_invoice(admin,invoice_id);
- SELECT id INTO line_id FROM public.saas_invoice_lines WHERE invoice_id=invoice_id LIMIT 1;
+ PERFORM public.platform_issue_saas_invoice(admin,v_invoice_id);
+ SELECT id INTO line_id FROM public.saas_invoice_lines WHERE invoice_id=v_invoice_id LIMIT 1;
  failed:=false;
  BEGIN
   PERFORM public.platform_paid_saas_commission_context(admin,line_id);
@@ -72,10 +72,10 @@ BEGIN
  IF NOT failed THEN RAISE EXCEPTION 'unpaid_sales_commission_was_previewable';END IF;
  failed:=false;
  BEGIN
-  PERFORM public.prepare_saas_test_payment(owner,invoice_id,'card');
+  PERFORM public.prepare_saas_test_payment(owner,v_invoice_id,'card');
  EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
  IF NOT failed THEN RAISE EXCEPTION 'payment_method_changed_after_issue';END IF;
- d:=public.prepare_saas_test_payment(owner,invoice_id,'promptpay');
+ d:=public.prepare_saas_test_payment(owner,v_invoice_id,'promptpay');
  attempt_id:=(d->>'attemptId')::uuid;
  IF (d->>'amountSatang')::bigint<>335552
  THEN RAISE EXCEPTION 'payment_intent_amount_not_invoice_total';END IF;
@@ -85,34 +85,34 @@ BEGIN
  failed:=false;
  BEGIN
   PERFORM public.reconcile_saas_test_paid_event('evt_QAFiveStationTest123456',
-   'pi_QAFiveStationTest123456',invoice_id,attempt_id,
+   'pi_QAFiveStationTest123456',v_invoice_id,attempt_id,
     335552,335552,'usd','succeeded',false);
  EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
  IF NOT failed THEN RAISE EXCEPTION 'wrong_currency_marked_5_station_invoice_paid';END IF;
  failed:=false;
  BEGIN
   PERFORM public.reconcile_saas_test_paid_event('evt_QAFiveStationTest123456',
-   'pi_QAFiveStationTest123456',invoice_id,attempt_id,
+   'pi_QAFiveStationTest123456',v_invoice_id,attempt_id,
     335552,335552,'thb','succeeded',true);
  EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
  IF NOT failed THEN RAISE EXCEPTION 'livemode_payment_marked_qa_invoice_paid';END IF;
  failed:=false;
  BEGIN
   PERFORM public.reconcile_saas_test_paid_event('evt_QAFiveStationTest123456',
-   'pi_QAFiveStationTest123456',invoice_id,attempt_id,
+   'pi_QAFiveStationTest123456',v_invoice_id,attempt_id,
     335552,335551,'thb','succeeded',false);
  EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
  IF NOT failed THEN RAISE EXCEPTION 'partial_provider_payment_marked_paid';END IF;
  d:=public.reconcile_saas_test_paid_event('evt_QAFiveStationTest123456',
-   'pi_QAFiveStationTest123456',invoice_id,attempt_id,
+   'pi_QAFiveStationTest123456',v_invoice_id,attempt_id,
     335552,335552,'thb','succeeded',false);
  IF d->>'status'<>'paid' OR d->>'replayed'<>'false'
  THEN RAISE EXCEPTION 'five_station_invoice_payment_failed %',d;END IF;
  d:=public.reconcile_saas_test_paid_event('evt_QAFiveStationTest123456',
-   'pi_QAFiveStationTest123456',invoice_id,attempt_id,
+   'pi_QAFiveStationTest123456',v_invoice_id,attempt_id,
     335552,335552,'thb','succeeded',false);
  IF d->>'replayed'<>'true' OR
-   (SELECT count(*) FROM public.saas_payment_attempts WHERE invoice_id=invoice_id)<>1
+   (SELECT count(*) FROM public.saas_payment_attempts WHERE invoice_id=v_invoice_id)<>1
  THEN RAISE EXCEPTION 'duplicate_invoice_payment_settled_twice';END IF;
  d:=public.platform_paid_saas_commission_context(admin,line_id);
  IF d->>'invoicePaid'<>'true' THEN RAISE EXCEPTION 'paid_invoice_sales_preview_denied';END IF;
