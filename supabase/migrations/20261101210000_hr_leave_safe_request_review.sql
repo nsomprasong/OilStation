@@ -46,8 +46,8 @@ BEGIN
   status,requested_by,reason)
  VALUES(v_id,p_employee_id,p_leave_type,p_start_date,p_end_date,
   'pending',p_actor_id,v_reason);
- INSERT INTO public.audit_events(id,actor_id,station_id,entity_type,entity_id,action,after_state)
- VALUES(pg_catalog.gen_random_uuid(),p_actor_id,e.station_id,'leave_request',v_id::text,
+ INSERT INTO public.audit_events(actor_id,station_id,entity_type,entity_id,action,after_state)
+ VALUES(p_actor_id,e.station_id,'leave_request',v_id::text,
   'leave_requested',pg_catalog.jsonb_build_object('employeeId',p_employee_id,'type',
    p_leave_type,'startDate',p_start_date,'endDate',p_end_date,'status','pending',
    'payrollImpact','undetermined'));
@@ -102,8 +102,8 @@ BEGIN
  v_status:=CASE WHEN p_approved THEN 'approved' ELSE 'rejected' END;
  UPDATE public.leave_requests SET status=v_status,reviewed_by=p_actor_id,
   reviewed_at=pg_catalog.clock_timestamp() WHERE id=l.id;
- INSERT INTO public.audit_events(id,actor_id,station_id,entity_type,entity_id,action,after_state)
- VALUES(pg_catalog.gen_random_uuid(),p_actor_id,e.station_id,'leave_request',l.id::text,
+ INSERT INTO public.audit_events(actor_id,station_id,entity_type,entity_id,action,after_state)
+ VALUES(p_actor_id,e.station_id,'leave_request',l.id::text,
   'leave_reviewed',pg_catalog.jsonb_build_object('status',v_status,
    'payrollImpact','undetermined','noPayrollDeduction',true));
  RETURN pg_catalog.jsonb_build_object('id',l.id,'status',v_status,'replayed',false,
