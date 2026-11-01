@@ -42,7 +42,8 @@ jobs:
                 20261029205000_platform_saas_billing_overview.sql \
                 20261029206000_commission_preview_after_paid.sql \
                 20261101144000_shared_qa_stripe_invoice_guard.sql \
-                20261101171000_saas_test_refund_journal.sql
+                20261101171000_saas_test_refund_journal.sql \
+                20261101183000_saas_test_dispute_review_history.sql
               do
                 psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
               done
