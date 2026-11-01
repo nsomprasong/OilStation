@@ -50,7 +50,7 @@ export function mountAttendancePayrollPreview({target,token,stationId}){
  const audit=document.createElement('section');audit.className='module-item';
  const auditHeading=document.createElement('strong');
  auditHeading.textContent='ตรวจความพร้อมก่อนปิดงวด HR';
- const auditButton=document.createElement('button');auditButton.type='button';
+ const auditButton=document.createElement('button');auditButton.type='button';auditButton.disabled=true;
  auditButton.className='button secondary';auditButton.textContent='ตรวจรายการค้างก่อนปิดงวด';
  const auditResult=document.createElement('div');auditResult.setAttribute('aria-live','polite');
  const blockerLabels={
@@ -143,8 +143,9 @@ export function mountAttendancePayrollPreview({target,token,stationId}){
    }
    if([...employee.options].some(o=>o.value===selected))employee.value=selected;
    submit.disabled=employee.options.length===0;
+   auditButton.disabled=employee.options.length===0;
    notice.textContent=employee.options.length?'เลือกพนักงานและกดตรวจสรุปได้เลย':'ยังไม่มีพนักงานที่ดูได้';
-  }catch{submit.disabled=true;notice.textContent='โหลดรายชื่อไม่ได้ กรุณาตรวจสิทธิ์การจัดการพนักงาน';}
+  }catch{submit.disabled=true;auditButton.disabled=true;notice.textContent='โหลดรายชื่อไม่ได้ กรุณาตรวจสิทธิ์การจัดการพนักงาน';}
   finally{reload.disabled=false;}
  }
  form.addEventListener('submit',async e=>{
