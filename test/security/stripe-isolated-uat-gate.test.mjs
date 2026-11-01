@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {stripeTestProviderEligible,stripeTestReconciliationEligible} from '../../src/domain/stripe-test-environment.mjs';
+import {stripeTestProviderEligible,stripeTestReconciliationEligible,
+ stripeTestRefundReconciliationEligible,stripeTestDisputeReviewEligible} from '../../src/domain/stripe-test-environment.mjs';
 
 const ref='abcdefghijklmnopqrst';
 const safe={
@@ -56,4 +57,46 @@ test('production preview defaults to disabled, and both worker routes apply the 
  assert.match(worker,/if\(!stripeTestProviderEligible\(env\)\)/);
  assert.match(worker,/processTestPayments:stripeTestReconciliationEligible\(env\)/);
  assert.match(worker,/stripePublishableKey:stripeTestProviderEligible\(env\)/);
+});
+
+test('refund and dispute webhooks require an independent UAT project and explicit opt-in',()=>{
+ const enabled={...safe,STRIPE_TEST_REFUNDS_ENABLED:'true',
+  STRIPE_TEST_DISPUTE_REVIEW_ENABLED:'true'};
+ assert.equal(stripeTestRefundReconciliationEligible(enabled),true);
+ assert.equal(stripeTestDisputeReviewEligible(enabled),true);
+ assert.equal(stripeTestRefundReconciliationEligible(safe),false);
+ assert.equal(stripeTestDisputeReviewEligible(safe),false);
+ const forbidden=[
+  {OILSTATION_DEPLOY_TARGET:'production'},
+  {OILSTATION_API_ENABLED:'false'},
+  {OILSTATION_SHARED_QA_BILLING_ENABLED:'true'},
+  {OILSTATION_UAT_SUPABASE_REF:'cxihsotcpdnalswfoysx',
+   SUPABASE_URL:'https://cxihsotcpdnalswfoysx.supabase.co'},
+  {SUPABASE_URL:'https://cxihsotcpdnalswfoysx.supabase.co'},
+  {STRIPE_SECRET_KEY:'sk_live_abcdefghijklmnopqrst'},
+  {STRIPE_TEST_RECONCILIATION_ENABLED:'false'},
+ ];
+ for(const change of forbidden){
+  const env={...enabled,...change};
+  assert.equal(stripeTestRefundReconciliationEligible(env),false,JSON.stringify(change));
+  assert.equal(stripeTestDisputeReviewEligible(env),false,JSON.stringify(change));
+ }
+ assert.equal(stripeTestRefundReconciliationEligible({
+  ...enabled,STRIPE_TEST_REFUNDS_ENABLED:'false'}),false);
+ assert.equal(stripeTestDisputeReviewEligible({
+  ...enabled,STRIPE_TEST_DISPUTE_REVIEW_ENABLED:'false'}),false);
+});
+test('production and transitional shared UAT configs cannot activate new financial paths',()=>{
+ const wrangler=JSON.parse(readFileSync(new URL('../../wrangler.jsonc',import.meta.url),'utf8'));
+ const production=wrangler.vars, shared=wrangler.env.uat.vars;
+ assert.equal(production.OILSTATION_API_ENABLED,'false');
+ assert.equal(shared.OILSTATION_API_ENABLED,'false');
+ assert.equal(shared.OILSTATION_SHARED_QA_BILLING_ENABLED,'true');
+ for(const key of ['STRIPE_TEST_REFUNDS_ENABLED','STRIPE_TEST_DISPUTE_REVIEW_ENABLED']){
+  assert.notEqual(production[key],'true');
+  assert.notEqual(shared[key],'true');
+ }
+ const worker=readFileSync(new URL('../../src/worker.mjs',import.meta.url),'utf8');
+ assert.match(worker,/processTestRefunds:stripeTestRefundReconciliationEligible\(env\)/);
+ assert.match(worker,/processTestDisputes:stripeTestDisputeReviewEligible\(env\)/);
 });
