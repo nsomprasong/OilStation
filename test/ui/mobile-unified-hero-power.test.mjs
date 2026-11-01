@@ -48,15 +48,15 @@ test('home has an accessible power icon in the top-right corner which uses exist
  assert.match(main,/authClient\.auth\.signOut\(\)/);
  assert.match(read('src/client/icons.js'),/power:Power/);
 });
-test('teal full-bleed mobile hero and coherent cards render on every subpage while desktop remains Gentelella',()=>{
+test('mobile v2 hero, safe area and coherent feature cards preserve responsive layout',()=>{
  const css=read('public/oilstation.css');
- assert.match(css,/\.os-mobile-page-hero/);
+ assert.match(css,/\.os-mobile-hero/);
  assert.match(css,/\.os-mobile-page-content/);
- assert.match(css,/\.os-mobile-page-shortcuts/);
+ assert.match(css,/\.os-mobile-feature-grid/);
  assert.match(css,/\.os-mobile-power/);
- assert.match(css,/\.ws-layout\[data-active-screen="overview"\]/);
+ assert.match(css,/\.ws-layout\[data-active-screen=overview\]/);
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(css,/env\(safe-area-inset-bottom\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(read('public/oilstation.css'),/--gt-sidebar:#1a2332/);
+ assert.match(read('public/oilstation.css'),/--os-side:#040B28/);
 });

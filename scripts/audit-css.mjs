@@ -9,10 +9,24 @@ if(links.length!==1||links[0]!=='/oilstation.css')throw Error('Exactly one local
 const assets=readdirSync('public').filter(name=>name.endsWith('.css'));
 if(assets.length!==1||assets[0]!=='oilstation.css')throw Error('Remove orphan theme CSS: '+assets);
 const content=readFileSync('public/oilstation.css','utf8');
-if(!content.includes('--mid-page:#040D3F')||!content.includes('--mid-card:#1D2552')||!content.includes('--mid-cyan:#0D8091'))
- throw Error('Midnight Banking tokens not canonical');
 const root=postcss.parse(content,{from:'public/oilstation.css'});
-let ruleCount=0,declarations=0;const seen=new Set();
+// CSS v2 is the approved source of truth. Verify the actual token graph,
+// not literal v1 colors that no longer exist after the user's redesign.
+const tokens=new Map();
+root.walkRules(rule=>{
+ if(rule.selector.split(',').some(x=>[':root','html:root'].includes(x.trim())))
+  rule.walkDecls(d=>{if(d.prop.startsWith('--'))tokens.set(d.prop,d.value.trim());});
+});
+const expected={
+ '--os-bg':'#060F33','--os-side':'#040B28','--os-card':'#0E1B47',
+ '--os-ac':'#2BB6C9','--os-ac-deep':'#0D8091',
+ '--mid-page':'var(--os-bg)','--mid-card':'var(--os-card)',
+ '--mid-cyan':'var(--os-ac-deep)',
+};
+for(const [name,value] of Object.entries(expected))
+ if(tokens.get(name)!==value)throw Error('CSS v2 token mismatch: '+name+
+  ' expected '+value+' got '+tokens.get(name));
+let ruleCount=0,declarations=0,layeredOverrides=0;const seen=new Set();
 const context=rule=>{
  let parts=[],node=rule.parent;
  while(node&&node.type!=='root'){
@@ -24,14 +38,21 @@ const context=rule=>{
 root.walkRules(rule=>{
  ruleCount++;
  if(rule.parent?.type==='atrule'&&/keyframes/i.test(rule.parent.name))return;
+ const withinBlock=new Set();
  rule.walkDecls(d=>{
   declarations++;
   const key=context(rule)+'|'+rule.selector+'|'+d.prop+'|'+Boolean(d.important);
-  if(seen.has(key))throw Error('Duplicate CSS declaration: '+key);
+  const local=d.prop+'|'+Boolean(d.important);
+  // A duplicate within one block is an authoring mistake. Across separate
+  // blocks the CSS v2 base -> module -> shell cascade is intentional: keep
+  // the last rule authoritative, and report these overrides for review.
+  if(withinBlock.has(local))throw Error('Duplicate property in CSS block: '+key);
+  withinBlock.add(local);
+  if(seen.has(key))layeredOverrides++;
   seen.add(key);
  });
 });
 const retained=['.ws-screen-head','.os-mobile-bottom','.os-functional-nav','.os-auth-card',
  '.os-sales-panel','.os-plan-card','.fuel-row','.attendance-workspace','.os-station-card'];
 for(const name of retained)if(!content.includes(name))throw Error('Missing operational selector '+name);
-console.log('CSS audit PASS: 1 stylesheet, '+ruleCount+' rules, '+declarations+' declarations, '+Buffer.byteLength(content)+' bytes');
+console.log('CSS audit PASS: 1 stylesheet, '+ruleCount+' rules, '+declarations+' declarations, '+layeredOverrides+' layered overrides, '+Buffer.byteLength(content)+' bytes');

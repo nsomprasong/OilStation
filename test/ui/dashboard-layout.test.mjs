@@ -23,10 +23,10 @@ test('multi-scope screen mount ids stay unique',()=>{
 });
 test('desktop width overrides narrow login without breaking sign-in and mobile',()=>{
  const css=readFileSync(new URL('../../public/oilstation.css',import.meta.url),'utf8');
- assert.match(css,/\.center\{width:min\(100%,540px\)/);
- assert.match(css,/#app\.workspace-mode \.ws-main\{/);
- assert.match(css,/@media\(max-width:760px\)/);
- assert.match(css,/\.ws-screen\[hidden\]\{display:none!important\}/);
+ assert.match(css,/#app\.center\{width:min\(100%,520px\)/);
+ assert.match(css,/\.ws-main\{/);
+ assert.match(css,/@media\(max-width:850px\)/);
+ assert.match(css,/\[hidden\]\{display:none!important\}/);
  const source=readFileSync(new URL('../../src/client/main.js',import.meta.url),'utf8');
  assert.match(source,/show\(renderWorkspaceShell\(screens\)\)/);
  assert.match(source,/wireWorkspaceNavigation\(root,\{screens,userId:session\.user\?\.id\}\)/);

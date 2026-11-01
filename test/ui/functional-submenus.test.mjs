@@ -57,7 +57,7 @@ test('all per-screen functional tabs are exclusive, preserve loaded nodes and re
  const css=read('public/oilstation.css');
  assert.match(css,/\.os-functional-pane\[hidden\]/);
  assert.match(css,/display:none!important/);
- assert.match(css,/flex-flow:row nowrap/);
+ assert.match(css,/flex-wrap:nowrap/);
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(read('index.html'),/href="\/oilstation\.css"/);
 });

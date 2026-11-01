@@ -46,8 +46,9 @@ test('brand icons materialize at build/dev and CSS keeps the transparent backgro
  assert.match(pkg.scripts.prebuild,/materialize-brand-assets\.mjs/);
  assert.match(pkg.scripts.predev,/materialize-brand-assets\.mjs/);
  const css=read('public/oilstation.css');
- assert.match(css,/background:transparent!important/);
- assert.match(css,/\.ws-logo/);
+ assert.match(css,/\.os-auth-mark\{[^}]*object-fit:contain/);
+ assert.match(css,/\.os-mobile-brandmark\{[^}]*object-fit:contain/);
+ assert.match(css,/\.os-desktop-brand/);
  assert.match(css,/\.os-auth-mark/);
  assert.match(css,/\.os-mobile-brandmark/);
  const html=read('index.html');

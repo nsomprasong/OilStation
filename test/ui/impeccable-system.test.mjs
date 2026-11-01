@@ -18,7 +18,7 @@ test('shared design language covers every primary operational area and both gues
  const css=read('public/oilstation.css');
  const index=read('index.html');
  for(const t of [
-  '#app.workspace-mode','.ws-sidebar','.ws-screen','.field input','.button.primary',
+  '#app.workspace-mode','.os-desktop-sidebar','.ws-screen',':where(#app) .field','.button.primary',
   '.saas-plan-row','.owner-plan-card','.fuel-row','.finance-item',
   '.attendance-workspace','.plate-review-card','.fuel-review-card','.billing-panel',
   '.os-station-card','.notice','[role="alert"]','@media(max-width:620px)',

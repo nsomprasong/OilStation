@@ -87,7 +87,7 @@ test('dialog styling uses OilStation Teal, responsive widths and top-layer backd
  const css=read('public/oilstation.css');
  assert.match(css,/\.os-logout-dialog::backdrop/);
  assert.match(css,/\.os-logout-confirm/);
- assert.match(css,/width:min\(400px,calc\(100vw - 32px\)\)/);
+ assert.match(css,/width:min\(92vw,400px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  const layout=read('src/client/workspace-layout.js');
  assert.doesNotMatch(layout,/window\.confirm\(/);

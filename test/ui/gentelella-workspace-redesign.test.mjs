@@ -56,7 +56,7 @@ test('Gentelella shell styling remains isolated from public login and respects m
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
- assert.match(css,/\.ws-sidebar\.is-open/);
+ assert.match(css,/\.os-desktop-sidebar\{/);
  assert.match(css,/\.saas-simple-layout/);
  assert.match(css,/\.os-price-grid/);
  assert.ok(!index.includes('gentelella.min.css'));
