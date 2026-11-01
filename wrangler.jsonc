@@ -38,7 +38,14 @@
         "OILSTATION_DEPLOY_TARGET": "uat",
         "OILSTATION_API_ENABLED": "false",
         "INVITATION_EMAIL_ENABLED": "false",
-        "INVITATION_FROM_EMAIL": "no-reply@oilstation.goldensoft.cloud"
+        "INVITATION_FROM_EMAIL": "no-reply@oilstation.goldensoft.cloud",
+        "OILSTATION_SHARED_QA_BILLING_ENABLED": "true",
+        "OILSTATION_QA_MODE_ENABLED": "true",
+        "OILSTATION_QA_RUN_ID": "QA-20261031-PLATFORM-001",
+        "OILSTATION_QA_STRIPE_STATION_ID": "e22fb5ff-1878-446f-ab8d-585115e8a1a9",
+        "OILSTATION_SHARED_SUPABASE_REF": "cxihsotcpdnalswfoysx",
+        "STRIPE_TEST_PAYMENTS_ENABLED": "true",
+        "STRIPE_TEST_RECONCILIATION_ENABLED": "true"
       }
     }
   },

@@ -1,0 +1,67 @@
+name: OilStation Shared-Project Stripe QA Worker
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/api/qa-stripe-shared.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-uat
+  cancel-in-progress: false
+jobs:
+  deploy-qa-only:
+    runs-on: ubuntu-latest
+    environment: oilstation-uat
+    env:
+      CLOUDFLARE_ACCOUNT_ID: '02e018ecd969426251e2a369a80b713f'
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - name: Assert permanent fail-closed business API and fixed QA-only switch
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const c=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          const q=c.env?.uat?.vars;
+          if(c.vars?.OILSTATION_API_ENABLED!=='false' ||
+             q?.OILSTATION_API_ENABLED!=='false' ||
+             q?.OILSTATION_DEPLOY_TARGET!=='uat' ||
+             q?.OILSTATION_SHARED_QA_BILLING_ENABLED!=='true' ||
+             q?.OILSTATION_SHARED_SUPABASE_REF!=='cxihsotcpdnalswfoysx' ||
+             q?.OILSTATION_QA_STRIPE_STATION_ID!=='e22fb5ff-1878-446f-ab8d-585115e8a1a9' ||
+             q?.OILSTATION_QA_RUN_ID!=='QA-20261031-PLATFORM-001')
+             throw new Error('Unsafe QA Stripe deployment configuration');
+          NODE
+      - name: Require Cloudflare token to deploy UAT only
+        run: test -n "$CLOUDFLARE_API_TOKEN"
+      - name: Deploy isolated Worker with shared-project QA-only routes
+        run: npx --yes wrangler@4 deploy --env uat
+      - name: Verify UAT Stripe route is enabled only for authorized requests
+        run: |
+          set -eu
+          url='https://oilstation-uat.nsomprasong.workers.dev'
+          curl -fsS --retry 3 --retry-delay 2 "$url/api/health" |
+            jq -e '.service=="oilstation" and .status=="ok"'
+          status="$(curl -sS -o /dev/null -w '%{http_code}' \
+             "$url/api/billing/payment-intent")"
+          test "$status" = "405" || {
+            echo "::error::QA-only Stripe test route unavailable (HTTP $status)"
+            exit 1
+          }
+          status="$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' \
+            --data '{"invoiceId":"22222222-2222-4222-8222-222222222222","paymentMethod":"card"}' \
+            "$url/api/billing/payment-intent")"
+          test "$status" = "401" || {
+            echo "::error::QA Stripe endpoint did not enforce authentication (HTTP $status)"
+            exit 1
+          }

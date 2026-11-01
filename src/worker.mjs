@@ -13,6 +13,8 @@ import { createBillingInvoiceApi } from './api/billing-invoices.mjs';
 import { createBillingPaymentApi } from './api/billing-payment.mjs';
 import { createStripeTestPaymentIntents } from './adapters/stripe-test-payments.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
+import {createSharedQaStripeApi} from './api/qa-stripe-shared.mjs';
+import {sharedProjectQaStripeEligible} from './domain/stripe-test-environment.mjs';
 import {stripeTestProviderEligible,stripeTestReconciliationEligible} from './domain/stripe-test-environment.mjs';
 import { createPlateReviewInboxApi } from './api/plate-review-inbox.mjs';
 import { createAttendancePayrollPreviewApi } from './api/attendance-payroll-preview.mjs';
@@ -62,6 +64,24 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) {
+      // Explicit owner-approved Stripe TEST mode on the existing OilStation
+      // Supabase project. Never enable all business APIs to use this exception.
+      // Both routes require frozen QA station + invoice SQL attestation.
+      if(env.OILSTATION_DEPLOY_TARGET==='uat' &&
+         ['/api/billing/payment-intent','/api/webhooks/stripe'].includes(url.pathname) &&
+         env.OILSTATION_SHARED_QA_BILLING_ENABLED==='true'){
+        if(!sharedProjectQaStripeEligible(env))
+          return new Response(JSON.stringify({error:'qa_stripe_not_ready'}),{
+            status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
+        try{
+          return createSharedQaStripeApi({env,...createSupabaseAdapter(env)})(request);
+        }catch{
+          return new Response(JSON.stringify({error:'qa_stripe_unavailable'}),{
+            status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+          });
+        }
+      }
       if (url.pathname === '/api/internal/supabase-connectivity') {
         return createSupabaseConnectivityProbe(env)(request);
       }
