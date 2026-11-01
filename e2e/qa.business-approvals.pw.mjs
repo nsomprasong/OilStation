@@ -39,6 +39,16 @@ test('QA-HR-02 actual OT partial approval and shift substitution by independent 
  try{
   const ot=await login(owner,'owner'),ht=await login(hr,'hr');
   expect(ot).toBeTruthy();expect(ht).toBeTruthy();
+  // The actual production-preview UI must provide the compact 3-step
+  // worktime review. This is read-only and cannot approve/pay wages.
+  await owner.locator('[data-ws-go="payroll"]:visible').first().click();
+  const payrollUi=owner.locator('#attendance-payroll-preview-workspace');
+  await expect(payrollUi).toContainText('ตรวจรอบเงินเดือน 3 ขั้นตอน');
+  await expect(payrollUi).toContainText('ยังไม่ใช่รายการจ่ายเงินเดือน');
+  const lastMonth=payrollUi.getByRole('button',{name:'เดือนก่อน'});
+  await lastMonth.click();
+  await expect(lastMonth).toHaveAttribute('aria-pressed','true');
+  console.log('QA-HR PAYROLL UI PASS: 3-step month selector, review-only, no payment');
   const r=await get(hr,ht,'/api/hr/roster?stationId='+station);
   expect(r.status()).toBe(200);
   const roster=(await r.json()).roster;
