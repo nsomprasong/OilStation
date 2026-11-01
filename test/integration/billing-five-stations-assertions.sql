@@ -13,6 +13,7 @@ DECLARE
   'aaaaa004-1111-4111-8111-aaaaaaaaaaaa'::uuid,
   'aaaaa005-1111-4111-8111-aaaaaaaaaaaa'::uuid];
  v_station_id uuid;plan uuid;group_id uuid;v_invoice_id uuid;attempt_id uuid;line_id uuid;
+ renewal_invoice_id uuid;renewal_attempt_id uuid;
  d jsonb;v_count int;failed boolean;total bigint;
 BEGIN
  FOR n IN 1..5 LOOP
@@ -116,6 +117,84 @@ BEGIN
  THEN RAISE EXCEPTION 'duplicate_invoice_payment_settled_twice';END IF;
  d:=public.platform_paid_saas_commission_context(admin,line_id);
  IF d->>'invoicePaid'<>'true' THEN RAISE EXCEPTION 'paid_invoice_sales_preview_denied';END IF;
- RAISE NOTICE 'PASS disposable five-station consolidated invoice with PromptPay discount, VAT and Stripe-event simulation';
+ -- Simulate the NEXT monthly subscription period in this disposable DB only.
+ -- This is a manual invoice-cycle test, NOT evidence of automatic Stripe renewal.
+ UPDATE public.station_subscriptions
+   SET current_period_end='2026-12-01T00:00:00Z'
+   WHERE station_id=ANY(stations);
+ IF (SELECT count(*) FROM public.station_subscriptions
+     WHERE station_id=ANY(stations) AND current_period_end='2026-12-01T00:00:00Z')<>5
+ THEN RAISE EXCEPTION 'renewal_subscriptions_not_extended';END IF;
+ -- All five stations must appear on ONE next-period card invoice, without
+ -- the PromptPay-only discount, and with unchanged 7% exclusive VAT.
+ d:=public.platform_draft_saas_flat_invoice(admin,group_id,'card',
+   '2026-11-01','2026-12-01');
+ renewal_invoice_id:=(d->>'invoiceId')::uuid;
+ IF renewal_invoice_id=v_invoice_id OR d->>'status'<>'draft'
+   OR (d->>'replayed')::boolean IS DISTINCT FROM false
+   OR (d->>'lineCount')::int<>6
+   OR (d->>'subtotalSatang')::bigint<>320000
+   OR (d->>'discountSatang')::bigint<>0
+   OR (d->>'taxSatang')::bigint<>22400
+   OR (d->>'totalSatang')::bigint<>342400
+ THEN RAISE EXCEPTION 'five_station_next_period_card_invoice_incorrect %',d;END IF;
+ IF (SELECT count(distinct station_id) FROM public.saas_invoice_lines
+      WHERE invoice_id=renewal_invoice_id)<>5 OR
+    (SELECT coalesce(sum((price_snapshot->>'allocatedTaxSatang')::bigint),0)
+       FROM public.saas_invoice_lines WHERE invoice_id=renewal_invoice_id)<>22400
+ THEN RAISE EXCEPTION 'five_station_next_period_lines_incorrect';END IF;
+ d:=public.platform_draft_saas_flat_invoice(admin,group_id,'card',
+   '2026-11-01','2026-12-01');
+ IF d->>'replayed'<>'true' OR (d->>'invoiceId')::uuid<>renewal_invoice_id
+ THEN RAISE EXCEPTION 'duplicate_renewal_invoice_created';END IF;
+ failed:=false;
+ BEGIN
+  PERFORM public.platform_draft_saas_flat_invoice(admin,group_id,'promptpay',
+   '2026-11-01','2026-12-01');
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
+ IF NOT failed THEN RAISE EXCEPTION 'card_renewal_repriced_as_promptpay';END IF;
+ -- The earlier cycle remains paid and cannot be used to create a second PI.
+ failed:=false;
+ BEGIN
+  PERFORM public.prepare_saas_test_payment(owner,v_invoice_id,'promptpay');
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
+ IF NOT failed OR
+    (SELECT status FROM public.saas_invoices WHERE id=v_invoice_id)<>'paid'
+ THEN RAISE EXCEPTION 'old_paid_invoice_accepted_second_payment';END IF;
+ PERFORM public.platform_issue_saas_invoice(admin,renewal_invoice_id);
+ d:=public.prepare_saas_test_payment(owner,renewal_invoice_id,'card');
+ renewal_attempt_id:=(d->>'attemptId')::uuid;
+ IF (d->>'amountSatang')::bigint<>342400
+ THEN RAISE EXCEPTION 'renewal_payment_amount_changed';END IF;
+ -- A failed / incomplete provider charge must not settle this card invoice.
+ PERFORM public.attach_saas_test_intent(owner,renewal_attempt_id,
+   'pi_QAFiveStationRenewal123456');
+ PERFORM public.record_stripe_signed_event('evt_QAFiveStationRenewal123456',
+   'payment_intent.succeeded',repeat('f',64),false);
+ failed:=false;
+ BEGIN
+  PERFORM public.reconcile_saas_test_paid_event(
+   'evt_QAFiveStationRenewal123456',
+   'pi_QAFiveStationRenewal123456',renewal_invoice_id,renewal_attempt_id,
+   342400,0,'thb','succeeded',false);
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
+ IF NOT failed OR
+    (SELECT status FROM public.saas_invoices WHERE id=renewal_invoice_id)<>'issued'
+ THEN RAISE EXCEPTION 'incomplete_card_payment_marked_paid';END IF;
+ d:=public.reconcile_saas_test_paid_event('evt_QAFiveStationRenewal123456',
+  'pi_QAFiveStationRenewal123456',renewal_invoice_id,renewal_attempt_id,
+  342400,342400,'thb','succeeded',false);
+ IF d->>'status'<>'paid' OR d->>'replayed'<>'false'
+ THEN RAISE EXCEPTION 'next_period_card_reconciliation_failed %',d;END IF;
+ d:=public.reconcile_saas_test_paid_event('evt_QAFiveStationRenewal123456',
+  'pi_QAFiveStationRenewal123456',renewal_invoice_id,renewal_attempt_id,
+  342400,342400,'thb','succeeded',false);
+ IF d->>'replayed'<>'true' OR
+    (SELECT count(*) FROM public.saas_payment_attempts
+     WHERE invoice_id=renewal_invoice_id)<>1 OR
+    (SELECT count(*) FROM public.saas_invoices
+      WHERE id IN (v_invoice_id,renewal_invoice_id) AND status='paid')<>2
+ THEN RAISE EXCEPTION 'renewal_card_duplicate_settlement_or_state';END IF;
+ RAISE NOTICE 'PASS disposable five-station two billing cycles: PromptPay discount and next-period card, 5 stations / 6 lines, VAT, replay and no double payment';
 END $test$;
 ROLLBACK;
