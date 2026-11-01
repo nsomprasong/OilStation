@@ -1,3 +1,4 @@
+import {mountHrPayrollPolicy} from './hr-payroll-policy.js';
 /** Fast, review-only payroll worktime flow. Never authorizes a payout. */
 export function mountAttendancePayrollPreview({target,token,stationId}){
  if(!target)return;
@@ -98,7 +99,14 @@ export function mountAttendancePayrollPreview({target,token,stationId}){
   }catch(e){auditResult.textContent=e.message;}
   finally{auditButton.disabled=false;}
  });
- wrap.append(heading,hint,form,notice,resultCard,blocked,audit);target.append(wrap);
+ const policyDetails=document.createElement('details');
+ const policySummary=document.createElement('summary');
+ policySummary.textContent='ตั้งค่านโยบายการลาและค่าจ้าง (ต้องให้คนละบัญชีอนุมัติ)';
+ const policyTarget=document.createElement('section');
+ policyTarget.className='hr-payroll-policy-settings';
+ policyDetails.append(policySummary,policyTarget);
+ wrap.append(heading,hint,form,notice,resultCard,blocked,audit,policyDetails);target.append(wrap);
+ mountHrPayrollPolicy({target:policyTarget,token,stationId});
  function monthWindow(offset=0){
   const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Bangkok',year:'numeric',month:'numeric'})
    .formatToParts(new Date());
