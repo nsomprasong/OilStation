@@ -9,9 +9,23 @@ if(links.length!==1||links[0]!=='/oilstation.css')throw Error('Exactly one local
 const assets=readdirSync('public').filter(name=>name.endsWith('.css'));
 if(assets.length!==1||assets[0]!=='oilstation.css')throw Error('Remove orphan theme CSS: '+assets);
 const content=readFileSync('public/oilstation.css','utf8');
-if(!content.includes('--mid-page:#040D3F')||!content.includes('--mid-card:#1D2552')||!content.includes('--mid-cyan:#0D8091'))
- throw Error('Midnight Banking tokens not canonical');
 const root=postcss.parse(content,{from:'public/oilstation.css'});
+// CSS v2 is the approved source of truth. Verify the actual token graph,
+// not literal v1 colors that no longer exist after the user's redesign.
+const tokens=new Map();
+root.walkRules(rule=>{
+ if(rule.selector.split(',').some(x=>[':root','html:root'].includes(x.trim())))
+  rule.walkDecls(d=>{if(d.prop.startsWith('--'))tokens.set(d.prop,d.value.trim());});
+});
+const expected={
+ '--os-bg':'#060F33','--os-side':'#040B28','--os-card':'#0E1B47',
+ '--os-ac':'#2BB6C9','--os-ac-deep':'#0D8091',
+ '--mid-page':'var(--os-bg)','--mid-card':'var(--os-card)',
+ '--mid-cyan':'var(--os-ac-deep)',
+};
+for(const [name,value] of Object.entries(expected))
+ if(tokens.get(name)!==value)throw Error('CSS v2 token mismatch: '+name+
+  ' expected '+value+' got '+tokens.get(name));
 let ruleCount=0,declarations=0;const seen=new Set();
 const context=rule=>{
  let parts=[],node=rule.parent;
