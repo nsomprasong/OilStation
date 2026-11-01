@@ -195,6 +195,80 @@ BEGIN
     (SELECT count(*) FROM public.saas_invoices
       WHERE id IN (v_invoice_id,renewal_invoice_id) AND status='paid')<>2
  THEN RAISE EXCEPTION 'renewal_card_duplicate_settlement_or_state';END IF;
+ -- Refunds are confirmed by signed provider events and linked to the
+ -- existing paid PaymentIntent, NOT by a client choosing an invoice.
+ PERFORM public.record_stripe_signed_event('evt_QARefundPart123456',
+   'refund.created',repeat('1',64),false);
+ failed:=false;
+ BEGIN
+  PERFORM public.reconcile_saas_test_succeeded_refund(
+   'evt_QARefundPart123456','re_QAPartial123456',
+   'pi_QAFiveStationRenewal123456','ch_QAFiveStationRenewal123456',
+   100000,'thb','pending',false);
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
+ IF NOT failed THEN RAISE EXCEPTION 'pending_refund_marked_paid_back';END IF;
+ failed:=false;
+ BEGIN
+  PERFORM public.reconcile_saas_test_succeeded_refund(
+   'evt_QARefundPart123456','re_QAPartial123456',
+   'pi_QAUnboundInvoiceMissing123456','ch_QAFiveStationRenewal123456',
+   100000,'thb','succeeded',false);
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
+ IF NOT failed THEN RAISE EXCEPTION 'unbound_refund_payment_intent_allowed';END IF;
+ d:=public.reconcile_saas_test_succeeded_refund(
+   'evt_QARefundPart123456','re_QAPartial123456',
+   'pi_QAFiveStationRenewal123456','ch_QAFiveStationRenewal123456',
+   100000,'thb','succeeded',false);
+ IF d->>'status'<>'paid' OR d->>'replayed'<>'false'
+   OR (d->>'refundedSatang')::bigint<>100000
+   OR (SELECT status FROM public.saas_invoices WHERE id=renewal_invoice_id)<>'paid'
+ THEN RAISE EXCEPTION 'partial_refund_changed_invoice_to_full %',d;END IF;
+ -- Exactly one ledger row per provider refund, even with two signed events.
+ d:=public.reconcile_saas_test_succeeded_refund(
+   'evt_QARefundPart123456','re_QAPartial123456',
+   'pi_QAFiveStationRenewal123456','ch_QAFiveStationRenewal123456',
+   100000,'thb','succeeded',false);
+ IF d->>'replayed'<>'true' THEN RAISE EXCEPTION 'same_event_refund_replayed';END IF;
+ PERFORM public.record_stripe_signed_event('evt_QARefundRetry12345',
+   'refund.updated',repeat('2',64),false);
+ d:=public.reconcile_saas_test_succeeded_refund(
+   'evt_QARefundRetry12345','re_QAPartial123456',
+   'pi_QAFiveStationRenewal123456','ch_QAFiveStationRenewal123456',
+   100000,'thb','succeeded',false);
+ IF d->>'replayed'<>'true'
+   OR (SELECT count(*) FROM public.saas_test_refund_journal
+      WHERE invoice_id=renewal_invoice_id)<>1
+ THEN RAISE EXCEPTION 'same_refund_double_booked';END IF;
+ PERFORM public.record_stripe_signed_event('evt_QARefundFull123456',
+   'refund.updated',repeat('3',64),false);
+ failed:=false;
+ BEGIN
+  PERFORM public.reconcile_saas_test_succeeded_refund(
+   'evt_QARefundFull123456','re_QASecondPart123456',
+   'pi_QAFiveStationRenewal123456','ch_QAFiveStationRenewal123456',
+   242401,'thb','succeeded',false);
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
+ IF NOT failed THEN RAISE EXCEPTION 'over_refund_not_rejected';END IF;
+ d:=public.reconcile_saas_test_succeeded_refund(
+   'evt_QARefundFull123456','re_QASecondPart123456',
+   'pi_QAFiveStationRenewal123456','ch_QAFiveStationRenewal123456',
+   242400,'thb','succeeded',false);
+ IF d->>'status'<>'refunded' OR d->>'fullRefund'<>'true'
+   OR (d->>'refundedSatang')::bigint<>342400 OR
+   (SELECT status FROM public.saas_invoices WHERE id=renewal_invoice_id)<>'refunded'
+   OR (SELECT status FROM public.saas_payment_attempts
+      WHERE id=renewal_attempt_id)<>'refunded'
+ THEN RAISE EXCEPTION 'full_refund_not_atomic %',d;END IF;
+ failed:=false;
+ BEGIN
+  UPDATE public.saas_test_refund_journal SET amount_satang=1
+    WHERE refund_id='re_QAPartial123456';
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='REFUND_JOURNAL_IMMUTABLE';END;
+ IF NOT failed THEN RAISE EXCEPTION 'refund_ledger_mutable';END IF;
+ -- After full reversal, old monthly paid invoice remains paid;
+ -- no subscription invoice is silently recreated or repriced.
+ IF (SELECT status FROM public.saas_invoices WHERE id=v_invoice_id)<>'paid'
+ THEN RAISE EXCEPTION 'refund_changed_prior_month';END IF;
  RAISE NOTICE 'PASS disposable five-station two billing cycles: PromptPay discount and next-period card, 5 stations / 6 lines, VAT, replay and no double payment';
 END $test$;
 ROLLBACK;

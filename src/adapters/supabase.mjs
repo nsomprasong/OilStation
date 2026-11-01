@@ -314,6 +314,18 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_organization_id:d.organizationId}),
         }),
+      // Never invoked unless the isolated TEST refund feature gate is
+      // explicitly enabled and an authenticated Stripe webhook is checked.
+      reconcileSaasRefund: async d=>serviceRequest(env,
+        '/rest/v1/rpc/reconcile_saas_test_succeeded_refund',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({
+            p_event_id:d.eventId,p_refund_id:d.refundId,
+            p_payment_intent_id:d.paymentIntentId,p_charge_id:d.chargeId,
+            p_amount_satang:d.amountSatang,p_currency:d.currency,
+            p_status:d.status,p_livemode:d.livemode,
+          }),
+        }),
       reconcileSaasPaid: async d=>serviceRequest(env,
         '/rest/v1/rpc/reconcile_saas_test_paid_event',{
           method:'POST',headers:{'content-type':'application/json'},
