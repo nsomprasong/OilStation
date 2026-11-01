@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.sales_station_creation_requests (
  PRIMARY KEY(actor_id,request_id)
 );
 ALTER TABLE public.sales_station_creation_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sales_station_creation_requests FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON public.sales_station_creation_requests FROM PUBLIC,anon,authenticated;
 
 CREATE OR REPLACE FUNCTION public.platform_sales_create_station(
