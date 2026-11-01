@@ -3,7 +3,7 @@
 -- payout reversal, refund or bank balance reconciliation.
 -- Stripe events may be delivered out of order: store immutable event history
 -- and its source timestamp, never overwrite an apparent latest state.
-CREATE TABLE public.saas_test_dispute_review_events(
+CREATE TABLE IF NOT EXISTS public.saas_test_dispute_review_events(
  event_id text PRIMARY KEY REFERENCES public.stripe_events(id),
  dispute_id text NOT NULL CHECK(dispute_id ~ '^du_[A-Za-z0-9]{6,100}$'),
  invoice_id uuid NOT NULL REFERENCES public.saas_invoices(id),
@@ -19,7 +19,7 @@ CREATE TABLE public.saas_test_dispute_review_events(
  amount_satang bigint NOT NULL CHECK(amount_satang BETWEEN 1 AND 99999999),
  received_at timestamptz NOT NULL DEFAULT clock_timestamp()
 );
-CREATE INDEX saas_test_dispute_review_by_invoice
+CREATE INDEX IF NOT EXISTS saas_test_dispute_review_by_invoice
  ON public.saas_test_dispute_review_events(invoice_id,dispute_id,event_created DESC);
 ALTER TABLE public.saas_test_dispute_review_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saas_test_dispute_review_events FORCE ROW LEVEL SECURITY;
@@ -33,6 +33,7 @@ BEGIN
 END $fn$;
 REVOKE ALL ON FUNCTION public.guard_saas_test_dispute_review_events()
  FROM PUBLIC,anon,authenticated,service_role;
+DROP TRIGGER IF EXISTS guard_saas_test_dispute_review_events ON public.saas_test_dispute_review_events;
 CREATE TRIGGER guard_saas_test_dispute_review_events BEFORE UPDATE OR DELETE
  ON public.saas_test_dispute_review_events FOR EACH ROW
  EXECUTE FUNCTION public.guard_saas_test_dispute_review_events();
@@ -121,5 +122,7 @@ END $fn$;
 REVOKE ALL ON FUNCTION public.record_saas_test_dispute_review(
  text,text,text,text,bigint,text,text,text,bigint,boolean)
  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.record_saas_test_dispute_review(
- text,text,text,text,bigint,text,text,text,bigint,boolean) TO service_role;
+-- SQL-only by default on a production-backed shared project. A separate
+-- isolated UAT approval may grant service_role explicitly AFTER verification.
+REVOKE ALL ON FUNCTION public.record_saas_test_dispute_review(
+ text,text,text,text,bigint,text,text,text,bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;
