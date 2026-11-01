@@ -1,5 +1,6 @@
 name: QA 66 existing accounts - read-only browser role verification
 on:
+  workflow_dispatch: # Protected, read-only live QA suite; run only from main
   push:
     branches: [main]
     paths: [.github/workflows/qa-roles-readonly-on-merge.yml]
@@ -11,6 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   authenticated-roles-readonly:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: oilstation-qa

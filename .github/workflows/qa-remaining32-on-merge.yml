@@ -1,5 +1,6 @@
 name: QA 32 remaining Station and Organization roles - read-only Chrome
 on:
+  workflow_dispatch: # Protected, read-only live QA suite; run only from main
   push:
     branches: [main]
     paths: [.github/workflows/qa-remaining32-on-merge.yml]
@@ -11,6 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   station-organization-readonly:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: oilstation-qa
