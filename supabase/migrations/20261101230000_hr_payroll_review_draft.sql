@@ -57,6 +57,7 @@ BEGIN
  IF v_evidence->>'policyReviewed'<>'true'
   OR (v_evidence->>'pendingLeave')::integer>0
   OR (v_evidence->>'pendingOt')::integer>0
+  OR (v_evidence->>'attendancePunches')::integer=0
   OR (v_evidence->>'unreviewedPunches')::integer>0
   OR (v_evidence->>'rejectedPunches')::integer>0
   OR ((v_evidence->>'scheduledShifts')::integer>0
