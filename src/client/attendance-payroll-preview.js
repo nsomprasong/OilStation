@@ -46,7 +46,59 @@ export function mountAttendancePayrollPreview({target,token,stationId}){
  const blocked=document.createElement('p');blocked.className='hint';
  blocked.textContent='ก่อนจ่ายจริงยังต้องตรวจการลา ขาดงาน OT เบิกล่วงหน้า ภาษี ประกันสังคม อนุมัติงวดและบัญชีรับเงิน';
  form.append(employeeLabel,period,reload,submit);
- wrap.append(heading,hint,form,notice,resultCard,blocked);target.append(wrap);
+ const audit=document.createElement('section');audit.className='module-item';
+ const auditHeading=document.createElement('strong');
+ auditHeading.textContent='ตรวจความพร้อมก่อนปิดงวด HR';
+ const auditButton=document.createElement('button');auditButton.type='button';
+ auditButton.className='button secondary';auditButton.textContent='ตรวจรายการค้างก่อนปิดงวด';
+ const auditResult=document.createElement('div');auditResult.setAttribute('aria-live','polite');
+ const blockerLabels={
+  employee_not_active:'สถานะพนักงานยังไม่พร้อม',
+  wage_not_configured:'ยังไม่มีอัตราค่าจ้างที่ตรวจสอบได้',
+  frequency_not_configured:'ยังไม่ได้กำหนดรอบจ่ายเงินเดือน',
+  pending_leave:'มีคำขอลารออนุมัติ',
+  leave_pay_policy_unverified:'ต้องตรวจสิทธิ์วันลาที่ได้รับค่าจ้าง',
+  pending_overtime:'มี OT รออนุมัติ',
+  overtime_rate_unverified:'ต้องตรวจอัตราค่า OT',
+  unreviewed_attendance:'มีรายการลงเวลายังไม่ผ่านการตรวจ',
+  rejected_attendance:'มีรายการลงเวลาถูกปฏิเสธ',
+  missing_attendance:'มีกะงานแต่ไม่พบบันทึกเวลา',
+  approved_primary_payee_required:'ต้องมีบัญชีรับเงินหลักที่อนุมัติแล้วหนึ่งบัญชี',
+  advance_reconciliation_required:'ต้องกระทบยอดเงินเบิกล่วงหน้า',
+  wage_and_leave_policy_unreviewed:'รอตรวจนโยบายค่าจ้างและการลา',
+  tax_social_security_unreviewed:'รอตรวจภาษีและประกันสังคม',
+ };
+ audit.append(auditHeading,auditButton,auditResult);
+ auditButton.addEventListener('click',async()=>{
+  auditResult.replaceChildren();
+  if(!employee.value||!start.value||!end.value||end.value<=start.value){
+   auditResult.textContent='โปรดเลือกพนักงานและงวดที่ถูกต้อง';return;
+  }
+  auditButton.disabled=true;
+  try{
+   const qs=new URLSearchParams({employeeId:employee.value,
+    startDate:start.value,endDate:end.value});
+   const response=await fetch('/api/hr/payroll/readiness?'+qs,{cache:'no-store',
+    headers:{authorization:'Bearer '+token}});
+   if(!response.ok)throw new Error('โหลดการตรวจความพร้อมไม่ได้');
+   const payload=await response.json();
+   if(payload.payable!==false||payload.readOnly!==true||payload.postedSatang!==0||
+      payload.salaryCanBeApproved!==false||!Array.isArray(payload.issueCodes))
+    throw new Error('ข้อมูลความพร้อมไม่ปลอดภัย');
+   const summary=document.createElement('p');
+   summary.textContent='ยังไม่อนุญาตให้จ่ายหรือปิดงวด · มี '+payload.issueCodes.length+
+    ' รายการที่ต้องตรวจ';
+   auditResult.append(summary);
+   const list=document.createElement('ul');
+   for(const code of payload.issueCodes){
+    const li=document.createElement('li');li.textContent=blockerLabels[code]||'รอตรวจ: '+code;
+    list.append(li);
+   }
+   auditResult.append(list);
+  }catch(e){auditResult.textContent=e.message;}
+  finally{auditButton.disabled=false;}
+ });
+ wrap.append(heading,hint,form,notice,resultCard,blocked,audit);target.append(wrap);
  function monthWindow(offset=0){
   const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Bangkok',year:'numeric',month:'numeric'})
    .formatToParts(new Date());
