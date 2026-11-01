@@ -13,6 +13,7 @@ import { createBillingInvoiceApi } from './api/billing-invoices.mjs';
 import { createBillingPaymentApi } from './api/billing-payment.mjs';
 import { createStripeTestPaymentIntents } from './adapters/stripe-test-payments.mjs';
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
+import {stripeTestProviderEligible,stripeTestReconciliationEligible} from './domain/stripe-test-environment.mjs';
 import { createPlateReviewInboxApi } from './api/plate-review-inbox.mjs';
 import { createAttendancePayrollPreviewApi } from './api/attendance-payroll-preview.mjs';
 import { createAttendanceReviewApi } from './api/attendance-review.mjs';
@@ -236,8 +237,7 @@ export default {
         if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return new Response(null,{status:503});
         return new Response(JSON.stringify({
           supabaseUrl: env.SUPABASE_URL, supabaseAnonKey: env.SUPABASE_ANON_KEY,
-          stripePublishableKey:env.STRIPE_TEST_PAYMENTS_ENABLED==='true' &&
-           /^pk_test_[A-Za-z0-9_]{12,}$/.test(env.STRIPE_PUBLISHABLE_KEY||'')?
+          stripePublishableKey:stripeTestProviderEligible(env)?
            env.STRIPE_PUBLISHABLE_KEY:null,
         }), { status:200, headers: { 'content-type':'application/json',
             'cache-control':'no-store', 'x-content-type-options':'nosniff' }});
@@ -275,14 +275,18 @@ export default {
           return createBillingInvoiceApi(deps)(request);
         }
         if (url.pathname === '/api/billing/payment-intent') {
-          const enabled=env.STRIPE_TEST_PAYMENTS_ENABLED==='true';
+          const enabled=stripeTestProviderEligible(env);
           const payments=enabled?createStripeTestPaymentIntents(env.STRIPE_SECRET_KEY):null;
           return createBillingPaymentApi({...deps,payments,enabled})(request);
         }
         if (url.pathname === '/api/webhooks/stripe') {
+          // Never accept/ACK test webhooks against a production billing ledger.
+          if(!stripeTestProviderEligible(env))
+            return new Response(JSON.stringify({error:'test_billing_disabled'}),{
+              status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
+            });
           return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET,
-            processTestPayments:env.STRIPE_TEST_RECONCILIATION_ENABLED==='true' &&
-              env.STRIPE_TEST_PAYMENTS_ENABLED==='true'})(request);
+            processTestPayments:stripeTestReconciliationEligible(env)})(request);
         }
         if (url.pathname === '/api/hr/attendance/payroll-preview') {
           return createAttendancePayrollPreviewApi(deps)(request);
