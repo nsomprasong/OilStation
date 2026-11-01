@@ -39,7 +39,7 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
   const cfg=await request.get(BASE+'/api/public-config');
   expect(cfg.status()).toBe(200);
   expect((await cfg.json()).qaFinanceSimEnabled).toBe(false);
-  const owner=await browser.newPage(),hr=await browser.newPage();
+  const owner=await browser.newPage(),hr=await browser.newPage(),manager=await browser.newPage();
   try{
    const ownerToken=await login(owner,'owner'),hrToken=await login(hr,'hr');
    await owner.locator('[data-ws-go="hr"]:visible').first().click();
@@ -141,5 +141,38 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
    expect(repeat.status()).toBe(200);
    expect((await repeat.json()).postedSatang).toBe(0);
    console.log('QA-HR ADVANCE PERIOD PASS: persisted installments reloaded, no payroll deduction');
-  }finally{await Promise.all([owner.close(),hr.close()]);}
+   // A real-money claim requires external bank verification. Use deliberately
+   // false QA transaction evidence, then reject it with a different manager.
+   const managerToken=await login(manager,'manager');
+   const bankReference='QA-UNPAID-'+Date.now();
+   const submission=await post(owner,ownerToken,
+    '/api/hr/advances/manual-confirmation/submit',{
+     advanceId:payload.advance.id,methodId:pp.id,bankReference});
+   expect(submission.status()).toBe(201);
+   const pendingClaim=(await submission.json()).claim;
+   expect(pendingClaim.status).toBe('pending');
+   expect(pendingClaim.disbursed).toBe(false);
+   const pendingInbox=await get(manager,managerToken,
+    '/api/hr/advances/manual-confirmations?employeeId='+employee.id);
+   expect(pendingInbox.status()).toBe(200);
+   const inbox=(await pendingInbox.json()).items;
+   expect(inbox.some(x=>x.id===pendingClaim.id&&x.status==='pending')).toBe(true);
+   const qaNotPaid=await post(manager,managerToken,
+    '/api/hr/advances/manual-confirmation/review',{claimId:pendingClaim.id,verified:true});
+   expect(qaNotPaid.status()).toBe(403);
+   const self=await post(owner,ownerToken,
+    '/api/hr/advances/manual-confirmation/review',{claimId:pendingClaim.id,verified:false});
+   expect(self.status()).toBe(403);
+   const rejected=await post(manager,managerToken,
+    '/api/hr/advances/manual-confirmation/review',{claimId:pendingClaim.id,verified:false});
+   expect(rejected.status()).toBe(200);
+   expect((await rejected.json()).claim.status).toBe('rejected');
+   const after=await get(owner,ownerToken,
+    '/api/hr/advances/period-preview?'+new URLSearchParams({
+     employeeId:employee.id,startDate:currentMonth,endDate:nextMonth}));
+   const afterPlan=(await after.json()).items.find(x=>x.advanceId===payload.advance.id);
+   expect(afterPlan.status).toBe('approved');
+   expect(afterPlan.deductibleSatang).toBe(0);
+   console.log('QA-HR MANUAL EVIDENCE PASS: false reference rejected, no paid advance or payroll posting');
+  }finally{await Promise.all([owner.close(),hr.close(),manager.close()]);}
  });
