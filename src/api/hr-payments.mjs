@@ -113,6 +113,7 @@ export function createHrPaymentApi({authenticate,db}){
    }
   }catch(e){
    if(e?.code==='FORBIDDEN'||e?.code==='SELF_APPROVAL_FORBIDDEN')return deny(403,'permission_denied');
+   if(e instanceof RangeError||e instanceof TypeError)return deny(400,'invalid_request');
    if(['INVALID_REQUEST','INVALID_PAYEE','INVALID_ADVANCE_PLAN','INVALID_PAYROLL_DATE'].includes(e?.code))
     return deny(400,'invalid_request');
    if(['DUPLICATE_PENDING_PAYEE','PENDING_ADVANCE_EXISTS'].includes(e?.code))
