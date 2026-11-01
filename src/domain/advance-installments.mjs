@@ -11,6 +11,7 @@ export function planAdvanceInstallments({principalSatang,installments,firstDeduc
   throw new RangeError('invalid advance amount');
  if(!Number.isInteger(installments)||installments<1||installments>24)
   throw new RangeError('installment count must be 1-24');
+ if(installments>principalSatang)throw new RangeError('installment amount under one satang');
  if(!['weekly','semi_monthly','monthly'].includes(frequency))
   throw new RangeError('invalid payroll frequency');
  const first=validDate(firstDeductionDate),day=first.getUTCDate();
