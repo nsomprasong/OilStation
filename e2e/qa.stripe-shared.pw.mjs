@@ -4,11 +4,11 @@ const LIVE='https://oilstation.goldensoft.cloud';
 const UAT='https://oilstation-uat.nsomprasong.workers.dev';
 const INVOICE='af6bd702-eecb-45da-b031-3039baaaca32';
 const QA_AMOUNT=342400;
-function qaOwnerPassword(){
+function qaOrganizationOwnerPassword(){
  const root=process.env.OILSTATION_QA_SALES01_PASSWORD;
  if(!root)throw Error('Missing QA-only owner credential source');
  return createHmac('sha256',root)
-  .update('OilStation QA station role account 20261031/v1/s01a-owner')
+  .update('OilStation QA station role account 20261031/v1/o01-owner')
   .digest('base64url').slice(0,30)+'a9!';
 }
 test.use({headless:true,trace:'off',screenshot:'off',video:'off'});
@@ -23,11 +23,10 @@ async({browser,request})=>{
  try{
   await page.goto(LIVE,{waitUntil:'domcontentloaded'});
   await expect(page.locator('#qa-login-form')).toBeVisible();
-  await page.locator('#qa-login-alias').fill('s01a-owner');
-  await page.locator('#qa-login-password').fill(qaOwnerPassword());
+  await page.locator('#qa-login-alias').fill('o01-owner');
+  await page.locator('#qa-login-password').fill(qaOrganizationOwnerPassword());
   await page.locator('#qa-login-form button[type=submit]').click();
-  await expect(page.locator('[data-ws-go="pump"]:visible').first())
-   .toBeVisible({timeout:35000});
+  await expect(page.locator('#qa-login-form')).toBeHidden({timeout:35000});
   const token=await page.evaluate(()=>{
    for(const key of Object.keys(localStorage)){
     if(!key.startsWith('sb-')||!key.endsWith('-auth-token'))continue;
