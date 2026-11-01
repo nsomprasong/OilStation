@@ -83,6 +83,16 @@ test('SQL writes only draft/review and never actual payout or advance repayment'
  const fix=readFileSync(new URL('../../supabase/migrations/20261101231000_hr_payroll_attendance_guard.sql',import.meta.url),'utf8');
  assert.match(fix,/attendancePunches'\)::integer=0/);
  assert.match(fix,/REVOKE ALL ON FUNCTION/);
+ const status=readFileSync(new URL('../../supabase/migrations/20261101232000_hr_payroll_accepted_attendance_timezone.sql',import.meta.url),'utf8');
+ assert.match(status,/IS DISTINCT FROM 'accepted'/);
+ assert.match(status,/AT TIME ZONE v_station_tz/);
+ const provenance=readFileSync(new URL('../../supabase/migrations/20261101233000_hr_payroll_manual_punch_provenance.sql',import.meta.url),'utf8');
+ assert.match(provenance,/hr_reviewed_attendance_punches_local/);
+ assert.match(provenance,/verifiedPunches',v_time/);
+ assert.match(provenance,/unclosed|v_active OR v_break/);
+ assert.match(provenance,/PAYROLL_SOURCE_CHANGED/);
+ assert.match(provenance,/REVOKE ALL ON FUNCTION/);
+
  assert.doesNotMatch(sql,/INSERT INTO public\.payroll_payouts|UPDATE public\.payroll_payouts/i);
  assert.doesNotMatch(sql,/INSERT INTO public\.advance_repayments|UPDATE public\.salary_advances/i);
  assert.doesNotMatch(sql,/status='paid'|status='paying'|status='approved'/);
