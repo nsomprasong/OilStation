@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountHrAccessSetup } from './hr-access-setup.js';
+import {mountHrPayeeAdvance} from './hr-payments.js';
 import { mountPlatformSaasBilling } from './platform-saas-billing.js';
 import { mountPlatformSales } from './platform-sales.js';
 import {installFunctionalSubmenus} from './functional-submenus.js';
@@ -513,6 +514,8 @@ async function hrWorkspace(token,stationId,target) {
   <div class="divider"></div>
   <section id="hr-access-setup" class="hr-access-setup" aria-label="เชื่อมบัญชีพนักงานและตั้งค่า GPS"></section>
   <div class="divider"></div>
+  <section id="hr-payee-advance" class="hr-payee-advance" aria-label="ช่องทางรับเงินและเงินเบิกล่วงหน้า"></section>
+  <div class="divider"></div>
   <form class="coupon-form" id="hr-schedule">
     <label class="field">พนักงาน <select id="hr-select-employee" required></select></label>
     <label class="field">กะ <select id="hr-select-template" required></select></label>
@@ -715,6 +718,8 @@ async function hrWorkspace(token,stationId,target) {
  await refresh();
  await mountHrAccessSetup({target:target.querySelector('#hr-access-setup'),
    stationId,token,getApi});
+ await mountHrPayeeAdvance({target:target.querySelector('#hr-payee-advance'),
+   stationId,token});
 }
 
 async function stationFinanceWorkspace(token,stationId,target) {
