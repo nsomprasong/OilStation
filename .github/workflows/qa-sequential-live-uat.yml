@@ -1,0 +1,69 @@
+name: OilStation QA sequential HR and GPS live UAT
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/qa-sequential-live-uat.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  # Parent job does not share the Worker deployment lock. Each child
+  # independently holds oilstation-customer-facing-worker until disarmed.
+  group: oilstation-qa-sequential-live-uat
+  cancel-in-progress: false
+jobs:
+  dispatch-one-at-a-time:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Require this exact main commit's Preview deployment to be healthy
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          verified=false
+          for i in $(seq 1 48); do
+            state="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=50" \
+              --jq '[.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push")] | .[0].conclusion // ""')"
+            if [ "$state" = success ]; then verified=true; break; fi
+            if [ "$state" = failure ] || [ "$state" = cancelled ]; then
+              echo "::error::Matching preview deployment failed"; exit 1
+            fi
+            sleep 10
+          done
+          if [ "$verified" != true ]; then
+            echo "::error::Preview deployment not confirmed"; exit 1
+          fi
+      - name: Dispatch bounded HR then GPS live QA sequentially and require disarm success
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "::error::Live QA must run from default main only"; exit 1
+          fi
+          for workflow in qa-business-uat-one-shot.yml qa-gps-linked-on-merge.yml; do
+            started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Dispatching protected live QA: $workflow"
+            gh workflow run "$workflow" --ref main -R "$GITHUB_REPOSITORY"
+            run_id=''
+            for i in $(seq 1 30); do
+              response="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?event=workflow_dispatch&branch=main&per_page=30")"
+              run_id="$(printf '%s' "$response" | jq -r \
+                --arg sha "$GITHUB_SHA" --arg since "$started" \
+                '[.workflow_runs[] | select(.head_sha==$sha and .created_at >= $since)] \
+                 | sort_by(.created_at) | last | .id // empty')"
+              if [ -n "$run_id" ]; then break; fi
+              sleep 3
+            done
+            if [ -z "$run_id" ]; then
+              echo "::error::Cannot locate dispatched workflow $workflow"; exit 1
+            fi
+            echo "Waiting for $workflow (run $run_id). Its disarm job must pass."
+            gh run watch "$run_id" --exit-status -R "$GITHUB_REPOSITORY"
+            echo "Completed $workflow with all guarded jobs successful"
+          done
