@@ -38,4 +38,5 @@ jobs:
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261101041000_hr_account_geofence_audit.sql
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261101042500_hr_station_link_setup.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-employee-link-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-link-setup-assertions.sql
             '
