@@ -1,3 +1,4 @@
+import {mountHrPayrollDraft} from './hr-payroll-draft.js';
 import {mountHrPayrollPolicy} from './hr-payroll-policy.js';
 /** Fast, review-only payroll worktime flow. Never authorizes a payout. */
 export function mountAttendancePayrollPreview({target,token,stationId}){
@@ -105,8 +106,16 @@ export function mountAttendancePayrollPreview({target,token,stationId}){
  const policyTarget=document.createElement('section');
  policyTarget.className='hr-payroll-policy-settings';
  policyDetails.append(policySummary,policyTarget);
- wrap.append(heading,hint,form,notice,resultCard,blocked,audit,policyDetails);target.append(wrap);
+ const draftDetails=document.createElement('details');
+ const draftSummary=document.createElement('summary');
+ draftSummary.textContent='ร่างและตรวจยอดเงินเดือน (ไม่ใช่การจ่ายเงิน)';
+ const draftTarget=document.createElement('section');
+ draftTarget.className='hr-payroll-draft-workspace';
+ draftDetails.append(draftSummary,draftTarget);
+ wrap.append(heading,hint,form,notice,resultCard,blocked,audit,policyDetails,draftDetails);target.append(wrap);
  mountHrPayrollPolicy({target:policyTarget,token,stationId});
+ mountHrPayrollDraft({target:draftTarget,token,stationId,
+  getContext:()=>({employeeId:employee.value,startDate:start.value,endDate:end.value})});
  function monthWindow(offset=0){
   const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Bangkok',year:'numeric',month:'numeric'})
    .formatToParts(new Date());

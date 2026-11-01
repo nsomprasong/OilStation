@@ -31,6 +31,9 @@ async function fetchJson(url, init) {
       'SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
       'ADVANCE_NOT_APPROVED','CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE',
       'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE','PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED',
+      'DUPLICATE_PAYROLL_LINE','PAYROLL_PERIOD_LOCKED','PAYROLL_SOURCE_CHANGED',
+      'PAYROLL_EVIDENCE_UNREVIEWED','INVALID_PAYROLL_DRAFT','NEGATIVE_NET_SALARY',
+      'INVALID_PAYROLL_REVIEW','EMPTY_PAYROLL','FREQUENCY_NOT_CONFIGURED',
       'INVALID_PAYROLL_POLICY','PENDING_PAYROLL_POLICY','POLICY_DATE_IN_USE',
       'INVALID_LEAVE_DATES','INVALID_LEAVE_TYPE','INVALID_LEAVE_REASON',
       'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW',
@@ -46,7 +49,10 @@ async function fetchJson(url, init) {
          'CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE',
          'INVALID_LEAVE_DATES','INVALID_LEAVE_TYPE','INVALID_LEAVE_REASON',
          'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW',
-         'INVALID_PAYROLL_POLICY','PENDING_PAYROLL_POLICY','POLICY_DATE_IN_USE'].includes(detail.message) ? detail.message :
+         'INVALID_PAYROLL_POLICY','PENDING_PAYROLL_POLICY','POLICY_DATE_IN_USE',
+         'DUPLICATE_PAYROLL_LINE','PAYROLL_PERIOD_LOCKED','PAYROLL_SOURCE_CHANGED',
+         'PAYROLL_EVIDENCE_UNREVIEWED','INVALID_PAYROLL_DRAFT','NEGATIVE_NET_SALARY',
+         'INVALID_PAYROLL_REVIEW','EMPTY_PAYROLL','FREQUENCY_NOT_CONFIGURED'].includes(detail.message) ? detail.message :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
@@ -467,6 +473,28 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
         }),
+      hrListPayrollDrafts: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_list_payroll_drafts_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+      }),
+      hrCreatePayrollReviewLine: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_create_payroll_review_line',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
+          p_start_date:d.startDate,p_end_date:d.endDate,
+          p_base_satang:d.baseSatang,p_ot_satang:d.otSatang,
+          p_other_earnings_satang:d.otherEarningsSatang,p_tax_satang:d.taxSatang,
+          p_social_satang:d.socialSecuritySatang,
+          p_other_deductions_satang:d.otherDeductionsSatang,
+          p_adjustment_satang:d.adjustmentSatang,p_basis:d.basis}),
+      }),
+      hrReviewPayrollDraft: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_review_payroll_draft_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_run_id:d.runId,
+          p_approved:d.approved,p_legal_basis:d.legalBasis}),
+      }),
       hrListPayrollPolicies: async d=>serviceRequest(env,
         '/rest/v1/rpc/hr_list_payroll_policies',{
         method:'POST',headers:{'content-type':'application/json'},

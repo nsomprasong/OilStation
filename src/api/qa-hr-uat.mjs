@@ -5,6 +5,7 @@ import {createAttendanceReviewApi} from './attendance-review.mjs';
 import {createAttendancePayrollPreviewApi} from './attendance-payroll-preview.mjs';
 import {createPayrollReadinessApi} from './hr-payroll-readiness.mjs';
 import {createPayrollPolicyApi,PAYROLL_POLICY_ROUTES} from './hr-payroll-policy.mjs';
+import {createPayrollDraftApi,PAYROLL_DRAFT_ROUTES} from './hr-payroll-draft.mjs';
 import {createGpsAttendanceApi} from './attendance.mjs';
 import {createHrPaymentApi,HR_PAYMENT_ROUTES} from './hr-payments.mjs';
 import {createLeaveApi,LEAVE_ROUTES} from './hr-leave.mjs';
@@ -36,6 +37,9 @@ const paths=new Map([
  ['/api/hr/payroll/policies','GET'],
  ['/api/hr/payroll/policies/propose','POST'],
  ['/api/hr/payroll/policies/review','POST'],
+ ['/api/hr/payroll/drafts','GET'],
+ ['/api/hr/payroll/drafts/line','POST'],
+ ['/api/hr/payroll/drafts/review','POST'],
  ['/api/hr/attendance/gps','POST'],
 ]);
 const reply=(code,error)=>new Response(JSON.stringify({error}),{
@@ -80,6 +84,7 @@ export function createQaHrUatApi({env,authenticate,db}){
    const deps={authenticate,db};
    if(url.pathname==='/api/hr/attendance/pending'||url.pathname==='/api/hr/attendance/review')
     return createAttendanceReviewApi(deps)(request);
+   if(PAYROLL_DRAFT_ROUTES.includes(url.pathname))return createPayrollDraftApi(deps)(request);
    if(PAYROLL_POLICY_ROUTES.includes(url.pathname))
     return createPayrollPolicyApi(deps)(request);
    if(url.pathname==='/api/hr/payroll/readiness')
