@@ -31,6 +31,8 @@ async function fetchJson(url, init) {
       'SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
       'ADVANCE_NOT_APPROVED','CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE',
       'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE','PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED',
+      'INVALID_LEAVE_DATES','INVALID_LEAVE_TYPE','INVALID_LEAVE_REASON',
+      'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW',
       'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
@@ -40,7 +42,9 @@ async function fetchJson(url, init) {
         ['SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
          'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE',
          'PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED','ADVANCE_NOT_APPROVED',
-         'CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE'].includes(detail.message) ? detail.message :
+         'CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE',
+         'INVALID_LEAVE_DATES','INVALID_LEAVE_TYPE','INVALID_LEAVE_REASON',
+         'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW'].includes(detail.message) ? detail.message :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
@@ -563,6 +567,21 @@ export function createSupabaseAdapter(env) {
         '/rest/v1/rpc/hr_advance_review_manual_confirmation',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_claim_id:d.claimId,p_verified:d.verified}),
+      }),
+      hrLeaveList: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_leave_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
+      }),
+      hrLeaveRequest: async d=>serviceRequest(env,'/rest/v1/rpc/hr_request_leave_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
+          p_leave_type:d.leaveType,p_start_date:d.startDate,p_end_date:d.endDate,
+          p_reason:d.reason}),
+      }),
+      hrLeaveReview: async d=>serviceRequest(env,'/rest/v1/rpc/hr_review_leave_safe',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_request_id:d.requestId,
+          p_approved:d.approved}),
       }),
       hrListAdvances: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_salary_advances',{
         method:'POST',headers:{'content-type':'application/json'},

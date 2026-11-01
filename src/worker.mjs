@@ -34,6 +34,7 @@ import {createQaCouponViewApi} from './api/qa-coupon-view.mjs';
 import {createDriverWorkspaceApi} from './api/driver-workspace.mjs';
 import {createQaHrUatApi} from './api/qa-hr-uat.mjs';
 import {createHrPaymentApi,HR_PAYMENT_ROUTES} from './api/hr-payments.mjs';
+import {createLeaveApi,LEAVE_ROUTES} from './api/hr-leave.mjs';
 
 const RELEASE_SCHEMA_VERSION = '20261029215000';
 const PRODUCTION_SUPABASE_REF = 'cxihsotcpdnalswfoysx';
@@ -311,6 +312,9 @@ export default {
             processTestPayments:stripeTestReconciliationEligible(env),
              processTestRefunds:stripeTestRefundReconciliationEligible(env),
              processTestDisputes:stripeTestDisputeReviewEligible(env)})(request);
+        }
+        if (LEAVE_ROUTES.includes(url.pathname)) {
+          return createLeaveApi(deps)(request);
         }
         if (HR_PAYMENT_ROUTES.includes(url.pathname)) {
           return createHrPaymentApi(deps)(request);

@@ -18,6 +18,7 @@ const DESCRIPTORS={
   {id:'people',label:'พนักงาน',icon:'users'},
   {id:'access',label:'บัญชีและ GPS',icon:'map-pin',anchor:'#hr-access-setup',previous:'DIV'},
   {id:'payees',label:'บัญชีและเงินเบิก',icon:'wallet',anchor:'#hr-payee-advance',previous:'DIV'},
+  {id:'leave',label:'การลา',icon:'calendar',anchor:'#hr-leave-workspace',previous:'DIV'},
   {id:'schedule',label:'จัดกะ',icon:'calendar',anchor:'#hr-schedule',previous:'DIV'},
   {id:'replacement',label:'ทำงานแทน',icon:'users',anchor:'#hr-replacement',previous:'H3'},
   {id:'overtime',label:'ขอ OT',icon:'clipboard',anchor:'#hr-ot-request',previous:'H3'},
