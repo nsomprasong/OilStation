@@ -40,12 +40,14 @@ jobs:
                 20261029203000_platform_saas_configuration.sql \
                 20261029204000_saas_flat_invoice_draft.sql \
                 20261029205000_platform_saas_billing_overview.sql \
-                20261029206000_commission_preview_after_paid.sql
+                20261029206000_commission_preview_after_paid.sql \
+                20261101144000_shared_qa_stripe_invoice_guard.sql
               do
                 psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
               done
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-assertions.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-five-stations-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-qa-shared-assertions.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-seed.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-invoice-first.sql \
                 > /tmp/billing-lock-invoice.log 2>&1 &
