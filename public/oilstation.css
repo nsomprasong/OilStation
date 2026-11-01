@@ -832,6 +832,11 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 /* form controls: one dark look everywhere in the workspace */
 #app :is(input:not([type=checkbox],[type=radio],[type=range],[type=file],[type=search]),select,textarea){background:var(--os-side);color:var(--os-tx);border-color:var(--os-line)}
 
+/* Compact, scannable sales audit: three columns and readable small-screen rows. */
+.os-activity-table{width:100%;table-layout:fixed;border-collapse:collapse}
+.os-activity-table th,.os-activity-table td{overflow-wrap:anywhere}
+@media(max-width:620px){.os-activity-table th,.os-activity-table td{padding:7px 6px;font-size:11px}}
+
 /* ---------- 4. SHELL ---------- */
 
 /* ===== Auth (login / invite / first setup) ===== */
