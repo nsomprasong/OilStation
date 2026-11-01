@@ -1,0 +1,121 @@
+name: QA fictional fuel photo and wallet settlement UAT
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/qa-fuel-complete-on-merge.yml
+      - e2e/qa.fuel-complete.pw.mjs
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-customer-facing-worker
+  cancel-in-progress: false
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Fail closed on unsafe finance flags or non-frozen QA scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const c=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          const v=c.vars;
+          if(v.OILSTATION_DEPLOY_TARGET!=='production' ||
+             v.OILSTATION_API_ENABLED!=='false' ||
+             v.OILSTATION_QA_FINANCE_SIM_ENABLED!=='false' ||
+             v.OILSTATION_PREVIEW_OPERATIONS_ENABLED!=='true' ||
+             v.OILSTATION_QA_HR_UAT_ENABLED==='true' ||
+             v.OILSTATION_QA_STATION_IDS?.split(',').length!==4 ||
+             v.OILSTATION_QA_COMPANY_IDS?.split(',').length!==12 ||
+             v.OILSTATION_QA_STATION_IDS.split(',')[0]!=='e22fb5ff-1878-446f-ab8d-585115e8a1a9' ||
+             v.OILSTATION_QA_COMPANY_IDS.split(',')[0]!=='4e6a3fc9-217d-4543-885b-113f1f3ba4c3')
+           throw Error('Fail closed: unsupported QA scope or unsafe flags');
+          NODE
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Check and build before arming QA finance
+        run: |
+          npm run check
+          npm test
+          npm run build
+      - name: Deploy ONLY time-bounded QA finance simulation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const path='wrangler.jsonc';
+          const c=JSON.parse(readFileSync(path,'utf8'));
+          c.vars.OILSTATION_QA_FINANCE_SIM_ENABLED='true';
+          c.vars.OILSTATION_QA_BUSINESS_UAT_TEMP='true';
+          c.vars.OILSTATION_QA_UAT_EXPIRES_EPOCH=String(Math.floor(Date.now()/1000)+2700);
+          writeFileSync(path,JSON.stringify(c,null,2));
+          NODE
+          npx --yes wrangler@4 deploy
+          curl -fsS https://oilstation.goldensoft.cloud/api/public-config |
+            jq -e '.qaModeEnabled == true and .qaFinanceSimEnabled == true'
+          test "$(curl -s -o /tmp/qa-not-ready -w '%{http_code}' https://oilstation.goldensoft.cloud/api/ready)" = 503
+          test "$(curl -s -o /tmp/qa-stripe-off -w '%{http_code}' https://oilstation.goldensoft.cloud/api/billing/payment-intent)" = 503
+  browser:
+    needs: arm
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_FUEL_COMPLETE_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - run: test -n "$OILSTATION_QA_SALES01_PASSWORD"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Fictional 50-THB driver QR and independent photo review through live APIs
+        run: npm run test:e2e -- --grep '@qa-fuel-complete' --reporter=list
+  disarm:
+    if: ${{ always() }}
+    needs: [arm, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Always restore globally disabled business and finance config
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const c=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          if(c.vars.OILSTATION_API_ENABLED!=='false' ||
+             c.vars.OILSTATION_QA_FINANCE_SIM_ENABLED!=='false' ||
+             c.vars.OILSTATION_QA_HR_UAT_ENABLED==='true')
+            throw Error('Refuse unsafe baseline');
+          NODE
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          npx --yes wrangler@4 deploy
+          curl -fsS https://oilstation.goldensoft.cloud/api/public-config |
+            jq -e '.qaFinanceSimEnabled == false'
+          test "$(curl -s -o /tmp/qa-closed -w '%{http_code}' https://oilstation.goldensoft.cloud/api/coupons)" = 503
+          test "$(curl -s -o /tmp/payments-closed -w '%{http_code}' https://oilstation.goldensoft.cloud/api/billing/payment-intent)" = 503
