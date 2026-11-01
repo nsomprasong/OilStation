@@ -10,6 +10,8 @@ export function stripeTestProviderEligible(env){
  const ref=env?.OILSTATION_UAT_SUPABASE_REF;
  return env?.OILSTATION_DEPLOY_TARGET==='uat' &&
    env?.OILSTATION_API_ENABLED==='true' &&
+   // Never mix the transitional shared-project pilot with isolated financial writes.
+   env?.OILSTATION_SHARED_QA_BILLING_ENABLED!=='true' &&
    env?.STRIPE_TEST_PAYMENTS_ENABLED==='true' &&
    typeof ref==='string'&&REF.test(ref)&&ref!==LIVE_REF &&
    (env.SUPABASE_URL==='https://'+ref+'.supabase.co' ||
@@ -21,6 +23,18 @@ export function stripeTestProviderEligible(env){
 export function stripeTestReconciliationEligible(env){
  return stripeTestProviderEligible(env)&&
   env.STRIPE_TEST_RECONCILIATION_ENABLED==='true';
+}
+
+// Explicit opt-in paths for provider-confirmed test refunds and dispute
+// history. These must NEVER activate for the shared, production-backed pilot.
+// Stripe TEST provider + signed payment reconciliation must already be ready.
+export function stripeTestRefundReconciliationEligible(env){
+ return stripeTestReconciliationEligible(env) &&
+   env?.STRIPE_TEST_REFUNDS_ENABLED==='true';
+}
+export function stripeTestDisputeReviewEligible(env){
+ return stripeTestReconciliationEligible(env) &&
+   env?.STRIPE_TEST_DISPUTE_REVIEW_ENABLED==='true';
 }
 
 // User-approved same-project pilot. Unlike the standard isolated UAT path,
