@@ -211,10 +211,10 @@ BEGIN
  BEGIN
   PERFORM public.reconcile_saas_test_succeeded_refund(
    'evt_QARefundPart123456','re_QAPartial123456',
-   'pi_QAFiveStationTest123456','ch_QAFiveStationRenewal123456',
+   'pi_QAUnboundInvoiceMissing123456','ch_QAFiveStationRenewal123456',
    100000,'thb','succeeded',false);
  EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
- IF NOT failed THEN RAISE EXCEPTION 'refund_moved_between_invoices';END IF;
+ IF NOT failed THEN RAISE EXCEPTION 'unbound_refund_payment_intent_allowed';END IF;
  d:=public.reconcile_saas_test_succeeded_refund(
    'evt_QARefundPart123456','re_QAPartial123456',
    'pi_QAFiveStationRenewal123456','ch_QAFiveStationRenewal123456',
