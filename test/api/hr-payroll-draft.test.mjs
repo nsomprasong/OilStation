@@ -79,6 +79,10 @@ test('SQL writes only draft/review and never actual payout or advance repayment'
   'SECURITY DEFINER SET search_path','PAYROLL_EVIDENCE_UNREVIEWED',
   'SELF_APPROVAL_FORBIDDEN','PAYROLL_SOURCE_CHANGED','REVOKE ALL ON FUNCTION',
   'TO service_role','noMoneyTransfer'])assert.ok(sql.includes(text),text);
+ assert.match(sql,/attendancePunches'\)::integer=0/);
+ const fix=readFileSync(new URL('../../supabase/migrations/20261101231000_hr_payroll_attendance_guard.sql',import.meta.url),'utf8');
+ assert.match(fix,/attendancePunches'\)::integer=0/);
+ assert.match(fix,/REVOKE ALL ON FUNCTION/);
  assert.doesNotMatch(sql,/INSERT INTO public\.payroll_payouts|UPDATE public\.payroll_payouts/i);
  assert.doesNotMatch(sql,/INSERT INTO public\.advance_repayments|UPDATE public\.salary_advances/i);
  assert.doesNotMatch(sql,/status='paid'|status='paying'|status='approved'/);
