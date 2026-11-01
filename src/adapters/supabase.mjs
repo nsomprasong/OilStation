@@ -494,6 +494,18 @@ export function createSupabaseAdapter(env) {
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
       }),
+      hrLinkEmployee: async d => serviceRequest(env,'/rest/v1/rpc/hr_link_existing_station_employee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+          p_employee_id:d.employeeId,p_user_id:d.userId}),
+      }),
+      hrConfigureGeofence: async d => serviceRequest(env,
+        '/rest/v1/rpc/hr_configure_station_geofence_audited',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_latitude:d.latitude,p_longitude:d.longitude,
+            p_radius_m:d.radiusMeters,p_accuracy_m:d.maxAccuracyMeters}),
+        }),
       hrAddEmployee: async d => serviceRequest(env,'/rest/v1/rpc/hr_add_employee',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
