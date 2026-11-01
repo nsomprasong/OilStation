@@ -15,7 +15,8 @@ import { createStripeTestPaymentIntents } from './adapters/stripe-test-payments.
 import { createStripeWebhookApi } from './api/stripe-webhook.mjs';
 import {createSharedQaStripeApi} from './api/qa-stripe-shared.mjs';
 import {sharedProjectQaStripeEligible} from './domain/stripe-test-environment.mjs';
-import {stripeTestProviderEligible,stripeTestReconciliationEligible} from './domain/stripe-test-environment.mjs';
+import {stripeTestProviderEligible,stripeTestReconciliationEligible,
+ stripeTestRefundReconciliationEligible,stripeTestDisputeReviewEligible} from './domain/stripe-test-environment.mjs';
 import { createPlateReviewInboxApi } from './api/plate-review-inbox.mjs';
 import { createAttendancePayrollPreviewApi } from './api/attendance-payroll-preview.mjs';
 import { createAttendanceReviewApi } from './api/attendance-review.mjs';
@@ -306,7 +307,9 @@ export default {
               status:503,headers:{'content-type':'application/json','cache-control':'no-store'},
             });
           return createStripeWebhookApi({db:deps.db,secret:env.STRIPE_WEBHOOK_SECRET,
-            processTestPayments:stripeTestReconciliationEligible(env)})(request);
+            processTestPayments:stripeTestReconciliationEligible(env),
+             processTestRefunds:stripeTestRefundReconciliationEligible(env),
+             processTestDisputes:stripeTestDisputeReviewEligible(env)})(request);
         }
         if (url.pathname === '/api/hr/attendance/payroll-preview') {
           return createAttendancePayrollPreviewApi(deps)(request);
