@@ -48,7 +48,7 @@ test('brand icons materialize at build/dev and CSS keeps the transparent backgro
  const css=read('public/oilstation.css');
  assert.match(css,/\.os-auth-mark\{[^}]*object-fit:contain/);
  assert.match(css,/\.os-mobile-brandmark\{[^}]*object-fit:contain/);
- assert.match(css,/\.ws-logo/);
+ assert.match(css,/\.os-desktop-brand/);
  assert.match(css,/\.os-auth-mark/);
  assert.match(css,/\.os-mobile-brandmark/);
  const html=read('index.html');
