@@ -8,9 +8,9 @@ test('one mobile bottom dock sits above content and the old drawer is disabled',
  const css=read('public/oilstation.css');
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(css,/\.os-mobile-bottom/);
- assert.match(css,/z-index:70/);
+ assert.match(css,/z-index:40/);
  assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
- assert.match(css,/\.ws-sidebar/);
+ assert.match(css,/\.os-desktop-sidebar/);
  assert.match(css,/display:none!important/);
 });
 
@@ -31,6 +31,6 @@ test('fix is last stylesheet and does not change desktop Gentelella design',()=>
  const html=read('index.html');
  assert.match(html,/href="\/oilstation\.css"/);
  assert.doesNotMatch(html,/gentelella-v4-selected\.css|mobile-app\.css/);
- assert.match(read('public/oilstation.css'),/--gt-sidebar:#1a2332/);
+ assert.match(read('public/oilstation.css'),/--os-side:#040B28/);
  assert.match(read('public/oilstation.css'),/@media\(max-width:850px\)/);
 });
