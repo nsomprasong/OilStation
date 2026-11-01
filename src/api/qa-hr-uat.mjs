@@ -12,7 +12,8 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const paths=new Map([
  ['/api/hr/payees','GET'],['/api/hr/payees/register','POST'],
  ['/api/hr/payees/review','POST'],['/api/hr/payees/instruction','POST'],
- ['/api/hr/advances','GET'],['/api/hr/advances/request','POST'],
+ ['/api/hr/advances','GET'],['/api/hr/advances/period-preview','GET'],
+ ['/api/hr/advances/request','POST'],
  ['/api/hr/advances/review','POST'],
  ['/api/hr/link-setup','GET'],
  ['/api/hr/roster','GET'],['/api/hr/employees','POST'],

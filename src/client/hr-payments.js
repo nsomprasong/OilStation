@@ -141,6 +141,23 @@ export async function mountHrPayeeAdvance({target,token,stationId}){
    const row=el('div',undefined,'module-item');
    row.append(el('strong','เบิก '+fmt(a.amountSatang)+' บาท · '+a.status),
     el('p','หัก '+a.installments+' งวด เริ่ม '+a.firstDeductionDate+' ('+a.frequency+')'));
+   // An employee's chosen deduction date and each payment's status remain visible
+   // after the request has been approved. This schedule never debits wages.
+   if(Number.isSafeInteger(Number(a.amountSatang))&&Number.isSafeInteger(a.installments)
+      &&a.firstDeductionDate&&a.frequency){
+    const detail=el('details');
+    detail.append(el('summary','ดูตารางหักรายงวด (ยังไม่หักเงินจริง)'));
+    try{
+     const schedule=planAdvanceInstallments({principalSatang:Number(a.amountSatang),
+      installments:a.installments,firstDeductionDate:a.firstDeductionDate,
+      frequency:a.frequency});
+     for(const p of schedule)detail.append(el('p','งวด '+p.installment+' · '+p.date+
+      ' · '+fmt(p.amountSatang)+' บาท · วางแผนเท่านั้น','hint'));
+     if(a.status!=='paid'&&a.status!=='repaid')
+      detail.append(el('p','ยังไม่ยืนยันการจ่ายเงินเบิก จึงไม่อนุญาตให้หักเงินเดือน','hint'));
+    }catch{detail.append(el('p','ไม่สามารถแสดงตารางเดิมได้ กรุณาให้ฝ่ายบุคคลตรวจสอบ','hint'));}
+    row.append(detail);
+   }
    if(a.status==='requested'){
     const approve=el('button','อนุมัติคำขอ','button secondary');approve.type='button';
     const reject=el('button','ไม่อนุมัติ','button secondary');reject.type='button';
