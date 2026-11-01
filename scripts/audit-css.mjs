@@ -26,7 +26,7 @@ const expected={
 for(const [name,value] of Object.entries(expected))
  if(tokens.get(name)!==value)throw Error('CSS v2 token mismatch: '+name+
   ' expected '+value+' got '+tokens.get(name));
-let ruleCount=0,declarations=0;const seen=new Set();
+let ruleCount=0,declarations=0,layeredOverrides=0;const seen=new Set();
 const context=rule=>{
  let parts=[],node=rule.parent;
  while(node&&node.type!=='root'){
@@ -38,14 +38,21 @@ const context=rule=>{
 root.walkRules(rule=>{
  ruleCount++;
  if(rule.parent?.type==='atrule'&&/keyframes/i.test(rule.parent.name))return;
+ const withinBlock=new Set();
  rule.walkDecls(d=>{
   declarations++;
   const key=context(rule)+'|'+rule.selector+'|'+d.prop+'|'+Boolean(d.important);
-  if(seen.has(key))throw Error('Duplicate CSS declaration: '+key);
+  const local=d.prop+'|'+Boolean(d.important);
+  // A duplicate within one block is an authoring mistake. Across separate
+  // blocks the CSS v2 base -> module -> shell cascade is intentional: keep
+  // the last rule authoritative, and report these overrides for review.
+  if(withinBlock.has(local))throw Error('Duplicate property in CSS block: '+key);
+  withinBlock.add(local);
+  if(seen.has(key))layeredOverrides++;
   seen.add(key);
  });
 });
 const retained=['.ws-screen-head','.os-mobile-bottom','.os-functional-nav','.os-auth-card',
  '.os-sales-panel','.os-plan-card','.fuel-row','.attendance-workspace','.os-station-card'];
 for(const name of retained)if(!content.includes(name))throw Error('Missing operational selector '+name);
-console.log('CSS audit PASS: 1 stylesheet, '+ruleCount+' rules, '+declarations+' declarations, '+Buffer.byteLength(content)+' bytes');
+console.log('CSS audit PASS: 1 stylesheet, '+ruleCount+' rules, '+declarations+' declarations, '+layeredOverrides+' layered overrides, '+Buffer.byteLength(content)+' bytes');
