@@ -14,6 +14,15 @@ export function createSharedQaStripeApi({env,authenticate,db,payments}){
    (await db.qaSaasInvoiceScope({invoiceId,actorId,stationId,qaRunId}))===true;
  return async request=>{
   const path=new URL(request.url).pathname;
+  // Publishable TEST key is public, unlike the encrypted Worker Stripe secret.
+  // This route is reachable only through the UAT Worker shared-project QA guard.
+  if(path==='/api/qa/stripe/public-key'){
+   if(request.method!=='GET')return new Response(JSON.stringify({error:'method_not_allowed'}),{
+    status:405,headers:{'content-type':'application/json','cache-control':'no-store'}});
+   return new Response(JSON.stringify({publishableKey:env.STRIPE_PUBLISHABLE_KEY}),{
+    status:200,headers:{'content-type':'application/json','cache-control':'no-store',
+      'x-content-type-options':'nosniff'}});
+  }
   if(path==='/api/billing/payment-intent'){
    let prepared;
    const guardedDb={
