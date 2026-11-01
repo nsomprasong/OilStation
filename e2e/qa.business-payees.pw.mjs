@@ -52,7 +52,7 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
    expect(initialBank.status()).toBe(200);
    const created=await post(hr,hrToken,'/api/hr/payees/register',{
     employeeId:employee.id,type:'bank_account',reference:'999000001234',bankCode:'KBANK'});
-   expect(created.status(),await created.text()).toBe(201);
+   expect(created.status()).toBe(201);
    const bank=(await created.json()).payee;
    expect(bank.masked).toBe('••••1234');
    expect(JSON.stringify(bank)).not.toContain('999000001234');
@@ -64,11 +64,11 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
    expect(JSON.stringify(await pending.json())).not.toContain('999000001234');
    const reviewed=await post(owner,ownerToken,'/api/hr/payees/review',{
     methodId:bank.id,approved:true,verifiedName:'QA DO NOT TRANSFER'});
-   expect(reviewed.status(),await reviewed.text()).toBe(200);
+   expect(reviewed.status()).toBe(200);
    expect((await reviewed.json()).result.status).toBe('approved');
    const r=await post(owner,ownerToken,'/api/hr/payees/instruction',{
     methodId:bank.id,amountSatang:'12345'});
-   expect(r.status(),await r.text()).toBe(200);
+   expect(r.status()).toBe(200);
    const bankInstruction=await r.json();
    expect(bankInstruction.kind).toBe('manual_bank');
    expect(bankInstruction.bankAccount).toBe('999000001234');
@@ -79,15 +79,15 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
    // Invalid unregistered mock ID. QR is never scanned or paid.
    const newPP=await post(hr,hrToken,'/api/hr/payees/register',{
     employeeId:employee.id,type:'promptpay_national_id',reference:'0000000000000'});
-   expect(newPP.status(),await newPP.text()).toBe(201);
+   expect(newPP.status()).toBe(201);
    const pp=(await newPP.json()).payee;
    expect(pp.masked).toBe('•••••••••0000');
    const ppReview=await post(owner,ownerToken,'/api/hr/payees/review',{
     methodId:pp.id,approved:true,verifiedName:'QA SYNTHETIC NOT A BENEFICIARY'});
-   expect(ppReview.status(),await ppReview.text()).toBe(200);
+   expect(ppReview.status()).toBe(200);
    const qr=await post(owner,ownerToken,'/api/hr/payees/instruction',{
     methodId:pp.id,amountSatang:'10001'});
-   expect(qr.status(),await qr.text()).toBe(200);
+   expect(qr.status()).toBe(200);
    const qrData=await qr.json();
    expect(qrData.kind).toBe('promptpay');
    expect(qrData.paid).toBe(false);
@@ -99,7 +99,7 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
     next.getUTCFullYear(),next.getUTCMonth()+1,15)).toISOString().slice(0,10);
    const adv=await post(hr,hrToken,'/api/hr/advances/request',{
     employeeId:employee.id,amountSatang:'10001',installments:3,firstDeductionDate:first});
-   expect(adv.status(),await adv.text()).toBe(201);
+   expect(adv.status()).toBe(201);
    const payload=await adv.json();
    expect(payload.previewOnly).toBe(true);expect(payload.deducted).toBe(false);
    expect(payload.schedule.map(x=>x.amountSatang)).toEqual([3333,3333,3335]);
@@ -108,10 +108,10 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
    expect(badSelf.status()).toBe(403);
    const review=await post(owner,ownerToken,'/api/hr/advances/review',{
     advanceId:payload.advance.id,approved:true});
-   expect(review.status(),await review.text()).toBe(200);
+   expect(review.status()).toBe(200);
    const result=await review.json();
    expect(result.disbursed).toBe(false);expect(result.deducted).toBe(false);
-   expect((await result.result).status).toBe('approved');
+   expect(result.result.status).toBe('approved');
    const replay=await post(owner,ownerToken,'/api/hr/advances/review',{
     advanceId:payload.advance.id,approved:true});
    expect(replay.status()).toBe(200);
