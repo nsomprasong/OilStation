@@ -55,7 +55,7 @@ jobs:
               response="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?event=workflow_dispatch&branch=main&per_page=30")"
               run_id="$(printf '%s' "$response" | jq -r \
                 --arg sha "$GITHUB_SHA" --arg since "$started" \
-                '[.workflow_runs[] | select(.head_sha==$sha and .created_at >= $since)] \
+                '[.workflow_runs[] | select(.head_sha == $sha and .created_at >= $since)]
                  | sort_by(.created_at) | last | .id // empty')"
               if [ -n "$run_id" ]; then break; fi
               sleep 3
