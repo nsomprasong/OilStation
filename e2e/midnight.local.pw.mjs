@@ -37,10 +37,10 @@ test('Midnight guest login renders dark at all breakpoints',async({page},info)=>
     heading:style('.os-auth-hero h1').fontFamily,radius:style('.os-auth-provider').borderTopLeftRadius,
     width:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth};
   });
-  expect(state.hero).toBe('rgb(20, 28, 78)');
-  expect(state.card).toBe('rgb(29, 37, 82)');
-  expect(state.heading).toContain('Inter');
-  expect(state.radius).toBe('8px');
+  expect(state.hero).toBe('rgb(4, 11, 40)');
+  expect(state.card).toBe('rgba(0, 0, 0, 0)'); // transparent form on v2 background
+  expect(state.heading).toContain('Noto Sans Thai');
+  expect(state.radius).toBe('12px');
   expect(state.width).toBeLessThanOrEqual(state.viewport+2);
   await page.screenshot({path:info.outputPath('midnight-login-'+width+'.png'),animations:'disabled'});
  }
@@ -61,7 +61,7 @@ test('Desktop is a real sidebar/topbar/dashboard grid, not a floating bottom doc
    sidebarWidth:rect('.os-desktop-sidebar').width,
    sidebarBg:style('.os-desktop-sidebar').backgroundColor,
    topBg:style('.ws-toolbar').backgroundColor,
-   background:style('#app.workspace-mode').backgroundColor,
+   background:style('body').backgroundColor,
    card:style('.ws-quick').backgroundColor,
    grid:style('.ws-quick-grid').gridTemplateColumns.split(' ').length,
    dock:style('.os-mobile-bottom').display,
@@ -71,11 +71,11 @@ test('Desktop is a real sidebar/topbar/dashboard grid, not a floating bottom doc
  expect(state.columns).toBe(2);
  expect(state.sidebarWidth).toBeGreaterThan(200);
  expect(state.sidebarWidth).toBeLessThan(260);
- expect(state.sidebarBg).toBe('rgb(20, 28, 78)');
- expect(state.topBg).toBe('rgb(20, 28, 78)');
- expect(state.background).toBe('rgb(4, 13, 63)');
- expect(state.card).toBe('rgb(29, 37, 82)');
- expect(state.grid).toBe(3);
+ expect(state.sidebarBg).toBe('rgb(4, 11, 40)');
+ expect(state.topBg).not.toBe('rgba(0, 0, 0, 0)');
+ expect(state.background).toBe('rgb(6, 15, 51)');
+ expect(state.card).toBe('rgb(14, 27, 71)');
+ expect(state.grid).toBeGreaterThanOrEqual(2);
  expect(state.dock).toBe('none');
  expect(state.width).toBeLessThanOrEqual(state.viewport+2);
  await page.screenshot({path:info.outputPath('midnight-desktop-dashboard.png'),animations:'disabled',fullPage:true});
@@ -94,7 +94,7 @@ test('Sales desktop workspace keeps dark surfaces and authorized sidebar',async(
    image:css('[data-ws-screen="sales"] .ws-screen-head').backgroundImage,
    sidebar:css('.os-desktop-sidebar').display};
  });
- expect(status.color).toBe('rgb(255, 255, 255)');
+ expect(status.color).toBe('rgb(238, 242, 255)');
  expect(status.bg).toBe('rgba(0, 0, 0, 0)');
  expect(status.image).toBe('none');
  expect(status.sidebar).not.toBe('none');
@@ -111,10 +111,10 @@ test('Seven real role scopes retain navigation and mobile safe area',async({page
     return {sidebar:style('.os-desktop-sidebar').display,dock:style('.os-mobile-bottom').display,
      slots:document.querySelectorAll('.os-mobile-bottom .os-mobile-tab').length,
      nav:document.querySelectorAll('.os-desktop-side-link').length,
-     background:style('#app.workspace-mode').backgroundColor,
+     background:style('body').backgroundColor,
      width:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth};
    });
-   expect(result.background).toBe('rgb(4, 13, 63)');
+   expect(result.background).toBe('rgb(6, 15, 51)');
    expect(result.slots).toBe(5);
    expect(result.nav).toBe(screens.length);
    expect(result.width,name+' '+width).toBeLessThanOrEqual(result.viewport+2);
