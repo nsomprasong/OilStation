@@ -47,6 +47,10 @@ jobs:
               do
                 psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
               done
+              # Ensure replay-safe SQL files and never grant shared QA RPC access.
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261101171000_saas_test_refund_journal.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261101183000_saas_test_dispute_review_history.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-financial-sql-only-assertions.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-assertions.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-five-stations-assertions.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-qa-shared-assertions.sql

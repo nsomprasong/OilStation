@@ -112,5 +112,7 @@ END $fn$;
 REVOKE ALL ON FUNCTION public.reconcile_saas_test_succeeded_refund(
  text,text,text,text,bigint,text,text,boolean)
  FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.reconcile_saas_test_succeeded_refund(
- text,text,text,text,bigint,text,text,boolean) TO service_role;
+-- SQL-only by default on a production-backed shared project. A separate
+-- isolated UAT approval may grant service_role explicitly AFTER verification.
+REVOKE ALL ON FUNCTION public.reconcile_saas_test_succeeded_refund(
+ text,text,text,text,bigint,text,text,boolean) FROM PUBLIC,anon,authenticated,service_role;
