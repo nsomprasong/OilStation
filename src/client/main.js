@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import { mountAttendanceWorkspace } from './attendance.js';
+import { mountHrAccessSetup } from './hr-access-setup.js';
 import { mountPlatformSaasBilling } from './platform-saas-billing.js';
 import { mountPlatformSales } from './platform-sales.js';
 import {installFunctionalSubmenus} from './functional-submenus.js';
@@ -510,6 +511,8 @@ async function hrWorkspace(token,stationId,target) {
     <button type="submit" class="button primary"><i data-ui-icon="user-plus"></i>เพิ่มพนักงาน</button>
   </form>
   <div class="divider"></div>
+  <section id="hr-access-setup" class="hr-access-setup" aria-label="เชื่อมบัญชีพนักงานและตั้งค่า GPS"></section>
+  <div class="divider"></div>
   <form class="coupon-form" id="hr-schedule">
     <label class="field">พนักงาน <select id="hr-select-employee" required></select></label>
     <label class="field">กะ <select id="hr-select-template" required></select></label>
@@ -710,6 +713,8 @@ async function hrWorkspace(token,stationId,target) {
    note('บันทึกตารางกะแล้ว');await refresh();
  });
  await refresh();
+ await mountHrAccessSetup({target:target.querySelector('#hr-access-setup'),
+   stationId,token,getApi});
 }
 
 async function stationFinanceWorkspace(token,stationId,target) {
