@@ -25,6 +25,9 @@ const deps=({qa=true,stationId=station}={})=>({
   hrRoster:async()=>({employees:[],templates:[],assignments:[]}),
   hrSeedTemplates:async()=>{writes++;return {templates:3};},
   hrAddEmployee:async()=>{writes++;return {id:'22222222-2222-4222-8222-222222222222'};},
+  hrLinkEmployee:async()=>{writes++;return {replayed:false};},
+  hrConfigureGeofence:async()=>{writes++;return {configured:true};},
+
  },
 });
 const req=(path,body=null,origin='https://oilstation.goldensoft.cloud')=>
@@ -71,4 +74,22 @@ test('QA HR writes use real validated HR RPC interface only in scoped station',a
  const wrong=await createQaHrUatApi(d)(req('/api/hr/employees',{...employee,stationId:other}));
  assert.equal(wrong.status,403);
  assert.equal(writes,1);
+});
+
+test('QA HR station gate permits actor-scoped link and geofence but refuses cross station',async()=>{
+ writes=0;
+ const d=deps();
+ const link={stationId:station,employeeId:'22222222-2222-4222-8222-222222222222',
+  userId:'55555555-5555-4555-8555-555555555555'};
+ const geo={stationId:station,latitude:13.7563,longitude:100.5018,
+   radiusMeters:150,maxAccuracyMeters:100};
+ assert.equal((await createQaHrUatApi(d)(req('/api/hr/employee-link',link))).status,200);
+ assert.equal((await createQaHrUatApi(d)(req('/api/hr/geofence',geo))).status,200);
+ assert.equal(writes,2);
+ assert.equal((await createQaHrUatApi(d)(req('/api/hr/employee-link',
+  {...link,stationId:other}))).status,403);
+ assert.equal((await createQaHrUatApi(d)(req('/api/hr/geofence',
+  {...geo,stationId:other}))).status,403);
+ assert.equal((await createQaHrUatApi(deps({qa:false}))(req('/api/hr/geofence',geo))).status,403);
+ assert.equal(writes,2);
 });
