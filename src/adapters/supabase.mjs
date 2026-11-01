@@ -516,6 +516,40 @@ export function createSupabaseAdapter(env) {
             p_actor_id:d.actorId,p_request_id:d.requestId,p_approved:d.approved,
           }),
         }),
+      hrRegisterPayee: async d=>serviceRequest(env,'/rest/v1/rpc/hr_register_employee_payee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,p_type:d.type,
+          p_reference:d.reference,p_bank_code:d.bankCode}),
+      }),
+      hrListPayees: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_employee_payees',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
+      }),
+      hrReviewPayee: async d=>serviceRequest(env,'/rest/v1/rpc/hr_review_employee_payee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_method_id:d.methodId,
+          p_approved:d.approved,p_verified_name:d.verifiedName}),
+      }),
+      hrRevealPayee: async d=>serviceRequest(env,'/rest/v1/rpc/hr_reveal_approved_payee',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_method_id:d.methodId}),
+      }),
+      hrRequestAdvance: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_request_salary_advance_installments',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
+          p_amount_satang:d.amountSatang,p_installments:d.installments,
+          p_first_date:d.firstDeductionDate}),
+      }),
+      hrListAdvances: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_salary_advances',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
+      }),
+      hrReviewAdvance: async d=>serviceRequest(env,'/rest/v1/rpc/hr_review_salary_advance',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_advance_id:d.advanceId,
+          p_approved:d.approved}),
+      }),
       hrRoster: async d => serviceRequest(env,'/rest/v1/rpc/hr_station_roster',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
