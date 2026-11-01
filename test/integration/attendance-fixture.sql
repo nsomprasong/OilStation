@@ -3,7 +3,7 @@
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN;
-CREATE TABLE public.app_users(id uuid PRIMARY KEY,status text NOT NULL DEFAULT 'active');
+CREATE TABLE public.app_users(id uuid PRIMARY KEY,status text NOT NULL DEFAULT 'active',display_name text);
 CREATE TABLE public.stations(
  id uuid PRIMARY KEY,latitude numeric,longitude numeric,timezone text NOT NULL DEFAULT 'Asia/Bangkok');
 CREATE TABLE public.employees(
