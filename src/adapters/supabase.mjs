@@ -31,6 +31,7 @@ async function fetchJson(url, init) {
       'SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
       'ADVANCE_NOT_APPROVED','CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE',
       'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE','PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED',
+      'INVALID_PAYROLL_POLICY','PENDING_PAYROLL_POLICY','POLICY_DATE_IN_USE',
       'INVALID_LEAVE_DATES','INVALID_LEAVE_TYPE','INVALID_LEAVE_REASON',
       'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW',
       'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED']);
@@ -44,7 +45,8 @@ async function fetchJson(url, init) {
          'PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED','ADVANCE_NOT_APPROVED',
          'CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE',
          'INVALID_LEAVE_DATES','INVALID_LEAVE_TYPE','INVALID_LEAVE_REASON',
-         'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW'].includes(detail.message) ? detail.message :
+         'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW',
+         'INVALID_PAYROLL_POLICY','PENDING_PAYROLL_POLICY','POLICY_DATE_IN_USE'].includes(detail.message) ? detail.message :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
@@ -465,6 +467,27 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_photo_id:d.photoId}),
         }),
+      hrListPayrollPolicies: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_list_payroll_policies',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+      }),
+      hrProposePayrollPolicy: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_propose_payroll_policy',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+          p_effective_from:d.effectiveFrom,p_divisor:d.monthlyDivisorDays,
+          p_day_minutes:d.normalDayMinutes,p_ot_rate_bps:d.overtimeRateBps,
+          p_annual_days:d.annualLeaveDays,p_sick_days:d.sickLeaveDays,
+          p_personal_days:d.personalLeaveDays,p_paid_annual:d.paidAnnual,
+          p_paid_sick:d.paidSick,p_paid_personal:d.paidPersonal,p_basis:d.policyBasis}),
+      }),
+      hrReviewPayrollPolicy: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_review_payroll_policy',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_policy_id:d.policyId,
+          p_approved:d.approved}),
+      }),
       hrPayrollReadinessEvidence: async d=>serviceRequest(env,
         '/rest/v1/rpc/hr_payroll_readiness_evidence',{
         method:'POST',headers:{'content-type':'application/json'},
