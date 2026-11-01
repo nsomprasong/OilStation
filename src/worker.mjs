@@ -19,6 +19,7 @@ import {stripeTestProviderEligible,stripeTestReconciliationEligible,
  stripeTestRefundReconciliationEligible,stripeTestDisputeReviewEligible} from './domain/stripe-test-environment.mjs';
 import { createPlateReviewInboxApi } from './api/plate-review-inbox.mjs';
 import { createAttendancePayrollPreviewApi } from './api/attendance-payroll-preview.mjs';
+import {createPayrollReadinessApi} from './api/hr-payroll-readiness.mjs';
 import { createAttendanceReviewApi } from './api/attendance-review.mjs';
 import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
@@ -318,6 +319,9 @@ export default {
         }
         if (HR_PAYMENT_ROUTES.includes(url.pathname)) {
           return createHrPaymentApi(deps)(request);
+        }
+        if (url.pathname === '/api/hr/payroll/readiness') {
+          return createPayrollReadinessApi(deps)(request);
         }
         if (url.pathname === '/api/hr/attendance/payroll-preview') {
           return createAttendancePayrollPreviewApi(deps)(request);
