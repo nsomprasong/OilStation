@@ -1,5 +1,6 @@
 name: QA real functional browser journeys - read-only on fixed QA actors
 on:
+  workflow_dispatch: # Protected, read-only live QA suite; run only from main
   push:
     branches: [main]
     paths:
@@ -13,6 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   real-functional-browser:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: oilstation-qa
