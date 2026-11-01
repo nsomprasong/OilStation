@@ -76,14 +76,14 @@ test('editable fuel and VAT cards use existing controls, not simulated API actio
  assert.match(read('src/client/main.js'),/fuelPriceEditor/);
  assert.match(read('src/client/platform-saas-billing.js'),/vatMode/);
 });
-test('mobile FAB remains above bottom navigation and desktop inherits teal hero style',()=>{
+test('mobile FAB remains above v2 dock while desktop keeps a persistent sidebar',()=>{
  const css=read('public/oilstation.css');
  const html=read('index.html');
  assert.match(html,/href="\/oilstation\.css"/);
- for(const selector of ['.os-add-fab','.os-card-edit','.os-category-nav','.os-auth-shell','.ws-toolbar']){
+ for(const selector of ['.os-add-fab','.os-card-edit','.os-functional-nav','.os-auth-shell','.ws-toolbar']){
   assert.ok(css.includes(selector),selector);
  }
- assert.match(css,/bottom:calc\(101px \+ env\(safe-area-inset-bottom\)\)/);
+ assert.match(css,/bottom:calc\(var\(--os-dock-h\) \+ 16px \+ env\(safe-area-inset-bottom\)\)/);
  assert.match(css,/@media\(min-width:851px\)/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
