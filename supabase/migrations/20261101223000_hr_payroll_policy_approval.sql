@@ -45,6 +45,8 @@ BEGIN
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
  IF p_effective_from IS NULL OR p_effective_from<current_date-365
   OR p_effective_from>current_date+730
+  OR p_divisor IS NULL OR p_day_minutes IS NULL OR p_ot_rate_bps IS NULL
+  OR p_annual_days IS NULL OR p_sick_days IS NULL OR p_personal_days IS NULL
   OR p_divisor NOT BETWEEN 1 AND 31 OR p_day_minutes NOT BETWEEN 240 AND 720
   OR p_ot_rate_bps NOT BETWEEN 10000 AND 40000
   OR p_annual_days NOT BETWEEN 0 AND 366 OR p_sick_days NOT BETWEEN 0 AND 366
