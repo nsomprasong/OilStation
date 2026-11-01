@@ -45,6 +45,7 @@ jobs:
                 psql -v ON_ERROR_STOP=1 -f "/work/supabase/migrations/$migration"
               done
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-five-stations-assertions.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-seed.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/billing-concurrency-invoice-first.sql \
                 > /tmp/billing-lock-invoice.log 2>&1 &
