@@ -12,7 +12,7 @@ DECLARE
   'aaaaa003-1111-4111-8111-aaaaaaaaaaaa'::uuid,
   'aaaaa004-1111-4111-8111-aaaaaaaaaaaa'::uuid,
   'aaaaa005-1111-4111-8111-aaaaaaaaaaaa'::uuid];
- id uuid;plan uuid;group_id uuid;v_invoice_id uuid;attempt_id uuid;line_id uuid;
+ v_station_id uuid;plan uuid;group_id uuid;v_invoice_id uuid;attempt_id uuid;line_id uuid;
  d jsonb;v_count int;failed boolean;total bigint;
 BEGIN
  FOR n IN 1..5 LOOP
@@ -29,8 +29,8 @@ BEGIN
    50000,70000,'2026-10-01')->>'planId')::uuid;
  group_id:=(public.platform_create_saas_billing_group(admin,org,
   'Fictional 5 Stations',stations)->>'billingGroupId')::uuid;
- FOREACH id IN ARRAY stations LOOP
-   PERFORM public.platform_subscribe_saas_station(admin,id,plan,
+ FOREACH v_station_id IN ARRAY stations LOOP
+   PERFORM public.platform_subscribe_saas_station(admin,v_station_id,plan,
      '2026-10-01T00:00:00Z','2026-11-01T00:00:00Z');
  END LOOP;
  d:=public.platform_draft_saas_flat_invoice(admin,group_id,'promptpay',
@@ -64,7 +64,7 @@ BEGIN
  EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
  IF NOT failed THEN RAISE EXCEPTION 'payment_method_repriced_issued_snapshot';END IF;
  PERFORM public.platform_issue_saas_invoice(admin,v_invoice_id);
- SELECT id INTO line_id FROM public.saas_invoice_lines WHERE invoice_id=v_invoice_id LIMIT 1;
+ SELECT l.id INTO line_id FROM public.saas_invoice_lines l WHERE l.invoice_id=v_invoice_id LIMIT 1;
  failed:=false;
  BEGIN
   PERFORM public.platform_paid_saas_commission_context(admin,line_id);
