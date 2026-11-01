@@ -35,6 +35,7 @@ test('QA-HR-04 independent leave UI and payroll-safe labels @qa-business-leave',
   console.log('QA-HR LEAVE UI PASS: HR & Owner see request/review workflow, no payroll claims');
   await owner.locator('[data-ws-go="payroll"]:visible').first().click();
   await expect(owner.locator('.attendance-payroll-preview')).toContainText('ตรวจความพร้อมก่อนปิดงวด HR');
+  await expect(owner.locator('.attendance-payroll-preview select option').first()).toBeAttached({timeout:20000});
   const readiness=owner.getByRole('button',{name:'ตรวจรายการค้างก่อนปิดงวด'});
   await expect(readiness).toBeEnabled();
   await readiness.click();
