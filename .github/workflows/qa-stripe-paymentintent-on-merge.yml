@@ -1,0 +1,31 @@
+name: QA Stripe real Test Mode PaymentIntent (shared OilStation DB)
+on:
+  push:
+    branches: [main]
+    paths:
+      - e2e/qa.stripe-shared.pw.mjs
+      - .github/workflows/qa-stripe-paymentintent-on-merge.yml
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-uat
+  cancel-in-progress: false
+jobs:
+  stripe-test-pi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_STRIPE_PROVIDER_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Require protected QA identity, never real customer credentials
+        run: test -n "$OILSTATION_QA_SALES01_PASSWORD"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Authenticated QA-only Stripe Test PaymentIntent with replay
+        run: npm run test:e2e -- --grep '@qa-stripe-shared' --reporter=list
