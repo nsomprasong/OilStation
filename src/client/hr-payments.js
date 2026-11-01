@@ -75,8 +75,9 @@ export async function mountHrPayeeAdvance({target,token,stationId}){
   transfer.hidden=true;payeeList.replaceChildren();advanceList.replaceChildren();
   if(!employee.select.value)return;
   const selected=roster.find(e=>e.id===employee.select.value);frequency=selected?.payrollFrequency||'monthly';
-  const [payees,advances]=await Promise.all([
-   request('/api/hr/payees'+qs()),request('/api/hr/advances'+qs())]);
+  const [payees,advances,confirmations]=await Promise.all([
+   request('/api/hr/payees'+qs()),request('/api/hr/advances'+qs()),
+   request('/api/hr/advances/manual-confirmations'+qs())]);
   for(const p of payees.items||[]){
    const row=el('div',undefined,'module-item');
    const label=el('strong',p.masked+' · '+(p.bankCode||p.type));
@@ -168,6 +169,55 @@ export async function mountHrPayeeAdvance({target,token,stationId}){
      }catch(e){say(e.message,true);}
     });
     row.append(approve,reject);
+   }
+   const evidence=(confirmations.items||[]).find(c=>c.advanceId===a.id&&c.status==='pending');
+   const primary=(payees.items||[]).find(p=>p.status==='approved'&&p.isPrimary===true);
+   if(a.status==='approved'&&evidence){
+    const review=el('details');review.append(el('summary','ตรวจหลักฐานโอนเงินเบิก · รอคนละบัญชี'));
+    review.append(el('p','อ้างอิงธุรกรรม '+evidence.maskedBankReference+
+     ' · ต้องตรวจรายการโอนกับธนาคารด้วยตนเอง','hint'));
+    const approve=el('button','ยืนยันหลังตรวจรายการธนาคารแล้ว','button secondary');
+    approve.type='button';
+    const reject=el('button','หลักฐานไม่ผ่าน','button secondary');reject.type='button';
+    for(const [button,verified] of [[approve,true],[reject,false]])
+     button.addEventListener('click',async()=>{
+      button.disabled=true;
+      try{
+       const result=await request('/api/hr/advances/manual-confirmation/review',{
+        method:'POST',body:{claimId:evidence.id,verified}});
+       say(verified?'บันทึกการตรวจโอนภายนอกแล้ว · ยังไม่หักเงินเดือน':
+        'ปฏิเสธหลักฐานแล้ว · ยังไม่มีการจ่ายเงินเบิกในระบบ');
+       if(result.claim?.deducted===true)throw new Error('ระบบหักเงินโดยไม่ได้อนุญาต');
+       await refresh();
+      }catch(e){say(e.message,true);}finally{button.disabled=false;}
+     });
+    review.append(approve,reject);
+    row.append(review);
+   }else if(a.status==='approved'&&primary){
+    const claim=el('details');claim.append(el('summary','แจ้งโอนเงินเบิกจากแอปธนาคารแล้ว'));
+    claim.append(el('p','เฉพาะผู้ที่โอนเงินจริงแล้วเท่านั้น ระบบไม่ได้สั่งโอนเงิน และจะรอคนละบัญชียืนยัน','hint'));
+    const form=el('form',undefined,'coupon-form');
+    const bankRef=field('เลขอ้างอิงจากรายการโอนธนาคารจริง','text','เลขอ้างอิง 8–80 ตัว');
+    bankRef.input.required=true;bankRef.input.minLength=8;bankRef.input.maxLength=80;
+    bankRef.input.pattern='[A-Z0-9-]{8,80}';bankRef.input.autocomplete='off';
+    const submitClaim=el('button','ส่งให้ตรวจยอดโอน','button secondary');submitClaim.type='submit';
+    form.append(bankRef.wrap,submitClaim);claim.append(form);
+    form.addEventListener('submit',async event=>{
+     event.preventDefault();submitClaim.disabled=true;
+     try{
+      await request('/api/hr/advances/manual-confirmation/submit',{
+       method:'POST',body:{advanceId:a.id,methodId:primary.id,
+        bankReference:bankRef.input.value.trim().toUpperCase()}});
+      bankRef.input.value='';
+      say('รับเลขอ้างอิงแล้ว · ยังไม่ถือว่าจ่ายจนกว่าคนละบัญชีตรวจธนาคาร');
+      await refresh();
+     }catch(e){say(e.message,true);}finally{submitClaim.disabled=false;}
+    });
+    row.append(claim);
+   }else if(a.status==='approved'&&!primary){
+    row.append(el('p','ต้องอนุมัติบัญชีรับเงินหลักก่อนบันทึกการโอน','hint'));
+   }else if(a.status==='paid'){
+    row.append(el('p','ธนาคารได้รับการยืนยันโดยผู้ตรวจ 2 คนแล้ว · ยังต้องผ่านงวด Payroll ก่อนหัก','hint'));
    }
    advanceList.append(row);
   }

@@ -10,6 +10,9 @@ const methods={
  '/api/hr/advances':'GET','/api/hr/advances/period-preview':'GET',
  '/api/hr/advances/request':'POST',
  '/api/hr/advances/review':'POST',
+ '/api/hr/advances/manual-confirmations':'GET',
+ '/api/hr/advances/manual-confirmation/submit':'POST',
+ '/api/hr/advances/manual-confirmation/review':'POST',
 };
 const respond=(status,data)=>new Response(JSON.stringify(data),{
  status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'private,no-store',
@@ -61,6 +64,30 @@ export function createHrPaymentApi({authenticate,db}){
     const proposedSatang=items.reduce((sum,x)=>sum+x.plannedInPeriodSatang,0);
     return respond(200,{items,proposedSatang,postedSatang:0,deductibleSatang:0,
       payable:false,readOnly:true,needsExternalVerification:true});
+   }
+   if(path==='/api/hr/advances/manual-confirmations'){
+    const employeeId=url.searchParams.get('employeeId');
+    if(!UUID.test(employeeId??''))return deny(400,'invalid_employee');
+    return respond(200,{items:await db.hrListAdvanceConfirmations({actorId:user.id,employeeId})});
+   }
+   if(path==='/api/hr/advances/manual-confirmation/submit'){
+    if(!UUID.test(body.advanceId??'')||!UUID.test(body.methodId??'')||
+       typeof body.bankReference!=='string'||!/^[A-Z0-9-]{8,80}$/.test(body.bankReference))
+     return deny(400,'invalid_bank_reference');
+    const claim=await db.hrSubmitAdvanceConfirmation({actorId:user.id,
+     advanceId:body.advanceId,methodId:body.methodId,bankReference:body.bankReference});
+    return respond(201,{claim,automaticTransfer:false,deducted:false});
+   }
+   if(path==='/api/hr/advances/manual-confirmation/review'){
+    if(!UUID.test(body.claimId??'')||typeof body.verified!=='boolean')
+     return deny(400,'invalid_review');
+    // QA bank references are synthetic. Even two QA actors must never
+    // attest that a fictitious transfer is real.
+    if(user.isQa===true&&body.verified===true)
+     return deny(403,'qa_real_disbursement_forbidden');
+    const claim=await db.hrReviewAdvanceConfirmation({actorId:user.id,
+     claimId:body.claimId,verified:body.verified});
+    return respond(200,{claim,automaticTransfer:false,deducted:false});
    }
    if(path==='/api/hr/payees/register'){
     if(!UUID.test(body.employeeId??''))return deny(400,'invalid_employee');
@@ -130,6 +157,9 @@ export function createHrPaymentApi({authenticate,db}){
    if(e instanceof RangeError||e instanceof TypeError)return deny(400,'invalid_request');
    if(['INVALID_REQUEST','INVALID_PAYEE','INVALID_ADVANCE_PLAN','INVALID_PAYROLL_DATE'].includes(e?.code))
     return deny(400,'invalid_request');
+   if(['ADVANCE_NOT_APPROVED','PAYEE_NOT_APPROVED','CLAIM_ALREADY_EXISTS'].includes(e?.code))
+    return deny(409,'disbursement_claim_not_allowed');
+   if(['INVALID_BANK_REFERENCE'].includes(e?.code))return deny(400,'invalid_bank_reference');
    if(['DUPLICATE_PENDING_PAYEE','PENDING_ADVANCE_EXISTS'].includes(e?.code))
     return deny(409,'already_pending');
    return deny(503,'hr_payment_unavailable');
