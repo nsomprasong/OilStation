@@ -9,6 +9,7 @@ import {createGpsAttendanceApi} from './attendance.mjs';
 // Never accept real employee/payroll actors, cross-station writes or real payments.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const paths=new Map([
+ ['/api/hr/link-setup','GET'],
  ['/api/hr/roster','GET'],['/api/hr/employees','POST'],
  ['/api/hr/employee-link','POST'],['/api/hr/geofence','POST'],
  ['/api/hr/seed-shifts','POST'],['/api/hr/assign-shift','POST'],

@@ -26,6 +26,7 @@ const deps=({qa=true,stationId=station}={})=>({
   hrSeedTemplates:async()=>{writes++;return {templates:3};},
   hrAddEmployee:async()=>{writes++;return {id:'22222222-2222-4222-8222-222222222222'};},
   hrLinkEmployee:async()=>{writes++;return {replayed:false};},
+  hrLinkSetup:async()=>({employees:[],accounts:[],geofence:{configured:false}}),
   hrConfigureGeofence:async()=>{writes++;return {configured:true};},
 
  },
@@ -92,4 +93,15 @@ test('QA HR station gate permits actor-scoped link and geofence but refuses cros
   {...geo,stationId:other}))).status,403);
  assert.equal((await createQaHrUatApi(deps({qa:false}))(req('/api/hr/geofence',geo))).status,403);
  assert.equal(writes,2);
+});
+
+test('QA HR setup is confined to same-station active QA management',async()=>{
+ const allowed=await createQaHrUatApi(deps())(
+  req('/api/hr/link-setup?stationId='+station));
+ assert.equal(allowed.status,200);
+ assert.deepEqual((await allowed.json()).setup.accounts,[]);
+ assert.equal((await createQaHrUatApi(deps())(
+  req('/api/hr/link-setup?stationId='+other))).status,403);
+ assert.equal((await createQaHrUatApi(deps({qa:false}))(
+  req('/api/hr/link-setup?stationId='+station))).status,403);
 });

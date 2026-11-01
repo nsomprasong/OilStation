@@ -13,6 +13,7 @@ const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalo
   '/api/corporate/pending-links': 'GET',
   '/api/station/invite-first-admin': 'POST',
   '/api/hr/roster': 'GET', '/api/hr/employees': 'POST',
+  '/api/hr/link-setup': 'GET',
   '/api/hr/employee-link':'POST', '/api/hr/geofence':'POST',
   '/api/hr/seed-shifts': 'POST', '/api/hr/assign-shift': 'POST',
   '/api/hr/request-substitute': 'POST', '/api/hr/review-substitute': 'POST',
@@ -165,8 +166,9 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       }
       if (path.startsWith('/api/hr/') &&
         !['/api/hr/request-ot','/api/hr/review-ot','/api/hr/pending-ot'].includes(path)) {
-        const body = path === '/api/hr/roster' ? null : await readBody(request);
-        const stationId = path === '/api/hr/roster'
+        const isHrGet = path === '/api/hr/roster' || path === '/api/hr/link-setup';
+        const body = isHrGet ? null : await readBody(request);
+        const stationId = isHrGet
           ? url.searchParams.get('stationId') : body?.stationId;
         if (!UUID.test(stationId??'')) return fail(400,'invalid_station');
         const canManage = active.some(m=>
@@ -178,6 +180,9 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
         if (!canManage) return fail(403,'permission_denied');
         if (path==='/api/hr/roster') {
           return json(200,{roster:await db.hrRoster({actorId:user.id,stationId})});
+        }
+        if (path==='/api/hr/link-setup') {
+          return json(200,{setup:await db.hrLinkSetup({actorId:user.id,stationId})});
         }
         if (!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json')) {
           return fail(415,'unsupported_media_type');

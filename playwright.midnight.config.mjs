@@ -3,7 +3,7 @@ import {defineConfig} from '@playwright/test';
 // Isolated local Vite preview; never points to customer production or a live DB.
 export default defineConfig({
   testDir:'./e2e',
-  testMatch:'**/midnight.local.pw.mjs',
+  testMatch:['**/midnight.local.pw.mjs','**/hr-access.local.pw.mjs'],
   timeout:60_000,
   expect:{timeout:10_000},
   workers:1,

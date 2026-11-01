@@ -494,6 +494,10 @@ export function createSupabaseAdapter(env) {
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
       }),
+      hrLinkSetup: async d => serviceRequest(env,'/rest/v1/rpc/hr_station_link_setup',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+      }),
       hrLinkEmployee: async d => serviceRequest(env,'/rest/v1/rpc/hr_link_existing_station_employee',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
