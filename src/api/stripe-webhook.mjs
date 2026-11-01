@@ -46,7 +46,7 @@ export async function verifyStripeSignature(raw,header,secret,nowSeconds=Math.fl
  }
  return false;
 }
-export function createStripeWebhookApi({db,secret,processTestPayments=false,nowSeconds=()=>Math.floor(Date.now()/1000)}){
+export function createStripeWebhookApi({db,secret,processTestPayments=false,verifyEventScope=null,nowSeconds=()=>Math.floor(Date.now()/1000)}){
  return async request=>{
   if(new URL(request.url).pathname!=='/api/webhooks/stripe')return json(404,{error:'not_found'});
   if(request.method!=='POST')return json(405,{error:'method_not_allowed'});
@@ -64,6 +64,13 @@ export function createStripeWebhookApi({db,secret,processTestPayments=false,nowS
      typeof event?.type!=='string'||!/^[a-z][a-z0-9_.]{2,90}$/.test(event.type)||
      typeof event?.livemode!=='boolean'||event.livemode===true)
     return json(422,{error:'unsupported_event'});
+  // Shared-project Stripe UAT checks signed event scope before recording
+  // anything in the production database, including the event inbox.
+  if(verifyEventScope){
+   try{
+    if(!(await verifyEventScope(event)))return json(403,{error:'qa_event_outside_scope'});
+   }catch{return json(503,{error:'qa_event_scope_unavailable'});}
+  }
   const hashBytes=new Uint8Array(await crypto.subtle.digest('SHA-256',raw));
   const hash=[...hashBytes].map(v=>v.toString(16).padStart(2,'0')).join('');
   try{
