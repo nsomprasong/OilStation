@@ -126,7 +126,7 @@ DECLARE p public.employee_payment_methods%ROWTYPE;e public.employees%ROWTYPE;
  v_value text;
 BEGIN
  SELECT * INTO p FROM public.employee_payment_methods WHERE id=p_method_id
-  AND status='approved' AND vault_secret_id IS NOT NULL;
+  AND status='approved' AND is_primary=true AND vault_secret_id IS NOT NULL;
  IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='PAYEE_NOT_APPROVED';END IF;
  SELECT * INTO e FROM public.employees WHERE id=p.employee_id;
  IF p_actor_id=e.user_id OR NOT EXISTS(
