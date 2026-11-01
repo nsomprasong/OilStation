@@ -11,6 +11,12 @@ test('scoped leave database RPCs require station/employee ACL and distinct revie
  'REVOKE ALL ON FUNCTION','TO service_role','payrollImpact','noPayrollDeduction']){
   assert.ok(sql.includes(phrase),phrase);
  }
+ // Audit history uses a bigint IDENTITY, never a UUID insert.
+ assert.doesNotMatch(sql,/INSERT INTO public\.audit_events\(id,/);
+ const hotfix=read('supabase/migrations/20261101211000_hr_leave_audit_identity_fix.sql');
+ assert.doesNotMatch(hotfix,/INSERT INTO public\.audit_events\(id,/);
+ assert.match(hotfix,/CREATE OR REPLACE FUNCTION public\.hr_request_leave_safe/);
+ assert.match(hotfix,/CREATE OR REPLACE FUNCTION public\.hr_review_leave_safe/);
  for(const forbidden of [/UPDATE public\.payroll_/i,/INSERT INTO public\.payroll_/i,
   /UPDATE public\.attendance_events/i,/INSERT INTO public\.advance_repayments/i])
   assert.doesNotMatch(sql,forbidden);
