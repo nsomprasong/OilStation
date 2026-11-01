@@ -1,10 +1,14 @@
 import {test,expect} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+const clientSource=readFileSync(new URL('../src/client/hr-access-setup.js',import.meta.url),'utf8')
+ .replace('export async function mountHrAccessSetup','async function mountHrAccessSetup');
 
 const station='e22fb5ff-1878-446f-ab8d-585115e8a1a9';
 const employee='aaaaaaaa-5555-4555-8555-aaaaaaaaaaaa';
 const user='55555555-5555-4555-8555-555555555555';
 async function setup(page){
  await page.goto('/');
+ await page.addScriptTag({content:clientSource+'\\nwindow.__mountHrAccessSetup=mountHrAccessSetup;'});
  await page.evaluate(async ({station,employee,user})=>{
   const app=document.querySelector('#app');
   app.className='workspace-mode';
@@ -33,8 +37,7 @@ async function setup(page){
    }
    return {ok:false,status:404,data:{}};
   };
-  const {mountHrAccessSetup}=await import('/src/client/hr-access-setup.js');
-  await mountHrAccessSetup({target:document.getElementById('hr-access-setup'),
+  await window.__mountHrAccessSetup({target:document.getElementById('hr-access-setup'),
     stationId:station,token:'qa-fixture-token',getApi});
  },{station,employee,user});
 }
