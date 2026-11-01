@@ -50,7 +50,7 @@ async({browser,request})=>{
   expect(wrongMethod.status()).toBe(409);
   const create=await page.request.post(UAT+'/api/billing/payment-intent',{
    headers,data:{invoiceId:INVOICE,paymentMethod:'card'}});
-  expect(create.status(),await create.text()).toBe(200);
+  expect(create.status(),'QA Stripe PI should create in test-only UAT').toBe(200);
   const result=await create.json();
   expect(result.invoiceId).toBe(INVOICE);
   expect(result.paymentMethod).toBe('card');
