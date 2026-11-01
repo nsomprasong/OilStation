@@ -8,6 +8,7 @@ on:
       - e2e/qa.business-hr.pw.mjs
       - e2e/qa.business-approvals.pw.mjs
       - e2e/qa.business-payees.pw.mjs
+      - e2e/qa.business-guard.pw.mjs
 permissions:
   contents: read
   actions: read
