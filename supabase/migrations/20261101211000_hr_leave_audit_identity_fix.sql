@@ -75,3 +75,9 @@ BEGIN
   'payrollImpact','undetermined','payable',false,'deducted',false,
   'attendanceAutoChanged',false);
 END $func$;
+
+-- Explicitly repeat the same grant boundary after the CREATE OR REPLACE.
+REVOKE ALL ON FUNCTION public.hr_request_leave_safe(uuid,uuid,text,date,date,text) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.hr_review_leave_safe(uuid,uuid,boolean) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.hr_request_leave_safe(uuid,uuid,text,date,date,text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.hr_review_leave_safe(uuid,uuid,boolean) TO service_role;
