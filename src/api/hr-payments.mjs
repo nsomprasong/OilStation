@@ -1,12 +1,14 @@
 import {buildPromptPayPayload,normalizePromptPay,maskManualAccount} from '../domain/promptpay.mjs';
 import {planAdvanceInstallments} from '../domain/advance-installments.mjs';
+import {reviewAdvanceDeductions} from '../domain/advance-payroll-readiness.mjs';
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 const methods={
  '/api/hr/payees':'GET','/api/hr/payees/register':'POST',
  '/api/hr/payees/review':'POST','/api/hr/payees/instruction':'POST',
- '/api/hr/advances':'GET','/api/hr/advances/request':'POST',
+ '/api/hr/advances':'GET','/api/hr/advances/period-preview':'GET',
+ '/api/hr/advances/request':'POST',
  '/api/hr/advances/review':'POST',
 };
 const respond=(status,data)=>new Response(JSON.stringify(data),{
@@ -47,6 +49,18 @@ export function createHrPaymentApi({authenticate,db}){
       await db.hrListPayees({actorId:user.id,employeeId}):
       await db.hrListAdvances({actorId:user.id,employeeId});
     return respond(200,{items:data});
+   }
+   if(path==='/api/hr/advances/period-preview'){
+    const employeeId=url.searchParams.get('employeeId');
+    const startDate=url.searchParams.get('startDate');
+    const endDate=url.searchParams.get('endDate');
+    if(!UUID.test(employeeId??'')||!DATE.test(startDate??'')||!DATE.test(endDate??''))
+     return deny(400,'invalid_period');
+    const data=await db.hrListAdvances({actorId:user.id,employeeId});
+    const items=(data||[]).map(advance=>reviewAdvanceDeductions(advance,{startDate,endDate}));
+    const proposedSatang=items.reduce((sum,x)=>sum+x.plannedInPeriodSatang,0);
+    return respond(200,{items,proposedSatang,postedSatang:0,deductibleSatang:0,
+      payable:false,readOnly:true,needsExternalVerification:true});
    }
    if(path==='/api/hr/payees/register'){
     if(!UUID.test(body.employeeId??''))return deny(400,'invalid_employee');
