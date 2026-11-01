@@ -117,5 +117,29 @@ test('QA-HR-03 Vault payee bank fallback, PromptPay QR, independent review, inst
    expect(replay.status()).toBe(200);
    expect((await replay.json()).result.replayed).toBe(true);
    console.log('QA-HR ADVANCE PASS: 3 selected installments, independent approval, no actual deduction');
+   // Following approval, the stored plan remains visible, but no wages are
+   // deducted until an externally verified disbursement and payroll approval.
+   const currentMonth=first.slice(0,8)+'01';
+   const nextMonthDate=new Date(first+'T00:00:00.000Z');
+   nextMonthDate.setUTCMonth(nextMonthDate.getUTCMonth()+1);
+   nextMonthDate.setUTCDate(1);
+   const nextMonth=nextMonthDate.toISOString().slice(0,10);
+   const readiness=await get(owner,ownerToken,'/api/hr/advances/period-preview?'+
+     new URLSearchParams({employeeId:employee.id,startDate:currentMonth,endDate:nextMonth}));
+   expect(readiness.status()).toBe(200);
+   const plan=await readiness.json();
+   expect(plan.payable).toBe(false);
+   expect(plan.readOnly).toBe(true);
+   expect(plan.deductibleSatang).toBe(0);
+   expect(plan.postedSatang).toBe(0);
+   const reviewedPlan=plan.items.find(x=>x.advanceId===payload.advance.id);
+   expect(reviewedPlan).toBeTruthy();
+   expect(reviewedPlan.plannedInPeriodSatang).toBe(3333);
+   expect(reviewedPlan.blockers).toContain('advance_not_disbursed');
+   const repeat=await get(owner,ownerToken,'/api/hr/advances/period-preview?'+
+     new URLSearchParams({employeeId:employee.id,startDate:currentMonth,endDate:nextMonth}));
+   expect(repeat.status()).toBe(200);
+   expect((await repeat.json()).postedSatang).toBe(0);
+   console.log('QA-HR ADVANCE PERIOD PASS: persisted installments reloaded, no payroll deduction');
   }finally{await Promise.all([owner.close(),hr.close()]);}
  });
