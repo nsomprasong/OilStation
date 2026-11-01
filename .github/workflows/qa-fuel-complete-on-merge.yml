@@ -1,5 +1,6 @@
 name: QA fictional fuel photo and wallet settlement UAT
 on:
+  workflow_dispatch: # Manual reruns only from main and protected environments
   push:
     branches: [main]
     paths:
@@ -12,6 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   arm:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
@@ -86,7 +88,7 @@ jobs:
       - name: Fictional 50-THB driver QR and independent photo review through live APIs
         run: npm run test:e2e -- --grep '@qa-fuel-complete' --reporter=list
   disarm:
-    if: ${{ always() }}
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
     needs: [arm, browser]
     runs-on: ubuntu-latest
     timeout-minutes: 15

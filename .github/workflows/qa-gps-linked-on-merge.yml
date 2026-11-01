@@ -1,5 +1,6 @@
 name: QA linked GPS attendance - bounded fictional Chromium UAT
 on:
+  workflow_dispatch: # Manual reruns only from main and protected environments
   push:
     branches: [main]
     paths:
@@ -13,6 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   arm-qa-hr:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
@@ -82,7 +84,7 @@ jobs:
         run: npm run test:e2e -- --grep '@qa-gps-linked' --reporter=list
 
   disarm-qa-hr:
-    if: ${{ always() }}
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
     needs: [arm-qa-hr, run-qa-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 15

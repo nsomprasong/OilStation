@@ -1,5 +1,6 @@
 name: QA real business UAT - bounded synthetic HR and QR
 on:
+  workflow_dispatch: # Manual reruns only from main and protected environments
   push:
     branches: [main]
     paths:
@@ -15,6 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   arm-scoped-qa:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
@@ -94,7 +96,7 @@ jobs:
         run: npm run test:e2e -- --grep '@qa-business-' --reporter=list
   disarm-scoped-qa:
     # Undo temporary Worker variables on success, failure OR skipped tests.
-    if: ${{ always() }}
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
     needs: [arm-scoped-qa, live-qa-business]
     runs-on: ubuntu-latest
     timeout-minutes: 15
