@@ -325,6 +325,12 @@ export function createSupabaseAdapter(env) {
            p_currency:d.currency,p_payment_status:d.status,p_livemode:d.livemode,
           }),
         }),
+      qaSaasInvoiceScope: async d=>serviceRequest(env,
+        '/rest/v1/rpc/qa_authorize_saas_test_invoice',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId??null,p_invoice_id:d.invoiceId,
+            p_station_id:d.stationId,p_qa_run_id:d.qaRunId}),
+        }),
       prepareSaasPayment: async d=>serviceRequest(env,
         '/rest/v1/rpc/prepare_saas_test_payment',{
           method:'POST',headers:{'content-type':'application/json'},
