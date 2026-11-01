@@ -29,6 +29,13 @@ export function createGpsAttendanceApi({authenticate,db}){
        !range(data?.latitude,-90,90)||!range(data?.longitude,-180,180)||
        !range(data?.accuracyMeters,0,1000))
       return json(400,{error:'invalid_attendance'});
+    // A linked employee record alone is not an active access grant. Revoking a
+    // user's station membership must immediately block further GPS punches,
+    // even while their employee profile remains active.
+    const memberships=await db.memberships(user.id);
+    if(!Array.isArray(memberships)||!memberships.some(m=>
+      m.active===true && m.scope_type==='station' && m.station_id===data.stationId))
+      return json(403,{error:'permission_denied'});
     const attendance=await db.hrRecordGps({actorId:user.id,stationId:data.stationId,
       eventType:data.eventType,latitude:data.latitude,longitude:data.longitude,
       accuracyMeters:data.accuracyMeters,idempotencyKey:data.idempotencyKey});
