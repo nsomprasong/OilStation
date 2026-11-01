@@ -102,7 +102,7 @@ test('simulated Stripe provider: locked invoice -> one PI -> signed webhook -> p
    data:{object:payment}};
  assert.equal((await hook(await signed(good,false))).status,400);
  assert.equal(eventHashes.size,0);
- assert.equal((await hook(await signed({...good,data:{object:{
+ assert.equal((await hook(await signed({...good,id:'evt_QABillingInvalid123456',data:{object:{
    ...payment,amount_received:AMOUNT-1}}}))).status,422);
  assert.equal(invoiceStatus,'issued');
  const signedOnce=await hook(await signed(good));
