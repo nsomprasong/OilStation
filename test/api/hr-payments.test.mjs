@@ -46,7 +46,7 @@ test('wrong method, origin and missing authentication fail before storing',async
  let count=0;
  const fn=handler({hrRegisterPayee:async()=>{count++;return{};}});
  assert.equal((await fn(req('/api/hr/payees/register',{employeeId:EMP,type:'bank_account',
-  reference:'1234',bankCode:'KBANK'}))).status,503);
+  reference:'1234',bankCode:'KBANK'}))).status,400);
  assert.equal(count,0);
 });
 test('payment instruction is flagged unpaid and only approved details are used',async()=>{
@@ -87,7 +87,7 @@ test('missing session, invalid amount, methods and other-origin posts are denied
  assert.equal((await fn(req('/api/hr/payees/instruction',{methodId:METHOD,amountSatang:'-100'}))).status,400);
  assert.equal((await fn(req('/api/hr/payees/instruction',{methodId:METHOD,amountSatang:'0'}))).status,400);
  assert.equal((await fn(req('/api/hr/payees/register',{
-  employeeId:EMP,type:'promptpay_phone',reference:'0011111111'}))).status,503);
+  employeeId:EMP,type:'promptpay_phone',reference:'0011111111'}))).status,400);
  assert.equal((await fn(req('/api/hr/payees/register',{employeeId:EMP,type:'promptpay_phone',
   reference:'0812345678'},{origin:'https://attacker.invalid'}))).status,403);
  assert.equal((await fn(req('/api/hr/payees?employeeId='+EMP,undefined,{authorization:'Bearer bad'}))).status,401);
@@ -96,7 +96,7 @@ test('security migration forces role checks, independent reviews and Vault secre
  const sql=readFileSync(new URL('../../supabase/migrations/20261101190000_hr_payee_advance_installments.sql',import.meta.url),'utf8');
  for(const key of ['vault.create_secret','vault.decrypted_secrets','SELF_APPROVAL_FORBIDDEN',
   'REVOKE ALL ON FUNCTION','TO service_role','advance_requested',
-  'p_installments BETWEEN','PENDING_ADVANCE_EXISTS','payment_method','is_primary'])
+  'p_installments NOT BETWEEN','PENDING_ADVANCE_EXISTS','payment_method','is_primary'])
   assert.ok(sql.includes(key),key);
  assert.doesNotMatch(sql,/UPDATE public.payroll_payouts|INSERT INTO public.payroll_payouts/);
 });
