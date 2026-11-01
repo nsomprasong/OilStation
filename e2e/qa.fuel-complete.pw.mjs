@@ -1,11 +1,10 @@
 import {test,expect} from '@playwright/test';
-import {createHmac,createHash} from 'node:crypto';
+import {createHmac,createHash,randomUUID} from 'node:crypto';
 
-// ONE irreversible fictional 50 THB reservation in QA-S01-A only.
+// Fresh synthetic 50 THB QR per run, restricted to QA-S01-A and fixed QA company.
 // These visibly marked photos do NOT document actual petrol or bank payment.
 const BASE='https://oilstation.goldensoft.cloud';
 const STATION='e22fb5ff-1878-446f-ab8d-585115e8a1a9';
-const COUPON='bee58d32-9444-4514-8a7f-5ee6cd9e2d5c';
 const COMPANY='4e6a3fc9-217d-4543-885b-113f1f3ba4c3';
 const PLATE='QA 1001';
 const MAX=5000n;
@@ -50,8 +49,8 @@ const headers=(token,method='GET',contentType='application/json')=>({
 async function get(page,token,path){
  return page.request.get(BASE+path,{headers:headers(token)});
 }
-async function post(page,token,path,data){
- return page.request.post(BASE+path,{headers:headers(token,'POST'),data});
+async function post(page,token,path,data,extraHeaders={}){
+ return page.request.post(BASE+path,{headers:{...headers(token,'POST'),...extraHeaders},data});
 }
 async function payload(page,label,detail){
  // Canvas is created only in a fictional QA browser context; not a receipt forgery.
@@ -113,11 +112,56 @@ test('QA-FUEL-01 complete photo-reviewed synthetic 50 THB QR exactly once @qa-fu
   expect(account,'preexisting fictional station/company wallet').toBeTruthy();
   const before=BigInt(account.availableSatang);
 
+  // A completed coupon cannot be reused. Each run issues a distinct,
+  // 24-hour QA-only coupon and verifies its balance reservation.
+  const roster=await get(corporate,ct,
+   '/api/corporate/drivers?companyId='+COMPANY);
+  expect(roster.status()).toBe(200);
+  const driverFixture=(await roster.json()).drivers.find(d=>
+   d.userId&&d.driverId&&d.plate&&/QA.?1001/i.test(d.plate));
+  expect(driverFixture,'fixed QA driver and synthetic plate').toBeTruthy();
+  const fuels=await get(corporate,ct,'/api/my-accounts/'+account.id+'/fuels');
+  expect(fuels.status()).toBe(200);
+  const fuel=(await fuels.json()).fuels.find(f=>f.id);
+  expect(fuel,'existing positively priced station fuel').toBeTruthy();
+  let balanceBeforeHold=before;
+  if(balanceBeforeHold<MAX){
+   // Optional synthetic top-up through the SAME fixed QA lane; no bank
+   // receipt, outside-tenant account or payment is ever touched.
+   const t=await post(corporate,ct,'/api/qa/finance/topup/request',{
+    accountId:account.id,amountSatang:'10000',requestKey:randomUUID()});
+   expect(t.status(),await t.text()).toBe(201);
+   const requestId=(await t.json()).request.requestId;
+   const a=await post(owner,ot,'/api/qa/finance/topup/review',
+    {requestId,approved:true});
+   expect(a.status(),await a.text()).toBe(200);
+   expect((await a.json()).result.simulated).toBe(true);
+   const funded=await get(corporate,ct,'/api/my-accounts');
+   expect(funded.status()).toBe(200);
+   balanceBeforeHold=BigInt((await funded.json()).accounts.find(a=>
+    a.id===account.id).availableSatang);
+   expect(balanceBeforeHold).toBe(before+10000n);
+  }
+  const issue=await post(corporate,ct,'/api/coupons',{
+   accountId:account.id,stationFuelId:fuel.id,amountSatang:'5000',
+   driverId:driverFixture.driverId,
+   expiresAt:new Date(Date.now()+24*3600*1000).toISOString(),
+  },{'idempotency-key':randomUUID().replaceAll('-','')});
+  expect(issue.status(),await issue.text()).toBe(201);
+  const issued=await issue.json();
+  const qrPayload=issued.coupon?.qrPayload;
+  expect(typeof qrPayload).toBe('string');
+  const couponId=qrPayload.split('.')[0];
+  expect(couponId).toMatch(/^[0-9a-f-]{36}$/i);
+  const afterIssue=await get(corporate,ct,'/api/my-accounts');
+  expect(afterIssue.status()).toBe(200);
+  expect(BigInt((await afterIssue.json()).accounts.find(a=>
+   a.id===account.id).availableSatang)).toBe(balanceBeforeHold-MAX);
   const qrInbox=await get(driver,dt,'/api/driver/coupons');
   expect(qrInbox.status()).toBe(200);
   const assigned=(await qrInbox.json()).coupons.find(c=>
-   typeof c.qrPayload==='string'&&c.qrPayload.startsWith(COUPON+'.'));
-  expect(assigned,'existing non-expired QA driver QR; never create new coupon').toBeTruthy();
+   c.qrPayload===qrPayload);
+  expect(assigned,'newly issued QA coupon in driver wallet').toBeTruthy();
   expect(assigned.plate||PLATE).toMatch(/QA.?1001/i);
 
   const scan=await post(attendant,at,'/api/station/scan-qr',
@@ -127,7 +171,7 @@ test('QA-FUEL-01 complete photo-reviewed synthetic 50 THB QR exactly once @qa-fu
   // A test driver and employees at foreign stations cannot upload plate evidence.
   const plateBytes=await payload(attendant,'TEST VEHICLE PLATE','QA 1001');
   const platePath='/api/evidence/plate?'+
-   new URLSearchParams({stationId:STATION,couponId:COUPON});
+   new URLSearchParams({stationId:STATION,couponId});
   const unauthorized=await upload(driver,dt,platePath,plateBytes);
   expect(unauthorized.status()).toBe(403);
 
@@ -223,8 +267,8 @@ test('QA-FUEL-01 complete photo-reviewed synthetic 50 THB QR exactly once @qa-fu
   expect(afterRes.status()).toBe(200);
   const after=(await afterRes.json()).accounts.find(a=>a.id===account.id);
   expect(after).toBeTruthy();
-  expect(BigInt(after.availableSatang)).toBe(before+MAX-netExpected);
-  console.log('QA-FUEL PASS: fictional plate/photo data, independent QA actor review, locked '+lockedPublic+' pump price, 1.000L, 50THB hold settled once, no real fueling/payment.');
+  expect(BigInt(after.availableSatang)).toBe(balanceBeforeHold-netExpected);
+  console.log('QA-FUEL PASS: fresh fictional QR '+couponId+', plate/photo independent review, locked '+lockedPublic+' THB pump price, 1.000L, 50THB hold settled once, no real fueling/payment.');
  }finally{
   await Promise.all([attendant.close(),owner.close(),driver.close(),corporate.close()]);
  }
