@@ -16,6 +16,7 @@ function make(role='manager'){
    hrRoster:async args=>{calls.push(['roster',args]);return {employees:[],shiftTemplates:[],assignments:[]}},
    hrAddEmployee:async args=>{calls.push(['employee',args]);return {id:EMPLOYEE,name:args.name}},
    hrLinkEmployee:async args=>{calls.push(['employee-link',args]);return {employeeId:args.employeeId,userId:args.userId}},
+   hrLinkSetup:async args=>{calls.push(['link-setup',args]);return {employees:[],accounts:[],geofence:{configured:false}}},
    hrConfigureGeofence:async args=>{calls.push(['geofence',args]);return {configured:true}},
 
    hrSeedTemplates:async args=>{calls.push(['seed',args]);return {created:3}},
@@ -87,5 +88,19 @@ test('HR linking and geofence deny foreign scope, bad input and attendant actors
  assert.equal((await attendant.handler(attendant.req('/api/hr/employee-link','POST',
    {stationId:STATION,employeeId:EMPLOYEE,userId}))).status,403);
  assert.equal((await attendant.handler(attendant.req('/api/hr/geofence','POST',geo))).status,403);
+ assert.equal(attendant.calls.length,0);
+});
+
+test('station HR setup provides allowed manager scoped GET only',async()=>{
+ const x=make();
+ const r=await x.handler(x.req('/api/hr/link-setup?stationId='+STATION));
+ assert.equal(r.status,200);
+ const data=await r.json();
+ assert.deepEqual(data.setup.accounts,[]);
+ assert.equal(x.calls[0][0],'link-setup');
+ assert.equal(x.calls[0][1].stationId,STATION);
+ assert.equal((await x.handler(x.req('/api/hr/link-setup?stationId='+EMPLOYEE))).status,403);
+ const attendant=make('attendant');
+ assert.equal((await attendant.handler(attendant.req('/api/hr/link-setup?stationId='+STATION))).status,403);
  assert.equal(attendant.calls.length,0);
 });
