@@ -29,6 +29,7 @@ async function fetchJson(url, init) {
       'INVITE_INVALID_OR_EXPIRED', 'INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED',
       'BOOTSTRAP_FORBIDDEN', 'ALREADY_BOOTSTRAPPED', 'PLATE_MISMATCH',
       'SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
+      'ADVANCE_NOT_APPROVED','CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE',
       'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE','PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED',
       'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED']);
     const err = new Error('supabase_request_failed');
@@ -38,7 +39,8 @@ async function fetchJson(url, init) {
         detail.message === 'FORBIDDEN' ? 'FORBIDDEN' :
         ['SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
          'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE',
-         'PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED'].includes(detail.message) ? detail.message :
+         'PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED','ADVANCE_NOT_APPROVED',
+         'CLAIM_ALREADY_EXISTS','INVALID_BANK_REFERENCE'].includes(detail.message) ? detail.message :
         ['INVITE_INVALID_OR_EXPIRED', 'INVALID_INVITATION'].includes(detail.message) ? 'INVITE_INVALID' :
         ['INVITED_EMAIL_MISMATCH', 'EMAIL_VERIFICATION_REQUIRED'].includes(detail.message) ? 'EMAIL_MISMATCH' :
         ['BOOTSTRAP_FORBIDDEN','ALREADY_BOOTSTRAPPED','PLATE_MISMATCH',
@@ -545,6 +547,22 @@ export function createSupabaseAdapter(env) {
         body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId,
           p_amount_satang:d.amountSatang,p_installments:d.installments,
           p_first_date:d.firstDeductionDate}),
+      }),
+      hrSubmitAdvanceConfirmation: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_advance_submit_manual_confirmation',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_advance_id:d.advanceId,
+          p_method_id:d.methodId,p_bank_reference:d.bankReference}),
+      }),
+      hrListAdvanceConfirmations: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_advance_list_manual_confirmations',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_employee_id:d.employeeId}),
+      }),
+      hrReviewAdvanceConfirmation: async d=>serviceRequest(env,
+        '/rest/v1/rpc/hr_advance_review_manual_confirmation',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({p_actor_id:d.actorId,p_claim_id:d.claimId,p_verified:d.verified}),
       }),
       hrListAdvances: async d=>serviceRequest(env,'/rest/v1/rpc/hr_list_salary_advances',{
         method:'POST',headers:{'content-type':'application/json'},
