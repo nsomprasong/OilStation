@@ -42,6 +42,13 @@ test('QA-HR-04 independent leave UI and payroll-safe labels @qa-business-leave',
    'ยังไม่อนุญาตให้จ่ายหรือปิดงวด',{timeout:20000});
   await expect(owner.locator('.attendance-payroll-preview')).toContainText('รอตรวจภาษีและประกันสังคม');
   console.log('QA-HR PAYROLL READINESS PASS: live scoped evidence, review blockers, no payout');
+  const policies=owner.locator('.attendance-payroll-preview details').filter({
+   hasText:'ตั้งค่านโยบายการลาและค่าจ้าง'});
+  await policies.locator('summary').click();
+  await expect(policies).toContainText('กำหนดนโยบายตามเอกสารของสถานีเอง');
+  await expect(policies.getByRole('button',{name:'ส่งนโยบายให้ผู้มีสิทธิ์อีกคนตรวจ'})).toBeVisible();
+  await expect(policies).toContainText('ภาษีและประกันสังคม');
+  console.log('QA-HR POLICY UI PASS: station-specific rules require independent verification');
  }finally{
   await Promise.all([hr.close(),owner.close()]);
  }
