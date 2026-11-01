@@ -51,6 +51,14 @@ const request=(data,auth='Bearer qa')=>new Request(base+'/api/billing/payment-in
  method:'POST',headers:{authorization:auth,'content-type':'application/json',origin:base},
  body:JSON.stringify(data),
 });
+test('UAT QA only exposes publishable test key, not privileged Stripe secret',async()=>{
+ const handle=createSharedQaStripeApi({env,authenticate:async()=>null,db:{}});
+ const res=await handle(new Request(base+'/api/qa/stripe/public-key'));
+ assert.equal(res.status,200);
+ assert.deepEqual(await res.json(),{publishableKey:env.STRIPE_PUBLISHABLE_KEY});
+ const bad=await handle(new Request(base+'/api/qa/stripe/public-key',{method:'POST'}));
+ assert.equal(bad.status,405);
+});
 test('only authenticated QA actor with SQL-attested invoice can create PI (never arbitrary invoice)',async()=>{
  const calls=[];
  const deps={env,
