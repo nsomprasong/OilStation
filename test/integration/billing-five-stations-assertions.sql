@@ -269,6 +269,67 @@ BEGIN
  -- no subscription invoice is silently recreated or repriced.
  IF (SELECT status FROM public.saas_invoices WHERE id=v_invoice_id)<>'paid'
  THEN RAISE EXCEPTION 'refund_changed_prior_month';END IF;
+ -- Dispute review is append-only: a lost chargeback requires separate
+ -- financial settlement reconciliation, never marks SaaS invoice refunded.
+ PERFORM public.record_stripe_signed_event('evt_QADisputeClosed123',
+   'charge.dispute.closed',repeat('7',64),false);
+ d:=public.record_saas_test_dispute_review('evt_QADisputeClosed123',
+   'du_QAReviewDispute123','pi_QAFiveStationTest123456',
+   'ch_QAReviewDispute123',70000,'thb','lost','charge.dispute.closed',
+   1793500200,false);
+ IF d->>'reviewOnly'<>'true' OR d->>'replayed'<>'false'
+   OR (SELECT status FROM public.saas_invoices WHERE id=v_invoice_id)<>'paid'
+ THEN RAISE EXCEPTION 'dispute_changed_paid_invoice %',d;END IF;
+ d:=public.record_saas_test_dispute_review('evt_QADisputeClosed123',
+   'du_QAReviewDispute123','pi_QAFiveStationTest123456',
+   'ch_QAReviewDispute123',70000,'thb','lost','charge.dispute.closed',
+   1793500200,false);
+ IF d->>'replayed'<>'true' OR
+   (SELECT count(*) FROM public.saas_test_dispute_review_events
+    WHERE dispute_id='du_QAReviewDispute123')<>1
+ THEN RAISE EXCEPTION 'duplicate_dispute_event_written';END IF;
+ -- Stripe may deliver a CREATED event after a CLOSED event.
+ PERFORM public.record_stripe_signed_event('evt_QADisputeLate12345',
+   'charge.dispute.created',repeat('8',64),false);
+ d:=public.record_saas_test_dispute_review('evt_QADisputeLate12345',
+   'du_QAReviewDispute123','pi_QAFiveStationTest123456',
+   'ch_QAReviewDispute123',70000,'thb','needs_response',
+   'charge.dispute.created',1793500100,false);
+ IF d->>'replayed'<>'false' OR
+   (SELECT count(*) FROM public.saas_test_dispute_review_events
+    WHERE dispute_id='du_QAReviewDispute123')<>2 OR
+   (SELECT dispute_status FROM public.saas_test_dispute_review_events
+    WHERE dispute_id='du_QAReviewDispute123'
+    ORDER BY event_created DESC,event_id DESC LIMIT 1)<>'lost'
+ THEN RAISE EXCEPTION 'late_dispute_event_overwrote_closed_status';END IF;
+ -- Same dispute ID cannot be rebound to a different invoice/PaymentIntent.
+ PERFORM public.record_stripe_signed_event('evt_QADisputeWrong1234',
+   'charge.dispute.updated',repeat('9',64),false);
+ failed:=false;
+ BEGIN
+  PERFORM public.record_saas_test_dispute_review('evt_QADisputeWrong1234',
+   'du_QAReviewDispute123','pi_QAFiveStationRenewal123456',
+   'ch_QAReviewDispute123',70000,'thb','under_review',
+   'charge.dispute.updated',1793500150,false);
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='IDEMPOTENCY_CONFLICT';END;
+ IF NOT failed THEN RAISE EXCEPTION 'dispute_moved_between_billing_periods';END IF;
+ failed:=false;
+ BEGIN
+  PERFORM public.record_saas_test_dispute_review('evt_QADisputeWrong1234',
+   'du_UnknownDispute123456','pi_UnknownDispute123456',
+   'ch_QAReviewDispute123',70000,'thb','under_review',
+   'charge.dispute.updated',1793500150,false);
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='INVALID_REQUEST';END;
+ IF NOT failed THEN RAISE EXCEPTION 'unbound_dispute_was_accepted';END IF;
+ failed:=false;
+ BEGIN
+  UPDATE public.saas_test_dispute_review_events SET dispute_status='won'
+   WHERE event_id='evt_QADisputeClosed123';
+ EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='DISPUTE_HISTORY_IMMUTABLE';END;
+ IF NOT failed THEN RAISE EXCEPTION 'dispute_history_was_mutable';END IF;
+ IF (SELECT status FROM public.saas_invoices WHERE id=v_invoice_id)<>'paid'
+   OR (SELECT status FROM public.saas_invoices WHERE id=renewal_invoice_id)<>'refunded'
+ THEN RAISE EXCEPTION 'dispute_modified_financial_state';END IF;
  RAISE NOTICE 'PASS disposable five-station two billing cycles: PromptPay discount and next-period card, 5 stations / 6 lines, VAT, replay and no double payment';
 END $test$;
 ROLLBACK;
