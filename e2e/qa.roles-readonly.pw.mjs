@@ -38,6 +38,9 @@ function staffPassword(company,suffix){
 }
 async function login(page,alias,password,role,scopeId,scopeField){
  await page.goto(BASE,{waitUntil:'domcontentloaded'});
+ await expect(page.locator('.os-auth-frame')).toBeVisible({timeout:40_000});
+ await expect(page.locator('.os-auth-hero')).toBeVisible();
+ await expect(page.locator('.os-auth-card')).toBeVisible();
  await expect(page.locator('#qa-login-form')).toBeVisible({timeout:40_000});
  await page.locator('#qa-login-alias').fill(alias);
  await page.locator('#qa-login-password').fill(password);
