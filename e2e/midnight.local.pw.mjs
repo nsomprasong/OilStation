@@ -24,7 +24,7 @@ async function mountShell(page,role,screen='overview'){
  },{markup:renderWorkspaceShell(screens),selected});
  return screens;
 }
-test('Midnight guest login renders dark at all breakpoints',async({page},info)=>{
+test('Reference guest login keeps angled green and cream styling at all breakpoints',async({page},info)=>{
  for(const width of [360,390,430,1280]){
   await page.setViewportSize({width,height:width===1280?800:844});
   await page.goto('/');
@@ -33,16 +33,18 @@ test('Midnight guest login renders dark at all breakpoints',async({page},info)=>
   await expect(page.locator('#facebook')).toBeVisible();
   const state=await page.evaluate(()=>{
    const style=sel=>getComputedStyle(document.querySelector(sel));
-   return {hero:style('.os-auth-hero').backgroundColor,card:style('.os-auth-card').backgroundColor,
+   return {hero:style('.os-auth-hero').backgroundImage,
+    frame:style('.os-auth-frame').backgroundColor,card:style('.os-auth-card').backgroundColor,
     heading:style('.os-auth-hero h1').fontFamily,radius:style('.os-auth-provider').borderTopLeftRadius,
     width:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth};
   });
-  expect(state.hero).toBe('rgb(4, 11, 40)');
-  expect(state.card).toBe('rgba(0, 0, 0, 0)'); // transparent form on v2 background
+  expect(state.hero).toContain('radial-gradient(');
+  expect(state.frame).toBe('rgb(234, 231, 223)');
+  expect(state.card).toBe('rgba(0, 0, 0, 0)');
   expect(state.heading).toContain('Noto Sans Thai');
-  expect(state.radius).toBe('12px');
+  expect(state.radius).toBe('99px');
   expect(state.width).toBeLessThanOrEqual(state.viewport+2);
-  await page.screenshot({path:info.outputPath('midnight-login-'+width+'.png'),animations:'disabled'});
+  await page.screenshot({path:info.outputPath('reference-login-'+width+'.png'),animations:'disabled'});
  }
 });
 test('Desktop is a real sidebar/topbar/dashboard grid, not a floating bottom dock',async({page},info)=>{
