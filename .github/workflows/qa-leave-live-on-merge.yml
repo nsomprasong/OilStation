@@ -1,10 +1,7 @@
 name: QA HR fictional leave request and independent decision
+# One-shot append-only QA fixture already exists: never automatically replay
+# a workflow that writes leave requests on a push or a workflow-file edit.
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/qa-leave-live-on-merge.yml
-      - e2e/qa.leave-live.pw.mjs
   workflow_dispatch:
 permissions:
   contents: read
