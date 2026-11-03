@@ -1,0 +1,133 @@
+name: QA HR fictional leave request and independent decision
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/qa-leave-live-on-merge.yml
+      - e2e/qa.leave-live.pw.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: oilstation-customer-facing-worker
+  cancel-in-progress: false
+jobs:
+  arm-qa-leave:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Enforce actual Worker baseline and fixed synthetic scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const c=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          const v=c.vars;
+          if(c.name!=='oilstation' || v.OILSTATION_DEPLOY_TARGET!=='production' ||
+             v.OILSTATION_API_ENABLED!=='false' ||
+             v.OILSTATION_QA_FINANCE_SIM_ENABLED!=='false' ||
+             v.OILSTATION_QA_HR_UAT_ENABLED==='true' ||
+             v.OILSTATION_QA_STATION_IDS?.split(',').length!==4 ||
+             v.OILSTATION_QA_COMPANY_IDS?.split(',').length!==12 ||
+             v.OILSTATION_QA_STATION_IDS.split(',')[0]!=='e22fb5ff-1878-446f-ab8d-585115e8a1a9')
+            throw Error('QA scope or production safety flags changed; abort without mutation');
+          NODE
+          response="$(mktemp)"
+          trap 'rm -f "$response"' EXIT
+          curl --fail --silent --show-error --max-time 15 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/oilstation/settings" > "$response"
+          jq -e '.success == true and
+            any(.result.bindings[]?; .name=="OILSTATION_API_ENABLED" and .text=="false") and
+            any(.result.bindings[]?; .name=="OILSTATION_QA_FINANCE_SIM_ENABLED" and .text=="false") and
+            (any(.result.bindings[]?; .name=="OILSTATION_QA_HR_UAT_ENABLED" and .text=="true") | not)' "$response" >/dev/null
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Test reviewed code and build before time-bounded HR toggle
+        run: |
+          npm run check
+          npm test
+          npm run build
+      - name: Arm only fictional station-scoped HR UAT for at most 45 minutes
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const p='wrangler.jsonc',c=JSON.parse(readFileSync(p,'utf8'));
+          c.vars.OILSTATION_QA_HR_UAT_ENABLED='true';
+          c.vars.OILSTATION_QA_BUSINESS_UAT_TEMP='true';
+          c.vars.OILSTATION_QA_UAT_EXPIRES_EPOCH=String(Math.floor(Date.now()/1000)+2700);
+          writeFileSync(p,JSON.stringify(c,null,2));
+          NODE
+          npx --yes wrangler@4 deploy
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            https://oilstation.goldensoft.cloud/api/public-config |
+            jq -e '.qaModeEnabled == true and .qaFinanceSimEnabled == false'
+          test "$(curl -s -o /tmp/hr-leave-not-ready -w '%{http_code}' \
+            https://oilstation.goldensoft.cloud/api/ready)" = 503
+  test-leave-browser:
+    needs: arm-qa-leave
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_LEAVE_E2E_RUN: 'true'
+      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Require protected QA actor without leaking credentials
+        run: test -n "$OILSTATION_QA_SALES01_PASSWORD"
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Real Chromium HR request, self-approval denial, owner decision and replay
+        run: npm run test:e2e -- --grep '@qa-leave-safe' --reporter=list
+  disarm-qa-leave:
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
+    needs: [arm-qa-leave, test-leave-browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "02e018ecd969426251e2a369a80b713f"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Always restore default locked Worker even if QA failed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const c=JSON.parse(readFileSync('wrangler.jsonc','utf8'));
+          if(c.vars.OILSTATION_API_ENABLED!=='false' ||
+             c.vars.OILSTATION_QA_FINANCE_SIM_ENABLED!=='false' ||
+             c.vars.OILSTATION_QA_HR_UAT_ENABLED==='true')
+            throw Error('Refuse unsafe default configuration');
+          NODE
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          npx --yes wrangler@4 deploy
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 \
+            https://oilstation.goldensoft.cloud/api/public-config |
+            jq -e '.qaFinanceSimEnabled == false'
+          test "$(curl -s -o /tmp/hr-leave-off -w '%{http_code}' \
+            https://oilstation.goldensoft.cloud/api/hr/roster)" = 503
+          test "$(curl -s -o /tmp/finance-off -w '%{http_code}' \
+            https://oilstation.goldensoft.cloud/api/coupons)" = 503
