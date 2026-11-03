@@ -92,7 +92,7 @@ test('same reviewed wage inputs fail closed if punch review is missing',()=>{
  assert.equal(result.status,'blocked');
  assert.equal(result.payable,false);
  assert.equal(result.summary,null);
- assert.ok(result.issueCodes.includes('unreviewed_attendance'));
+ assert.ok(result.issueCodes.includes('unreviewed_attendance_or_leave'));
 });
 test('payment flags and misleading evidence cannot turn a read-only readiness result into permission to pay',()=>{
  for(const altered of [{payable:true},{readOnly:false},{postedSatang:1},
