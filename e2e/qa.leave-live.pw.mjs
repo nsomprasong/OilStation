@@ -48,12 +48,31 @@ async function showLeave(page){
  const go=page.locator('[data-ws-go="hr"]:visible').first();
  await expect(go).toBeVisible();
  await go.click();
- const tab=page.locator('[data-context-for="hr"] [data-os-pane-key="leave"]');
- await expect(tab).toBeVisible({timeout:20000});
- await tab.click();
  const host=page.locator('#hr-leave-workspace');
+ // First wait for asynchronous roster/payee/leave mount. A premature submenu
+ // assertion can otherwise mistake an unfinished HR workspace for a missing tab.
+ await expect(host.locator('form select')).toHaveCount(2,{timeout:45000});
+ const tab=page.locator('[data-context-for="hr"] [data-os-pane-key="leave"]');
+ if(!await tab.count()){
+  // Only DOM structure and menu keys are logged; never JWT, employee names,
+  // form values, API responses, screenshots or authenticated browser traces.
+  const meta=await page.evaluate(()=>({
+   activeScreen:document.querySelector('[data-workspace-shell]')?.dataset.activeScreen,
+   contexts:[...document.querySelectorAll('[data-context-for]')].map(el=>({
+    key:el.dataset.contextFor,hidden:el.hidden,
+    tabs:[...el.querySelectorAll('[data-os-pane-key]')].map(b=>b.dataset.osPaneKey)
+   })).filter(x=>x.key==='hr'),
+   hrChildren:[...document.querySelector('#hr-workspace')?.children||[]].map(el=>({
+    tag:el.tagName,id:el.id,cls:el.className?.toString().slice(0,55)
+   })),
+   leaveParent:document.querySelector('#hr-leave-workspace')?.parentElement?.className,
+   alertCount:document.querySelectorAll('[role="alert"]').length
+  }));
+  console.log('SAFE_HR_SUBMENU_DIAGNOSTIC '+JSON.stringify(meta));
+ }
+ await expect(tab).toBeVisible({timeout:15000});
+ await tab.click();
  await expect(host).toBeVisible();
- await expect(host.locator('form select')).toHaveCount(2);
  return host;
 }
 const items=async(page,token,employeeId)=>{
