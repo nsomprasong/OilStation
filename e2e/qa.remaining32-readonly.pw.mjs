@@ -67,6 +67,9 @@ for(const identity of identities){
    const page=await context.newPage();
    const response=await page.goto(BASE,{waitUntil:'domcontentloaded'});
    expect(response?.status()).toBe(200);
+   await expect(page.locator('.os-auth-frame')).toBeVisible({timeout:40000});
+   await expect(page.locator('.os-auth-hero')).toBeVisible();
+   await expect(page.locator('.os-auth-card')).toBeVisible();
    await expect(page.locator('#qa-login-form')).toBeVisible({timeout:40000});
    await page.locator('#qa-login-alias').fill(identity.alias);
    await page.locator('#qa-login-password').fill(password(identity));
