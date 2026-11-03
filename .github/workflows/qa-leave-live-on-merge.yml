@@ -127,7 +127,22 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 2 \
             https://oilstation.goldensoft.cloud/api/public-config |
             jq -e '.qaFinanceSimEnabled == false'
+          # Anonymous identity is denied before release-gate checks on HR
+          # routes, so 401 (not 503) is the correct closed-gate response.
           test "$(curl -s -o /tmp/hr-leave-off -w '%{http_code}' \
-            https://oilstation.goldensoft.cloud/api/hr/roster)" = 503
+            https://oilstation.goldensoft.cloud/api/hr/roster)" = 401
           test "$(curl -s -o /tmp/finance-off -w '%{http_code}' \
             https://oilstation.goldensoft.cloud/api/coupons)" = 503
+          test "$(curl -s -o /tmp/ready-off -w '%{http_code}' \
+            https://oilstation.goldensoft.cloud/api/ready)" = 503
+          # Inspect the *actual* Cloudflare bindings; status codes alone do not
+          # prove the time-boxed HR override was removed after this run.
+          settings="$(mktemp)"
+          trap 'rm -f "$settings"' EXIT
+          curl --fail --silent --show-error --max-time 15 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/oilstation/settings" > "$settings"
+          jq -e '.success == true and
+            any(.result.bindings[]?; .name=="OILSTATION_API_ENABLED" and .text=="false") and
+            any(.result.bindings[]?; .name=="OILSTATION_QA_FINANCE_SIM_ENABLED" and .text=="false") and
+            (any(.result.bindings[]?; .name=="OILSTATION_QA_HR_UAT_ENABLED" and .text=="true") | not)' "$settings" >/dev/null
