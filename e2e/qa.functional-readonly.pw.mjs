@@ -37,6 +37,9 @@ function password(station,alias){
 }
 async function login(page,station,alias,role,scopeId,scopeField){
  await page.goto(BASE,{waitUntil:'domcontentloaded'});
+ await expect(page.locator('.os-auth-frame')).toBeVisible({timeout:45000});
+ await expect(page.locator('.os-auth-hero')).toBeVisible();
+ await expect(page.locator('.os-auth-card')).toBeVisible();
  await expect(page.locator('#qa-login-form')).toBeVisible({timeout:45000});
  await page.locator('#qa-login-alias').fill(alias);
  await page.locator('#qa-login-password').fill(password(station,alias));
@@ -82,9 +85,17 @@ test.beforeEach(()=>{
  if(!process.env.OILSTATION_QA_SALES01_PASSWORD||!process.env.OILSTATION_QA_SALES02_PASSWORD)
   throw Error('Missing protected QA role credentials');
 });
-test('FUN-00 finance release remains disabled; no QR writes @qa-functional',async({request})=>{
+test('FUN-00 guarded production preview remains nonpayable after login deploy @qa-functional',async({request})=>{
  const r=await request.get(BASE+'/api/public-config');expect(r.status()).toBe(200);
  const cfg=await r.json();expect(cfg.qaFinanceSimEnabled).toBe(false);
+ const health=await request.get(BASE+'/api/health');expect(health.status()).toBe(200);
+ expect((await health.json()).status).toBe('ok');
+ const ready=await request.get(BASE+'/api/ready');expect(ready.status()).toBe(503);
+ expect((await ready.json()).ready).toBe(false);
+ const coupons=await request.get(BASE+'/api/coupons');expect(coupons.status()).toBe(503);
+ expect((await coupons.json()).error).toBe('release_not_enabled');
+ const payroll=await request.get(BASE+'/api/hr/payroll/drafts?stationId='+stations[0].id);
+ expect([401,403,503]).toContain(payroll.status());
 });
 test('FUN-01 Sales actual station directory and private reporting @qa-functional',async({browser})=>{
  test.setTimeout(5*60*1000);

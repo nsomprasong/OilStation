@@ -1,26 +1,44 @@
 import {test,expect} from '@playwright/test';
 
-test('CSS v2 deployed guest layout at six screen widths @public',async({page,request})=>{
+test('Post-deploy login matches forest/cream reference at six screen widths @public',async({page,request},info)=>{
  const css=await request.get('/oilstation.css');
  expect(css.status()).toBe(200);
  const source=await css.text();
- for(const token of ['--os-bg:#060F33','--os-side:#040B28','--os-card:#0E1B47'])
+ // Verify the deployed stylesheet, rather than the obsolete pre-November blue hero.
+ for(const token of ['--auth-cream:#eae7df','--auth-deep:#0c1d17',
+  'clip-path:polygon(0 0,73% 0,100% 100%,0 100%)'])
   expect(source).toContain(token);
  for(const width of [360,390,430,768,1280,1440]){
   await page.setViewportSize({width,height:width>=1200?900:844});
   const response=await page.goto('/',{waitUntil:'domcontentloaded'});
   expect(response?.status()).toBe(200);
+  await expect(page.locator('.os-auth-frame')).toBeVisible();
   await expect(page.locator('.os-auth-hero')).toBeVisible();
+  await expect(page.locator('.os-auth-card')).toBeVisible();
   await expect(page.locator('#google')).toBeVisible();
   await expect(page.locator('#facebook')).toBeVisible();
-  const result=await page.evaluate(()=>{
+  await expect(page.locator('#qa-login-form')).toBeVisible();
+  await expect(page.locator('#qa-login-password')).toHaveAttribute('type','password');
+  await expect(page.getByRole('button',{name:/สมัครสมาชิก|สร้างบัญชี/})).toHaveCount(0);
+  const state=await page.evaluate(()=>{
    const hero=document.querySelector('.os-auth-hero');
-   return {color:getComputedStyle(hero).backgroundColor,
+   const frame=document.querySelector('.os-auth-frame');
+   const form=document.querySelector('#qa-login-form');
+   return {heroImage:getComputedStyle(hero).backgroundImage,
+    clip:getComputedStyle(hero).clipPath,frameColor:getComputedStyle(frame).backgroundColor,
+    buttonRadius:getComputedStyle(document.querySelector('#google')).borderTopLeftRadius,
     viewport:document.documentElement.clientWidth,
-    width:document.documentElement.scrollWidth};
+    width:document.documentElement.scrollWidth,
+    formRect:form.getBoundingClientRect().toJSON()};
   });
-  expect(result.color).toBe('rgb(4, 11, 40)');
-  expect(result.width).toBeLessThanOrEqual(result.viewport+2);
+  expect(state.heroImage).toContain('radial-gradient(');
+  expect(state.clip).toContain('polygon(');
+  expect(state.frameColor).toBe('rgb(234, 231, 223)');
+  expect(state.buttonRadius).toBe('99px');
+  expect(state.width,'horizontal overflow at '+width).toBeLessThanOrEqual(state.viewport+2);
+  expect(state.formRect.x).toBeGreaterThanOrEqual(-1);
+  expect(state.formRect.right).toBeLessThanOrEqual(state.viewport+2);
+  await page.screenshot({path:info.outputPath('production-login-reference-'+width+'.png'),animations:'disabled'});
  }
 });
 test('HR advance and payee read routes remain private on live Worker @public',async({request})=>{
