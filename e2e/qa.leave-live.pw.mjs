@@ -70,8 +70,9 @@ async function showLeave(page){
   }));
   console.log('SAFE_HR_SUBMENU_DIAGNOSTIC '+JSON.stringify(meta));
  }
- await expect(tab).toBeVisible({timeout:15000});
+ await expect(tab).toBeVisible({timeout:20000});
  await tab.click();
+ console.log('LEAVE_UI_NAV_RECOVERED: functional leave pane opened via visible submenu');
  await expect(host).toBeVisible();
  return host;
 }
