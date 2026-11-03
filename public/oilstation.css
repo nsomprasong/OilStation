@@ -844,34 +844,129 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 
 /* ---------- 4. SHELL ---------- */
 
-/* ===== Auth (login / invite / first setup) ===== */
-.os-auth-shell{min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,520px)}
-.os-auth-hero{background:var(--os-side);padding:clamp(32px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:40px;border-right:1px solid var(--os-line)}
-.os-auth-wordmark{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:700}
-.os-auth-mark{width:45px;height:45px;object-fit:contain}
-.os-auth-kicker{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--os-gold)}
-.os-auth-eyebrow,.os-logout-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--os-gold);text-transform:uppercase}
-.os-auth-hero-copy h1{font-size:clamp(34px,4.6vw,56px);line-height:1.25;margin:12px 0 14px;letter-spacing:-.02em}
-.os-auth-hero-copy p{margin:0;color:var(--os-mu);font-size:18px}
-.os-auth-hero-foot{color:var(--os-mu);font-size:13px}
-.os-auth-card{align-self:center;justify-self:center;width:100%;max-width:460px;padding:40px clamp(22px,4vw,40px)}
-.os-auth-card h2{font-size:28px;margin:8px 0 6px}
-.os-auth-description{color:var(--os-mu);margin:0 0 24px}
-.os-auth-providers{display:grid;gap:12px}
-.os-auth-provider{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:52px;padding:0 18px;border:0;border-radius:12px;
-  background:#fff;color:#14203F;font-weight:600}
-.os-auth-provider:hover{background:#E8EEFF}
-.os-auth-provider:focus-visible{outline-color:#fff;outline-offset:3px}
-.os-auth-note{display:flex;gap:10px;align-items:flex-start;margin:22px 0 0;color:var(--os-mu);font-size:13px;line-height:1.6}
-.os-auth-note .app-icon{color:var(--os-ac);margin-top:2px}
-.os-auth-actions{margin-top:18px}.os-auth-actions a{font-weight:600;text-decoration:none}
-.os-qa-login,.os-qa-admin{margin-top:22px;padding:16px;border:1px solid var(--os-line);border-radius:var(--os-r);background:var(--os-card);color:var(--os-tx)}
-.os-qa-login h3{font-size:15px}
+
+/* ===== Login / invitation / initial admin: angled reference design =====
+   Visual-only change. OAuth, QA password sign-in and invitation flows are unchanged.
+   Scoped to auth-mode so the operational Midnight workspace keeps its own theme. */
+.os-auth-shell{
+  --auth-forest:#10271e;
+  --auth-deep:#0c1d17;
+  --auth-cream:#eae7df;
+  --auth-ink:#1b2a24;
+  --auth-muted:#67736b;
+  --auth-gold:#bd9a5e;
+  min-height:100dvh;
+  display:grid;
+  place-items:center;
+  padding:clamp(18px,4vw,52px);
+  background:radial-gradient(ellipse at 46% 30%,#214535 0%,#12291f 43%,#0c1814 100%);
+}
+.os-auth-frame{
+  position:relative;
+  isolation:isolate;
+  width:min(100%,1100px);
+  min-height:clamp(570px,76vh,720px);
+  display:flex;
+  align-items:stretch;
+  border:1px solid #506658;
+  border-radius:24px;
+  overflow:hidden;
+  background:var(--auth-cream);
+  box-shadow:0 36px 90px #07171078;
+}
+.os-auth-hero{
+  position:absolute;
+  z-index:1;
+  inset:0 auto 0 0;
+  width:61%;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:30px;
+  padding:clamp(30px,4vw,52px);
+  clip-path:polygon(0 0,73% 0,100% 100%,0 100%);
+  background:radial-gradient(ellipse at 12% 12%,#214f3b 0%,#143126 47%,var(--auth-deep) 100%);
+  color:#f5f1e8;
+  animation:os-auth-arrive .6s cubic-bezier(.2,.7,.2,1) both;
+}
+.os-auth-hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  clip-path:polygon(72.5% 0,73.1% 0,100% 100%,99.3% 100%);
+  background:linear-gradient(180deg,#d0b17c,#8b7043);
+  opacity:.7;
+}
+.os-auth-wordmark{display:flex;align-items:center;gap:12px;font-size:21px;font-weight:700;letter-spacing:-.025em}
+.os-auth-mark{width:46px;height:46px;object-fit:contain}
+.os-auth-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--auth-gold);text-transform:uppercase}
+.os-logout-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--os-gold);text-transform:uppercase}
+.os-auth-hero-copy{max-width:330px;padding-bottom:18px}
+.os-auth-hero-copy h1{font-size:clamp(34px,4.3vw,52px);font-weight:650;line-height:1.24;margin:14px 0 18px;letter-spacing:-.045em}
+.os-auth-hero-copy h1 em{display:inline-block;color:#d7ae6e;font-style:italic;font-weight:450}
+.os-auth-hero-copy p{max-width:310px;margin:0;color:#b7c7ba;font-size:15px;line-height:1.75}
+.os-auth-hero-foot{font-size:12px;letter-spacing:.01em;color:#afc5b3}
+.os-auth-card{
+  position:relative;
+  z-index:2;
+  margin-left:55%;
+  width:45%;
+  max-width:none;
+  align-self:center;
+  padding:clamp(30px,5vw,64px) clamp(26px,4vw,54px);
+  color:var(--auth-ink);
+}
+.os-auth-kicker{display:block;color:#8e754d;font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase}
+.os-auth-card h2{font-size:clamp(25px,3vw,34px);font-weight:750;letter-spacing:-.035em;margin:10px 0 10px;line-height:1.25}
+.os-auth-card h2::after{content:"";display:block;width:44px;height:2px;margin-top:14px;background:var(--auth-gold)}
+.os-auth-description{color:var(--auth-muted);font-size:13px;line-height:1.75;margin:0 0 26px}
+.os-auth-providers{display:grid;gap:11px}
+.os-auth-provider{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  width:100%;min-height:50px;padding:9px 16px;
+  border:1px solid #225844;border-radius:99px;
+  background:#174735;color:#fff;
+  font-size:14px;font-weight:650;line-height:1.4;
+  box-shadow:0 4px 10px #102e1d1a;
+  transition:background .2s,transform .2s,border-color .2s;
+}
+.os-auth-provider:hover{background:#246148;transform:translateY(-1px)}
+.os-auth-provider:focus-visible{outline:3px solid #a3844e;outline-offset:3px}
+.os-auth-provider.os-auth-facebook{background:transparent;color:var(--auth-ink);border-color:#9fa89e;box-shadow:none}
+.os-auth-provider.os-auth-facebook:hover{background:#dde3d9}
+.os-auth-note{display:flex;align-items:flex-start;gap:9px;margin:20px 0 0;color:var(--auth-muted);font-size:12px;line-height:1.65}
+.os-auth-note .app-icon{color:#286249;margin-top:1px;flex:none}
+.os-auth-actions{margin-top:15px;font-size:12px}
+.os-auth-actions a{color:#225b45;font-weight:650;text-decoration:underline;text-underline-offset:3px}
+.os-auth-card .os-qa-login{
+  margin-top:24px;padding:19px 0 0;border:0;border-top:1px solid #c5c7bd;
+  border-radius:0;background:transparent;color:var(--auth-ink);
+}
+.os-qa-login h3{font-size:14px;font-weight:700;margin:0 0 12px}
 .os-qa-form{display:grid;gap:12px}
-.os-qa-form label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--os-mu)}
-.os-qa-note,.os-qa-status{font-size:12px;line-height:1.55;color:var(--os-mu);margin:8px 0}
-.os-qa-login summary,.os-qa-admin summary{font-weight:700;min-height:40px;display:flex;align-items:center}
-.os-auth-card .notice{margin-top:18px}
+.os-qa-form label{display:grid;gap:4px;color:#536259;font-size:12px;font-weight:600}
+#app.auth-mode .os-auth-card :is(input:not([type=checkbox],[type=radio]),select,textarea){
+  min-width:0;width:100%;min-height:42px;padding:8px 0;
+  border:0;border-bottom:1px solid #9ea79b;border-radius:0;
+  background:transparent;color:var(--auth-ink);box-shadow:none;
+}
+#app.auth-mode .os-auth-card :is(input,textarea)::placeholder{color:#7d8b81}
+#app.auth-mode .os-auth-card :is(input,textarea):focus-visible{
+  outline:0;border-bottom:2px solid #275f48;
+}
+.os-qa-form .button.primary{
+  width:100%;min-height:46px;margin-top:5px;border:0;border-radius:99px;
+  background:#174735;color:#fff;box-shadow:0 4px 9px #1a42301f;
+}
+.os-qa-form .button.primary:hover{background:#246148}
+.os-qa-note,.os-qa-status{font-size:11px;line-height:1.6;color:var(--auth-muted);margin:10px 0 0}
+.os-qa-admin{margin-top:22px;padding:16px;border:1px solid var(--os-line);border-radius:var(--os-r);background:var(--os-card);color:var(--os-tx)}
+.os-auth-card .os-qa-login summary,.os-qa-admin summary{font-weight:700;min-height:40px;display:flex;align-items:center}
+.os-auth-card .notice{margin-top:16px;color:#284c3c;background:#d9e6d8}
+.os-auth-card .notice[data-tone=error]{color:#84362e;background:#f1dcd6}
+.os-auth-card .notice[data-tone=success]{color:#26573f;background:#d5e7d7}
+@keyframes os-auth-arrive{from{opacity:.85;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
 
 /* ===== Workspace frame ===== */
 .skip-workspace+.shell #app.workspace-mode{flex:1}
@@ -1041,15 +1136,20 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
   .os-mobile-tab.is-current .os-nav-orb,.os-mobile-tab[aria-current=page] .os-nav-orb{background:var(--os-on);color:var(--os-ac)}
   .os-nav-orb-placeholder{visibility:hidden}
 
-  /* auth on phones */
-  .os-auth-shell{grid-template-columns:1fr}
-  .os-auth-hero{padding:28px 22px;gap:24px;border-right:0;border-bottom:1px solid var(--os-line)}
-  .os-auth-hero-copy p{font-size:15px}.os-auth-hero-foot{display:none}
-  .os-auth-card{padding:28px 22px 40px}
+  /* auth on phones: preserve the angled split while keeping the real sign-in controls reachable */
+  .os-auth-shell{padding:16px;align-items:start}
+  .os-auth-frame{display:block;min-height:0;border-radius:19px}
+  .os-auth-hero{position:relative;inset:auto;width:100%;min-height:246px;padding:25px 25px 36px;gap:22px;clip-path:polygon(0 0,100% 0,100% 100%,0 90%)}
+  .os-auth-hero::after{clip-path:polygon(0 89.5%,0 90.5%,100% 100%,100% 99%)}
+  .os-auth-hero-copy{padding:0;max-width:100%}
+  .os-auth-hero-copy h1{font-size:32px;margin:8px 0}
+  .os-auth-hero-copy p{font-size:13px}
+  .os-auth-hero-foot{display:none}
+  .os-auth-card{margin:0;width:100%;padding:22px 26px 30px}
 }
 @media(max-width:480px){
   .os-mobile-summary-card p{display:none}
-  .os-auth-hero-copy h1{font-size:32px}
+  .os-auth-hero-copy h1{font-size:30px}
   .os-logout-actions{grid-template-columns:1fr}
 }
 @media(min-width:851px){.os-mobile-page-content{padding:0}}
