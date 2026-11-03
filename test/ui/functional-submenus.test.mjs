@@ -112,3 +112,13 @@ test('Corporate finance, driver assignment and QR issuance are independent permi
  assert.ok(driverScreen.includes('driver'));
  assert.ok(!driverScreen.includes('corporate'));
 });
+
+test('reconcile restores lost contextual buttons and reattached nav without wiping task forms',()=>{
+ const source=read('src/client/functional-submenus.js');
+ assert.match(source,/const rendered=\[\.\.\.state\.nav\.querySelectorAll/);
+ assert.match(source,/rendered!==signature/);
+ assert.match(source,/state\.nav!==nav/);
+ assert.match(source,/state\.nav=nav;state\.signature=null/);
+ assert.match(source,/state\.selected=id/);
+ assert.match(source,/for\(const node of entry\.nodes\)wrap\.append\(node\)/);
+});
