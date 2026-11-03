@@ -155,7 +155,11 @@ export function installFunctionalSubmenus(root){
   const available=state.panes.filter(p=>p.wrapper?.isConnected&&
     !p.nodes[0]?.hidden&&(p.id!=='fuel'||p.nodes[0]?.childElementCount));
   const signature=available.map(p=>p.id).join('|');
-  if(state.signature!==signature){
+  // A lazy screen can have mounted panes but an emptied/replaced contextual nav.
+  // Detect missing buttons and restore only the nav, retaining all loaded forms.
+  const rendered=[...state.nav.querySelectorAll('button[data-os-pane-key]')]
+   .map(button=>button.dataset.osPaneKey).join('|');
+  if(state.signature!==signature||rendered!==signature){
    state.signature=signature;
    const frag=document.createDocumentFragment();
    for(const p of available){
@@ -210,6 +214,9 @@ export function installFunctionalSubmenus(root){
      state={key,panes,nav,selected:state?.selected||null,
       start:DESCRIPTORS[key]?.start||panes[0].id,signature:null};
      states.set(key,state);
+    }else if(state.nav!==nav){
+     // The outer workspace may replace the contextual menu but not its panes.
+     state.nav=nav;state.signature=null;
     }
     syncState(state);
    }
