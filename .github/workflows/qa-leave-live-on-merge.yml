@@ -1,10 +1,7 @@
 name: QA HR fictional leave request and independent decision
+# One-shot append-only QA fixture already exists: never automatically replay
+# a workflow that writes leave requests on a push or a workflow-file edit.
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/qa-leave-live-on-merge.yml
-      - e2e/qa.leave-live.pw.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -127,10 +124,14 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 2 \
             https://oilstation.goldensoft.cloud/api/public-config |
             jq -e '.qaFinanceSimEnabled == false'
-          # Anonymous identity is denied before release-gate checks on HR
-          # routes, so 401 (not 503) is the correct closed-gate response.
-          test "$(curl -s -o /tmp/hr-leave-off -w '%{http_code}' \
-            https://oilstation.goldensoft.cloud/api/hr/roster)" = 401
+          # With the HR QA override disarmed, /api/hr/roster must reach the
+          # global release guard first. It returns 503 release_not_enabled,
+          # not 401 from the HR handler (which is no longer reachable).
+          hr_status="$(curl --silent --show-error --max-time 15 -o /tmp/hr-leave-off -w '%{http_code}' \
+            https://oilstation.goldensoft.cloud/api/hr/roster)"
+          echo "Disarmed HR roster HTTP status: $hr_status"
+          test "$hr_status" = 503
+          jq -e '.error == "release_not_enabled"' /tmp/hr-leave-off >/dev/null
           test "$(curl -s -o /tmp/finance-off -w '%{http_code}' \
             https://oilstation.goldensoft.cloud/api/coupons)" = 503
           test "$(curl -s -o /tmp/ready-off -w '%{http_code}' \
