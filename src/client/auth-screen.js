@@ -2,12 +2,12 @@
 export function authMarkup({invited=false,setup=false,qaMode=false}={}){
  const title=setup?'ตั้งค่าผู้ดูแลครั้งแรก':invited?'ยืนยันคำเชิญ':'เข้าสู่ OilStation';
  const note=setup?'เฉพาะบัญชีผู้ดูแลที่ระบบอนุญาต':invited?'เข้าสู่ระบบด้วยบัญชีที่ได้รับเชิญ':'สำหรับสมาชิกของปั๊มและบริษัทที่ได้รับเชิญเท่านั้น';
- return `<div class="os-auth-shell">
+ return `<div class="os-auth-shell"><div class="os-auth-frame">
    <section class="os-auth-hero" aria-label="OilStation">
      <div class="os-auth-wordmark"><img class="os-auth-mark" src="/oilstation-gold-logo.png?v=2" width="45" height="45" alt="" aria-hidden="true"><span>OilStation</span></div>
      <div class="os-auth-hero-copy">
        <span class="os-auth-eyebrow">OILSTATION WORKSPACE</span>
-       <h1>จัดการงานปั๊ม<br>ในที่เดียว</h1>
+       <h1>จัดการงานปั๊ม<br><em>ในที่เดียว</em></h1>
        <p>น้ำมัน · คูปอง · บุคลากร · การเงิน</p>
      </div>
      <div class="os-auth-hero-foot">ระบบสำหรับผู้ได้รับสิทธิ์ใช้งาน</div>
@@ -38,5 +38,5 @@ export function authMarkup({invited=false,setup=false,qaMode=false}={}){
      </section>`:''}
      <p id="notice" class="notice" role="status" hidden></p>
    </section>
- </div>`;
+ </div></div>`;
 }
