@@ -1,5 +1,5 @@
 import {
-  createElement, Fuel, UsersRound, Wallet, CalendarDays, QrCode,
+  createElement, Fuel, UsersRound, Wallet, CalendarDays, MapPin, QrCode,
   LogOut, ShieldCheck, Mail, ClipboardList, ScanLine, TicketCheck,
   Building2, UserPlus, ReceiptText, Camera, CheckCircle2, Settings2, Menu, House, Power, Pencil, Plus,
 } from 'lucide';
@@ -10,7 +10,7 @@ const UI = Object.freeze({
   fuel:Fuel, users:UsersRound, wallet:Wallet, calendar:CalendarDays,
   qr:QrCode, logout:LogOut, shield:ShieldCheck, mail:Mail,
   clipboard:ClipboardList, scan:ScanLine, ticket:TicketCheck,
-  building:Building2, 'user-plus':UserPlus, receipt:ReceiptText,
+  building:Building2, 'user-plus':UserPlus, receipt:ReceiptText, 'map-pin':MapPin,
   camera:Camera, check:CheckCircle2, settings:Settings2, menu:Menu, home:House, power:Power, edit:Pencil, plus:Plus,
 });
 const BRANDS = Object.freeze({ google:siGoogle, facebook:siFacebook });
