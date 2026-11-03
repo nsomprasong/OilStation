@@ -900,7 +900,8 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 }
 .os-auth-wordmark{display:flex;align-items:center;gap:12px;font-size:21px;font-weight:700;letter-spacing:-.025em}
 .os-auth-mark{width:46px;height:46px;object-fit:contain}
-.os-auth-eyebrow,.os-logout-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--auth-gold);text-transform:uppercase}
+.os-auth-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--auth-gold);text-transform:uppercase}
+.os-logout-eyebrow{display:block;font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--os-gold);text-transform:uppercase}
 .os-auth-hero-copy{max-width:330px;padding-bottom:18px}
 .os-auth-hero-copy h1{font-size:clamp(34px,4.3vw,52px);font-weight:650;line-height:1.24;margin:14px 0 18px;letter-spacing:-.045em}
 .os-auth-hero-copy h1 em{display:inline-block;color:#d7ae6e;font-style:italic;font-weight:450}
@@ -938,7 +939,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .os-auth-note .app-icon{color:#286249;margin-top:1px;flex:none}
 .os-auth-actions{margin-top:15px;font-size:12px}
 .os-auth-actions a{color:#225b45;font-weight:650;text-decoration:underline;text-underline-offset:3px}
-.os-qa-login,.os-qa-admin{
+.os-auth-card .os-qa-login{
   margin-top:24px;padding:19px 0 0;border:0;border-top:1px solid #c5c7bd;
   border-radius:0;background:transparent;color:var(--auth-ink);
 }
@@ -960,7 +961,8 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 }
 .os-qa-form .button.primary:hover{background:#246148}
 .os-qa-note,.os-qa-status{font-size:11px;line-height:1.6;color:var(--auth-muted);margin:10px 0 0}
-.os-qa-login summary,.os-qa-admin summary{font-weight:700;min-height:40px;display:flex;align-items:center}
+.os-qa-admin{margin-top:22px;padding:16px;border:1px solid var(--os-line);border-radius:var(--os-r);background:var(--os-card);color:var(--os-tx)}
+.os-auth-card .os-qa-login summary,.os-qa-admin summary{font-weight:700;min-height:40px;display:flex;align-items:center}
 .os-auth-card .notice{margin-top:16px;color:#284c3c;background:#d9e6d8}
 .os-auth-card .notice[data-tone=error]{color:#84362e;background:#f1dcd6}
 .os-auth-card .notice[data-tone=success]{color:#26573f;background:#d5e7d7}
