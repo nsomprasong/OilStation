@@ -24,6 +24,7 @@ import {authMarkup} from './auth-screen.js';
 import {mountQaAccountsAdmin} from './qa-accounts.js';
 import {mountMemberInvitations} from './member-invitations.js';
 import {mountUserProfile} from './user-profile.js';
+import {mountToolbarCredit} from './toolbar-credit.js';
 import {mountHrEmployeeTable} from './hr-employee-table.js';
 import {mountFuelReport,mountStationCustomerCredit} from './station-customer-reports.js';
 import {canonicalLandingAfterOAuth} from './oauth-landing.js';
@@ -1548,6 +1549,7 @@ function dashboard(data, session, publicConfig={}) {
  show(renderWorkspaceShell(screens));root.classList.add('workspace-mode');
  mountUserProfile({target:document.getElementById('os-toolbar-profile'),
    user:session.user,memberships});
+ mountToolbarCredit({target:document.getElementById('os-toolbar-credit'),token:session.access_token,memberships,shell:root.querySelector('[data-workspace-shell]')});
  installProgressiveWorkspace(root);
  installFunctionalSubmenus(root);
  document.getElementById('scope-title').textContent=active.title;

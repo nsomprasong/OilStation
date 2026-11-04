@@ -28,7 +28,7 @@ test('green navigation, ivory content and form inputs stay separate by surface',
  for(const s of [
   '.os-desktop-sidebar','.os-desktop-side-link',
   '.os-desktop-side-footer','.ws-toolbar',
-  '.os-toolbar-logout','.os-desktop-search',
+  '.os-toolbar-logout','.os-toolbar-credit',
   '.os-functional-nav','.os-category-tab',
   '.ws-screen-head','.ws-quick','.balance-card',
   '.coupon-form','.invite-form','.os-logout-dialog',

@@ -21,12 +21,13 @@ test('Committed CSS v3 login green and cream, fonts and compatibility aliases ar
  for(const font of ['Inter','Noto Sans Thai','JetBrains Mono'])
   assert.ok(css.includes(font),font);
 });
-test('Desktop layout includes actual role-filtered sidebar, search and grid',()=>{
+test('Desktop layout includes actual role-filtered sidebar, credit and grid',()=>{
  const screens=selectWorkspaceScreens([{scopeType:'platform',role:'platform_sales'}]);
  const shell=renderWorkspaceShell(screens);
  assert.match(shell,/os-desktop-sidebar/);
  assert.match(shell,/os-desktop-side-nav/);
- assert.match(shell,/data-desktop-search/);
+ assert.match(shell,/id="os-toolbar-credit"/);
+ assert.doesNotMatch(shell,/data-desktop-search/);
  assert.match(shell,/os-midnight-layout/);
  assert.equal((shell.match(/class="os-desktop-side-link/g)||[]).length,screens.length);
  assert.doesNotMatch(shell,/data-ws-go="billing"/);
@@ -39,7 +40,8 @@ test('Desktop layout includes actual role-filtered sidebar, search and grid',()=
 test('Mobile only has five-slot dock, desktop dock stays hidden, no teal banner',()=>{
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(css,/\.os-mobile-bottom\{display:none\}/);
- assert.match(css,/\.os-mobile-bottom\{position:fixed;[\s\S]*?display:grid/);
+ assert.match(css,/\.os-mobile-bottom\{position:fixed;[\s\S]*?display:block/);
+ assert.match(css,/\.os-mobile-dock-inner\{display:grid/);
  assert.match(css,/\.ws-screen-head\{/);
  assert.match(css,/\.ws-layout\{display:block\}/);
  assert.doesNotMatch(css,/background:linear-gradient\(115deg,#077a6f,#12a58b\)/);

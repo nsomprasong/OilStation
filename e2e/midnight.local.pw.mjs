@@ -52,7 +52,8 @@ test('Desktop is a real sidebar/topbar/dashboard grid, not a floating bottom doc
  await page.goto('/');
  const screens=await mountShell(page,memberships[0][1]);
  await expect(page.locator('.os-desktop-sidebar')).toBeVisible();
- await expect(page.locator('.os-desktop-search')).toBeVisible();
+ await expect(page.locator('#os-toolbar-credit')).toHaveCount(1);
+ await expect(page.locator('.os-desktop-search')).toHaveCount(0);
  await expect(page.locator('.os-desktop-side-link')).toHaveCount(screens.length);
  await expect(page.locator('.ws-quick')).toHaveCount(screens.length-1);
  const state=await page.evaluate(()=>{
@@ -122,7 +123,8 @@ test('Seven real role scopes retain navigation and mobile safe area',async({page
    expect(result.width,name+' '+width).toBeLessThanOrEqual(result.viewport+2);
    if(width===390){
     expect(result.sidebar).toBe('none');
-    expect(result.dock).toBe('grid');
+    expect(result.dock).toBe('block');
+    await expect(page.locator('.os-mobile-dock-inner')).toBeVisible();
    }else{
     expect(result.sidebar).not.toBe('none');
     expect(result.dock).toBe('none');
@@ -189,7 +191,7 @@ test('All 18 role-scoped workspaces render on ivory without page overflow at 320
    if(state.ink)expect(state.ink,item.key+' '+width).toBe('rgb(27, 42, 36)');
    expect(state.hiddenViews).toBe(1);
    expect(state.width,item.key+' '+width).toBeLessThanOrEqual(state.viewport+2);
-   expect(state.dock).toBe(width<851?'grid':'none');
+   expect(state.dock).toBe(width<851?'block':'none');
    if(['corporate','hr','invitations','driver'].includes(item.key)&&[390,1440].includes(width))
     await page.screenshot({path:info.outputPath('emerald-'+item.key+'-'+width+'.png'),animations:'disabled'});
   }
