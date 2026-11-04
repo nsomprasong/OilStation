@@ -113,8 +113,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
   const target = document.getElementById('corporate-workspace');
   if (!target) return;
   target.innerHTML = `
-    <div class="section-title">บัญชีเติมน้ำมันของบริษัท</div>
-    <p class="lead" id="corp-help">กำลังโหลดบัญชี…</p>
+    <p class="lead os-corporate-intro" id="corp-help">กำลังโหลดบัญชี…</p>
     <div id="corp-remaining-credit" class="os-credit-banner" role="status" aria-live="polite">กำลังตรวจยอดพร้อมใช้…</div>
     <div class="account-overview" id="account-overview"></div>
     <div id="company-link-inbox" class="module-list"></div>
@@ -201,7 +200,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
     if (!res.ok) throw new Error('อ่านบัญชีบริษัทไม่สำเร็จ');
     accounts = res.data.accounts || [];
     $('corp-help').textContent = accounts.length
-      ? 'เลือกบัญชีของปั๊มที่ต้องการออกคูปอง'
+      ? 'ยอดพร้อมใช้หลังหักวงเงินคูปองที่กันไว้ แสดงตามบัญชีของแต่ละสถานี'
       : 'ยังไม่มีบัญชีเติมน้ำมันที่ผูกกับบริษัทของคุณ';
     const prior = accountSelect.value;
     accountSelect.replaceChildren();
@@ -227,7 +226,9 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
        check.textContent='ตรวจยอดจองคูปองและลูกหนี้';
        const report=document.createElement('p');
        report.className='hint';report.setAttribute('role','status');
+       report.hidden=true;
        check.addEventListener('click',async()=>{
+         report.hidden=false;
          check.disabled=true;report.textContent='กำลังตรวจยอดบัญชีที่เกี่ยวข้อง…';
          try{
            const res=await getApi('/api/corporate/wallet-integrity?accountId='+
