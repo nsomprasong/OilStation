@@ -16,8 +16,12 @@ const thaiDate=value=>{
 export function mountFuelReport({target,token,stationId,companyId=null,companies=[]}={}){
  if(!target||!stationId)return null;
  const head=el('header','os-report-header');
- head.append(el('h3',null,'รายงานการเติมน้ำมัน'),
-  el('p',null,'รายการเติมน้ำมันที่เสร็จสมบูรณ์ แยกตามบริษัทและทะเบียนรถ (สูงสุด 100 รายการล่าสุด)'));
+ // Corporate functional navigation already places this title in the one
+ // gradient page header. Station reports still need a section title here.
+ if(!companyId)head.append(el('h3',null,'รายงานการเติมน้ำมัน'));
+ head.append(el('p',null,companyId
+  ? 'แสดงเฉพาะรายการเติมน้ำมันที่เสร็จสมบูรณ์ของบริษัทนี้ (สูงสุด 100 รายการล่าสุด)'
+  : 'รายการเติมน้ำมันที่เสร็จสมบูรณ์ แยกตามบริษัทและทะเบียนรถ (สูงสุด 100 รายการล่าสุด)'));
  const filters=el('div','os-report-filters');
  const selector=el('select','os-report-select');
  if(!companyId){
