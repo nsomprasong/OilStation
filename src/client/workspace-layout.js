@@ -89,8 +89,7 @@ export function renderWorkspaceShell(screens){
  </aside><div class="ws-main">
      <div class="ws-toolbar">
        <span class="ws-toolbar-title"><img class="ws-toolbar-brand" src="/oilstation-gold-logo.png?v=2" width="28" height="28" alt="" aria-hidden="true">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
-       <label class="os-desktop-search"><i data-ui-icon="scan"></i><input type="search" data-desktop-search placeholder="ค้นหาเมนูงาน..." aria-label="ค้นหาเมนูงานตามสิทธิ์" autocomplete="off"></label>
-       <span class="os-desktop-toolbar-label">WORKSPACE</span>
+       <div class="os-toolbar-credit" id="os-toolbar-credit" role="status" aria-live="polite"></div>
        <div class="os-toolbar-profile" id="os-toolbar-profile"></div>
        <button type="button" class="os-toolbar-logout" data-mobile-logout
         aria-label="ออกจากระบบ" title="ออกจากระบบ"><i data-ui-icon="logout"></i></button>
@@ -118,13 +117,6 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
  const current=root.querySelector('#ws-current');
  const groups=[...root.querySelectorAll('[data-context-for]')];
  const homeSearch=root.querySelector('[data-mobile-search-input]');
- const desktopSearch=root.querySelector('[data-desktop-search]');
- const filterDesktopNavigation=()=>{
-  const q=desktopSearch?.value.trim().toLocaleLowerCase('th')||'';
-  for(const el of root.querySelectorAll('.os-desktop-side-link,.ws-quick')) el.hidden=!!q&&!((el.textContent||'').toLocaleLowerCase('th').includes(q));
- };
- desktopSearch?.addEventListener('input',filterDesktopNavigation);
- desktopSearch?.addEventListener('keydown',event=>{if(event.key==='Escape'){desktopSearch.value='';filterDesktopNavigation();desktopSearch.blur();}});
  wireLogoutDialog(root);
  homeSearch?.addEventListener('input',()=>{
   const query=homeSearch.value.trim().toLocaleLowerCase('th');
@@ -156,7 +148,6 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
   }
   // Keep a stable dock during work; update frequency order only on Home.
   if(key==='overview')bottom();
-  if(desktopSearch?.value){desktopSearch.value='';filterDesktopNavigation();}
   root.querySelectorAll('[data-ws-go]').forEach(button=>{
    const active=button.dataset.wsGo===key;
    button.classList.toggle('active',active);

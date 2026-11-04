@@ -3,7 +3,7 @@ import {makeIcon} from './icons.js';
 export function mountUserProfile({target,user,memberships=[]}={}){
  if(!target||!user)return;
  const name=String(user.user_metadata?.full_name||
-   user.user_metadata?.name||user.email?.split('@')[0]||'ผู้ใช้งาน').slice(0,100);
+   user.user_metadata?.name||user.user_metadata?.username||user.email?.split('@')[0]||'ผู้ใช้งาน').slice(0,100);
  const email=String(user.email||'').slice(0,254);
  const wrap=document.createElement('div');wrap.className='os-profile';
  const trigger=document.createElement('button');

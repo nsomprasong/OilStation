@@ -54,9 +54,11 @@ export function renderMobileNav(screens,counts={}){
  const placeholders=Array.from({length:4-frequent.length},()=>
    '<span class="os-mobile-tab os-nav-orb-placeholder" aria-hidden="true"></span>').join('');
  return `<nav class="os-mobile-bottom" aria-label="เมนูนำทางที่ใช้บ่อย">
+  <div class="os-mobile-dock-inner">
    <button class="os-mobile-tab os-nav-orb-item is-current" type="button" data-ws-go="overview" aria-current="page">
      <span class="os-nav-orb"><i data-ui-icon="home"></i></span><span class="os-nav-caption">Home</span></button>
    ${frequent.map(item).join('')}${placeholders}
+  </div>
  </nav>`;
 }
 
