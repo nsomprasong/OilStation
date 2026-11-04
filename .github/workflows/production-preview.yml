@@ -43,6 +43,8 @@ jobs:
             OILSTATION_API_ENABLED: 'false',
             OILSTATION_PREVIEW_LOGIN_ENABLED: 'true',
             OILSTATION_PREVIEW_OPERATIONS_ENABLED: 'true',
+            OILSTATION_HR_OPERATIONS_ENABLED: 'true',
+            OILSTATION_QA_FINANCE_SIM_ENABLED: 'false',
           };
           for (const [key, value] of Object.entries(expected)) {
             if (config.vars?.[key] !== value) {
@@ -85,6 +87,29 @@ jobs:
           code="$(curl --silent --output /tmp/oilstation-member.json --write-out '%{http_code}' --max-time 15 "$base/api/me")"
           test "$code" = 401
           jq -e '.error == "unauthenticated"' /tmp/oilstation-member.json
+          # HR is open only to authenticated, non-QA actors in an entitled
+          # station. Public requests MUST reach the HR authentication gate,
+          # never a public Supabase table or financial side effect.
+          for route in \
+            "/api/hr/roster?stationId=e22fb5ff-1878-446f-ab8d-585115e8a1a9" \
+            "/api/hr/payroll/readiness?employeeId=22222222-2222-4222-8222-222222222222" \
+            "/api/hr/payroll/policies?stationId=e22fb5ff-1878-446f-ab8d-585115e8a1a9" \
+            "/api/hr/leave?employeeId=22222222-2222-4222-8222-222222222222"; do
+            status="$(curl --silent --show-error --output /tmp/oilstation-hr-unauth.json --write-out '%{http_code}' --max-time 15 "$base$route")"
+            test "$status" = 401
+            jq -e '.error == "unauthenticated"' /tmp/oilstation-hr-unauth.json >/dev/null
+          done
+          # Salary review writes, bank/payee, advance and ordinary finance
+          # remain globally release-gated, despite HR operations being live.
+          for route in "/api/hr/payroll/drafts/line" \
+            "/api/hr/payroll/drafts/review" \
+            "/api/hr/payroll/policies/propose" \
+            "/api/hr/advances/request" \
+            "/api/hr/payees/register"; do
+            status="$(curl --silent --show-error --output /tmp/oilstation-hr-disabled.json --write-out '%{http_code}' --max-time 15 "$base$route")"
+            test "$status" = 503
+            jq -e '.error == "release_not_enabled"' /tmp/oilstation-hr-disabled.json >/dev/null
+          done
           code="$(curl --silent --output /tmp/oilstation-business.json --write-out '%{http_code}' --max-time 15 "$base/api/coupons")"
           test "$code" = 503
           jq -e '.error == "release_not_enabled"' /tmp/oilstation-business.json
