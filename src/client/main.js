@@ -23,6 +23,7 @@ import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
 import {mountQaAccountsAdmin} from './qa-accounts.js';
 import {mountMemberInvitations} from './member-invitations.js';
+import {mountUserProfile} from './user-profile.js';
 import {mountFuelReport,mountStationCustomerCredit} from './station-customer-reports.js';
 import {canonicalLandingAfterOAuth} from './oauth-landing.js';
 import {installProgressiveWorkspace} from './progressive-workspace.js';
@@ -1536,6 +1537,8 @@ function dashboard(data, session, publicConfig={}) {
  const active=scopes[memberships[0]?.scopeType]||scopes.station;
  const screens=selectWorkspaceScreens(memberships);
  show(renderWorkspaceShell(screens));root.classList.add('workspace-mode');
+ mountUserProfile({target:document.getElementById('os-toolbar-profile'),
+   user:session.user,memberships});
  installProgressiveWorkspace(root);
  installFunctionalSubmenus(root);
  document.getElementById('scope-title').textContent=active.title;
