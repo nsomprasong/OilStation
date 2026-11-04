@@ -65,7 +65,8 @@ test('no duplicate floating invite or fake single tab; nested card stays only in
  ])assert.ok(css.includes(piece),piece);
  assert.match(css,/\.os-member-list\{[\s\S]*?border:1px solid #C9D0C7/);
  assert.match(read('src/client/workspace-layout.js'),/s\.key==="invitations"\?"จัดการสมาชิก"/);
- assert.match(source,/รายชื่อบัญชีผู้ใช้งาน/);
- assert.match(source,/ประวัติพนักงาน HR และเงินเดือน/);
+ const memberUi=read('src/client/member-invitations.js');
+ assert.match(memberUi,/รายชื่อบัญชีผู้ใช้งาน/);
+ assert.match(memberUi,/ประวัติพนักงาน HR และเงินเดือน/);
  assert.match(read('playwright.midnight.config.mjs'),/member-invitations\.local\.pw\.mjs/);
 });
