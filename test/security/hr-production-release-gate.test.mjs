@@ -14,6 +14,7 @@ const env={
  SUPABASE_URL:'https://cxihsotcpdnalswfoysx.supabase.co',
  SUPABASE_ANON_KEY:'public_no_secret',
  SUPABASE_SERVICE_ROLE_KEY:'fake_not_a_real_key',
+ COUPON_SIGNING_KEY:'offline-unit-test-signing-key-not-a-real-secret-12345678',
 };
 const req=(path,method='GET')=>new Request(ROOT+path,{method,
  ...(method==='POST'?{headers:{origin:ROOT,'content-type':'application/json'},body:'{}'}:{})});
