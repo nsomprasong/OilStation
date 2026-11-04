@@ -94,12 +94,16 @@ test('Corporate four working panels are balanced and follow selected page headin
      driverGrid:css(driver).gridTemplateColumns.split(' ').length,
      couponGrid:css(coupon).gridTemplateColumns.split(' ').length,
      headingBg:css(heading).backgroundImage,
+     paneInset:css(document.querySelector('#corporate-workspace>.os-functional-pane[data-os-pane="'+key+'"]')).paddingLeft,
+     driverHintBorder:css(driver.querySelector(':scope > p.hint')).borderTopWidth,
      tab:key,
     };
    },{key});
    expect(state.page,key+' page overflow '+width).toBeLessThanOrEqual(state.viewport+2);
    if(local){
     expect(state.headingBg).toContain('linear-gradient(');
+    expect(state.paneInset).toBe(width<=680?'12px':'16px');
+    expect(state.driverHintBorder).toBe('0px');
     if(key==='driver')expect(state.driverGrid).toBe(width<=960?1:2);
     if(key==='coupon')expect(state.couponGrid).toBe(width<=680?1:2);
    }
