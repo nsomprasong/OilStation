@@ -3,7 +3,7 @@
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const STATION_OPERATIONS_ROUTES=Object.freeze([
  '/api/station/customer-overview','/api/fuel/report',
- '/api/members/directory','/api/members/change',
+ '/api/members/directory','/api/members/change','/api/hr/employee-change',
 ]);
 const reply=(status,body)=>new Response(JSON.stringify(body),{
  status,headers:{'content-type':'application/json; charset=utf-8',
