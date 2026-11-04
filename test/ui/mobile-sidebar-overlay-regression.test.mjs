@@ -31,6 +31,6 @@ test('fix is last stylesheet and does not change desktop Gentelella design',()=>
  const html=read('index.html');
  assert.match(html,/href="\/oilstation\.css"/);
  assert.doesNotMatch(html,/gentelella-v4-selected\.css|mobile-app\.css/);
- assert.match(read('public/oilstation.css'),/--os-side:#040B28/);
+ assert.match(read('public/oilstation.css'),/--os-side:#10271E/);
  assert.match(read('public/oilstation.css'),/@media\(max-width:850px\)/);
 });
