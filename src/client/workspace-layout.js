@@ -91,7 +91,9 @@ export function renderWorkspaceShell(screens){
        <span class="ws-toolbar-title"><img class="ws-toolbar-brand" src="/oilstation-gold-logo.png?v=2" width="28" height="28" alt="" aria-hidden="true">OilStation <span>ระบบบริหารสถานีบริการน้ำมัน</span></span>
        <label class="os-desktop-search"><i data-ui-icon="scan"></i><input type="search" data-desktop-search placeholder="ค้นหาเมนูงาน..." aria-label="ค้นหาเมนูงานตามสิทธิ์" autocomplete="off"></label>
        <span class="os-desktop-toolbar-label">WORKSPACE</span>
-       <button type="button" class="os-toolbar-logout" data-mobile-logout aria-label="ออกจากระบบ">ออกจากระบบ</button>
+       <div class="os-toolbar-profile" id="os-toolbar-profile"></div>
+       <button type="button" class="os-toolbar-logout" data-mobile-logout
+        aria-label="ออกจากระบบ" title="ออกจากระบบ"><i data-ui-icon="logout"></i></button>
      </div>
      <header class="ws-header">
        <div class="ws-header-copy">

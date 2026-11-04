@@ -37,12 +37,16 @@ async function fetchJson(url, init) {
       'INVALID_PAYROLL_POLICY','PENDING_PAYROLL_POLICY','POLICY_DATE_IN_USE',
       'INVALID_LEAVE_DATES','INVALID_LEAVE_TYPE','INVALID_LEAVE_REASON',
       'OVERLAPPING_LEAVE','EMPLOYEE_NOT_ELIGIBLE','NOT_FOUND','INVALID_REVIEW',
-      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED']);
+      'PUMP_AMOUNT_MISMATCH','COUPON_LIMIT_EXCEEDED','RATE_LIMITED','PLAN_IN_USE','TRANSFER_ALREADY_SCHEDULED','SALES_STATION_LIMIT_REACHED',
+      'PROTECTED_ROLE','DRIVER_HAS_ACTIVE_COUPON','FUTURE_SHIFT_EXISTS',
+      'INVALID_ROLE','INVALID_ACTION','ALREADY_INACTIVE']);
     const err = new Error('supabase_request_failed');
     err.status = response.status;
     if (allowed.has(detail?.message)) {
       err.code = detail.message === 'INSUFFICIENT_FUNDS' ? 'INSUFFICIENT_FUNDS' :
         detail.message === 'FORBIDDEN' ? 'FORBIDDEN' :
+        ['PROTECTED_ROLE','DRIVER_HAS_ACTIVE_COUPON','FUTURE_SHIFT_EXISTS',
+         'INVALID_ROLE','INVALID_ACTION','ALREADY_INACTIVE'].includes(detail.message) ? detail.message :
         ['SELF_APPROVAL_FORBIDDEN','INVALID_PAYEE','INVALID_ADVANCE_PLAN',
          'INVALID_PAYROLL_DATE','DUPLICATE_PENDING_PAYEE',
          'PENDING_ADVANCE_EXISTS','PAYEE_NOT_APPROVED','ADVANCE_NOT_APPROVED',
@@ -1134,6 +1138,35 @@ export function createSupabaseAdapter(env) {
         serviceRequest(env, '/rest/v1/rpc/station_pending_topup_inbox',{
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:actorId,p_station_id:stationId}),
+        }),
+      // Read-only, actor-scoped station/corporate customer and employee views.
+      stationCustomerOverview: async (actorId,stationId) =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_station_customer_overview',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_station_id:stationId}),
+        }),
+      stationFuelPlateReport: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_fuel_report_by_plate',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_company_id:d.companyId,p_plate:d.plate,p_limit:d.limit}),
+        }),
+      memberDirectory: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_scoped_member_directory',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_scope_type:d.scopeType,p_scope_id:d.scopeId}),
+        }),
+      memberChange: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_scoped_member_change',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_membership_id:d.membershipId,
+            p_action:d.action,p_role_code:d.roleCode}),
+        }),
+      hrEmployeeChange: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_hr_employee_change',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_employee_id:d.employeeId,p_action:d.action,p_name:d.name}),
         }),
       corporateAccounts: async (userId) => {
         return serviceRequest(env, '/rest/v1/rpc/corporate_account_summaries', {
