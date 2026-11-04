@@ -22,7 +22,7 @@ test('visual layout uses one project token system, inset cards and icon logout',
  const shell=read('src/client/workspace-layout.js');
  assert.match(css,/--os-r:16px;\s*--os-r-sm:12px;\s*--os-control-r:10px/);
  assert.match(css,/--os-section-pad:20px/);
- assert.match(css,/\.os-directory-controls\{display:grid/);
+ assert.match(css,/\.os-directory-controls\{display:block/);
  assert.match(css,/\.os-directory-dialog\{/);
  assert.match(css,/\.ws-widget>section>\.module-item\{[\s\S]*?margin-inline:8px/);
  for(const x of ['os-credit-grid','os-report-table','os-directory-table',
