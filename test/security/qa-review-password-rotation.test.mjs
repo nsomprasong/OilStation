@@ -21,12 +21,12 @@ test('only 22 frozen QA sample aliases; no real or wildcard password reset',()=>
  assert.match(script,/OILSTATION_QA_ROTATE_CONFIRM/);
  // The sample review workflow enforces exactly eight upper/lower/numeric
  // characters; it never embeds a shared password or accepts a password input.
- assert.match(script,/password\\.length!==8/);
- assert.match(script,/\\^\\[A-Za-z0-9\\]\\{8\\}\\$/);
- assert.match(script,/\\[A-Z\\]/);
- assert.match(script,/\\[a-z\\]/);
- assert.match(script,/\\[0-9\\]/);
- assert.doesNotMatch(workflow,/OILSTATION_QA_REVIEW_PASSWORD:\\s*[^\\n]*inputs\\./);
+ assert.ok(script.includes('password.length!==8'));
+ assert.ok(script.includes('!/[A-Z]/.test(password)'));
+ assert.ok(script.includes('!/[a-z]/.test(password)'));
+ assert.ok(script.includes('!/[0-9]/.test(password)'));
+ assert.ok(script.includes('!/^[A-Za-z0-9]{8}$/.test(password)'));
+ assert.ok(!workflow.includes('password: ${{ inputs.'));
  assert.match(script,/QA-20261031-PLATFORM-001/);
  assert.match(script,/Array\.from\(\{length:4\}/);
  assert.match(script,/Array\.from\(\{length:12\}/);
