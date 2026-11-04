@@ -66,6 +66,8 @@ test('Invitation landing is one quiet list-first screen; drawer is optional and 
   const pageRoot=page.locator('[data-ws-screen="invitations"]');
   await expect(pageRoot.locator('#ws-heading-invitations')).toHaveText('จัดการสมาชิก');
   await expect(pageRoot.locator('.os-member-list')).toBeVisible();
+  await expect(pageRoot.locator('.os-member-toolbar-title')).toHaveText('เชิญและจัดการสิทธิ์');
+  await expect(pageRoot.locator('.os-member-list-head')).toBeVisible();
   await expect(pageRoot.locator('.os-member-empty')).toContainText('ยังไม่มีรายการใหม่');
   await expect(pageRoot.locator('.os-member-create')).toHaveCount(1);
   await expect(pageRoot.locator('.os-add-fab')).toHaveCount(0);
@@ -74,10 +76,22 @@ test('Invitation landing is one quiet list-first screen; drawer is optional and 
     w:document.documentElement.scrollWidth,
     v:document.documentElement.clientWidth,
     bg:getComputedStyle(document.querySelector('.os-member-list')).backgroundColor,
+    heroGradient:getComputedStyle(document.querySelector('.os-member-toolbar')).backgroundImage,
+    cardGradient:getComputedStyle(document.querySelector('.os-member-list')).backgroundImage,
+    headerGradient:getComputedStyle(document.querySelector('.os-member-list-head')).backgroundImage,
+    emptyGradient:getComputedStyle(document.querySelector('.os-member-empty')).backgroundImage,
+    createBg:getComputedStyle(document.querySelector('.os-member-create')).backgroundImage,
+    heroText:getComputedStyle(document.querySelector('.os-member-toolbar-title')).color,
+    heroB:document.querySelector('.os-member-toolbar').getBoundingClientRect().bottom,
+    listT:document.querySelector('.os-member-list').getBoundingClientRect().top,
     toolbar:getComputedStyle(document.querySelector('.ws-header')).display,
   }));
   expect(metrics.w,width+'px page width').toBeLessThanOrEqual(metrics.v+2);
   expect(metrics.bg).toBe('rgb(249, 248, 244)');
+  for(const k of ['heroGradient','cardGradient','headerGradient','emptyGradient','createBg'])
+   expect(metrics[k],k+' at '+width+'px').toContain('linear-gradient(');
+  expect(metrics.heroText).toBe('rgb(255, 255, 255)');
+  expect(metrics.listT-metrics.heroB).toBeGreaterThanOrEqual(14);
   expect(metrics.toolbar).toBe('none');
   await pageRoot.locator('.os-member-create').click();
   await expect(pageRoot.locator('.os-member-drawer')).toBeVisible();
