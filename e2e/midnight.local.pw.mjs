@@ -132,3 +132,66 @@ test('Seven real role scopes retain navigation and mobile safe area',async({page
   }
  }
 });
+
+test('All 18 role-scoped workspaces render on ivory without page overflow at 320-1440px',async({page},info)=>{
+ // Purely local style fixtures: never log in, write to Supabase or fabricate
+ // financial statuses in Production. Their names match the actual role keys.
+ const allMembers=[
+  {scopeType:'platform',role:'platform_superadmin'},
+  {scopeType:'platform',role:'platform_sales'},
+  {scopeType:'platform',role:'platform_support'},
+  {scopeType:'organization',role:'organization_owner',organizationId:'org'},
+  {scopeType:'station',role:'station_owner',stationId:'station'},
+  {scopeType:'station',role:'finance_manager',stationId:'station'},
+  {scopeType:'station',role:'hr_manager',stationId:'station'},
+  {scopeType:'corporate_company',role:'corporate_admin',corporateCompanyId:'company'},
+  {scopeType:'corporate_company',role:'driver',corporateCompanyId:'company'},
+ ];
+ const names=new Set(selectWorkspaceScreens(allMembers).map(x=>x.key));
+ expect(names.size).toBe(18);
+ const must=['overview','support','sales','activity','stations','plan','billing','fuel',
+  'pump','customers','finance','hr','attendance','reviews','payroll','corporate',
+  'driver','invitations'];
+ expect([...names].sort()).toEqual([...must].sort());
+ for(const width of [320,360,390,1024,1440]){
+  await page.setViewportSize({width,height:width<850?840:900});
+  await page.goto('/');
+  const screens=await mountShell(page,allMembers);
+  for(const item of screens){
+   const state=await page.evaluate(key=>{
+    const views=[...document.querySelectorAll('[data-ws-screen]')];
+    for(const v of views)v.hidden=v.dataset.wsScreen!==key;
+    const shell=document.querySelector('[data-workspace-shell]');
+    shell.dataset.activeScreen=key;
+    // Real selectors and form fields; this is anonymous *layout evidence*,
+    // not an operational customer/transaction QA run.
+    const target=document.querySelector('[data-ws-screen="'+key+'"] .ws-widget');
+    if(target)target.innerHTML='<section class="module-item">'+
+      '<h3>ตรวจรูปแบบหน้าจอ</h3><label class="field">ช่องกรอกข้อมูล'+
+      '<input placeholder="ข้อมูลทดสอบรูปแบบหน้าจอ" value=""></label>'+
+      '<button class="button primary" type="button">ยืนยันตัวอย่าง</button></section>';
+    const style=selector=>getComputedStyle(document.querySelector(selector));
+    const panel=target?.querySelector('.module-item');
+    return {
+      screen:key,background:style('body').backgroundColor,
+      sidebar:style('.os-desktop-sidebar').backgroundColor,
+      card:panel?getComputedStyle(panel).backgroundColor:null,
+      ink:panel?getComputedStyle(panel).color:null,
+      width:document.documentElement.scrollWidth,
+      viewport:document.documentElement.clientWidth,
+      hiddenViews:views.filter(v=>!v.hidden).length,
+      dock:style('.os-mobile-bottom').display,
+    };
+   },item.key);
+   expect(state.background,item.key+' '+width).toBe('rgb(234, 231, 223)');
+   expect(state.sidebar,item.key+' '+width).toBe('rgb(16, 39, 30)');
+   if(state.card)expect(state.card,item.key+' '+width).toBe('rgb(247, 245, 239)');
+   if(state.ink)expect(state.ink,item.key+' '+width).toBe('rgb(27, 42, 36)');
+   expect(state.hiddenViews).toBe(1);
+   expect(state.width,item.key+' '+width).toBeLessThanOrEqual(state.viewport+2);
+   expect(state.dock).toBe(width<851?'grid':'none');
+   if(['corporate','hr','invitations','driver'].includes(item.key)&&[390,1440].includes(width))
+    await page.screenshot({path:info.outputPath('emerald-'+item.key+'-'+width+'.png'),animations:'disabled'});
+  }
+ }
+});
