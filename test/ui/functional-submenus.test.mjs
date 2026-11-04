@@ -122,3 +122,24 @@ test('reconcile restores lost contextual buttons and reattached nav without wipi
  assert.match(source,/state\.selected=id/);
  assert.match(source,/for\(const node of entry\.nodes\)wrap\.append\(node\)/);
 });
+
+test('corporate tabs update their single real page heading and retain all form panes',()=>{
+ const src=read('src/client/functional-submenus.js');
+ const css=read('public/oilstation.css');
+ const reports=read('src/client/station-customer-reports.js');
+ const main=read('src/client/main.js');
+ for(const phrase of [
+  "if(key==='corporate')","account:'ยอดพร้อมใช้","driver:'กำหนดทะเบียนรถ",
+  "coupon:'กำหนดปั๊ม","report:'รายการเติมน้ำมันที่เสร็จจริง",
+  'heading.textContent=found.label'
+ ])assert.ok(src.includes(phrase),phrase);
+ assert.match(css,/\.ws-screen \.module-list:not\(#company-driver-workspace\)/);
+ assert.match(css,/#company-driver-workspace\{[\s\S]*?grid-template-columns:minmax\(0,1fr\) minmax\(225px,280px\)/);
+ assert.match(css,/#corporate-workspace #coupon-form\{[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.ws-layout\[data-active-screen="corporate"\] \.ws-header\{display:none\}/);
+ assert.match(css,/@media\(max-width:680px\)/);
+ assert.match(reports,/if\(!companyId\)head.append\(el\('h3'/);
+ assert.match(main,/report.hidden=true/);
+ assert.match(main,/report.hidden=false/);
+ assert.doesNotMatch(main,/class="section-title">บัญชีเติมน้ำมันของบริษัท/);
+});
