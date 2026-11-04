@@ -73,7 +73,7 @@ test('only Home has a complete menu; contextual one is under Header and exactly 
 
 test('mobile and desktop share v2 functional submenus and a five-column dock',()=>{
  const css=read('public/oilstation.css');
- for(const part of ['--os-on:#162663','border-radius:99px','box-shadow','os-functional-nav',
+ for(const part of ['--os-on:#E3EBE1','border-radius:99px','box-shadow','os-functional-nav',
   'grid-template-columns:repeat(5,minmax(0,1fr))','@media(max-width:850px)',
   'prefers-reduced-motion'])assert.ok(css.includes(part),part);
  const html=read('index.html');
