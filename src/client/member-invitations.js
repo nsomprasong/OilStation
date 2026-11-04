@@ -5,9 +5,8 @@ import {mountMemberDirectory} from './member-directory.js';
 // and QA Auth forms remain mounted (only hidden) so validation, pending values
 // and their original server-side authorization are not bypassed.
 //
-// There is currently no tenant-scoped member directory API. Show ONLY items
-// successfully created in this browser view, clearly labeled as session activity.
-// Do not invent users, fetch other tenants, or misstate this as a complete roster.
+// In a permitted tenant, mount the trusted live directory. If unavailable,
+// session activity remains labelled as such; never fabricate membership rows.
 const el=(tag,className,text)=>{
  const node=document.createElement(tag);
  if(className)node.className=className;
@@ -29,8 +28,8 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
  const toolbar=el('header','os-member-toolbar');
  const intro=el('div','os-member-intro');
  intro.append(el('p','os-member-eyebrow','สมาชิกและสิทธิ์'),
-  el('h3','os-member-toolbar-title','เชิญและจัดการสิทธิ์'),
-  el('p','os-member-intro-copy','จัดการการเชิญและบัญชีทดสอบภายในขอบเขตที่ได้รับอนุญาต'));
+  el('h3','os-member-toolbar-title','จัดการบัญชีผู้ใช้งาน'),
+  el('p','os-member-intro-copy','เชิญสมาชิก กำหนดบทบาท และจัดการสิทธิ์การเข้าใช้งานตามขอบเขต'));
  toolbar.append(intro);
  const canManage=Boolean(inviteControl||qaHost);
  let create=null,dialog=null;
@@ -44,7 +43,7 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
  list.setAttribute('aria-label','รายการที่สร้างจากหน้านี้');
  const head=el('header','os-member-list-head');
  const copy=el('div');
- copy.append(el('h3',null,'รายการล่าสุด'),el('p',null,
+ copy.append(el('h3',null,'กิจกรรมการเชิญล่าสุด'),el('p',null,
   'แสดงคำเชิญและบัญชี QA ที่สร้างสำเร็จในหน้านี้เท่านั้น ไม่ใช่รายชื่อสมาชิกทั้งหมดของบริษัท'));
  head.append(copy);
  const badge=el('span','os-member-count','0 รายการ');
@@ -97,8 +96,8 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
   directory=mountMemberDirectory({
    target:directoryTarget,token,scopeType,scopeId,canChange,
    onLoaded:count=>{
-    head.querySelector('h3').textContent='รายชื่อพนักงานและสมาชิก';
-    head.querySelector('p').textContent='แสดงสมาชิกในขอบเขตของคุณ รวมผู้ใช้ที่ปิดสิทธิ์แล้ว';
+    head.querySelector('h3').textContent='รายชื่อบัญชีผู้ใช้งาน';
+    head.querySelector('p').textContent='จัดการบัญชีล็อกอินตามสิทธิ์ ไม่กระทบประวัติพนักงาน HR และเงินเดือน';
     badge.textContent=count===null?'ไม่พร้อมใช้งาน':count+' รายการ';
    },
   });
