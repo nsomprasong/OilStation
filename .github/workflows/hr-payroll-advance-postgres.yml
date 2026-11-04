@@ -1,16 +1,22 @@
-name: HR payroll advance draft guard (isolated PostgreSQL)
+name: HR payroll guarded draft and dual review (isolated PostgreSQL)
 on:
   pull_request:
     paths:
       - .github/workflows/hr-payroll-advance-postgres.yml
       - supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
       - test/integration/hr-payroll-advance-guard-assertions.sql
+      - test/integration/hr-payroll-dual-review-assertions.sql
+      - supabase/migrations/20261101230000_hr_payroll_review_draft.sql
+      - supabase/migrations/20261101233000_hr_payroll_manual_punch_provenance.sql
   push:
     branches-ignore: [main]
     paths:
       - .github/workflows/hr-payroll-advance-postgres.yml
       - supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
       - test/integration/hr-payroll-advance-guard-assertions.sql
+      - test/integration/hr-payroll-dual-review-assertions.sql
+      - supabase/migrations/20261101230000_hr_payroll_review_draft.sql
+      - supabase/migrations/20261101233000_hr_payroll_manual_punch_provenance.sql
 permissions:
   contents: read
 jobs:
@@ -42,6 +48,9 @@ jobs:
             sh -eu -c '
               export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_payroll_guard_test
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261101230000_hr_payroll_review_draft.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261101233000_hr_payroll_manual_punch_provenance.sql
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-payroll-advance-guard-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-payroll-dual-review-assertions.sql
             '
