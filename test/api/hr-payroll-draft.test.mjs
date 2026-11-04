@@ -106,3 +106,28 @@ test('draft UI has no local private payroll storage and presents independent rev
  assert.match(ui,/ตรวจร่างโดยผู้อนุมัติคนละบัญชี/);
  assert.doesNotMatch(ui,/localStorage|sessionStorage|innerHTML/);
 });
+
+test('draft endpoint returns retryable 409 when trusted SQL finds outstanding advances',async()=>{
+ const h=make({hrCreatePayrollReviewLine:async()=>{
+  const err=new Error('PAYROLL_EVIDENCE_UNREVIEWED');
+  err.code='PAYROLL_EVIDENCE_UNREVIEWED';throw err;
+ }});
+ const r=await h(req('/api/hr/payroll/drafts/line',data));
+ assert.equal(r.status,409);
+ const body=await r.json();
+ assert.equal(body.error,'payroll_evidence_unreviewed');
+ assert.notEqual(body.payable,true);
+});
+test('forward-only SQL checks open advances BEFORE creating payroll period and keeps grants private',()=>{
+ const migration=readFileSync(new URL('../../supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql',import.meta.url),'utf8');
+ const guard="COALESCE((v_evidence->>'openAdvances')::integer,-1)<>0";
+ assert.ok(migration.includes(guard),'must reject pending/approved/paid advances and missing evidence');
+ assert.ok(migration.indexOf(guard)<migration.indexOf('INSERT INTO public.payroll_periods'),
+  'advance reconciliation must precede period/run/line inserts');
+ for(const phrase of ['PAYROLL_EVIDENCE_UNREVIEWED',
+  'hr_reviewed_attendance_punches_local','verifiedPunches',
+  'REVOKE ALL ON FUNCTION public.hr_create_payroll_review_line',
+  'TO service_role'])
+  assert.ok(migration.includes(phrase),phrase);
+ assert.doesNotMatch(migration,/INSERT INTO public\\.(payroll_payouts|advance_repayments)|UPDATE public\\.salary_advances/i);
+});
