@@ -14,7 +14,9 @@ if(corporateMarkup.includes('${'))throw new Error('Template has dynamic data; te
 const submenus=readFileSync(new URL('../src/client/functional-submenus.js',import.meta.url),'utf8')
  .replace("import {makeIcon} from './icons.js';",`const makeIcon=name=>{
   const el=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  el.setAttribute('aria-hidden','true');el.dataset.icon=name;return el;};`)
+  el.setAttribute('aria-hidden','true');
+  el.setAttribute('width','18');el.setAttribute('height','18');
+  el.style.pointerEvents='none';el.dataset.icon=name;return el;};`)
  .replace('export function installFunctionalSubmenus','function installFunctionalSubmenus')+
  ';window.installFunctionalSubmenus=installFunctionalSubmenus;';
 
