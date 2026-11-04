@@ -159,7 +159,7 @@ test('Live member directory is compact, searchable, role-scoped and safe on phon
   };`)
   .replace('export const memberRoleLabel=','const memberRoleLabel=')
   .replace('export function mountMemberDirectory','function mountMemberDirectory')+
-  '\\nwindow.mountMemberDirectory=mountMemberDirectory;';
+  ';window.mountMemberDirectory=mountMemberDirectory;';
  const accounts=[
   {membershipId:'a1',displayName:'QA c01-accountant',email:'qa-c01-accountant@qa.oilstation.invalid',role:'accountant',active:true,joinedAt:'2026-11-01T01:00:00Z'},
   {membershipId:'a2',displayName:'QA c01-admin',email:'qa-c01-admin@qa.oilstation.invalid',role:'corporate_admin',active:true,joinedAt:'2026-11-01T02:00:00Z'},
@@ -191,8 +191,13 @@ test('Live member directory is compact, searchable, role-scoped and safe on phon
   await mount(page);
   await page.addScriptTag({content:directoryScript});
   await page.evaluate(()=>{
+   const app=document.querySelector('#app');
+   if(!app)throw new Error('workspace fixture root unavailable');
+   app.className='workspace-mode';
+   const fixture=document.createElement('section');fixture.className='os-member-list';
    const host=document.createElement('div');host.className='os-member-directory-host';
-   document.querySelector('.os-member-list').append(host);
+   fixture.append(host);
+   app.append(fixture);
    window.mountMemberDirectory({target:host,token:'mock-authorized',
     scopeType:'corporate_company',scopeId:'mock-corp',canChange:true});
   });
