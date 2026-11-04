@@ -154,7 +154,12 @@ export function installFunctionalSubmenus(root){
  function syncState(state){
   const available=state.panes.filter(p=>p.wrapper?.isConnected&&
     !p.nodes[0]?.hidden&&(p.id!=='fuel'||p.nodes[0]?.childElementCount));
-  const signature=available.map(p=>p.id).join('|');
+  // A single invitation workflow does not need a fake one-item tab.
+  // Hide only its contextual nav; preserve its mounted forms and the standard
+  // non-Home workflow selection for all other screens.
+  const singleInvitation=state.key==='invitations'&&available.length===1;
+  if(state.nav.hidden!==singleInvitation)state.nav.hidden=singleInvitation;
+  const signature=singleInvitation?'':available.map(p=>p.id).join('|');
   // A lazy screen can have mounted panes but an emptied/replaced contextual nav.
   // Detect missing buttons and restore only the nav, retaining all loaded forms.
   const rendered=[...state.nav.querySelectorAll('button[data-os-pane-key]')]
@@ -162,7 +167,7 @@ export function installFunctionalSubmenus(root){
   if(state.signature!==signature||rendered!==signature){
    state.signature=signature;
    const frag=document.createDocumentFragment();
-   for(const p of available){
+   for(const p of (singleInvitation?[]:available)){
     const button=document.createElement('button');
     button.type='button';button.className='os-category-tab os-nav-orb-item';
     button.dataset.osPaneKey=p.id;

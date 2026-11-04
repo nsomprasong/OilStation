@@ -22,6 +22,7 @@ import {selectWorkspaceScreens,renderWorkspaceShell,wireWorkspaceNavigation} fro
 import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
 import {mountQaAccountsAdmin} from './qa-accounts.js';
+import {mountMemberInvitations} from './member-invitations.js';
 import {canonicalLandingAfterOAuth} from './oauth-landing.js';
 import {installProgressiveWorkspace} from './progressive-workspace.js';
 
@@ -490,10 +491,19 @@ function createInviteControl(accessToken,scopeType,scopeId,roleChoices) {
         'ผู้ให้บริการรับคำขอส่งอีเมลแล้ว (ยังไม่ยืนยันการส่งถึงผู้รับ) สามารถคัดลอกลิงก์ได้':
         'สร้างลิงก์แล้ว การส่งอีเมลอัตโนมัติยังไม่ยืนยัน กรุณาคัดลอกและส่งให้ผู้รับ',
         accepted?'success':'warning');
+      wrapper.dispatchEvent(new CustomEvent('oilstation:member-created',{bubbles:true,
+        detail:{kind:'invitation',name:email.value.trim(),
+          role:roles.selectedOptions[0]?.textContent||roles.value}}));
     }catch{setUiStatus(status,'เชื่อมต่อไม่ได้ กรุณาตรวจสอบรายการก่อนลองซ้ำ','error');}
     finally{submit.disabled=false;}
   });
-  box.append(email,roles,submit,status,link,copy);
+  const emailField=document.createElement('label');
+  emailField.className='field';emailField.textContent='อีเมลผู้รับคำเชิญ';
+  emailField.append(email);
+  const roleField=document.createElement('label');
+  roleField.className='field';roleField.textContent='บทบาท';
+  roleField.append(roles);
+  box.append(emailField,roleField,submit,status,link,copy);
   wrapper.append(toggle,box);
   return wrapper;
 }
@@ -1552,7 +1562,8 @@ function dashboard(data, session, publicConfig={}) {
    register('stations',()=>platformWorkspace(session.access_token,{salesMode:true}));
    register('invitations',()=>{
     const host=document.getElementById('member-invites');
-    if(host)host.textContent='Sales เปิดปั๊มและส่งมอบบัญชี Admin เริ่มต้นเท่านั้น การเพิ่มพนักงานต้องทำโดย Admin ของแต่ละปั๊มหรือบริษัท';
+    mountMemberInvitations({target:host,
+      readOnlyMessage:'Sales เปิดปั๊มและส่งมอบบัญชี Admin เริ่มต้นเท่านั้น การเพิ่มพนักงานต้องทำโดย Admin ของแต่ละปั๊มหรือบริษัท'});
    });
   }
  if(!memberships.some(m=>m.scopeType==='platform'&&m.role==='platform_superadmin')&&
@@ -1624,28 +1635,30 @@ function dashboard(data, session, publicConfig={}) {
   register('customers',()=>stationCorporateWorkspace(session.access_token,station.stationId,document.getElementById('station-customers-workspace'),{qaMode:publicConfig.qaModeEnabled===true}));
   register('invitations',()=>{
    const host=document.getElementById('member-invites');
-   host?.appendChild(createInviteControl(session.access_token,'station',station.stationId,
+   const inviteControl=createInviteControl(session.access_token,'station',station.stationId,
     [['manager','ผู้จัดการ'],['cashier','แคชเชียร์'],['attendant','พนักงานปั๊ม'],
      ['pump_staff','พนักงานหน้าลาน'],['hr_manager','ผู้จัดการ HR'],
-     ['finance_manager','ผู้จัดการการเงิน']]));
+     ['finance_manager','ผู้จัดการการเงิน']]);
+   let qaHost=null;
    if(publicConfig.qaModeEnabled===true&&session.user?.app_metadata?.oilstation_qa===true){
-    const qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
-    host?.appendChild(qaHost);
+    qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
     mountQaAccountsAdmin({target:qaHost,token:session.access_token,mode:'station_owner'});
    }
+   mountMemberInvitations({target:host,inviteControl,qaHost});
   });
  }
  const corpAdmin=memberships.find(m=>m.scopeType==='corporate_company'&&m.role==='corporate_admin'&&m.corporateCompanyId);
  if(corpAdmin)register('invitations',()=>{
   const host=document.getElementById('member-invites');
-  host?.appendChild(createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
+  const inviteControl=createInviteControl(session.access_token,'corporate_company',corpAdmin.corporateCompanyId,
    [['coupon_issuer','ผู้ออกคูปอง'],['accountant','บัญชี'],
-    ['finance_manager','ผู้จัดการการเงิน'],['driver','คนขับรถ']]));
+    ['finance_manager','ผู้จัดการการเงิน'],['driver','คนขับรถ']]);
+  let qaHost=null;
   if(publicConfig.qaModeEnabled===true&&session.user?.app_metadata?.oilstation_qa===true){
-   const qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
-   host?.appendChild(qaHost);
+   qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
    mountQaAccountsAdmin({target:qaHost,token:session.access_token,mode:'corporate_admin'});
   }
+  mountMemberInvitations({target:host,inviteControl,qaHost});
  });
  const corpRoles=memberships.filter(m=>m.scopeType==='corporate_company'&&m.role!=='driver');
  if(corpRoles.length){

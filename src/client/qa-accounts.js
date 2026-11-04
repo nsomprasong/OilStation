@@ -170,6 +170,10 @@ export function mountQaAccountsAdmin({target,token,mode='platform_admin'}){
    const data=await result.json();
    status.textContent='สร้างบัญชี '+data.account.alias+' สำเร็จ ('+data.account.roleCode+
     ') ออกจากระบบแล้วใช้ชื่อผู้ใช้และรหัสผ่านที่ตั้งไว้ได้ทันที';
+   form.dispatchEvent(new CustomEvent('oilstation:member-created',{bubbles:true,
+    detail:{kind:'qa',name:data.account.alias,
+      role:(roles[scopeType.value]||[]).find(([code])=>code===data.account.roleCode)?.[1]||
+       data.account.roleCode}}));
    username.value='';password.value='';
   }catch(error){
    // Keep passwords and internal database diagnostics out of the UI while
