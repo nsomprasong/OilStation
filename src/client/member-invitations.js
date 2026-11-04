@@ -24,9 +24,10 @@ const button=(className,text,icon)=>{
 export function mountMemberInvitations({target,inviteControl=null,qaHost=null,readOnlyMessage=''}={}){
  if(!target)return;
  const page=el('div','os-member-page');
- const toolbar=el('div','os-member-toolbar');
+ const toolbar=el('header','os-member-toolbar');
  const intro=el('div','os-member-intro');
  intro.append(el('p','os-member-eyebrow','สมาชิกและสิทธิ์'),
+  el('h3','os-member-toolbar-title','เชิญและจัดการสิทธิ์'),
   el('p','os-member-intro-copy','จัดการการเชิญและบัญชีทดสอบภายในขอบเขตที่ได้รับอนุญาต'));
  toolbar.append(intro);
  const canManage=Boolean(inviteControl||qaHost);
@@ -39,7 +40,7 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
  page.append(toolbar);
  const list=el('section','os-member-list');
  list.setAttribute('aria-label','รายการที่สร้างจากหน้านี้');
- const head=el('div','os-member-list-head');
+ const head=el('header','os-member-list-head');
  const copy=el('div');
  copy.append(el('h3',null,'รายการล่าสุด'),el('p',null,
   'แสดงคำเชิญและบัญชี QA ที่สร้างสำเร็จในหน้านี้เท่านั้น ไม่ใช่รายชื่อสมาชิกทั้งหมดของบริษัท'));
