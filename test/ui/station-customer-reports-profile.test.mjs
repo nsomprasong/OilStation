@@ -37,7 +37,7 @@ test('sensitive data is not invented; SQL never modifies credit nor hard-deletes
  assert.match(sql,/fs\.status='completed'/);
  assert.match(sql,/a\.station_id=p_station_id/);
  assert.match(sql,/a\.company_id=p_company_id/);
- assert.match(sql,/SET search_path TO ''/);
+ assert.match(sql,/SET search_path = ''/);
  assert.match(sql,/REVOKE ALL ON FUNCTION public\.oilstation_scoped_member_change/);
  assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.oilstation_scoped_member_change[^\n]+TO service_role/);
  assert.doesNotMatch(sql,/DELETE FROM\s+public\.(?:memberships|employees|app_users|wallet_ledger)/i);
