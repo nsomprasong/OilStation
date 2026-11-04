@@ -4,11 +4,11 @@ import {readFileSync} from 'node:fs';
 import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/workspace-layout.js';
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const platform={scopeType:'platform',role:'platform_superadmin'};
-test('legacy components retain behavior under the sole CSS v2 stylesheet',()=>{
+test('legacy components retain behavior under the sole emerald CSS v3 stylesheet',()=>{
  const html=read('index.html'),css=read('public/oilstation.css');
  assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1);
  assert.match(html,/href="\/oilstation\.css"/);
- for(const token of ['#060F33','#040B28','#0E1B47','248px','72px'])
+ for(const token of ['#EAE7DF','#10271E','#F7F5EF','248px','72px'])
   assert.ok(css.includes(token),token);
  assert.match(css,/\.os-desktop-side-link/);
  assert.match(css,/\.os-desktop-sidebar/);
