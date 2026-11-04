@@ -162,11 +162,11 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .qr-wrapper canvas{max-width:100%;height:auto!important}
 .scope-chip{color:var(--os-ac);background:var(--os-on)}
 .module-item{background:var(--os-card);color:var(--os-tx);border-color:var(--os-line)}
-.account-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:18px 0}
-.balance-card{display:flex;flex-direction:column;text-align:left;gap:8px;border-radius:16px;background:var(--os-card);padding:20px;border:1px solid var(--os-line);border-top:2px solid var(--os-gold)}
+.account-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin:12px 0}
+.balance-card{display:flex;flex-direction:column;text-align:left;gap:7px;border-radius:var(--os-r-sm);background:var(--os-card);padding:18px;border:1px solid var(--os-line);border-top:2px solid var(--os-gold);min-width:0}
 .balance-card strong{font-size:14px;color:var(--os-tx)}
-.balance-card .money{font-size:clamp(26px,2.4vw,34px);color:var(--os-ac);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
-.balance-card span{font-size:11px;color:var(--os-mu)}
+.balance-card .money{font-size:clamp(25px,2.3vw,32px);color:var(--os-ac);font-variant-numeric:tabular-nums;letter-spacing:-.03em;line-height:1.2}
+.balance-card span{font-size:12px;color:var(--os-mu);line-height:1.55}
 .coupon-form{display:grid;gap:16px;text-align:left;padding-top:8px;min-width:0}
 .coupon-form[hidden],.issue-result[hidden]{display:none!important}
 .field input,.field select,.issue-result input{width:100%;border:1px solid var(--os-line);border-radius:11px;padding:12px;background:var(--os-card);color:var(--os-tx);font:inherit;min-height:44px}
@@ -342,7 +342,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-credit-detail strong{color:var(--os-tx);font-variant-numeric:tabular-nums}
 #app.workspace-mode .os-credit-workspace>.hint{margin:0 8px;color:var(--os-mu)}
 #app.workspace-mode .os-credit-review{justify-self:start;margin:0 8px;min-height:46px}
-#app.workspace-mode .os-credit-banner{margin:14px 0 18px;padding:17px 20px;background:#E3EEE5;
+#app.workspace-mode .os-credit-banner{margin:10px 0 14px;padding:12px 16px;background:#E3EEE5;
  border:1px solid #C7D8C8;border-left:4px solid var(--os-ac);border-radius:var(--os-r);
  font-size:16px;font-weight:700;color:var(--os-ac);font-variant-numeric:tabular-nums}
 #app.workspace-mode .os-report-filters{display:flex;align-items:end;gap:12px;flex-wrap:wrap;
@@ -367,6 +367,65 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode :is(.os-report-table,.os-directory-table) tr:last-child td{border-bottom:none}
 #app.workspace-mode :is(.os-report-table,.os-directory-table) tbody tr:hover{background:var(--os-hover)}
 #app.workspace-mode .os-report-table td:nth-child(n+5){text-align:right;font-variant-numeric:tabular-nums}
+/* Corporate account / coupon / report: compact work surfaces, form density
+   and tab-specific copy. These are scoped to this module, not global form hacks. */
+#app.workspace-mode [data-ws-screen="corporate"] .ws-screen-head{
+ margin:12px 0 14px;padding:18px 22px;
+}
+#app.workspace-mode [data-ws-screen="corporate"] .ws-screen-head p{
+ font-size:13px;line-height:1.5;margin:5px 0 0;
+}
+#app.workspace-mode #corporate-workspace{min-width:0}
+#app.workspace-mode #corporate-workspace>.os-functional-pane{min-width:0}
+#app.workspace-mode #corporate-workspace .os-corporate-intro{
+ margin:0 0 4px;font-size:13px;line-height:1.6;color:var(--os-mu);
+}
+#app.workspace-mode #corporate-workspace .balance-card .wallet-check-button{
+ align-self:start;max-width:100%;min-height:42px;
+}
+#app.workspace-mode #corporate-workspace .balance-card .hint[hidden]{display:none!important}
+#app.workspace-mode #corporate-workspace .balance-card .hint:not([hidden]){
+ background:transparent!important;margin:6px 0 0;padding:8px 0;
+ font-size:12px;line-height:1.6;
+}
+#app.workspace-mode #corporate-workspace #coupon-form{
+ grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;
+ align-items:start;padding:20px;border:1px solid var(--os-line);
+ border-radius:var(--os-r);background:var(--os-card);min-width:0;
+}
+#app.workspace-mode #coupon-form>.field{min-width:0;gap:7px}
+#app.workspace-mode #coupon-form :is(select,input){min-width:0;width:100%;min-height:46px}
+#app.workspace-mode #coupon-form>.hint,
+#app.workspace-mode #coupon-form>#coupon-notice{grid-column:1/-1;margin:0}
+#app.workspace-mode #coupon-form>.hint{
+ padding:10px 12px;background:var(--os-on)!important;
+ border-radius:var(--os-r-sm);color:var(--os-mu)!important;
+}
+#app.workspace-mode #coupon-form>#coupon-submit{
+ grid-column:1/-1;justify-self:start;min-height:46px;min-width:230px;
+}
+#app.workspace-mode #corporate-workspace #company-fuel-report{
+ gap:12px;min-width:0;
+}
+#app.workspace-mode #company-fuel-report .os-report-header{
+ background:transparent;border:0;padding:0 8px;
+}
+#app.workspace-mode #company-fuel-report .os-report-header p{
+ color:var(--os-mu);font-size:13px;margin:0;
+}
+#app.workspace-mode #company-fuel-report .os-report-summary{
+ border:1px solid var(--os-line-soft);border-radius:var(--os-r-sm);
+}
+#app.workspace-mode #company-fuel-report .os-report-table-scroll{
+ border-radius:var(--os-r-sm);
+}
+@media(max-width:680px){
+ #app.workspace-mode #corporate-workspace #coupon-form{
+  grid-template-columns:1fr;padding:16px;gap:12px;
+ }
+ #app.workspace-mode #coupon-form>#coupon-submit{width:100%;min-width:0}
+ #app.workspace-mode [data-ws-screen="corporate"] .ws-screen-head{padding:16px}
+}
 /* Member directory uses the same input/table/action design system as station and HR. */
 #app.workspace-mode .os-member-directory-host{display:grid;gap:12px;margin:0 var(--member-pad) var(--member-pad);min-width:0}
 #app.workspace-mode .os-directory-controls{display:grid;grid-template-columns:minmax(200px,1fr) repeat(3,minmax(112px,160px)) 44px;gap:10px;align-items:center;min-width:0}
@@ -609,7 +668,46 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .attendance-payroll-preview [role=status]{margin-top:10px;line-height:1.5}
 .ws-screen #new-station-form>.field:nth-child(3),.ws-screen #new-station-form>.module-choices,
 .ws-screen #new-station-form>.hint,.ws-screen #new-station-form>.button,.ws-screen #new-station-form>.notice{grid-column:1/-1}
-.ws-screen .module-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.ws-screen .module-list:not(#company-driver-workspace){grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+/* Corporate dispatcher: section heading, assignment form and roster are one
+   task rather than four unrelated auto-fit cards across the same row. */
+#app.workspace-mode #company-driver-workspace{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(225px,280px);
+ gap:12px 18px;align-items:start;min-width:0;margin:0;
+}
+#app.workspace-mode #company-driver-workspace>h3{
+ grid-column:1/-1;font-size:17px;line-height:1.4;margin:0;color:var(--os-tx);
+}
+#app.workspace-mode #company-driver-workspace>p.hint{
+ grid-column:1/-1;background:transparent!important;padding:0;
+ margin:0 0 4px;line-height:1.6;color:var(--os-mu)!important;
+}
+#app.workspace-mode #company-driver-workspace>form{
+ grid-column:1;display:grid;grid-template-columns:1fr;align-content:start;
+ gap:14px;min-width:0;padding:18px;border:1px solid var(--os-line);
+ border-radius:var(--os-r-sm);background:var(--os-input);
+}
+#app.workspace-mode #company-driver-workspace>form .button{width:100%;min-width:0}
+#app.workspace-mode #company-driver-workspace>form .hint{
+ margin:0;padding:8px 0;background:transparent!important;
+ font-size:12px;line-height:1.6;color:var(--os-mu)!important;
+}
+#app.workspace-mode #company-driver-workspace>.module-list{
+ grid-column:2;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;
+ align-content:start;margin:0;min-width:0;
+}
+#app.workspace-mode #company-driver-workspace>.module-list .module-item{
+ padding:14px;border:1px solid var(--os-line);border-radius:var(--os-r-sm);
+ background:var(--os-card);min-width:0;
+}
+#app.workspace-mode #company-driver-workspace>.module-list .module-subtitle{
+ color:var(--os-mu);line-height:1.55;margin:5px 0 0;
+}
+@media(max-width:960px){
+ #app.workspace-mode #company-driver-workspace{grid-template-columns:minmax(0,1fr)}
+ #app.workspace-mode #company-driver-workspace>form,
+ #app.workspace-mode #company-driver-workspace>.module-list{grid-column:1}
+}
 .saas-simple-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
 .saas-simple-intro,.saas-existing-plans{grid-column:1/-1}
 .saas-simple-intro h3{font-size:18px;margin:0 0 5px}
@@ -1293,6 +1391,9 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .os-toolbar-logout:hover{background:var(--os-side-hover)}
 
 .ws-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 0}
+/* The corporate pane owns its page title; suppress the redundant workspace
+   scope label above its functional navigation without hiding profile controls. */
+#app.workspace-mode .ws-layout[data-active-screen="corporate"] .ws-header{display:none}
 .ws-header h1:empty{display:none}
 .ws-overline{margin:0 0 4px;font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--os-gold-ink)}
 .ws-header h1{font-size:15px;font-weight:500;color:var(--os-mu);letter-spacing:0;margin:0;min-height:1.35em}
@@ -1323,6 +1424,10 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head .ws-breadcrumb{color:#EBD7AD}
 #app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head h2{color:#FFFDF8;margin:0 0 4px}
 #app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head p{color:#E1EEE5}
+/* The legacy panel text rule is !important; keep contrast in gradient headers. */
+#app.workspace-mode .os-midnight-layout .ws-screen>.ws-screen-head p{
+ color:#E4F0E9!important;
+}
 
 .ws-breadcrumb{font-size:12px;color:var(--os-gold-ink);font-weight:650;margin-bottom:6px}
 .ws-screen-head h2{font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin:0 0 6px}
