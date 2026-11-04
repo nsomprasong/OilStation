@@ -68,7 +68,7 @@ test('Invitation landing is one quiet list-first screen; drawer is optional and 
   const pageRoot=page.locator('[data-ws-screen="invitations"]');
   await expect(pageRoot.locator('#ws-heading-invitations')).toHaveText('จัดการสมาชิก');
   await expect(pageRoot.locator('.os-member-list')).toBeVisible();
-  await expect(pageRoot.locator('.os-member-toolbar-title')).toHaveText('เชิญและจัดการสิทธิ์');
+  await expect(pageRoot.locator('.os-member-toolbar-title')).toHaveText('จัดการบัญชีผู้ใช้งาน');
   await expect(pageRoot.locator('.os-member-list-head')).toBeVisible();
   await expect(pageRoot.locator('.os-member-empty')).toContainText('ยังไม่มีรายการใหม่');
   await expect(pageRoot.locator('.os-member-create')).toHaveCount(1);
