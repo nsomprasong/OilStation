@@ -16,6 +16,9 @@ const source=readFileSync(new URL('../src/client/member-invitations.js',import.m
 
 async function mount(page,{qa=true,readonly=false}={}){
  await page.goto('/');
+ // Wait for the actual anonymous auth boot to settle before replacing #app.
+ // Otherwise the async login renderer can race and erase this local fixture.
+ await expect(page.locator('#app.auth-mode .os-auth-card')).toBeVisible();
  const scope=[{scopeType:'corporate_company',role:'corporate_admin',corporateCompanyId:'qa-company'}];
  await page.evaluate(markup=>{
   const app=document.getElementById('app');
