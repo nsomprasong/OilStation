@@ -35,3 +35,13 @@ test('mobile nav is centered and keeps five slots with username visible',()=>{
  assert.match(css,/\.os-mobile-dock-inner\{[^}]*margin-inline:auto/);
  assert.doesNotMatch(css,/#app\.workspace-mode \.os-profile-summary\{display:none\}/);
 });
+
+test('mobile credit stays beside profile with background refresh and no button',()=>{
+ const c=read('src/client/toolbar-credit.js'),css=read('public/oilstation.css');
+ assert.doesNotMatch(c,/os-toolbar-credit-refresh|refresh\.addEventListener/);
+ assert.match(c,/setInterval\(/);
+ assert.match(c,/visibilitychange/);
+ assert.match(css,/\.ws-toolbar\{min-height:64px;[^}]*flex-wrap:nowrap/);
+ assert.match(css,/\.os-toolbar-credit\{order:0;flex:1 1 0/);
+ assert.match(css,/#app\.workspace-mode \.os-toolbar-profile\{order:1/);
+});

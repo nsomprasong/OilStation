@@ -47,25 +47,16 @@ const failureMessage=error=>({
 
 export function mountMemberDirectory({target,token,scopeType,scopeId,canChange=false,onLoaded=()=>{}}={}){
  if(!target||!token||!scopeId||!ROLES[scopeType])return null;
- const controls=node('div','os-directory-controls');
+ const controls=node('form','os-directory-controls');
+ controls.setAttribute('role','search');
+ const searchWrap=node('div','os-directory-search-wrap');
  const search=node('input','os-directory-search');
  search.type='search';search.placeholder='ค้นหาชื่อ อีเมล หรือบทบาท';
  search.setAttribute('aria-label','ค้นหาชื่อ อีเมล หรือบทบาท');
- const role=node('select','os-directory-filter');
- role.setAttribute('aria-label','กรองตามบทบาท');
- const state=node('select','os-directory-filter');
- state.setAttribute('aria-label','กรองตามสถานะ');
- for(const [value,text] of [['all','ทุกสถานะ'],['active','ใช้งาน'],['inactive','ปิดสิทธิ์แล้ว']]){
-  const opt=node('option',null,text);opt.value=value;state.append(opt);
- }
- const order=node('select','os-directory-filter os-directory-sort');
- order.setAttribute('aria-label','เรียงลำดับสมาชิก');
- for(const [value,text] of [['name','ชื่อ ก–ฮ'],['newest','เพิ่มล่าสุด']]){
-  const opt=node('option',null,text);opt.value=value;order.append(opt);
- }
- const refresh=actionButton('refresh','โหลดรายชื่อใหม่');
- refresh.classList.add('os-directory-refresh');
- controls.append(search,role,state,order,refresh);
+ search.autocomplete='off';
+ const searchButton=actionButton('search','ค้นหาสมาชิก','os-directory-search-submit');
+ searchButton.type='submit';
+ searchWrap.append(search,searchButton);controls.append(searchWrap);
  const notice=node('p','os-directory-notice');
  notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');
  const panel=node('div','os-directory-scroll');
@@ -98,28 +89,12 @@ export function mountMemberDirectory({target,token,scopeType,scopeId,canChange=f
   !ROLES[scopeType].some(([key])=>key===m.role);
  const selectedRows=()=>{
   const query=search.value.trim().toLocaleLowerCase('th');
-  return members.filter(m=>
-   (state.value==='all'||(state.value==='active')===Boolean(m.active))&&
-   (role.value==='all'||role.value===m.role)&&
-   [m.displayName,m.email,memberRoleLabel(m.role,scopeType),statusText(m.active)]
-    .join(' ').toLocaleLowerCase('th').includes(query))
-   .sort((a,b)=>order.value==='newest'?
-    String(b.joinedAt||'').localeCompare(String(a.joinedAt||''))||
-      String(a.displayName||'').localeCompare(String(b.displayName||''),'th'):
+  return members.filter(m=>[m.displayName,m.email,memberRoleLabel(m.role,scopeType)]
+   .join(' ').toLocaleLowerCase('th').includes(query))
+   .sort((a,b)=>
     String(a.displayName||'').localeCompare(String(b.displayName||''),'th')||
-      String(a.membershipId||'').localeCompare(String(b.membershipId||'')));
+    String(a.membershipId||'').localeCompare(String(b.membershipId||'')));
  };
- function populateRoleFilter(){
-  const previous=role.value||'all';
-  role.replaceChildren();
-  const all=node('option',null,'ทุกบทบาท');all.value='all';role.append(all);
-  for(const code of [...new Set(members.map(m=>m.role))].sort((a,b)=>
-    memberRoleLabel(a,scopeType).localeCompare(memberRoleLabel(b,scopeType),'th'))){
-   const opt=node('option',null,memberRoleLabel(code,scopeType));
-   opt.value=code;role.append(opt);
-  }
-  role.value=[...role.options].some(x=>x.value===previous)?previous:'all';
- }
  function render(){
   tbody.replaceChildren();
   const rows=selectedRows();
@@ -186,7 +161,7 @@ export function mountMemberDirectory({target,token,scopeType,scopeId,canChange=f
   if(!action||busy)return;
   const {member,kind}=action;
   if(kind==='edit'&&roleChoice.value===member.role){dialog.close();return;}
-  busy=true;save.disabled=true;cancel.disabled=true;refresh.disabled=true;
+  busy=true;save.disabled=true;cancel.disabled=true;
   notice.textContent='กำลังบันทึกการเปลี่ยนแปลง…';
   try{
    await authorizedRequest('/api/members/change',token,{
@@ -200,32 +175,29 @@ export function mountMemberDirectory({target,token,scopeType,scopeId,canChange=f
   }catch(error){
    notice.textContent=failureMessage(error);
   }finally{
-   busy=false;save.disabled=false;cancel.disabled=false;refresh.disabled=false;
+   busy=false;save.disabled=false;cancel.disabled=false;
   }
  });
  async function reload(){
   if(reading)return;
-  reading=true;refresh.disabled=true;
+  reading=true;
   notice.textContent='กำลังโหลดบัญชีผู้ใช้งาน…';
   try{
    const params=new URLSearchParams({scopeType,scopeId});
    const result=await authorizedRequest('/api/members/directory?'+params,token);
    if(!Array.isArray(result.members))throw Error('invalid_response');
    members=result.members;
-   populateRoleFilter();render();onLoaded(members.length);
+   render();onLoaded(members.length);
    notice.textContent='แสดง '+selectedRows().length+' จาก '+members.length+' บัญชี · รวมบัญชีที่ปิดสิทธิ์';
   }catch{
    notice.textContent='ไม่สามารถโหลดข้อมูลได้ โปรดตรวจสิทธิ์หรือการเชื่อมต่อแล้วลองใหม่';
    if(!members.length)render();
    onLoaded(null);
-  }finally{reading=false;refresh.disabled=busy;}
+  }finally{reading=false;}
  }
  function filter(){render();notice.textContent='แสดง '+selectedRows().length+' จาก '+members.length+' บัญชี';}
  search.addEventListener('input',filter);
- role.addEventListener('change',filter);
- state.addEventListener('change',filter);
- order.addEventListener('change',filter);
- refresh.addEventListener('click',reload);
+ controls.addEventListener('submit',event=>{event.preventDefault();filter();});
  reload();
  return {reload};
 }

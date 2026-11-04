@@ -85,3 +85,10 @@ test('mobile and desktop share v2 functional submenus and a five-column dock',()
  assert.match(source,/saveNavUsage\(userId,counts\)/);
  assert.match(source,/key==='overview'\)bottom\(\)/);
 });
+
+test('three accessible mobile items use five evenly distributed positions',()=>{
+ const nav=renderMobileNav(selectWorkspaceScreens([member('station','cashier',{stationId:'station'})]),{pump:7,attendance:3});
+ const slots=[...nav.matchAll(/<(?:span|button) class="os-mobile-tab ([^"]+)"/g)]
+  .map(match=>match[1].includes('os-nav-orb-placeholder')?'empty':'action');
+ assert.deepEqual(slots,['action','empty','action','empty','action']);
+});

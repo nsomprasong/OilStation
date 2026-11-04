@@ -73,3 +73,14 @@ test('the single workspace page header and menu gradients share one canonical st
  assert.doesNotMatch(members,/os-member-toolbar-title|os-member-list-head/);
  assert.doesNotMatch(css,/\.os-member-toolbar\{|\.os-member-list-head\{/);
 });
+
+test('member directory uses one search field and embedded magnifying glass',()=>{
+ const c=read('src/client/member-directory.js'),css=read('public/oilstation.css');
+ assert.match(c,/controls=node\('form','os-directory-controls'\)/);
+ assert.match(c,/actionButton\('search','ค้นหาสมาชิก'/);
+ assert.match(c,/controls\.addEventListener\('submit'/);
+ assert.doesNotMatch(c,/const (?:role|state|order)=node\('select'/);
+ assert.match(css,/\.os-member-directory-host\{[^}]*padding-top:18px/);
+ assert.match(css,/\.os-directory-search-submit\{/);
+ assert.doesNotMatch(css,/\.os-directory-refresh\{/);
+});
