@@ -68,7 +68,7 @@ test('Invitation landing is one quiet list-first screen; drawer is optional and 
   const pageRoot=page.locator('[data-ws-screen="invitations"]');
   await expect(pageRoot.locator('#ws-heading-invitations')).toHaveText('จัดการสมาชิก');
   await expect(pageRoot.locator('.os-member-list')).toBeVisible();
-  await expect(pageRoot.locator('.os-member-toolbar-title')).toHaveText('เชิญและจัดการสิทธิ์');
+  await expect(pageRoot.locator('.os-member-toolbar-title')).toHaveText('จัดการบัญชีผู้ใช้งาน');
   await expect(pageRoot.locator('.os-member-list-head')).toBeVisible();
   await expect(pageRoot.locator('.os-member-empty')).toContainText('ยังไม่มีรายการใหม่');
   await expect(pageRoot.locator('.os-member-create')).toHaveCount(1);
@@ -149,4 +149,93 @@ test('Sales read-only view never exposes invitation or QA account creation',asyn
  await expect(page.locator('.os-member-readonly')).toContainText('ไม่มีสิทธิ์');
  await expect(page.locator('.os-member-create')).toHaveCount(0);
  await expect(page.locator('.os-member-drawer')).toHaveCount(0);
+});
+
+test('Live member directory is compact, searchable, role-scoped and safe on phones @public',async({page})=>{
+ const directoryScript=readFileSync(new URL('../src/client/member-directory.js',import.meta.url),'utf8')
+  .replace("import {makeIcon} from './icons.js';",`const makeIcon=name=>{
+   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+   svg.setAttribute('aria-hidden','true');svg.dataset.icon=name;return svg;
+  };`)
+  .replace('export const memberRoleLabel=','const memberRoleLabel=')
+  .replace('export function mountMemberDirectory','function mountMemberDirectory')+
+  ';window.mountMemberDirectory=mountMemberDirectory;';
+ const accounts=[
+  {membershipId:'a1',displayName:'QA c01-accountant',email:'qa-c01-accountant@qa.oilstation.invalid',role:'accountant',active:true,joinedAt:'2026-11-01T01:00:00Z'},
+  {membershipId:'a2',displayName:'QA c01-admin',email:'qa-c01-admin@qa.oilstation.invalid',role:'corporate_admin',active:true,joinedAt:'2026-11-01T02:00:00Z'},
+  {membershipId:'a3',displayName:'QA c01-driver',email:'qa-c01-driver@qa.oilstation.invalid',role:'driver',active:true,joinedAt:'2026-11-01T03:00:00Z'},
+  {membershipId:'a4',displayName:'QA c01-finance',email:'qa-c01-finance@qa.oilstation.invalid',role:'finance_manager',active:true,joinedAt:'2026-11-01T04:00:00Z'},
+  {membershipId:'a5',displayName:'QA c01-issuer',email:'qa-c01-issuer@qa.oilstation.invalid',role:'coupon_issuer',active:true,joinedAt:'2026-11-01T05:00:00Z'},
+ ];
+ const changes=[];
+ await page.route('**/api/members/**',async route=>{
+  const request=route.request();
+  if(request.method()==='GET'){
+   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({members:accounts})});
+  }
+  const data=request.postDataJSON();changes.push(data);
+  if(data.membershipId==='a3'&&data.action==='deactivate'){
+   return route.fulfill({status:409,contentType:'application/json',
+    body:JSON.stringify({error:'driver_has_active_coupon'})});
+  }
+  if(data.membershipId==='a1'&&data.action==='edit'){
+   accounts[0].role=data.roleCode;
+   return route.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({result:{success:true}})});
+  }
+  return route.fulfill({status:403,contentType:'application/json',
+   body:JSON.stringify({error:'permission_denied'})});
+ });
+ for(const width of [320,390,1024,1440]){
+  await page.setViewportSize({width,height:width<600?844:900});
+  await mount(page);
+  // Both UI modules declare makeIcon; isolate the mocked directory in a
+  // lexical scope to avoid global redeclaration errors in non-module fixtures.
+  await page.addScriptTag({content:'(()=>{'+directoryScript+'})()'});
+  await page.evaluate(()=>{
+   const app=document.querySelector('#app');
+   if(!app)throw new Error('workspace fixture root unavailable');
+   app.className='workspace-mode';
+   const fixture=document.createElement('section');fixture.className='os-member-list';
+   const host=document.createElement('div');host.className='os-member-directory-host';
+   fixture.append(host);
+   app.append(fixture);
+   window.mountMemberDirectory({target:host,token:'mock-authorized',
+    scopeType:'corporate_company',scopeId:'mock-corp',canChange:true});
+  });
+  const root=page.locator('.os-member-directory-host');
+  await expect(root.locator('tbody tr')).toHaveCount(5);
+  await expect(root.locator('tbody')).toContainText('ผู้ดูแลบริษัท');
+  await expect(root.locator('tr').filter({hasText:'QA c01-admin'}).locator('.os-directory-protected'))
+   .toContainText('บัญชีที่ได้รับการป้องกัน');
+  const dimensions=await page.evaluate(()=>({
+   page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth,
+   table:document.querySelector('.os-directory-scroll').scrollWidth,
+   container:document.querySelector('.os-directory-scroll').clientWidth,
+  }));
+  expect(dimensions.page).toBeLessThanOrEqual(dimensions.viewport+2);
+  if(width===320)expect(dimensions.table).toBeGreaterThan(dimensions.container);
+  await root.locator('.os-directory-search').fill('driver');
+  await expect(root.locator('tbody tr')).toHaveCount(1);
+  await root.locator('.os-directory-search').fill('');
+  await root.locator('.os-directory-filter').first().selectOption('corporate_admin');
+  await expect(root.locator('tbody tr')).toHaveCount(1);
+  await root.locator('.os-directory-filter').first().selectOption('all');
+  await root.locator('.os-directory-filter').nth(1).selectOption('inactive');
+  await expect(root.locator('.os-directory-empty')).toContainText('ไม่พบ');
+  await root.locator('.os-directory-filter').nth(1).selectOption('all');
+  if(width===1440){
+   await root.getByRole('button',{name:'ปิดสิทธิ์ QA c01-driver'}).click();
+   await expect(root.locator('.os-directory-dialog')).toBeVisible();
+   await root.locator('.os-directory-dialog .button.destructive').click();
+   await expect(root.locator('.os-directory-notice')).toContainText('คนขับยังมีคูปอง');
+   await root.locator('.os-directory-dialog .button.secondary').click();
+   await root.getByRole('button',{name:'แก้ไขบทบาท QA c01-accountant'}).click();
+   await root.locator('.os-directory-role').selectOption('finance_manager');
+   await root.locator('.os-directory-dialog .button.primary').click();
+   await expect(root.locator('.os-directory-dialog')).toBeHidden();
+   await expect(root.locator('tbody')).toContainText('ผู้จัดการการเงิน');
+   expect(changes.at(-1)).toEqual({membershipId:'a1',action:'edit',roleCode:'finance_manager'});
+  }
+ }
 });

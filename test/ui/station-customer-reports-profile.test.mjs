@@ -17,16 +17,27 @@ test('scoped reports, credit, directory, profile and HR table are live component
    read('src/client/member-invitations.js')).includes(x),x);
  assert.match(main,/roster\.employees\.filter\(x=>x\.employmentStatus==='active'\)/);
 });
-test('visual layout has equal card radius, inset child cards and accessible icon logout',()=>{
+test('visual layout uses one project token system, inset cards and icon logout',()=>{
  const css=read('public/oilstation.css');
  const shell=read('src/client/workspace-layout.js');
- assert.match(css,/--os-r:16px;\s*--os-r-sm:16px/);
+ assert.match(css,/--os-r:16px;\s*--os-r-sm:12px;\s*--os-control-r:10px/);
+ assert.match(css,/--os-section-pad:20px/);
+ assert.match(css,/\.os-directory-controls\{display:grid/);
+ assert.match(css,/\.os-directory-dialog\{/);
  assert.match(css,/\.ws-widget>section>\.module-item\{[\s\S]*?margin-inline:8px/);
  for(const x of ['os-credit-grid','os-report-table','os-directory-table',
   'os-profile-panel','os-credit-banner','os-directory-actions'])assert.ok(css.includes(x),x);
  assert.match(shell,/class="os-toolbar-logout" data-mobile-logout[\s\S]*?data-ui-icon="logout"/);
  assert.match(shell,/id="os-toolbar-profile"/);
  assert.match(read('src/client/user-profile.js'),/setAttribute\('aria-expanded'/);
+ const directory=read('src/client/member-directory.js');
+ assert.match(directory,/memberRoleLabel/);
+ assert.match(directory,/ผู้ดูแลบริษัท/);
+ assert.match(directory,/sort\(/);
+ assert.match(directory,/dialog\.showModal\(\)/);
+ assert.match(directory,/makeIcon\('shield'\)/);
+ assert.match(directory,/driver_has_active_coupon/);
+ assert.doesNotMatch(directory,/removeChild\(|DELETE FROM|window\.confirm/);
 });
 test('sensitive data is not invented; SQL never modifies credit nor hard-deletes users',()=>{
  const sql=read('supabase/migrations/20261104110000_station_credit_plate_report_member_directory.sql');
