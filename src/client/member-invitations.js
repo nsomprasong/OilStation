@@ -129,6 +129,16 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
    }
   }
   select(tabs[0]?.key);
+  nav.addEventListener('keydown',event=>{
+   if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+   const idx=tabs.findIndex(x=>x.tab===document.activeElement);
+   if(idx<0)return;
+   event.preventDefault();
+   const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:
+    (idx+(event.key==='ArrowLeft'?-1:1)+tabs.length)%tabs.length;
+   select(tabs[next].key);
+   tabs[next].tab.focus();
+  });
   const footer=el('div','os-member-drawer-footer');
   const cancel=button('button secondary','กลับไปยังรายการ');
   footer.append(cancel);
