@@ -60,6 +60,10 @@ BEGIN
  UPDATE public.memberships SET active=false WHERE user_id=staff;
  IF public.hr_station_module_access(staff,station)
  THEN RAISE EXCEPTION 'REVOKED_STAFF_STILL_ENTITLED';END IF;
+ UPDATE public.app_users SET status='suspended' WHERE id=a;
+ IF public.hr_station_module_access(a,station)
+ THEN RAISE EXCEPTION 'SUSPENDED_STATION_OWNER_ALLOWED';END IF;
+ UPDATE public.app_users SET status='active' WHERE id=a;
  RAISE NOTICE 'PASS: HR module RPC roles, cross-station, subscription and revocation';
 END $assert$;
 -- Test execute grants from actual Worker database role, while table SELECT
