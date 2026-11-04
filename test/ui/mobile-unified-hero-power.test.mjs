@@ -58,5 +58,5 @@ test('mobile v2 hero, safe area and coherent feature cards preserve responsive l
  assert.match(css,/@media\(max-width:850px\)/);
  assert.match(css,/env\(safe-area-inset-bottom\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(read('public/oilstation.css'),/--os-side:#040B28/);
+ assert.match(read('public/oilstation.css'),/--os-side:#10271E/);
 });

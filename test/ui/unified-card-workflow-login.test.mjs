@@ -7,7 +7,7 @@ import {selectWorkspaceScreens,renderWorkspaceShell} from '../../src/client/work
 import {installProgressiveWorkspace} from '../../src/client/progressive-workspace.js';
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const station={scopeType:'station',role:'station_owner',stationId:'s'};
-test('compact login and first-admin setup use real OAuth buttons with same teal identity',()=>{
+test('compact login and first-admin setup use real OAuth buttons with emerald identity',()=>{
  const login=authMarkup();
  const invited=authMarkup({invited:true});
  const setup=authMarkup({setup:true});

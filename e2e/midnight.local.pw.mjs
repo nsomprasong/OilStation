@@ -73,16 +73,16 @@ test('Desktop is a real sidebar/topbar/dashboard grid, not a floating bottom doc
  expect(state.columns).toBe(2);
  expect(state.sidebarWidth).toBeGreaterThan(200);
  expect(state.sidebarWidth).toBeLessThan(260);
- expect(state.sidebarBg).toBe('rgb(4, 11, 40)');
+ expect(state.sidebarBg).toBe('rgb(16, 39, 30)');
  expect(state.topBg).not.toBe('rgba(0, 0, 0, 0)');
- expect(state.background).toBe('rgb(6, 15, 51)');
- expect(state.card).toBe('rgb(14, 27, 71)');
+ expect(state.background).toBe('rgb(234, 231, 223)');
+ expect(state.card).toBe('rgb(247, 245, 239)');
  expect(state.grid).toBeGreaterThanOrEqual(2);
  expect(state.dock).toBe('none');
  expect(state.width).toBeLessThanOrEqual(state.viewport+2);
- await page.screenshot({path:info.outputPath('midnight-desktop-dashboard.png'),animations:'disabled',fullPage:true});
+ await page.screenshot({path:info.outputPath('emerald-desktop-dashboard.png'),animations:'disabled',fullPage:true});
 });
-test('Sales desktop workspace keeps dark surfaces and authorized sidebar',async({page},info)=>{
+test('Sales desktop workspace keeps ivory surfaces and emerald authorized sidebar',async({page},info)=>{
  await page.setViewportSize({width:1230,height:900});
  await page.goto('/');
  const screens=await mountShell(page,memberships[1][1],'sales');
@@ -96,11 +96,11 @@ test('Sales desktop workspace keeps dark surfaces and authorized sidebar',async(
    image:css('[data-ws-screen="sales"] .ws-screen-head').backgroundImage,
    sidebar:css('.os-desktop-sidebar').display};
  });
- expect(status.color).toBe('rgb(238, 242, 255)');
+ expect(status.color).toBe('rgb(27, 42, 36)');
  expect(status.bg).toBe('rgba(0, 0, 0, 0)');
  expect(status.image).toBe('none');
  expect(status.sidebar).not.toBe('none');
- await page.screenshot({path:info.outputPath('midnight-sales-desktop.png'),animations:'disabled'});
+ await page.screenshot({path:info.outputPath('emerald-sales-desktop.png'),animations:'disabled'});
 });
 test('Seven real role scopes retain navigation and mobile safe area',async({page},info)=>{
  for(const width of [390,1440]){
@@ -116,7 +116,7 @@ test('Seven real role scopes retain navigation and mobile safe area',async({page
      background:style('body').backgroundColor,
      width:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth};
    });
-   expect(result.background).toBe('rgb(6, 15, 51)');
+   expect(result.background).toBe('rgb(234, 231, 223)');
    expect(result.slots).toBe(5);
    expect(result.nav).toBe(screens.length);
    expect(result.width,name+' '+width).toBeLessThanOrEqual(result.viewport+2);
@@ -128,7 +128,70 @@ test('Seven real role scopes retain navigation and mobile safe area',async({page
     expect(result.dock).toBe('none');
    }
    if(['station-owner','corporate-admin','sales'].includes(name))
-    await page.screenshot({path:info.outputPath('midnight-'+name+'-'+width+'.png'),animations:'disabled'});
+    await page.screenshot({path:info.outputPath('emerald-'+name+'-'+width+'.png'),animations:'disabled'});
+  }
+ }
+});
+
+test('All 18 role-scoped workspaces render on ivory without page overflow at 320-1440px',async({page},info)=>{
+ // Purely local style fixtures: never log in, write to Supabase or fabricate
+ // financial statuses in Production. Their names match the actual role keys.
+ const allMembers=[
+  {scopeType:'platform',role:'platform_superadmin'},
+  {scopeType:'platform',role:'platform_sales'},
+  {scopeType:'platform',role:'platform_support'},
+  {scopeType:'organization',role:'organization_owner',organizationId:'org'},
+  {scopeType:'station',role:'station_owner',stationId:'station'},
+  {scopeType:'station',role:'finance_manager',stationId:'station'},
+  {scopeType:'station',role:'hr_manager',stationId:'station'},
+  {scopeType:'corporate_company',role:'corporate_admin',corporateCompanyId:'company'},
+  {scopeType:'corporate_company',role:'driver',corporateCompanyId:'company'},
+ ];
+ const names=new Set(selectWorkspaceScreens(allMembers).map(x=>x.key));
+ expect(names.size).toBe(18);
+ const must=['overview','support','sales','activity','stations','plan','billing','fuel',
+  'pump','customers','finance','hr','attendance','reviews','payroll','corporate',
+  'driver','invitations'];
+ expect([...names].sort()).toEqual([...must].sort());
+ for(const width of [320,360,390,1024,1440]){
+  await page.setViewportSize({width,height:width<850?840:900});
+  await page.goto('/');
+  const screens=await mountShell(page,allMembers);
+  for(const item of screens){
+   const state=await page.evaluate(key=>{
+    const views=[...document.querySelectorAll('[data-ws-screen]')];
+    for(const v of views)v.hidden=v.dataset.wsScreen!==key;
+    const shell=document.querySelector('[data-workspace-shell]');
+    shell.dataset.activeScreen=key;
+    // Real selectors and form fields; this is anonymous *layout evidence*,
+    // not an operational customer/transaction QA run.
+    const target=document.querySelector('[data-ws-screen="'+key+'"] .ws-widget');
+    if(target)target.innerHTML='<section class="module-item">'+
+      '<h3>ตรวจรูปแบบหน้าจอ</h3><label class="field">ช่องกรอกข้อมูล'+
+      '<input placeholder="ข้อมูลทดสอบรูปแบบหน้าจอ" value=""></label>'+
+      '<button class="button primary" type="button">ยืนยันตัวอย่าง</button></section>';
+    const style=selector=>getComputedStyle(document.querySelector(selector));
+    const panel=target?.querySelector('.module-item');
+    return {
+      screen:key,background:style('body').backgroundColor,
+      sidebar:style('.os-desktop-sidebar').backgroundColor,
+      card:panel?getComputedStyle(panel).backgroundColor:null,
+      ink:panel?getComputedStyle(panel).color:null,
+      width:document.documentElement.scrollWidth,
+      viewport:document.documentElement.clientWidth,
+      hiddenViews:views.filter(v=>!v.hidden).length,
+      dock:style('.os-mobile-bottom').display,
+    };
+   },item.key);
+   expect(state.background,item.key+' '+width).toBe('rgb(234, 231, 223)');
+   expect(state.sidebar,item.key+' '+width).toBe('rgb(16, 39, 30)');
+   if(state.card)expect(state.card,item.key+' '+width).toBe('rgb(247, 245, 239)');
+   if(state.ink)expect(state.ink,item.key+' '+width).toBe('rgb(27, 42, 36)');
+   expect(state.hiddenViews).toBe(1);
+   expect(state.width,item.key+' '+width).toBeLessThanOrEqual(state.viewport+2);
+   expect(state.dock).toBe(width<851?'grid':'none');
+   if(['corporate','hr','invitations','driver'].includes(item.key)&&[390,1440].includes(width))
+    await page.screenshot({path:info.outputPath('emerald-'+item.key+'-'+width+'.png'),animations:'disabled'});
   }
  }
 });

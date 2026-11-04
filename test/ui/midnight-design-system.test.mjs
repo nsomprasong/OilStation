@@ -5,16 +5,16 @@ import {renderWorkspaceShell,selectWorkspaceScreens} from '../../src/client/work
 const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 const css=read('public/oilstation.css');
 const html=read('index.html');
-test('OilStation references only the canonical Midnight app stylesheet',()=>{
+test('OilStation references only the canonical forest and cream app stylesheet',()=>{
  assert.match(html,/href="\/oilstation\.css"/);
  assert.equal((html.match(/<link rel="stylesheet"/g)||[]).length,1);
  assert.doesNotMatch(html,/href="\/(luxcart|mobile-app|gentelella-v4-selected)\.css"/);
- assert.match(html,/name="color-scheme" content="dark"/);
+ assert.match(html,/name="color-scheme" content="light"/);
 });
-test('Committed CSS v2 dark theme, fonts and compatibility aliases are canonical',()=>{
+test('Committed CSS v3 login green and cream, fonts and compatibility aliases are canonical',()=>{
  for(const tok of [
-  '--os-bg:#060F33','--os-side:#040B28','--os-card:#0E1B47',
-  '--os-ac:#2BB6C9','--os-ac-deep:#0D8091',
+  '--os-bg:#EAE7DF','--os-side:#10271E','--os-card:#F7F5EF',
+  '--os-ac:#194635','--os-ac-deep:#174735',
   '--mid-page:var(--os-bg)','--mid-card:var(--os-card)',
   '--mid-cyan:var(--os-ac-deep)'
  ]) assert.ok(css.includes(tok),tok);

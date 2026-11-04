@@ -1,4 +1,4 @@
-/** Unified sign-in surface, same OilStation teal as the mobile workspace. */
+/** Login is the shared forest / ivory / gold visual authority for every OilStation screen. */
 export function authMarkup({invited=false,setup=false,qaMode=false}={}){
  const title=setup?'ตั้งค่าผู้ดูแลครั้งแรก':invited?'ยืนยันคำเชิญ':'เข้าสู่ OilStation';
  const note=setup?'เฉพาะบัญชีผู้ดูแลที่ระบบอนุญาต':invited?'เข้าสู่ระบบด้วยบัญชีที่ได้รับเชิญ':'สำหรับสมาชิกของปั๊มและบริษัทที่ได้รับเชิญเท่านั้น';
