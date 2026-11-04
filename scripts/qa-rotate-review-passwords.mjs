@@ -3,17 +3,14 @@
 // DO NOT run on normal CI/deploy. Credentials come only from GitHub Secrets.
 import {createClient} from '@supabase/supabase-js';
 import {normalizeQaReviewPassword} from '../src/domain/qa-review-password.mjs';
+import {QA_REVIEW_IDENTITIES} from '../src/domain/qa-review-identities.mjs';
 
 const PROJECT='cxihsotcpdnalswfoysx';
 const URL='https://'+PROJECT+'.supabase.co';
 const QA_RUN='QA-20261031-PLATFORM-001';
-const CONFIRM='QA-20261104-REVIEW-22';
-const selected=Object.freeze([
-  'sales01','sales02',
-  ...Array.from({length:4},(_,i)=>'o'+String(i+1).padStart(2,'0')+'-owner'),
-  ...['s01a','s01b','s02a','s02b'].map(s=>s+'-owner'),
-  ...Array.from({length:12},(_,i)=>'c'+String(i+1).padStart(2,'0')+'-admin'),
-]);
+const CONFIRM='QA-20261104-REVIEW-98';
+const selected=Object.freeze(QA_REVIEW_IDENTITIES.map(x=>x.alias));
+const roleByAlias=new Map(QA_REVIEW_IDENTITIES.map(x=>[x.alias,x]));
 const email=alias=>'qa-'+alias+'@qa.oilstation.invalid';
 const fail=reason=>{throw Error(reason);};
 const mode=process.argv[2];
@@ -56,12 +53,13 @@ for(let page=1;page<=25&&accounts.size<expected.size;page++){
 }
 if(accounts.size!==selected.length)
  fail('Required QA sample accounts missing; found '+accounts.size+' of '+selected.length);
-console.log('QA accounts verified: '+accounts.size+'; roles: 2 Sales / 4 org / 4 station / 12 corporate');
+console.log('QA accounts verified: '+accounts.size+
+ '; scope groups: 2 Sales / 8 organization / 28 station / 60 corporate');
 if(mode==='--dry-run'){
  console.log('PRECHECK PASS: all selected accounts are confirmed QA identities; no credentials changed');
  process.exit(0);
 }
-let rotated=0,verified=0;
+let rotated=0,verified=0,appRolesVerified=0;
 for(const alias of selected){
  const u=accounts.get(alias);
  const {data,error}=await client.auth.admin.updateUserById(u.id,{password});
@@ -76,7 +74,33 @@ for(const alias of selected){
  if(result.error||result.data?.user?.id!==u.id||!result.data.session?.access_token)
   fail('QA rotation login verification failed at '+alias+' (rotated '+rotated+')');
  verified++;
+ // Validate the actual deployed OilStation /api/me authorization route using
+ // the just-issued short-lived user JWT. The QA account must have its correct
+ // scope and role. This is a read-only check; no finance operation is invoked.
+ let memberResponse;
+ try{
+   memberResponse=await fetch('https://oilstation.goldensoft.cloud/api/me',{
+     method:'GET',
+     headers:{authorization:'Bearer '+result.data.session.access_token},
+     cache:'no-store',
+     signal:AbortSignal.timeout(15000),
+   });
+ }catch{
+   fail('QA app role verification transport failed at '+alias+' (rotated '+rotated+')');
+ }
+ if(memberResponse.status!==200)
+   fail('QA app membership rejected at '+alias+
+    ': HTTP '+memberResponse.status+' (rotated '+rotated+')');
+ const actorView=await memberResponse.json().catch(()=>null);
+ const expectedRole=roleByAlias.get(alias);
+ if(actorView?.userId!==u.id||
+    !Array.isArray(actorView.memberships)||
+    !actorView.memberships.some(m=>
+     m.scopeType===expectedRole.scopeType&&m.role===expectedRole.role))
+   fail('QA app role mismatch at '+alias+' (rotated '+rotated+')');
+ appRolesVerified++;
  await login.auth.signOut().catch(()=>{});
- console.log('PASS '+alias+' (password redacted)');
+ console.log('PASS '+alias+' (password and token redacted; actor role verified)');
 }
-console.log('QA_REVIEW_PASSWORD_ROTATION_PASS='+rotated+'; AUTH_SIGNIN_PASS='+verified);
+console.log('QA_REVIEW_PASSWORD_ROTATION_PASS='+rotated+
+ '; AUTH_SIGNIN_PASS='+verified+'; APP_ROLE_CHECK_PASS='+appRolesVerified);
