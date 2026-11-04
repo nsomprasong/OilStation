@@ -1,0 +1,47 @@
+name: HR payroll advance draft guard (isolated PostgreSQL)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/hr-payroll-advance-postgres.yml
+      - supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
+      - test/integration/hr-payroll-advance-guard-assertions.sql
+  push:
+    branches-ignore: [main]
+    paths:
+      - .github/workflows/hr-payroll-advance-postgres.yml
+      - supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
+      - test/integration/hr-payroll-advance-guard-assertions.sql
+permissions:
+  contents: read
+jobs:
+  payroll-guard-postgresql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: isolated_testing_only
+          POSTGRES_DB: oilstation_payroll_guard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oilstation_payroll_guard_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Compile forward migration and test advance blocker on disposable Postgres
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --network host -v "$PWD":/work:ro \
+            -e PGPASSWORD=isolated_testing_only postgres:16-alpine \
+            sh -eu -c '
+              export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGDATABASE=oilstation_payroll_guard_test
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/live-public-schema-fixture.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-payroll-advance-guard-assertions.sql
+            '
