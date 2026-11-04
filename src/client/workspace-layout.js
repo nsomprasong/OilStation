@@ -60,7 +60,7 @@ export function renderWorkspaceShell(screens){
    <div class="ws-screen-head">
      <div class="ws-breadcrumb">OilStation <span aria-hidden="true">/</span> ${s.label}</div>
      <h2 id="ws-heading-${s.key}" tabindex="-1">${s.key==="overview"?"พื้นที่ทำงานของคุณ":s.key==="invitations"?"จัดการสมาชิก":s.label}</h2>
-     <p>${s.key==="overview"?"เลือกงานที่ต้องการจากรายการด้านล่าง ทุกเมนูแสดงตามสิทธิ์ที่ได้รับ":s.desc}</p>
+     ${s.key==="invitations"?"":`<p>${s.key==="overview"?"เลือกงานที่ต้องการจากรายการด้านล่าง ทุกเมนูแสดงตามสิทธิ์ที่ได้รับ":s.desc}</p>`}
    </div>
    ${s.key==="overview"?`
      ${renderMobileHome(screens)}
