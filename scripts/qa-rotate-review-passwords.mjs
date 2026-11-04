@@ -17,22 +17,23 @@ const email=alias=>'qa-'+alias+'@qa.oilstation.invalid';
 const fail=reason=>{throw Error(reason);};
 const mode=process.argv[2];
 if(!['--dry-run','--apply'].includes(mode))fail('Use --dry-run or --apply');
+const event=process.env.GITHUB_EVENT_NAME;
 if(process.env.GITHUB_ACTIONS!=='true'||
    process.env.GITHUB_REPOSITORY!=='nsomprasong/OilStation'||
    process.env.GITHUB_REF!=='refs/heads/main'||
-   process.env.GITHUB_EVENT_NAME!=='workflow_dispatch')
- fail('This operation is reserved for an explicit, main-branch manual GitHub Actions run');
+   !['workflow_dispatch','push'].includes(event)||
+   (event==='push' && process.env.OILSTATION_QA_ONETIME_TRIGGER!=='QA-REVIEW-22-NOV04'))
+ fail('This operation is reserved for an approved one-time main-branch QA review workflow');
 const key=process.env.OILSTATION_QA_DB_KEY;
-const password=process.env.OILSTATION_QA_REVIEW_PASSWORD;
+const password=process.env.OILSTATION_QA_REVIEW_PASSWORD?.trim();
 if(!key||!(key.startsWith('sb_secret_')||key.split('.').length===3))
  fail('Existing protected QA DB service credential is unavailable');
-// Exactly eight simple-to-type characters for the owner's 22 disposable
-// review-only QA accounts. Keep upper/lower/numeric mixing, no spaces.
-// NEVER use this relaxed check for real accounts or newly created QA users.
-if(!password||password.length!==8||
-   !/^[A-Za-z0-9]{8}$/.test(password)||
-   !/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password))
- fail('QA review password must be exactly 8 letters/digits with upper, lower and number');
+// The owner requested an easy eight-character QA-only password. Accept any
+// eight ASCII letters/digits, without forcing upper/lower/number categories.
+// Trimming only accidental outer whitespace avoids hidden copy/paste errors.
+// NEVER relax requirements for real users or new QA account registration.
+if(!password||password.length!==8||!/^[A-Za-z0-9]{8}$/.test(password))
+ fail('QA review password must contain exactly eight English letters or digits');
 if(mode==='--apply'&&process.env.OILSTATION_QA_ROTATE_CONFIRM!==CONFIRM)
  fail('Missing explicit one-time QA review password rotation confirmation');
 const client=createClient(URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
