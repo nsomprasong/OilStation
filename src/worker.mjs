@@ -194,6 +194,11 @@ export default {
           '/api/invitations/email-challenge','/api/invitations/email-confirm',
           '/api/station-fuels','/api/station-fuel-config']);
         try {
+          // Separate, tightly scoped operations work even while full finance APIs
+          // remain disabled. The SQL RPC permits reads and only audited role
+          // edits/soft-deactivation; never direct customer credit deposits.
+          if(STATION_OPERATIONS_ROUTES.includes(url.pathname))
+            return createStationOperationsApi(createSupabaseAdapter(env))(request);
           if(salesPages.has(url.pathname))
             return createPlatformSalesApi(createSupabaseAdapter(env))(request);
           if(billingPages.has(url.pathname))
@@ -279,6 +284,8 @@ export default {
       }
       try {
         const deps = createSupabaseAdapter(env);
+        if(STATION_OPERATIONS_ROUTES.includes(url.pathname))
+          return createStationOperationsApi(deps)(request);
         if (['/api/evidence/fuel/reviews','/api/evidence/fuel/photo',
              '/api/evidence/fuel/review','/api/fuel/finish'].includes(url.pathname)) {
           return createFuelReviewApi(deps)(request);
