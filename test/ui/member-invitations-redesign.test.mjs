@@ -30,7 +30,7 @@ test('member management is list-first and has one real primary action plus drawe
 test('server-backed invite and QA Auth handling remain permission-checked and unchanged',()=>{
  const source=read('src/client/main.js');
  const qa=read('src/client/qa-accounts.js');
- assert.match(source,/mountMemberInvitations\(\{target:host,inviteControl,qaHost\}\)/);
+ assert.match(source,/mountMemberInvitations\(\{target:host,inviteControl,qaHost,/);
  assert.match(source,/getApi\('\/api\/invitations\/create',accessToken/);
  assert.match(source,/kind:'invitation',name:email\.value\.trim\(\)/);
  assert.match(qa,/fetch\('\/api\/qa\/accounts'/);
