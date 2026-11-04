@@ -24,7 +24,8 @@ function mock({role='hr_manager',qa=false,station=S1,second=null,module=true,
   ...(second?[{active:true,scope_type:'station',station_id:second,role_code:role}]:[])];
  const db={
   memberships:async()=>{calls.push('memberships');return memberships;},
-  hrModuleEntitled:async id=>{calls.push('entitlement:'+id);return module;},
+  hrModuleEntitled:async ({actorId,stationId})=>{assert.equal(actorId,A);
+   calls.push('entitlement:'+stationId);return module;},
   hrRoster:async()=>{calls.push('roster');return {employees:[],shiftTemplates:[],assignments:[]};},
   hrLinkSetup:async()=>{calls.push('link');return {};},
   hrSeedTemplates:async()=>{calls.push('seed');return {created:3};},
