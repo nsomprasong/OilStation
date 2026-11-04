@@ -56,7 +56,7 @@ test('bottom bar and screenshot-style home exist only on mobile; desktop Gentele
  assert.match(css,/\.os-mobile-camera\.is-scanning/);
  assert.match(css,/env\(safe-area-inset-bottom\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(source('public/oilstation.css'),/--os-side:#040B28/);
+ assert.match(source('public/oilstation.css'),/--os-side:#10271E/);
  assert.match(source('src/client/icons.js'),/home:House/);
  const rendered=renderWorkspaceShell(selectWorkspaceScreens([m('platform','platform_superadmin')]));
  assert.match(rendered,/os-mobile-bottom/);
