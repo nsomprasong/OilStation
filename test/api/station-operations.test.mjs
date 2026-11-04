@@ -21,9 +21,9 @@ const get=(path,token='valid')=>new Request(root+path,{headers:{authorization:'B
 const post=(path,body,origin=root)=>new Request(root+path,{method:'POST',
  headers:{authorization:'Bearer valid','content-type':'application/json',origin},
  body:JSON.stringify(body)});
-test('only four narrowly-scoped routes exist; anonymous callers cannot read customer credit',async()=>{
+test('scoped routes reject anonymous station financial and HR access',async()=>{
  assert.deepEqual(STATION_OPERATIONS_ROUTES,['/api/station/customer-overview','/api/fuel/report',
-  '/api/members/directory','/api/members/change']);
+  '/api/members/directory','/api/members/change','/api/hr/employee-change']);
  const {handler,calls}=factory();
  assert.equal((await handler(get('/api/station/customer-overview?stationId='+S,''))).status,401);
  assert.equal((await handler(get('/api/station/customer-overview?stationId='+S,'bogus'))).status,401);
