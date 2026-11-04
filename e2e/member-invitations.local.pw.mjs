@@ -9,6 +9,8 @@ const source=readFileSync(new URL('../src/client/member-invitations.js',import.m
   svg.setAttribute('aria-hidden','true');
   svg.dataset.icon=name;return svg;
  };`)
+ .replace("import {mountMemberDirectory} from './member-directory.js';",
+   "const mountMemberDirectory=()=>null;")
  .replace('export function mountMemberInvitations','function mountMemberInvitations')+
  '\nwindow.mountMemberInvitations=mountMemberInvitations;';
 
