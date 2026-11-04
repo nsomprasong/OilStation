@@ -24,6 +24,7 @@ import {authMarkup} from './auth-screen.js';
 import {mountQaAccountsAdmin} from './qa-accounts.js';
 import {mountMemberInvitations} from './member-invitations.js';
 import {mountUserProfile} from './user-profile.js';
+import {mountHrEmployeeTable} from './hr-employee-table.js';
 import {mountFuelReport,mountStationCustomerCredit} from './station-customer-reports.js';
 import {canonicalLandingAfterOAuth} from './oauth-landing.js';
 import {installProgressiveWorkspace} from './progressive-workspace.js';
@@ -545,6 +546,7 @@ async function hrWorkspace(token,stationId,target) {
     <label class="field">รอบจ่ายเงิน <select id="hr-frequency"><option value="monthly">รายเดือน</option><option value="semi_monthly">เดือนละ 2 ครั้ง</option><option value="weekly">รายสัปดาห์</option></select></label>
     <button type="submit" class="button primary"><i data-ui-icon="user-plus"></i>เพิ่มพนักงาน</button>
   </form>
+  <section id="hr-employee-table" class="os-hr-employee-table" aria-label="รายชื่อพนักงานทั้งหมด"></section>
   <div class="divider"></div>
   <section id="hr-access-setup" class="hr-access-setup" aria-label="เชื่อมบัญชีพนักงานและตั้งค่า GPS"></section>
   <div class="divider"></div>
@@ -588,14 +590,20 @@ async function hrWorkspace(token,stationId,target) {
  const $=id=>document.getElementById(id);
  const note=(value,err=false)=>{const n=$('hr-notice');n.textContent=value;n.hidden=false;n.dataset.tone=err?'error':'neutral';};
  let roster={employees:[],shiftTemplates:[],assignments:[]};
+ let hrTable=null;
  async function refresh(){
    const r=await getApi('/api/hr/roster?stationId='+encodeURIComponent(stationId),token);
    if(!r.ok)return note('ไม่สามารถโหลดตารางกะได้',true);
    roster=r.data.roster;
+   if(!hrTable)hrTable=mountHrEmployeeTable({
+    target:$('hr-employee-table'),token,stationId,
+    employees:roster.employees,onChanged:refresh,
+   });
+   else hrTable.refresh(roster.employees);
    const e=$('hr-select-employee'),t=$('hr-select-template');
    const selected=e.value,selShift=t.value;
    e.replaceChildren();t.replaceChildren();
-   roster.employees.forEach(x=>{
+   roster.employees.filter(x=>x.employmentStatus==='active').forEach(x=>{
      const opt=document.createElement('option');opt.value=x.id;opt.textContent=x.name+' ('+x.code+')';e.appendChild(opt);
    });
    roster.shiftTemplates.forEach(x=>{
