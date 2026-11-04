@@ -189,7 +189,9 @@ test('Live member directory is compact, searchable, role-scoped and safe on phon
  for(const width of [320,390,1024,1440]){
   await page.setViewportSize({width,height:width<600?844:900});
   await mount(page);
-  await page.addScriptTag({content:directoryScript});
+  // Both UI modules declare makeIcon; isolate the mocked directory in a
+  // lexical scope to avoid global redeclaration errors in non-module fixtures.
+  await page.addScriptTag({content:'(()=>{'+directoryScript+'})()'});
   await page.evaluate(()=>{
    const app=document.querySelector('#app');
    if(!app)throw new Error('workspace fixture root unavailable');
