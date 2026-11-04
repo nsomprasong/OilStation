@@ -129,5 +129,5 @@ test('forward-only SQL checks open advances BEFORE creating payroll period and k
   'REVOKE ALL ON FUNCTION public.hr_create_payroll_review_line',
   'TO service_role'])
   assert.ok(migration.includes(phrase),phrase);
- assert.doesNotMatch(migration,/INSERT INTO public\\.(payroll_payouts|advance_repayments)|UPDATE public\\.salary_advances/i);
+ assert.doesNotMatch(migration,/INSERT INTO public\.(payroll_payouts|advance_repayments)|UPDATE public\.salary_advances/i);
 });
