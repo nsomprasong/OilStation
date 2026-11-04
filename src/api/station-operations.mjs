@@ -13,7 +13,7 @@ export function createStationOperationsApi({authenticate,db}){
  return async function handle(request){
   const url=new URL(request.url),path=url.pathname;
   if(!STATION_OPERATIONS_ROUTES.includes(path))return reply(404,{error:'not_found'});
-  if(request.method!==(path==='/api/members/change'?'POST':'GET'))
+  if(request.method!==((path==='/api/members/change'||path==='/api/hr/employee-change')?'POST':'GET'))
    return reply(405,{error:'method_not_allowed'});
   if(request.method==='POST'){
    const origin=request.headers.get('origin');
@@ -51,6 +51,18 @@ export function createStationOperationsApi({authenticate,db}){
    const contentLength=Number(request.headers.get('content-length')||0);
    if(contentLength>2048)return reply(413,{error:'too_large'});
    const body=await request.json().catch(()=>null);
+   if(path==='/api/hr/employee-change'){
+    if(!body||!UUID.test(body.stationId||'')||!UUID.test(body.employeeId||'')||
+      !['edit','deactivate'].includes(body.action)||
+      (body.action==='edit'&&
+       (typeof body.name!=='string'||body.name.trim().length<2||body.name.length>200))||
+      (body.action==='deactivate'&&body.confirm!==true))
+      return reply(400,{error:'invalid_employee_change'});
+    return reply(200,{result:await db.hrEmployeeChange({
+      actorId:actor.id,stationId:body.stationId,employeeId:body.employeeId,
+      action:body.action,name:body.action==='edit'?body.name.trim():null,
+    })});
+   }
    if(!body||!UUID.test(body.membershipId||'')||
       !['edit','deactivate'].includes(body.action)||
       (body.action==='edit'&&(!/^[a-z_]{2,32}$/.test(body.roleCode||'')))||
@@ -66,6 +78,8 @@ export function createStationOperationsApi({authenticate,db}){
     return reply(403,{error:'permission_denied'});
    if(/DRIVER_HAS_ACTIVE_COUPON/.test(error?.message||''))
     return reply(409,{error:'driver_has_active_coupon'});
+   if(/FUTURE_SHIFT_EXISTS/.test(error?.message||''))
+    return reply(409,{error:'future_shift_exists'});
    if(/INVALID_ROLE|INVALID_ACTION/.test(error?.message||''))
     return reply(400,{error:'invalid_member_change'});
    return reply(503,{error:'service_unavailable'});
