@@ -21,7 +21,7 @@ test('member management is list-first and has one real primary action plus drawe
   "aria-selected",
   'ArrowLeft','ArrowRight','Home','End',
  ])assert.ok(source.includes(part),part);
- assert.match(source,/รายการที่สร้างสำเร็จในหน้านี้เท่านั้น ไม่ใช่รายชื่อสมาชิกทั้งหมด/);
+ assert.match(source,/ที่สร้างสำเร็จในหน้านี้เท่านั้น ไม่ใช่รายชื่อสมาชิกทั้งหมดของบริษัท/);
  assert.doesNotMatch(source,/fetch\(/,'Never fabricate or expose directory queries in UI');
 });
 test('server-backed invite and QA Auth handling remain permission-checked and unchanged',()=>{
