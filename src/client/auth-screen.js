@@ -31,7 +31,7 @@ export function authMarkup({invited=false,setup=false,qaMode=false}={}){
          <label>ชื่อผู้ใช้ทดสอบ<input id="qa-login-alias" name="username" autocomplete="username" required
            pattern="[a-z][a-z0-9-]{2,30}" placeholder="เช่น sales01"></label>
          <label>รหัสผ่านทดสอบ<input id="qa-login-password" name="password" type="password"
-           autocomplete="current-password" minlength="16" required></label>
+           autocomplete="current-password" minlength="8" required></label>
          <button type="submit" class="button primary">เข้าสู่ระบบทดสอบ</button>
        </form>
        <p class="os-qa-note">ใช้ได้เฉพาะบัญชี QA ที่ผู้ดูแลสร้างไว้ ไม่ต้องมีอีเมลจริง</p>

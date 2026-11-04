@@ -26,10 +26,13 @@ const key=process.env.OILSTATION_QA_DB_KEY;
 const password=process.env.OILSTATION_QA_REVIEW_PASSWORD;
 if(!key||!(key.startsWith('sb_secret_')||key.split('.').length===3))
  fail('Existing protected QA DB service credential is unavailable');
-if(!password||password.length<20||password.length>128||
-   !/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password)||
-   !/[!@#$%^&*()_+=-]/.test(password)||/\s/.test(password))
- fail('Create a strong 20-128 character QA review secret with upper/lower/digit/symbol');
+// Exactly eight simple-to-type characters for the owner's 22 disposable
+// review-only QA accounts. Keep upper/lower/numeric mixing, no spaces.
+// NEVER use this relaxed check for real accounts or newly created QA users.
+if(!password||password.length!==8||
+   !/^[A-Za-z0-9]{8}$/.test(password)||
+   !/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password))
+ fail('QA review password must be exactly 8 letters/digits with upper, lower and number');
 if(mode==='--apply'&&process.env.OILSTATION_QA_ROTATE_CONFIRM!==CONFIRM)
  fail('Missing explicit one-time QA review password rotation confirmation');
 const client=createClient(URL,key,{auth:{persistSession:false,autoRefreshToken:false}});

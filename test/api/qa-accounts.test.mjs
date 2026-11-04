@@ -52,7 +52,13 @@ test('QA password reset requires authenticated active Super Admin, same origin a
  assert.equal(called.length,1);
  assert.equal(called[0].qaRunId,run);
  assert.equal(called[0].actorId,actor);
+ // The dedicated QA reset endpoint can use the owner's easy 8-character
+ // review password without weakening registration of new QA accounts.
+ assert.equal((await good(req('c01-admin','OilQA826'))).status,200);
+ assert.equal(called[1].alias,'c01-admin');
+ assert.equal(called[1].password,'OilQA826');
  assert.equal((await good(req('sales01','weak'))).status,400);
+ assert.equal((await good(req('sales01','abcdefgh'))).status,400);
  assert.equal((await good(req('sales01',pw,'https://evil.invalid'))).status,403);
  assert.equal((await handler({memberships:async()=>[{active:true,scope_type:'platform',role_code:'platform_sales'}]})(req())).status,403);
  assert.equal((await handler({reset:async()=>false})(req('sales02'))).status,404);
@@ -62,6 +68,7 @@ test('QA login and Admin form are always visible while QA mode is active',()=>{
  const login=readFileSync(new URL('../../src/client/auth-screen.js',import.meta.url),'utf8');
  const admin=readFileSync(new URL('../../src/client/qa-accounts.js',import.meta.url),'utf8');
  assert.ok(login.includes('<section class="os-qa-login"'));
+ assert.ok(login.includes('minlength="8"'));
  assert.ok(!login.includes('<details class="os-qa-login"'));
  assert.ok(admin.includes("'/api/qa/reset-password'"));
  assert.ok(admin.includes("'ตั้งรหัสผ่าน QA ใหม่'"));

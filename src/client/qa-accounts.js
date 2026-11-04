@@ -52,7 +52,7 @@ export function mountQaAccountsAdmin({target,token,mode='platform_admin'}){
  username.placeholder='เช่น sales01';
  const password=el('input');password.id='qa-create-password';password.type='password';
  password.required=true;password.minLength=16;password.maxLength=128;
- password.autocomplete='new-password';password.placeholder='อย่างน้อย 16 ตัว พร้อมตัวเลขและสัญลักษณ์';
+ password.autocomplete='new-password';password.placeholder='สร้างใหม่อย่างน้อย 16 ตัว / รีเซ็ต QA อย่างน้อย 8 ตัว';
  const scopeType=el('select');scopeType.required=true;scopeType.id='qa-create-scope-type';
  const typeChoices=platformMode?
    {platform:'Platform',organization:'เจ้าของกิจการ',station:'ปั๊ม',corporate_company:'บริษัทลูกค้า'}:
@@ -122,9 +122,14 @@ export function mountQaAccountsAdmin({target,token,mode='platform_admin'}){
   }).catch(()=>{status.textContent='ยังเปิดโหมด QA ไม่สำเร็จ หรือไม่มีสิทธิ์จัดการบัญชี';
    send.disabled=true;});
  reset.addEventListener('click',async()=>{
-  if(!username.checkValidity()||!password.checkValidity()){
-   form.reportValidity();return;
-  }
+  // Existing sample-account resets may use 8 characters; creating a new
+  // QA account still requires the original 16-character password minimum.
+  const createMin=password.minLength;
+  password.minLength=8;
+  const resetValid=username.checkValidity()&&password.checkValidity();
+  if(!resetValid)form.reportValidity();
+  password.minLength=createMin;
+  if(!resetValid)return;
   const alias=username.value.trim().toLowerCase();
   if(!alias)return;
   reset.disabled=true;status.textContent='กำลังตั้งรหัสผ่าน QA ใหม่…';
