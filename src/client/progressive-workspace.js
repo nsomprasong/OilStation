@@ -111,6 +111,9 @@ function enableCreation(screen,key,task){
  // do not auto-close or clear forms after an unconfirmed network request.
 }
 function inviteFab(screen){
+ // Invitations use a single in-page primary action and accessible drawer.
+ // Do not append the legacy floating duplicate button on this screen.
+ if(screen.querySelector('#member-invites .os-member-page'))return;
  const control=screen.querySelector('#member-invites .invite-control');
  if(!control||screen.querySelector(':scope > .os-add-fab'))return;
  const toggle=control.querySelector(':scope > button');
