@@ -2,6 +2,7 @@
 // One-time, manually approved QA review credential rotation.
 // DO NOT run on normal CI/deploy. Credentials come only from GitHub Secrets.
 import {createClient} from '@supabase/supabase-js';
+import {normalizeQaReviewPassword} from '../src/domain/qa-review-password.mjs';
 
 const PROJECT='cxihsotcpdnalswfoysx';
 const URL='https://'+PROJECT+'.supabase.co';
@@ -23,16 +24,15 @@ if(process.env.GITHUB_ACTIONS!=='true'||
    process.env.GITHUB_EVENT_NAME!=='workflow_dispatch')
  fail('This operation is reserved for an explicit, main-branch manual GitHub Actions run');
 const key=process.env.OILSTATION_QA_DB_KEY;
-const password=process.env.OILSTATION_QA_REVIEW_PASSWORD;
+const password=normalizeQaReviewPassword(process.env.OILSTATION_QA_REVIEW_PASSWORD);
 if(!key||!(key.startsWith('sb_secret_')||key.split('.').length===3))
  fail('Existing protected QA DB service credential is unavailable');
-// Exactly eight simple-to-type characters for the owner's 22 disposable
-// review-only QA accounts. Keep upper/lower/numeric mixing, no spaces.
-// NEVER use this relaxed check for real accounts or newly created QA users.
-if(!password||password.length!==8||
-   !/^[A-Za-z0-9]{8}$/.test(password)||
-   !/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password))
- fail('QA review password must be exactly 8 letters/digits with upper, lower and number');
+// The owner requested an easy eight-character QA-only password. Accept any
+// eight ASCII letters/digits, without forcing upper/lower/number categories.
+// Trimming only accidental outer whitespace avoids hidden copy/paste errors.
+// NEVER relax requirements for real users or new QA account registration.
+if(!password)
+ fail('QA review password must contain exactly eight English letters or digits');
 if(mode==='--apply'&&process.env.OILSTATION_QA_ROTATE_CONFIRM!==CONFIRM)
  fail('Missing explicit one-time QA review password rotation confirmation');
 const client=createClient(URL,key,{auth:{persistSession:false,autoRefreshToken:false}});
