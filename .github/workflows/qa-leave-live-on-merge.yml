@@ -35,6 +35,7 @@ jobs:
              v.OILSTATION_API_ENABLED!=='false' ||
              v.OILSTATION_QA_FINANCE_SIM_ENABLED!=='false' ||
              v.OILSTATION_QA_HR_UAT_ENABLED==='true' ||
+             v.OILSTATION_HR_OPERATIONS_ENABLED==='true' ||
              v.OILSTATION_QA_STATION_IDS?.split(',').length!==4 ||
              v.OILSTATION_QA_COMPANY_IDS?.split(',').length!==12 ||
              v.OILSTATION_QA_STATION_IDS.split(',')[0]!=='e22fb5ff-1878-446f-ab8d-585115e8a1a9')
@@ -124,14 +125,19 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 2 \
             https://oilstation.goldensoft.cloud/api/public-config |
             jq -e '.qaFinanceSimEnabled == false'
-          # With the HR QA override disarmed, /api/hr/roster must reach the
-          # global release guard first. It returns 503 release_not_enabled,
-          # not 401 from the HR handler (which is no longer reachable).
+          # The old one-shot leave QA override must be disarmed. In a live
+          # HR-only release, unauthenticated roster returns 401 rather than
+          # the old global 503; this is NOT financial readiness.
           hr_status="$(curl --silent --show-error --max-time 15 -o /tmp/hr-leave-off -w '%{http_code}' \
             https://oilstation.goldensoft.cloud/api/hr/roster)"
           echo "Disarmed HR roster HTTP status: $hr_status"
-          test "$hr_status" = 503
-          jq -e '.error == "release_not_enabled"' /tmp/hr-leave-off >/dev/null
+          if jq -e '.vars.OILSTATION_HR_OPERATIONS_ENABLED == "true"' wrangler.jsonc >/dev/null; then
+            test "$hr_status" = 401
+            jq -e '.error == "unauthenticated"' /tmp/hr-leave-off >/dev/null
+          else
+            test "$hr_status" = 503
+            jq -e '.error == "release_not_enabled"' /tmp/hr-leave-off >/dev/null
+          fi
           test "$(curl -s -o /tmp/finance-off -w '%{http_code}' \
             https://oilstation.goldensoft.cloud/api/coupons)" = 503
           test "$(curl -s -o /tmp/ready-off -w '%{http_code}' \

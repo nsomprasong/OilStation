@@ -36,6 +36,7 @@ import {createQaOperationsApi} from './api/qa-operations.mjs';
 import {createQaCouponViewApi} from './api/qa-coupon-view.mjs';
 import {createDriverWorkspaceApi} from './api/driver-workspace.mjs';
 import {createQaHrUatApi} from './api/qa-hr-uat.mjs';
+import {createProductionHrOperationsApi,PRODUCTION_HR_ROUTES} from './api/hr-production-operations.mjs';
 import {createHrPaymentApi,HR_PAYMENT_ROUTES} from './api/hr-payments.mjs';
 import {createLeaveApi,LEAVE_ROUTES} from './api/hr-leave.mjs';
 
@@ -221,6 +222,13 @@ export default {
         if(url.pathname.startsWith('/api/hr/') &&
            env.OILSTATION_QA_HR_UAT_ENABLED==='true' && qaIsEnabled(env))
           return createQaHrUatApi({env,...createSupabaseAdapter(env)})(request);
+        // Optional real HR rollout: independent, narrow role + paid HR-module
+        // gate. Never unlock ordinary finance, salary payout or bank APIs.
+        // QA actors are rejected by this lane even with valid station roles.
+        if(PRODUCTION_HR_ROUTES.includes(url.pathname) &&
+           env.OILSTATION_HR_OPERATIONS_ENABLED==='true')
+          return createProductionHrOperationsApi({
+            env,...createSupabaseAdapter(env)})(request);
         if(url.pathname==='/api/station/billing/options' ||
              url.pathname==='/api/station/billing/select')
             return createStationSaasOnboardingApi(createSupabaseAdapter(env))(request);

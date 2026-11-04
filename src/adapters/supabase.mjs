@@ -649,6 +649,18 @@ export function createSupabaseAdapter(env) {
         body:JSON.stringify({p_actor_id:d.actorId,p_advance_id:d.advanceId,
           p_approved:d.approved}),
       }),
+      // Station entitlement is checked by a service-role-only SECURITY
+      // DEFINER RPC that verifies both actor membership and the module.
+      // Direct station_modules SELECT is intentionally revoked for all
+      // Worker/browser roles in Production.
+      hrModuleEntitled: async ({actorId,stationId}) => {
+        const result=await serviceRequest(env,
+          '/rest/v1/rpc/hr_station_module_access',{
+            method:'POST',headers:{'content-type':'application/json'},
+            body:JSON.stringify({p_actor_id:actorId,p_station_id:stationId}),
+          });
+        return result===true;
+      },
       hrRoster: async d => serviceRequest(env,'/rest/v1/rpc/hr_station_roster',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
