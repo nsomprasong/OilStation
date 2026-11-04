@@ -1158,6 +1158,12 @@ export function createSupabaseAdapter(env) {
           body:JSON.stringify({p_actor_id:d.actorId,p_membership_id:d.membershipId,
             p_action:d.action,p_role_code:d.roleCode}),
         }),
+      hrEmployeeChange: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_hr_employee_change',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_employee_id:d.employeeId,p_action:d.action,p_name:d.name}),
+        }),
       corporateAccounts: async (userId) => {
         return serviceRequest(env, '/rest/v1/rpc/corporate_account_summaries', {
           method: 'POST', headers: { 'content-type': 'application/json' },
