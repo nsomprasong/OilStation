@@ -4,7 +4,7 @@ BEGIN;
 
 CREATE OR REPLACE FUNCTION public.oilstation_station_customer_overview(
  p_actor_id uuid,p_station_id uuid)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO ''
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $fn$
 DECLARE v_result jsonb;
 BEGIN
@@ -34,7 +34,7 @@ END $fn$;
 CREATE OR REPLACE FUNCTION public.oilstation_fuel_report_by_plate(
  p_actor_id uuid,p_station_id uuid,p_company_id uuid DEFAULT NULL,
  p_plate text DEFAULT NULL,p_limit integer DEFAULT 100)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO ''
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $fn$
 DECLARE v_result jsonb;
 BEGIN
@@ -77,7 +77,7 @@ END $fn$;
 
 CREATE OR REPLACE FUNCTION public.oilstation_scoped_member_directory(
  p_actor_id uuid,p_scope_type text,p_scope_id uuid)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO ''
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
 AS $fn$
 DECLARE v_result jsonb;
 BEGIN
@@ -103,7 +103,7 @@ END $fn$;
 
 CREATE OR REPLACE FUNCTION public.oilstation_scoped_member_change(
  p_actor_id uuid,p_membership_id uuid,p_action text,p_role_code text DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $fn$
 DECLARE v_m public.memberships%ROWTYPE;v_roles text[];v_scope uuid;
 BEGIN
@@ -159,7 +159,7 @@ END $fn$;
 
 CREATE OR REPLACE FUNCTION public.oilstation_hr_employee_change(
  p_actor_id uuid,p_station_id uuid,p_employee_id uuid,p_action text,p_name text DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $fn$
 DECLARE v_emp public.employees%ROWTYPE;
 BEGIN
