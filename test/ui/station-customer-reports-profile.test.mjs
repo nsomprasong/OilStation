@@ -63,9 +63,9 @@ test('the single workspace page header and menu gradients share one canonical st
  const members=read('src/client/member-invitations.js');
  for(const name of ['--os-gradient-page:','--os-gradient-menu:','--os-gradient-header:','--os-gradient-gold:'])
   assert.ok(css.includes(name),name);
- assert.match(css,/\.ws-layout\{[^\n]*background:var\(--os-gradient-page\)/);
+ assert.match(css,/\.ws-layout\{[^\n]*background-image:var\(--os-gradient-page\)/);
  assert.match(css,/\.os-desktop-sidebar\{[\s\S]*?background-image:var\(--os-gradient-menu\)/);
- assert.match(css,/\.os-mobile-bottom\{[\s\S]*?background:var\(--os-gradient-menu\)/);
+ assert.match(css,/\.os-mobile-bottom\{[\s\S]*?background-image:var\(--os-gradient-menu\)/);
  assert.match(css,/\.ws-screen:not\(\[data-ws-screen="overview"\]\)>\.ws-screen-head\{/);
  assert.match(css,/background-image:var\(--os-gradient-header\)/);
  assert.match(layout,/s.key==="invitations"\?"":/);
