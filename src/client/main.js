@@ -23,6 +23,7 @@ import {humanizeApiError,setUiStatus} from './ui-status.js';
 import {authMarkup} from './auth-screen.js';
 import {mountQaAccountsAdmin} from './qa-accounts.js';
 import {mountMemberInvitations} from './member-invitations.js';
+import {mountFuelReport,mountStationCustomerCredit} from './station-customer-reports.js';
 import {canonicalLandingAfterOAuth} from './oauth-landing.js';
 import {installProgressiveWorkspace} from './progressive-workspace.js';
 
@@ -112,6 +113,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
   target.innerHTML = `
     <div class="section-title">บัญชีเติมน้ำมันของบริษัท</div>
     <p class="lead" id="corp-help">กำลังโหลดบัญชี…</p>
+    <div id="corp-remaining-credit" class="os-credit-banner" role="status" aria-live="polite">กำลังตรวจยอดพร้อมใช้…</div>
     <div class="account-overview" id="account-overview"></div>
     <div id="company-link-inbox" class="module-list"></div>
     <div id="company-bank-options" class="module-list" aria-live="polite"></div>
@@ -153,6 +155,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
       <button type="button" id="copy-link" class="button secondary"><i data-ui-icon="clipboard"></i>คัดลอกลิงก์</button>
       <div id="issued-qr" class="qr-wrapper"></div>
     </section>
+    <section id="company-fuel-report" class="os-report-workspace" aria-label="รายงานการเติมน้ำมันแยกทะเบียนรถ"></section>
   `;
   const $ = id => document.getElementById(id);
   // Keep task submenus in sync with server-side corporate role permissions.
@@ -165,6 +168,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
     $('coupon-notice').dataset.tone = isError ? 'error' : 'neutral';
   };
   let accounts = [];
+  let corporateFuelReport=null;
   let pendingIdempotencyKey = null;
   let pendingPayload = null;
   const accountSelect = $('account-select');
@@ -242,6 +246,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
       overview.appendChild(el);
     });
     if (accounts.some(a => a.id === prior)) accountSelect.value = prior;
+    renderCreditHeaderAndReport();
     if(canIssueCoupon&&!driverAssignment){
       driverAssignment=mountCompanyDriverAssignment({
         target:$('company-driver-workspace'),token:accessToken,
@@ -258,6 +263,22 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
       if(canIssueCoupon)await reloadFuels();
       await reloadBankOptions();
     }
+  }
+  function renderCreditHeaderAndReport(){
+    const selected=accounts.find(a=>a.id===accountSelect.value);
+    const credit=$('corp-remaining-credit');
+    if(!selected){
+      credit.textContent='ยังไม่มีบัญชีเติมน้ำมันที่ใช้งานได้';
+    }else{
+      credit.textContent=selected.stationName+' · เครดิตพร้อมใช้ '+bahtText(selected.availableSatang)+
+       ' (หักยอดคูปองที่กันไว้แล้ว)';
+    }
+    corporateFuelReport?.destroy();
+    $('company-fuel-report').replaceChildren();
+    if(selected)corporateFuelReport=mountFuelReport({
+      target:$('company-fuel-report'),token:accessToken,
+      stationId:selected.stationId,companyId:selected.companyId,
+    });
   }
   async function reloadFuels() {
     fuelSelect.replaceChildren();
@@ -344,6 +365,7 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
     finally{button.disabled=false;accountSelect.disabled=false;}
   });
   accountSelect.addEventListener('change',() => {
+    renderCreditHeaderAndReport();
     pendingIdempotencyKey=null;
     if(canIssueCoupon)
       reloadFuels().catch(()=>setNotice('โหลดรายการน้ำมันไม่สำเร็จ',true));
@@ -852,6 +874,7 @@ async function stationFinanceWorkspace(token,stationId,target) {
 async function stationCorporateWorkspace(accessToken,stationId,target,{qaMode=false}={}) {
   if (!target) return;
   target.innerHTML = `
+    <section id="station-customer-credit" class="os-credit-workspace" aria-label="เครดิตลูกค้าบริษัทและยอดพร้อมใช้"></section>
     <div class="divider"></div><h2>ลูกค้าบริษัท</h2>
     <p>เปิดบัญชีลูกค้าประจำปั๊ม และส่งคำเชิญผู้ดูแลบริษัทคนแรก</p>
     <form id="customer-create" class="coupon-form">
@@ -881,7 +904,18 @@ async function stationCorporateWorkspace(accessToken,stationId,target,{qaMode=fa
       <button class="button secondary" type="submit">ส่งคำขอเชื่อมบัญชี</button>
     </form>
     <p id="link-notice" class="notice" role="status" hidden></p>
+    <section id="station-fuel-report-workspace" class="os-report-workspace" aria-label="รายงานการเติมน้ำมันแยกทะเบียนรถ"></section>
   `;
+  let stationFuelReport=null;
+  mountStationCustomerCredit({target:target.querySelector('#station-customer-credit'),
+    token:accessToken,stationId,onAccounts:accounts=>{
+      stationFuelReport?.destroy();
+      stationFuelReport=mountFuelReport({
+        target:target.querySelector('#station-fuel-report-workspace'),
+        token:accessToken,stationId,companies:accounts,
+      });
+    },
+  });
   const $=id=>document.getElementById(id);
   const note=(id,text,error=false)=>{
     $(id).textContent=text;$(id).hidden=false;$(id).dataset.tone=error?'error':'neutral';
@@ -915,6 +949,7 @@ async function stationCorporateWorkspace(accessToken,stationId,target,{qaMode=fa
       $('customer-invite-status').textContent='สร้างบริษัทแล้ว: '+response.data.customer.name+
         ' (ยอดเงินเริ่มต้น 0 บาท) กรุณาเชิญ Admin คนแรก';
       note('customer-notice','เปิดบัญชีบริษัทเรียบร้อย');
+      target.querySelector('.os-credit-head button')?.click();
     }catch{
       note('customer-notice','ไม่สามารถยืนยันผลการเปิดบัญชีได้ กรุณาตรวจสอบก่อนลองใหม่',true);
     }finally{btn.disabled=false;}
