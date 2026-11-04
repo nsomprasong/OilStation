@@ -8,6 +8,7 @@ on:
       - 'src/client/**'
       - 'e2e/midnight.local.pw.mjs'
       - 'e2e/hr-access.local.pw.mjs'
+      - 'e2e/member-invitations.local.pw.mjs'
       - 'playwright.midnight.config.mjs'
       - '.github/workflows/midnight-preview.yml'
   workflow_dispatch:
