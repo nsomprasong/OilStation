@@ -48,6 +48,25 @@ test('green navigation, ivory content and form inputs stay separate by surface',
  assert.match(css,/\.os-logout-dialog\{[^}]*background:var\(--os-card\)/);
 });
 
+
+test('gold curves are shared only by green navigation and page header surfaces',()=>{
+ for(const name of ['--os-gold-line:','--os-gold-line-soft:'])
+  assert.ok(css.includes(name),'shared gold token '+name);
+ for(const selector of [
+  '.os-desktop-sidebar::before',
+  '.ws-toolbar::before',
+  '.ws-toolbar::after',
+  '.ws-screen:not([data-ws-screen="overview"])>.ws-screen-head::before',
+  '.ws-screen:not([data-ws-screen="overview"])>.ws-screen-head::after',
+  '.os-mobile-bottom::before',
+ ])assert.ok(css.includes(selector),'missing decorative motif '+selector);
+ assert.match(css,/pointer-events:none/);
+ assert.match(css,/\.ws-toolbar > \*\{position:relative;z-index:1\}/);
+ assert.match(css,/\.os-desktop-sidebar > \*\{position:relative;z-index:1\}/);
+ assert.doesNotMatch(css,/\.ws-toolbar\{[^}]*overflow:hidden/);
+ assert.match(css,/\.os-mobile-dock-inner\{[^}]*z-index:1/);
+});
+
 test('role navigation still covers all 18 main screens without privilege crossover',()=>{
  const roles=[
   {scopeType:'platform',role:'platform_superadmin'},

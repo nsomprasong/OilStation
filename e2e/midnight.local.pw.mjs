@@ -197,3 +197,40 @@ test('All 18 role-scoped workspaces render on ivory without page overflow at 320
   }
  }
 });
+
+
+test('Gold sweep decorates green navigation and headings without blocking controls',async({page},info)=>{
+ for(const width of [1440,390]){
+  await page.setViewportSize({width,height:width===1440?900:844});
+  await page.goto('/');
+  await mountShell(page,memberships[5][1],'corporate');
+  const details=await page.evaluate(()=>{
+   const pseudo=(selector,part='::before')=>{
+    const node=document.querySelector(selector);
+    return node?getComputedStyle(node,part).backgroundImage:'missing';
+   };
+   const overlay=(selector)=>{
+    const node=document.querySelector(selector);
+    return node?getComputedStyle(node,'::before').pointerEvents:'missing';
+   };
+   return {
+    sidebar:pseudo('.os-desktop-sidebar'),
+    toolbar:pseudo('.ws-toolbar'),
+    title:pseudo('.ws-screen:not([data-ws-screen="overview"]) .ws-screen-head'),
+    dock:pseudo('.os-mobile-bottom'),
+    toolbarClick:overlay('.ws-toolbar'),
+    titleClick:overlay('.ws-screen:not([data-ws-screen="overview"]) .ws-screen-head'),
+    width:document.documentElement.scrollWidth,
+    viewport:document.documentElement.clientWidth
+   };
+  });
+  expect(details.toolbar).toContain('radial-gradient(');
+  expect(details.title).toContain('radial-gradient(');
+  expect(details.toolbarClick).toBe('none');
+  expect(details.titleClick).toBe('none');
+  expect(details.width).toBeLessThanOrEqual(details.viewport+2);
+  if(width===1440)expect(details.sidebar).toContain('radial-gradient(');
+  else expect(details.dock).toContain('radial-gradient(');
+  await page.screenshot({path:info.outputPath('gold-lined-corporate-'+width+'.png'),animations:'disabled'});
+ }
+});

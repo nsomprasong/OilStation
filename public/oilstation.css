@@ -14,6 +14,8 @@
   --os-tx:#1B2A24;       --os-mu:#59685F;
   --os-ac:#194635;       --os-ac-ink:#FAF8F1;     --os-ac-deep:#174735;
   --os-gold:#BD9A5E;     --os-gold-ink:#75572D;
+  --os-gold-line:rgba(231,190,122,.78);
+  --os-gold-line-soft:rgba(231,190,122,.26);
   --os-on:#E3EBE1;       --os-hover:#E9EFE7;
   --os-input:#FFFDF8;    --os-placeholder:#758177;
   --os-side-tx:#F7F5EF;  --os-side-mu:#C6D5CA;  --os-side-border:#385C4C;
@@ -1365,7 +1367,15 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .skip-workspace+.shell #app.workspace-mode{flex:1}
 .ws-layout{min-height:100dvh;display:grid;grid-template-columns:var(--os-side-w) minmax(0,1fr);background-color:var(--os-bg);background-image:var(--os-gradient-page)}
 .os-desktop-sidebar{position:sticky;top:0;align-self:start;height:100dvh;display:flex;flex-direction:column;gap:26px;
-  padding:24px 14px;background:var(--os-side);background-image:var(--os-gradient-menu);border-right:1px solid var(--os-side-border);overflow-y:auto;color:var(--os-side-tx)}
+  padding:24px 14px;background:var(--os-side);background-image:var(--os-gradient-menu);border-right:1px solid var(--os-side-border);overflow-y:auto;color:var(--os-side-tx);isolation:isolate}
+/* Gold sweep stays behind sidebar actions and follows the approved Login artwork. */
+.os-desktop-sidebar::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(ellipse 860px 580px at -420px 106%,transparent 78.28%,var(--os-gold-line) 78.48% 78.64%,transparent 78.84%),
+    radial-gradient(ellipse 900px 650px at -470px 108%,transparent 79.11%,var(--os-gold-line-soft) 79.31% 79.45%,transparent 79.63%);
+}
+.os-desktop-sidebar > *{position:relative;z-index:1}
 .os-desktop-brand{display:flex;align-items:center;gap:12px;padding:0 8px}
 .os-desktop-brand img{width:37px;height:37px;object-fit:contain}
 .os-desktop-brand strong{display:block;font-size:18px;line-height:1.2;color:var(--os-side-tx)}
@@ -1383,7 +1393,18 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 
 .ws-main{min-width:0;display:flex;flex-direction:column;padding:0 clamp(24px,3.4vw,48px) 64px}
 .ws-toolbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;min-height:72px;
-  background-color:var(--os-side);background-image:var(--os-gradient-menu);color:var(--os-side-tx);backdrop-filter:blur(8px);border-bottom:1px solid var(--os-side-border);margin:0 calc(-1*clamp(24px,3.4vw,48px));padding:12px clamp(24px,3.4vw,48px)}
+  background-color:var(--os-side);background-image:var(--os-gradient-menu);color:var(--os-side-tx);backdrop-filter:blur(8px);border-bottom:1px solid var(--os-side-border);margin:0 calc(-1*clamp(24px,3.4vw,48px));padding:12px clamp(24px,3.4vw,48px);isolation:isolate}
+/* Decorative arcs cannot intercept input or clip the account profile popover. */
+.ws-toolbar::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(ellipse 850px 180px at -120px 196px,
+    transparent 85.35%,var(--os-gold-line-soft) 85.58% 85.81%,transparent 86.08%);
+}
+.ws-toolbar::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;pointer-events:none;z-index:0;
+  background:linear-gradient(90deg,transparent,var(--os-gold-line) 24%,var(--os-gold-line-soft) 72%,transparent);
+}
+.ws-toolbar > *{position:relative;z-index:1}
 .ws-toolbar-title{display:none;align-items:center;gap:10px;font-weight:700;font-size:17px;min-width:0}
 .ws-toolbar-title>span{display:none}
 .ws-toolbar-brand{width:28px;height:28px;object-fit:contain}
@@ -1432,8 +1453,19 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  margin:20px 0 18px;padding:20px 24px;
  border:1px solid var(--os-side-border);border-radius:var(--os-r);
  background-color:var(--os-ac);background-image:var(--os-gradient-header);
- color:var(--os-side-tx);
+ color:var(--os-side-tx);position:relative;isolation:isolate;
 }
+/* Card headings get the same curved gold signature at a quieter intensity. */
+#app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head::before{
+ content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+ background-image:radial-gradient(ellipse 900px 270px at -180px 290px,
+   transparent 88.42%,var(--os-gold-line-soft) 88.65% 88.88%,transparent 89.11%);
+}
+#app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head::after{
+ content:"";position:absolute;bottom:0;left:24px;right:24px;height:1px;pointer-events:none;z-index:0;
+ background:linear-gradient(90deg,var(--os-gold-line-soft),var(--os-gold-line) 32%,transparent 84%);
+}
+#app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head > *{position:relative;z-index:1}
 #app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head .ws-breadcrumb{color:#EBD7AD}
 #app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head h2{color:#FFFDF8;margin:0 0 4px}
 #app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head p{color:#E1EEE5}
@@ -1567,8 +1599,17 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 
   /* five-slot bottom dock */
   .os-mobile-bottom{position:fixed;left:0;right:0;bottom:0;z-index:40;display:block;
-    min-height:var(--os-dock-h);padding:6px 6px calc(8px + env(safe-area-inset-bottom));background-color:var(--os-side);background-image:var(--os-gradient-menu);border-top:1px solid var(--os-side-border)}
-  .os-mobile-dock-inner{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;max-width:540px;margin-inline:auto;align-items:center;justify-content:center}
+    min-height:var(--os-dock-h);padding:6px 6px calc(8px + env(safe-area-inset-bottom));background-color:var(--os-side);background-image:var(--os-gradient-menu);border-top:1px solid var(--os-side-border);isolation:isolate}
+  .os-mobile-bottom::before{
+    content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(ellipse 800px 145px at -90px 178px,
+      transparent 86.5%,var(--os-gold-line-soft) 86.72% 86.95%,transparent 87.17%);
+  }
+  .os-mobile-bottom::after{
+    content:"";position:absolute;left:0;right:0;top:0;height:1px;z-index:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent,var(--os-gold-line) 32%,transparent);
+  }
+  .os-mobile-dock-inner{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;max-width:540px;margin-inline:auto;align-items:center;justify-content:center;position:relative;z-index:1}
   .os-mobile-tab{display:grid;justify-items:center;align-content:center;gap:3px;min-width:0;min-height:56px;padding:4px 2px;border:0;border-radius:12px;background:none;color:var(--os-side-mu)}
   .os-mobile-tab .os-nav-orb{display:grid;place-items:center;width:44px;height:28px;border-radius:99px}
   .os-mobile-tab .app-icon{width:21px;height:21px}
