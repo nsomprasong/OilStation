@@ -1,4 +1,5 @@
 import {makeIcon} from './icons.js';
+import {mountMemberDirectory} from './member-directory.js';
 
 // Invitation admin is deliberately list-first. The existing approved invitation
 // and QA Auth forms remain mounted (only hidden) so validation, pending values
@@ -21,7 +22,8 @@ const button=(className,text,icon)=>{
  return node;
 };
 
-export function mountMemberInvitations({target,inviteControl=null,qaHost=null,readOnlyMessage=''}={}){
+export function mountMemberInvitations({target,inviteControl=null,qaHost=null,readOnlyMessage='',
+  token=null,scopeType=null,scopeId=null,canChange=false}={}){
  if(!target)return;
  const page=el('div','os-member-page');
  const toolbar=el('header','os-member-toolbar');
@@ -86,6 +88,21 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
  }
  render();
  page.append(list);
+ let directory=null;
+ if(token&&scopeId&&['station','corporate_company'].includes(scopeType)){
+  // The live directory replaces the session-only activity placeholders.
+  search.hidden=true;records.hidden=true;
+  const directoryTarget=el('div','os-member-directory-host');
+  list.append(directoryTarget);
+  directory=mountMemberDirectory({
+   target:directoryTarget,token,scopeType,scopeId,canChange,
+   onLoaded:count=>{
+    head.querySelector('h3').textContent='รายชื่อพนักงานและสมาชิก';
+    head.querySelector('p').textContent='แสดงสมาชิกในขอบเขตของคุณ รวมผู้ใช้ที่ปิดสิทธิ์แล้ว';
+    badge.textContent=count===null?'ไม่พร้อมใช้งาน':count+' รายการ';
+   },
+  });
+ }
  if(canManage){
   dialog=el('dialog','os-member-drawer');
   dialog.setAttribute('aria-labelledby','os-member-drawer-title');
@@ -166,6 +183,7 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
     state:data.kind==='qa'?'สร้างบัญชีแล้ว':'สร้างคำเชิญแล้ว',
     kind:data.kind});
    render();
+   directory?.reload();
   });
   page.append(dialog);
  }
