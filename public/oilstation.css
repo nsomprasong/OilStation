@@ -223,10 +223,10 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-member-intro{min-width:0;flex:1;max-width:720px}
 #app.workspace-mode .os-member-eyebrow{margin:0 0 7px;color:var(--os-gold-ink);
  font-size:11px;letter-spacing:.1em;font-weight:750}
-#app.workspace-mode .os-member-toolbar .os-member-eyebrow{color:#F1D7A7}
-#app.workspace-mode .os-member-toolbar-title{margin:0 0 5px;color:#FFFFFF;
- font-size:clamp(19px,2vw,24px);font-weight:750;letter-spacing:-.02em;line-height:1.4}
-#app.workspace-mode .os-member-intro-copy{margin:0;color:#E5EEE7;font-size:14px;line-height:1.65}
+#app.workspace-mode .os-midnight-layout .os-member-toolbar .os-member-eyebrow{color:#F1D7A7!important}
+#app.workspace-mode .os-midnight-layout .os-member-toolbar .os-member-toolbar-title{margin:0 0 5px;color:#FFFFFF!important;
+ font:750 clamp(19px,2vw,24px)/1.4 var(--os-font)!important;letter-spacing:-.02em}
+#app.workspace-mode .os-midnight-layout .os-member-toolbar .os-member-intro-copy{margin:0;color:#E5EEE7!important;font-size:14px;line-height:1.65}
 #app.workspace-mode .os-member-create{width:auto;min-height:46px;padding:0 20px;display:inline-flex;
  align-items:center;justify-content:center;gap:9px;border-radius:12px;white-space:nowrap;font-weight:700;
  background-image:linear-gradient(135deg,#FFFDF8 0%,#EADFC6 100%);background-color:#FFFDF8;
@@ -247,8 +247,8 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  background-color:#E8F0E8;
  background-image:linear-gradient(108deg,#DDECE1 0%,#F2F5ED 53%,#F4ECDD 100%);
 }
-#app.workspace-mode .os-member-list-head h3{font-size:19px;font-weight:750;line-height:1.4;
- color:#163D2C;margin:0 0 6px}
+#app.workspace-mode .os-midnight-layout .os-member-list-head h3{font:750 19px/1.4 var(--os-font)!important;
+ color:#163D2C!important;margin:0 0 6px}
 #app.workspace-mode .os-member-list-head p{font-size:13px;line-height:1.65;
  color:#526358;margin:0;max-width:690px}
 #app.workspace-mode .os-member-count{white-space:nowrap;font-size:12px;font-weight:750;color:#174635;
@@ -304,9 +304,9 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-member-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;
  gap:18px;padding:26px 28px 20px;border-bottom:1px solid #486B55;
  background-color:#194635;background-image:linear-gradient(115deg,#102D23 0%,#194635 65%,#37644C 100%)}
-#app.workspace-mode .os-member-drawer-head .os-member-eyebrow{color:#F1D7A7}
-#app.workspace-mode .os-member-drawer-head h3{font-size:23px;font-weight:750;line-height:1.3;
- margin:2px 0 0;color:#FFFFFF}
+#app.workspace-mode .os-midnight-layout .os-member-drawer-head .os-member-eyebrow{color:#F1D7A7!important}
+#app.workspace-mode .os-midnight-layout .os-member-drawer-head h3{font:750 23px/1.3 var(--os-font)!important;
+ margin:2px 0 0;color:#FFFFFF!important}
 #app.workspace-mode .os-member-close{display:inline-flex;justify-content:center;align-items:center;
  min-width:50px;min-height:42px;border:1px solid #DADDCB;border-radius:10px;background:#F8F7EE;
  color:#194635;font-size:13px;font-weight:650}
