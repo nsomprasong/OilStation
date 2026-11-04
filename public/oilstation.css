@@ -236,6 +236,10 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  border:1px solid #C9D0C7;border-radius:var(--os-r);padding:0;
  box-shadow:0 12px 28px -25px #10271E9C;
 }
+#app.workspace-mode .os-member-session-note{
+ font-size:12px;line-height:1.6;color:var(--os-mu);
+ margin:14px var(--member-pad) 0;
+}
 #app.workspace-mode .os-member-count{white-space:nowrap;font-size:12px;font-weight:750;color:#174635;
  border-radius:99px;background-color:#E1EBDF;
  background-image:linear-gradient(105deg,#DAE9DB 0%,#F7F1DF 100%);
