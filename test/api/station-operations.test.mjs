@@ -75,7 +75,7 @@ test('Supabase RPC preserves scoped member and HR failure codes',async()=>{
    globalThis.fetch=async()=>new Response(JSON.stringify({message:code}),{
     status:400,headers:{'content-type':'application/json'},
    });
-   await assert.rejects(adapter.hrEmployeeChange({
+   await assert.rejects(adapter.db.hrEmployeeChange({
     actorId:U,stationId:S,employeeId:M,action:'deactivate',name:null,
    }),error=>error.code===code);
   }
