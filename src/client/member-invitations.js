@@ -25,8 +25,9 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
   token=null,scopeType=null,scopeId=null,canChange=false}={}){
  if(!target)return;
  const page=el('div','os-member-page');
+ const liveDirectory=Boolean(token&&scopeId&&['station','corporate_company'].includes(scopeType));
  const list=el('section','os-member-list');
- list.setAttribute('aria-label','รายการบัญชีและสิทธิ์ที่ได้รับอนุญาต');
+ list.setAttribute('aria-label',liveDirectory?'บัญชีผู้ใช้งานและสิทธิ์':'รายการที่สร้างในหน้านี้');
  // The workspace renders the single visible page heading. Keep only task
  // controls here: this is an action bar, not a second hero or section title.
  const actions=el('div','os-member-actions');
@@ -41,6 +42,8 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
  }
  actions.append(badge);
  list.append(actions);
+ if(!liveDirectory)list.append(el('p','os-member-session-note',
+  'แสดงคำเชิญและบัญชี QA ที่สร้างสำเร็จในหน้านี้เท่านั้น ไม่ใช่รายชื่อสมาชิกทั้งหมดของบริษัท'));
  const search=el('input','os-member-search');
  search.type='search';search.placeholder='ค้นหารายการที่สร้างในหน้านี้…';
  search.setAttribute('aria-label','ค้นหารายการที่สร้างในหน้านี้');
@@ -81,7 +84,7 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
  render();
  page.append(list);
  let directory=null;
- if(token&&scopeId&&['station','corporate_company'].includes(scopeType)){
+ if(liveDirectory){
   // The live directory replaces the session-only activity placeholders.
   search.hidden=true;records.hidden=true;
   const directoryTarget=el('div','os-member-directory-host');
