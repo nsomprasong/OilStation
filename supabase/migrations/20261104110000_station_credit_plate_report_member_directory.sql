@@ -157,6 +157,47 @@ BEGIN
  RETURN jsonb_build_object('membershipId',v_m.id,'action',p_action,'success',true);
 END $fn$;
 
+CREATE OR REPLACE FUNCTION public.oilstation_hr_employee_change(
+ p_actor_id uuid,p_station_id uuid,p_employee_id uuid,p_action text,p_name text DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $fn$
+DECLARE v_emp public.employees%ROWTYPE;
+BEGIN
+ IF p_actor_id IS NULL OR p_station_id IS NULL OR p_employee_id IS NULL
+    OR NOT EXISTS(SELECT 1 FROM public.memberships m
+     WHERE m.user_id=p_actor_id AND m.active AND m.scope_type='station'
+      AND m.station_id=p_station_id
+      AND m.role_code IN ('station_owner','owner','manager','hr_manager'))
+    OR NOT EXISTS(SELECT 1 FROM public.station_modules sm
+     WHERE sm.station_id=p_station_id AND sm.module_code='hr_payroll' AND sm.status='enabled')
+ THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
+ SELECT * INTO v_emp FROM public.employees e
+ WHERE e.id=p_employee_id AND e.station_id=p_station_id FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN';END IF;
+ IF p_action='edit' THEN
+  IF p_name IS NULL OR length(btrim(p_name)) NOT BETWEEN 2 AND 200
+  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+  UPDATE public.employees SET display_name=btrim(p_name)
+  WHERE id=v_emp.id;
+ ELSIF p_action='deactivate' THEN
+  IF v_emp.employment_status<>'active' THEN
+   RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ALREADY_INACTIVE';END IF;
+  -- Refuse leaving future shifts without an assigned active employee.
+  IF EXISTS(SELECT 1 FROM public.shift_assignments a
+   WHERE a.employee_id=v_emp.id AND a.shift_date>=current_date
+    AND a.status IN ('scheduled','absence_review'))
+  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FUTURE_SHIFT_EXISTS';END IF;
+  UPDATE public.employees SET employment_status='inactive' WHERE id=v_emp.id;
+ ELSE RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_ACTION';END IF;
+ INSERT INTO public.audit_events(actor_id,station_id,entity_type,entity_id,action,before_state,after_state)
+ VALUES(p_actor_id,p_station_id,'employee',v_emp.id::text,
+   CASE WHEN p_action='edit' THEN 'employee_name_updated' ELSE 'employee_deactivated' END,
+   jsonb_build_object('name',v_emp.display_name,'status',v_emp.employment_status),
+   jsonb_build_object('name',CASE WHEN p_action='edit' THEN btrim(p_name) ELSE v_emp.display_name END,
+     'status',CASE WHEN p_action='edit' THEN v_emp.employment_status ELSE 'inactive' END));
+ RETURN jsonb_build_object('employeeId',v_emp.id,'success',true,'action',p_action);
+END $fn$;
+
 REVOKE ALL ON FUNCTION public.oilstation_station_customer_overview(uuid,uuid) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.oilstation_fuel_report_by_plate(uuid,uuid,uuid,text,integer) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.oilstation_scoped_member_directory(uuid,text,uuid) FROM PUBLIC,anon,authenticated;
@@ -165,4 +206,6 @@ GRANT EXECUTE ON FUNCTION public.oilstation_station_customer_overview(uuid,uuid)
 GRANT EXECUTE ON FUNCTION public.oilstation_fuel_report_by_plate(uuid,uuid,uuid,text,integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.oilstation_scoped_member_directory(uuid,text,uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.oilstation_scoped_member_change(uuid,uuid,text,text) TO service_role;
+REVOKE ALL ON FUNCTION public.oilstation_hr_employee_change(uuid,uuid,uuid,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.oilstation_hr_employee_change(uuid,uuid,uuid,text,text) TO service_role;
 COMMIT;
