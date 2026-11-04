@@ -61,56 +61,64 @@ async function mount(page,{qa=true,readonly=false}={}){
  },{qa,readonly});
 }
 
-test('Invitation landing is one quiet list-first screen; drawer is optional and responsive',async({page},info)=>{
+test('Invitation uses one gradient page header, a compact action bar and responsive drawer @public',async({page},info)=>{
  for(const width of [320,390,1024,1440]){
   await page.setViewportSize({width,height:width<600?844:900});
   await mount(page);
-  const pageRoot=page.locator('[data-ws-screen="invitations"]');
-  await expect(pageRoot.locator('#ws-heading-invitations')).toHaveText('จัดการสมาชิก');
-  await expect(pageRoot.locator('.os-member-list')).toBeVisible();
-  await expect(pageRoot.locator('.os-member-toolbar-title')).toHaveText('จัดการบัญชีผู้ใช้งาน');
-  await expect(pageRoot.locator('.os-member-list-head')).toBeVisible();
-  await expect(pageRoot.locator('.os-member-empty')).toContainText('ยังไม่มีรายการใหม่');
-  await expect(pageRoot.locator('.os-member-create')).toHaveCount(1);
-  await expect(pageRoot.locator('.os-add-fab')).toHaveCount(0);
-  await expect(pageRoot.locator('.os-member-drawer')).toBeHidden();
-  const metrics=await page.evaluate(()=>({
+  const root=page.locator('[data-ws-screen="invitations"]');
+  await expect(root.locator('#ws-heading-invitations')).toHaveText('จัดการสมาชิก');
+  await expect(root.locator('.ws-screen-head p')).toHaveCount(0);
+  await expect(root.locator('.os-member-toolbar')).toHaveCount(0);
+  await expect(root.locator('.os-member-list-head')).toHaveCount(0);
+  await expect(root.locator('.os-member-list')).toBeVisible();
+  await expect(root.locator('.os-member-actions')).toBeVisible();
+  await expect(root.locator('.os-member-count')).toHaveText('0 รายการ');
+  await expect(root.locator('.os-member-session-note')).toContainText('ไม่ใช่รายชื่อสมาชิกทั้งหมด');
+  await expect(root.locator('.os-member-empty')).toContainText('ยังไม่มีรายการใหม่');
+  await expect(root.locator('.os-member-create')).toHaveCount(1);
+  await expect(root.locator('.os-add-fab')).toHaveCount(0);
+  await expect(root.locator('.os-member-drawer')).toBeHidden();
+  const metrics=await page.evaluate(()=>{
+   const css=selector=>getComputedStyle(document.querySelector(selector));
+   return {
     w:document.documentElement.scrollWidth,
     v:document.documentElement.clientWidth,
-    bg:getComputedStyle(document.querySelector('.os-member-list')).backgroundColor,
-    heroGradient:getComputedStyle(document.querySelector('.os-member-toolbar')).backgroundImage,
-    cardGradient:getComputedStyle(document.querySelector('.os-member-list')).backgroundImage,
-    headerGradient:getComputedStyle(document.querySelector('.os-member-list-head')).backgroundImage,
-    emptyGradient:getComputedStyle(document.querySelector('.os-member-empty')).backgroundImage,
-    createBg:getComputedStyle(document.querySelector('.os-member-create')).backgroundImage,
-    heroText:getComputedStyle(document.querySelector('.os-member-toolbar-title')).color,
-    heroB:document.querySelector('.os-member-toolbar').getBoundingClientRect().bottom,
-    listT:document.querySelector('.os-member-list').getBoundingClientRect().top,
-    toolbar:getComputedStyle(document.querySelector('.ws-header')).display,
-  }));
-  expect(metrics.w,width+'px page width').toBeLessThanOrEqual(metrics.v+2);
-  expect(metrics.bg).toBe('rgb(249, 248, 244)');
-  for(const k of ['heroGradient','cardGradient','headerGradient','emptyGradient','createBg'])
-   expect(metrics[k],k+' at '+width+'px').toContain('linear-gradient(');
-  expect(metrics.heroText).toBe('rgb(255, 255, 255)');
-  expect(metrics.listT-metrics.heroB).toBeGreaterThanOrEqual(14);
-  expect(metrics.toolbar).toBe('none');
-  await pageRoot.locator('.os-member-create').click();
-  await expect(pageRoot.locator('.os-member-drawer')).toBeVisible();
-  await expect(pageRoot.locator('.os-member-drawer .invite-form')).toBeVisible();
-  await expect(pageRoot.locator('.os-member-drawer .invite-control>button')).toBeHidden();
-  await expect(pageRoot.locator('.os-member-kind-tab')).toHaveCount(2);
-  const dialog=await page.evaluate(()=>{
-   const el=document.querySelector('.os-member-drawer'),r=el.getBoundingClientRect();
-   return {w:r.width,h:r.height,viewport:innerWidth,active:document.activeElement.tagName};
+    mainGradient:css('.ws-layout').backgroundImage,
+    menuGradient:css('.os-desktop-sidebar').backgroundImage,
+    toolbarGradient:css('.ws-toolbar').backgroundImage,
+    pageHeaderGradient:css('[data-ws-screen="invitations"] .ws-screen-head').backgroundImage,
+    actionsGradient:css('.os-member-actions').backgroundImage,
+    listGradient:css('.os-member-list').backgroundImage,
+    createGradient:css('.os-member-create').backgroundImage,
+    headerText:css('#ws-heading-invitations').color,
+    headerBottom:document.querySelector('[data-ws-screen="invitations"] .ws-screen-head').getBoundingClientRect().bottom,
+    listTop:document.querySelector('.os-member-list').getBoundingClientRect().top,
+    scopeHeaderDisplay:css('.ws-header').display,
+   };
   });
-  if(width<600)expect(dialog.w).toBeGreaterThanOrEqual(width-2);
-  else expect(dialog.w).toBeLessThanOrEqual(560);
-  expect(dialog.h).toBeGreaterThan(750);
+  expect(metrics.w,width+'px page overflow').toBeLessThanOrEqual(metrics.v+2);
+  for(const k of ['mainGradient','menuGradient','toolbarGradient',
+   'pageHeaderGradient','actionsGradient','listGradient','createGradient'])
+   expect(metrics[k],k+' at '+width+'px').toContain('linear-gradient(');
+  expect(metrics.headerText).toBe('rgb(255, 253, 248)');
+  expect(metrics.listTop-metrics.headerBottom).toBeGreaterThanOrEqual(14);
+  expect(metrics.scopeHeaderDisplay).toBe('none');
+  await root.locator('.os-member-create').click();
+  await expect(root.locator('.os-member-drawer')).toBeVisible();
+  await expect(root.locator('.os-member-drawer .invite-form')).toBeVisible();
+  await expect(root.locator('.os-member-drawer .invite-control>button')).toBeHidden();
+  await expect(root.locator('.os-member-kind-tab')).toHaveCount(2);
+  const modal=await page.evaluate(()=>{
+   const dialog=document.querySelector('.os-member-drawer'),r=dialog.getBoundingClientRect();
+   return {w:r.width,h:r.height};
+  });
+  if(width<600)expect(modal.w).toBeGreaterThanOrEqual(width-2);
+  else expect(modal.w).toBeLessThanOrEqual(560);
+  expect(modal.h).toBeGreaterThan(750);
   if([390,1440].includes(width))
    await page.screenshot({path:info.outputPath('member-drawer-'+width+'.png'),animations:'disabled'});
   await page.keyboard.press('Escape');
-  await expect(pageRoot.locator('.os-member-drawer')).toBeHidden();
+  await expect(root.locator('.os-member-drawer')).toBeHidden();
  }
 });
 test('Only verified creation feedback becomes a recent item; QA and real invitation remain distinct',async({page})=>{
@@ -142,7 +150,7 @@ test('Only verified creation feedback becomes a recent item; QA and real invitat
  await expect(page.locator('.os-member-count')).toHaveText('2 รายการ');
  await expect(page.locator('.os-member-record')).toHaveCount(2);
  await expect(page.locator('.os-member-record').first()).toContainText('สร้างคำเชิญแล้ว');
- await expect(page.locator('.os-member-list-head')).toContainText('ไม่ใช่รายชื่อสมาชิกทั้งหมด');
+ await expect(page.locator('.os-member-session-note')).toContainText('ไม่ใช่รายชื่อสมาชิกทั้งหมด');
 });
 test('Sales read-only view never exposes invitation or QA account creation',async({page})=>{
  await mount(page,{readonly:true});
