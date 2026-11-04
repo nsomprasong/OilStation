@@ -649,6 +649,15 @@ export function createSupabaseAdapter(env) {
         body:JSON.stringify({p_actor_id:d.actorId,p_advance_id:d.advanceId,
           p_approved:d.approved}),
       }),
+      // Service-role-only entitlement lookup; caller must authenticate and
+      // authorize the precise station before invoking this read. No customer
+      // balances or employee data are returned from this capability check.
+      hrModuleEntitled: async stationId => {
+        const q=new URLSearchParams({select:'station_id',station_id:'eq.'+stationId,
+          module_code:'eq.hr_payroll',status:'eq.enabled',limit:'1'});
+        const rows=await serviceRequest(env,'/rest/v1/station_modules?'+q);
+        return Array.isArray(rows)&&rows.length===1&&rows[0].station_id===stationId;
+      },
       hrRoster: async d => serviceRequest(env,'/rest/v1/rpc/hr_station_roster',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
