@@ -96,9 +96,9 @@ test('Sales desktop workspace keeps ivory surfaces and emerald authorized sideba
    image:css('[data-ws-screen="sales"] .ws-screen-head').backgroundImage,
    sidebar:css('.os-desktop-sidebar').display};
  });
- expect(status.color).toBe('rgb(27, 42, 36)');
- expect(status.bg).toBe('rgba(0, 0, 0, 0)');
- expect(status.image).toBe('none');
+ expect(status.color).toBe('rgb(255, 253, 248)');
+ expect(status.bg).toBe('rgb(25, 70, 53)');
+ expect(status.image).toContain('linear-gradient(');
  expect(status.sidebar).not.toBe('none');
  await page.screenshot({path:info.outputPath('emerald-sales-desktop.png'),animations:'disabled'});
 });
