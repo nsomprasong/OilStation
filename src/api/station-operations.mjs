@@ -80,7 +80,9 @@ export function createStationOperationsApi({authenticate,db}){
     return reply(409,{error:'driver_has_active_coupon'});
    if(/FUTURE_SHIFT_EXISTS/.test(error?.message||''))
     return reply(409,{error:'future_shift_exists'});
-   if(/INVALID_ROLE|INVALID_ACTION/.test(error?.message||''))
+   if(/ALREADY_INACTIVE/.test(error?.code||error?.message||''))
+    return reply(409,{error:'employee_already_inactive'});
+   if(/INVALID_ROLE|INVALID_ACTION/.test(error?.code||error?.message||''))
     return reply(400,{error:'invalid_member_change'});
    return reply(503,{error:'service_unavailable'});
   }
