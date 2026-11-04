@@ -7,9 +7,9 @@ const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
 test('member management is list-first and has one real primary action plus drawer',()=>{
  assert.equal(typeof mountMemberInvitations,'function');
  const source=read('src/client/member-invitations.js');
- assert.match(source,/el\('header','os-member-toolbar'\)/);
- assert.match(source,/el\('header','os-member-list-head'\)/);
- assert.match(source,/os-member-toolbar-title','จัดการบัญชีผู้ใช้งาน'/);
+ assert.match(source,/el\('div','os-member-actions'\)/);
+ assert.doesNotMatch(source,/el\('header','os-member-toolbar'\)|el\('header','os-member-list-head'\)/);
+ assert.doesNotMatch(source,/os-member-toolbar-title|รายชื่อบัญชีผู้ใช้งาน/);
  for(const part of [
   "el('div','os-member-page')",
   "el('section','os-member-list')",
@@ -58,15 +58,17 @@ test('no duplicate floating invite or fake single tab; nested card stays only in
  assert.match(css,/\[data-ws-screen="invitations"\] \.os-add-fab\{display:none!important\}/);
  assert.match(css,/@media\(max-width:640px\)/);
  for(const piece of [
-  '.os-member-toolbar{','.os-member-list-head{','.os-member-empty{',
+  '.os-member-actions{','.os-member-session-note{','.os-member-empty{',
   '.os-member-drawer-head{','background-image:linear-gradient(',
-  'background-image:radial-gradient(','.os-member-toolbar-title',
+  '--os-gradient-header:',
   '--member-pad:16px',
  ])assert.ok(css.includes(piece),piece);
  assert.match(css,/\.os-member-list\{[\s\S]*?border:1px solid #C9D0C7/);
  assert.match(read('src/client/workspace-layout.js'),/s\.key==="invitations"\?"จัดการสมาชิก"/);
  const memberUi=read('src/client/member-invitations.js');
- assert.match(memberUi,/รายชื่อบัญชีผู้ใช้งาน/);
- assert.match(memberUi,/ประวัติพนักงาน HR และเงินเดือน/);
+ assert.doesNotMatch(memberUi,/os-member-toolbar-title|os-member-list-head/);
+ assert.match(memberUi,/liveDirectory/);
+ assert.match(memberUi,/ที่สร้างสำเร็จในหน้านี้เท่านั้น ไม่ใช่รายชื่อสมาชิกทั้งหมดของบริษัท/);
+ assert.match(read('src/client/workspace-layout.js'),/s.key==="invitations"\?"":/);
  assert.match(read('playwright.midnight.config.mjs'),/member-invitations\.local\.pw\.mjs/);
 });

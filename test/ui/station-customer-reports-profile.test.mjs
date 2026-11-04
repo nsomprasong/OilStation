@@ -56,3 +56,20 @@ test('sensitive data is not invented; SQL never modifies credit nor hard-deletes
  assert.match(sql,/FUTURE_SHIFT_EXISTS/);
  assert.match(sql,/DRIVER_HAS_ACTIVE_COUPON/);
 });
+
+test('the single workspace page header and menu gradients share one canonical stylesheet',()=>{
+ const css=read('public/oilstation.css');
+ const layout=read('src/client/workspace-layout.js');
+ const members=read('src/client/member-invitations.js');
+ for(const name of ['--os-gradient-page:','--os-gradient-menu:','--os-gradient-header:','--os-gradient-gold:'])
+  assert.ok(css.includes(name),name);
+ assert.match(css,/\.ws-layout\{[^\n]*background-image:var\(--os-gradient-page\)/);
+ assert.match(css,/\.os-desktop-sidebar\{[\s\S]*?background-image:var\(--os-gradient-menu\)/);
+ assert.match(css,/\.os-mobile-bottom\{[\s\S]*?background-image:var\(--os-gradient-menu\)/);
+ assert.match(css,/\.ws-screen:not\(\[data-ws-screen="overview"\]\)>\.ws-screen-head\{/);
+ assert.match(css,/background-image:var\(--os-gradient-header\)/);
+ assert.match(layout,/s.key==="invitations"\?"":/);
+ assert.match(members,/el\('div','os-member-actions'\)/);
+ assert.doesNotMatch(members,/os-member-toolbar-title|os-member-list-head/);
+ assert.doesNotMatch(css,/\.os-member-toolbar\{|\.os-member-list-head\{/);
+});
