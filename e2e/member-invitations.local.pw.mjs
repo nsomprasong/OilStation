@@ -112,9 +112,14 @@ test('Only verified creation feedback becomes a recent item; QA and real invitat
  await expect(page.locator('.os-member-count')).toHaveText('1 รายการ');
  await expect(page.locator('.os-member-record')).toContainText('c01-issuer');
  await expect(page.locator('.os-member-record')).toContainText('สร้างบัญชีแล้ว');
+ // Native showModal() correctly makes the underlying list inert. Dismiss
+ // the drawer before interacting with its sibling search input.
+ await page.keyboard.press('Escape');
+ await expect(page.locator('.os-member-drawer')).toBeHidden();
  await page.locator('.os-member-search').fill('ไม่พบ');
  await expect(page.locator('.os-member-empty')).toContainText('ไม่พบรายการที่ค้นหา');
  await page.locator('.os-member-search').fill('');
+ await page.locator('.os-member-create').click();
  await page.locator('.os-member-drawer').evaluate(el=>
   el.dispatchEvent(new CustomEvent('oilstation:member-created',{bubbles:true,
    detail:{kind:'invitation',name:'demo@qa.oilstation.invalid',role:'ผู้ออกคูปอง'}})));
