@@ -8,7 +8,7 @@ test('review login rotation can only run manually with a separate secret',()=>{
  assert.match(workflow,/workflow_dispatch:/);
  assert.doesNotMatch(workflow,/\n\s+(push|pull_request|schedule):/);
  assert.match(workflow,/github\.ref == 'refs\/heads\/main'/);
- assert.match(workflow,/inputs\.confirm == 'RESET-22-QA-SAMPLES'/);
+ assert.match(workflow,/inputs\.confirm == 'RESET-98-QA-USERS'/);
  assert.match(workflow,/environment: oilstation-qa/);
  assert.match(workflow,/secrets\.OILSTATION_QA_DB_KEY/);
  assert.match(workflow,/secrets\.OILSTATION_QA_REVIEW_PASSWORD/);
@@ -16,8 +16,10 @@ test('review login rotation can only run manually with a separate secret',()=>{
  assert.doesNotMatch(workflow,/echo .*OILSTATION_QA_REVIEW_PASSWORD/i);
  assert.match(workflow,/--dry-run/);
  assert.match(workflow,/--apply/);
+ assert.match(workflow,/98 QA accounts/);
+ assert.match(workflow,/QA-20261104-REVIEW-98/);
 });
-test('only 22 frozen QA sample aliases; no real or wildcard password reset',()=>{
+test('only 98 frozen QA role aliases; no real or wildcard password reset',()=>{
  assert.match(script,/OILSTATION_QA_ROTATE_CONFIRM/);
  // The sample review workflow enforces exactly eight upper/lower/numeric
  // characters; it never embeds a shared password or accepts a password input.
@@ -26,16 +28,18 @@ test('only 22 frozen QA sample aliases; no real or wildcard password reset',()=>
  assert.ok(script.includes("GITHUB_EVENT_NAME!=='workflow_dispatch'"));
  assert.ok(!workflow.includes('password: ${{ inputs.'));
  assert.match(script,/QA-20261031-PLATFORM-001/);
- assert.match(script,/Array\.from\(\{length:4\}/);
- assert.match(script,/Array\.from\(\{length:12\}/);
- assert.match(script,/s01a','s01b','s02a','s02b/);
- assert.match(script,/'sales01','sales02'/);
+ assert.match(script,/QA_REVIEW_IDENTITIES/);
+ assert.match(script,/roleByAlias/);
+ assert.match(script,/appRolesVerified/);
+ assert.match(script,/api\/me/);
  assert.match(script,/oilstation_qa!==true/);
  assert.match(script,/oilstation_qa_run_id!==QA_RUN/);
  assert.match(script,/email_confirmed_at/);
  assert.match(script,/accounts\.size!==selected\.length/);
  assert.match(script,/client\.auth\.admin\.updateUserById\(u\.id,\{password\}\)/);
  assert.match(script,/signInWithPassword\(\{email:u\.email,password\}\)/);
+ assert.match(script,/APP_ROLE_CHECK_PASS/);
+ assert.match(script,/m\.scopeType===expectedRole\.scopeType&&m\.role===expectedRole\.role/);
  assert.doesNotMatch(script,/auth\.admin\.deleteUser|\.delete\(/);
  assert.doesNotMatch(script,/console\.log\([^\n]*password\)/i);
 });
