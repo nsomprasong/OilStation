@@ -17,13 +17,11 @@ const email=alias=>'qa-'+alias+'@qa.oilstation.invalid';
 const fail=reason=>{throw Error(reason);};
 const mode=process.argv[2];
 if(!['--dry-run','--apply'].includes(mode))fail('Use --dry-run or --apply');
-const event=process.env.GITHUB_EVENT_NAME;
 if(process.env.GITHUB_ACTIONS!=='true'||
    process.env.GITHUB_REPOSITORY!=='nsomprasong/OilStation'||
    process.env.GITHUB_REF!=='refs/heads/main'||
-   !['workflow_dispatch','push'].includes(event)||
-   (event==='push' && process.env.OILSTATION_QA_ONETIME_TRIGGER!=='QA-REVIEW-22-NOV04'))
- fail('This operation is reserved for an approved one-time main-branch QA review workflow');
+   process.env.GITHUB_EVENT_NAME!=='workflow_dispatch')
+ fail('This operation is reserved for an explicit, main-branch manual GitHub Actions run');
 const key=process.env.OILSTATION_QA_DB_KEY;
 const password=process.env.OILSTATION_QA_REVIEW_PASSWORD?.trim();
 if(!key||!(key.startsWith('sb_secret_')||key.split('.').length===3))
