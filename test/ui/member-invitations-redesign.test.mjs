@@ -9,7 +9,7 @@ test('member management is list-first and has one real primary action plus drawe
  const source=read('src/client/member-invitations.js');
  assert.match(source,/el\('header','os-member-toolbar'\)/);
  assert.match(source,/el\('header','os-member-list-head'\)/);
- assert.match(source,/os-member-toolbar-title','เชิญและจัดการสิทธิ์'/);
+ assert.match(source,/os-member-toolbar-title','จัดการบัญชีผู้ใช้งาน'/);
  for(const part of [
   "el('div','os-member-page')",
   "el('section','os-member-list')",
@@ -65,5 +65,7 @@ test('no duplicate floating invite or fake single tab; nested card stays only in
  ])assert.ok(css.includes(piece),piece);
  assert.match(css,/\.os-member-list\{[\s\S]*?border:1px solid #C9D0C7/);
  assert.match(read('src/client/workspace-layout.js'),/s\.key==="invitations"\?"จัดการสมาชิก"/);
+ assert.match(source,/รายชื่อบัญชีผู้ใช้งาน/);
+ assert.match(source,/ประวัติพนักงาน HR และเงินเดือน/);
  assert.match(read('playwright.midnight.config.mjs'),/member-invitations\.local\.pw\.mjs/);
 });
