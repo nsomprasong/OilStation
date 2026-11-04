@@ -37,13 +37,13 @@ test('green navigation, ivory content and form inputs stay separate by surface',
  ]) assert.ok(css.includes(s),s);
  assert.match(css,/\.os-desktop-sidebar\{[^}]*background:var\(--os-side\)/);
  assert.match(css,/\.os-desktop-sidebar\{[^}]*background-image:var\(--os-gradient-menu\)/);
- assert.match(css,/\.ws-layout\{[^}]*background:var\(--os-gradient-page\)/);
+ assert.match(css,/\.ws-layout\{[^}]*background-image:var\(--os-gradient-page\)/);
  assert.match(css,/\.ws-screen:not\(\[data-ws-screen="overview"\]\)>\.ws-screen-head\{/);
- assert.match(css,/\.ws-toolbar\{[\s\S]*?background:var\(--os-gradient-menu\)/);
+ assert.match(css,/\.ws-toolbar\{[\s\S]*?background-image:var\(--os-gradient-menu\)/);
  assert.match(css,/\.os-desktop-side-link\.is-current[^}]*background:var\(--os-bg\)/);
- assert.match(css,/\.os-mobile-bottom\{position:fixed;[\s\S]*?background:var\(--os-gradient-menu\)/);
+ assert.match(css,/\.os-mobile-bottom\{position:fixed;[\s\S]*?background-image:var\(--os-gradient-menu\)/);
  assert.match(css,/\.os-mobile-tab\.is-current[^}]*color:var\(--os-side-tx\)/);
- assert.match(css,/\.os-category-tab\.active[^}]*background:var\(--os-gradient-menu\)/);
+ assert.match(css,/\.os-category-tab\.active[^}]*background-image:var\(--os-gradient-menu\)/);
  assert.match(css,/#app :is\(input:not\([^)]+\),select,textarea\)\{background:var\(--os-input\)/);
  assert.match(css,/\.os-logout-dialog\{[^}]*background:var\(--os-card\)/);
 });
