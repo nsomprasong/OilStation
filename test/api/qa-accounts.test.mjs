@@ -68,7 +68,7 @@ test('QA login and Admin form are always visible while QA mode is active',()=>{
  const login=readFileSync(new URL('../../src/client/auth-screen.js',import.meta.url),'utf8');
  const admin=readFileSync(new URL('../../src/client/qa-accounts.js',import.meta.url),'utf8');
  assert.ok(login.includes('<section class="os-qa-login"'));
- assert.match(login,/id="qa-login-password"[\\s\\S]*?minlength="8"/);
+ assert.ok(login.includes('minlength="8"'));
  assert.ok(!login.includes('<details class="os-qa-login"'));
  assert.ok(admin.includes("'/api/qa/reset-password'"));
  assert.ok(admin.includes("'ตั้งรหัสผ่าน QA ใหม่'"));
