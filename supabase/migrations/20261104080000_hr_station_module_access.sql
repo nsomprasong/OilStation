@@ -10,6 +10,7 @@ BEGIN
  IF p_actor_id IS NULL OR p_station_id IS NULL THEN RETURN false;END IF;
  RETURN EXISTS(
   SELECT 1 FROM public.memberships m
+  JOIN public.app_users u ON u.id=m.user_id AND u.status='active'
   JOIN public.station_modules sm ON sm.station_id=m.station_id
   WHERE m.user_id=p_actor_id AND m.active
     AND m.scope_type='station' AND m.station_id=p_station_id
