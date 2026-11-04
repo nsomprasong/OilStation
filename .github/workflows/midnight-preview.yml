@@ -1,4 +1,4 @@
-name: Midnight Banking Local Preview Browser
+name: Emerald Cream Local Preview Browser
 on:
   pull_request:
     branches: [main]
@@ -28,13 +28,13 @@ jobs:
         run: npm run build
       - name: Install real Chromium
         run: npx playwright install --with-deps chromium
-      - name: Verify local Midnight Banking login, desktop and mobile role-scoped shell
+      - name: Verify local emerald login, ivory workspace, desktop and mobile role-scoped shell
         run: npx playwright test --config=playwright.midnight.config.mjs
       - name: Attach anonymous screenshots and traces only
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: midnight-anonymous-browser-preview
+          name: emerald-anonymous-browser-preview
           path: |
             test-results-midnight/
             playwright-report-midnight/
