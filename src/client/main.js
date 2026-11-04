@@ -1679,7 +1679,9 @@ function dashboard(data, session, publicConfig={}) {
     qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
     mountQaAccountsAdmin({target:qaHost,token:session.access_token,mode:'station_owner'});
    }
-   mountMemberInvitations({target:host,inviteControl,qaHost});
+   mountMemberInvitations({target:host,inviteControl,qaHost,
+    token:session.access_token,scopeType:'station',scopeId:station.stationId,
+    canChange:['station_owner','owner'].includes(station.role)});
   });
  }
  const corpAdmin=memberships.find(m=>m.scopeType==='corporate_company'&&m.role==='corporate_admin'&&m.corporateCompanyId);
@@ -1693,7 +1695,9 @@ function dashboard(data, session, publicConfig={}) {
    qaHost=document.createElement('div');qaHost.className='os-qa-admin-host';
    mountQaAccountsAdmin({target:qaHost,token:session.access_token,mode:'corporate_admin'});
   }
-  mountMemberInvitations({target:host,inviteControl,qaHost});
+  mountMemberInvitations({target:host,inviteControl,qaHost,
+   token:session.access_token,scopeType:'corporate_company',
+   scopeId:corpAdmin.corporateCompanyId,canChange:true});
  });
  const corpRoles=memberships.filter(m=>m.scopeType==='corporate_company'&&m.role!=='driver');
  if(corpRoles.length){
