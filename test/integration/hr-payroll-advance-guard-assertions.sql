@@ -6,6 +6,9 @@ VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Synthetic payroll-only organizat
 INSERT INTO public.stations(id,organization_id,name)
 VALUES ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
         'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Synthetic station');
+-- In the live-shaped fixture public.app_users references auth.users.
+INSERT INTO auth.users(id)
+VALUES ('11111111-1111-4111-8111-111111111111');
 INSERT INTO public.app_users(id)
 VALUES ('11111111-1111-4111-8111-111111111111');
 INSERT INTO public.memberships(user_id,role_code,scope_type,station_id)
