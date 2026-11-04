@@ -112,7 +112,7 @@ export function createProductionHrOperationsApi({env,authenticate,db}){
     return response(403,'manager_required');
    // Entitlement check is also imposed on employee self-service operations,
    // whose original leave RPCs do not check station_modules themselves.
-   if((await db.hrModuleEntitled(stationId))!==true)
+   if((await db.hrModuleEntitled({actorId:actor.id,stationId}))!==true)
     return response(403,'hr_module_not_enabled');
    const deps={authenticate,db};
    if(url.pathname==='/api/hr/attendance/gps')
