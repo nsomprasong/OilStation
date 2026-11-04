@@ -157,11 +157,11 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .scope-chip{color:var(--os-ac);background:var(--os-on)}
 .module-item{background:var(--os-card);color:var(--os-tx);border-color:var(--os-line)}
 .account-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:18px 0}
-.balance-card{display:flex;flex-direction:column;text-align:left;gap:6px;border-radius:14px;background:var(--os-card);padding:17px;border:1px solid var(--os-line)}
-.balance-card strong{font-size:14px;color:var(--os-mu)}
-.balance-card .money{font-size:25px;color:var(--os-ac);font-variant-numeric:tabular-nums}
+.balance-card{display:flex;flex-direction:column;text-align:left;gap:8px;border-radius:16px;background:var(--os-card);padding:20px;border:1px solid var(--os-line);border-top:2px solid var(--os-gold)}
+.balance-card strong{font-size:14px;color:var(--os-tx)}
+.balance-card .money{font-size:clamp(26px,2.4vw,34px);color:var(--os-ac);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
 .balance-card span{font-size:11px;color:var(--os-mu)}
-.coupon-form{display:grid;gap:15px;text-align:left;padding-top:8px}
+.coupon-form{display:grid;gap:16px;text-align:left;padding-top:8px;min-width:0}
 .coupon-form[hidden],.issue-result[hidden]{display:none!important}
 .field input,.field select,.issue-result input{width:100%;border:1px solid var(--os-line);border-radius:11px;padding:12px;background:var(--os-card);color:var(--os-tx);font:inherit;min-height:44px}
 .field input:focus,.field select:focus,.issue-result input:focus{outline:2px solid var(--os-ac);outline-offset:1px}
@@ -172,7 +172,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .issue-result p{margin:0}
 .issue-result .qr-wrapper{margin:0}
 .balance-card{background:var(--os-card);border-color:var(--os-line)}
-.balance-card strong,.balance-card span{color:var(--os-mu)}
+.balance-card span{color:var(--os-mu)}
 .balance-card .money{color:var(--os-ac)}
 .field input,.field select,.issue-result input{background:var(--os-input);border-color:var(--os-line);color:var(--os-tx)}
 .issue-result{background:var(--os-card);border-color:var(--os-line)}
@@ -198,9 +198,9 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .fuel-row{border-color:var(--os-line)}
 .fuel-row-controls input:not([type=checkbox]){background:var(--os-input);color:var(--os-tx);border-color:var(--os-line)}
 .invite-control{margin-top:12px}
-.invite-form{display:grid;gap:9px;padding:12px 0}
+.invite-form{display:grid;gap:12px;padding:14px 0}
 .invite-form[hidden]{display:none!important}
-.invite-form input,.invite-form select{min-height:42px;border:1px solid var(--os-line);border-radius:10px;padding:9px 12px;background:var(--os-card);color:var(--os-tx);font:inherit;width:100%;min-width:0}
+.invite-form input,.invite-form select{min-height:44px;border:1px solid var(--os-line);border-radius:10px;padding:9px 12px;background:var(--os-card);color:var(--os-tx);font:inherit;width:100%;min-width:0}
 .invite-form small{font-size:12px;line-height:1.5;color:var(--os-mu)}
 .invite-form button{min-height:40px}
 .invite-form input,.invite-form select{background:var(--os-input);color:var(--os-tx);border-color:var(--os-line)}
@@ -1097,6 +1097,18 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
   .ws-overview-columns{display:none}
   .ws-screen[data-ws-screen=overview]>.ws-screen-head{display:none}
   .os-mobile-home{display:block;padding-top:10px}
+  /* Mobile page identity is required on every non-Home screen. */
+  .os-mobile-page-hero{display:grid;gap:12px;padding:14px 0 12px;border-bottom:1px solid var(--os-line-soft)}
+  .os-mobile-page-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .os-mobile-page-home{min-height:40px;display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--os-line);border-radius:99px;background:var(--os-card);color:var(--os-ac);font-size:12px;font-weight:650}
+  .os-mobile-page-heading{display:flex;align-items:flex-start;gap:12px}
+  .os-mobile-page-icon{display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:13px;background:var(--os-on);color:var(--os-ac)}
+  .os-mobile-page-copy{min-width:0}
+  .os-mobile-page-kicker{font-size:11px;letter-spacing:.08em;color:var(--os-gold-ink);font-weight:700}
+  .os-mobile-page-copy strong{display:block;font-size:20px;color:var(--os-tx);line-height:1.35}
+  .os-mobile-page-copy p{margin:4px 0 0;font-size:12px;color:var(--os-mu)}
+  .os-mobile-page-shortcuts{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .os-mobile-page-shortcuts button{display:inline-flex;align-items:center;gap:6px;min-height:39px;white-space:nowrap;border:1px solid var(--os-line);border-radius:99px;background:var(--os-card);color:var(--os-ac);padding:5px 11px;font-size:12px;font-weight:650}
   .os-functional-nav{flex-wrap:nowrap;overflow-x:auto;margin:10px -16px 0;padding:2px 16px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .os-functional-nav::-webkit-scrollbar{display:none}
   .os-add-fab{right:16px;bottom:calc(var(--os-dock-h) + 16px + env(safe-area-inset-bottom));min-height:52px}
