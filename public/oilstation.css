@@ -376,7 +376,9 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  font-size:13px;line-height:1.5;margin:5px 0 0;
 }
 #app.workspace-mode #corporate-workspace{min-width:0}
-#app.workspace-mode #corporate-workspace>.os-functional-pane{min-width:0}
+#app.workspace-mode #corporate-workspace>.os-functional-pane{
+ min-width:0;padding:16px!important;
+}
 #app.workspace-mode #corporate-workspace .os-corporate-intro{
  margin:0 0 4px;font-size:13px;line-height:1.6;color:var(--os-mu);
 }
@@ -420,6 +422,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  border-radius:var(--os-r-sm);
 }
 @media(max-width:680px){
+ #app.workspace-mode #corporate-workspace>.os-functional-pane{padding:12px!important}
  #app.workspace-mode #corporate-workspace #coupon-form{
   grid-template-columns:1fr;padding:16px;gap:12px;
  }
@@ -680,6 +683,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 }
 #app.workspace-mode #company-driver-workspace>p.hint{
  grid-column:1/-1;background:transparent!important;padding:0;
+ border:0!important;border-radius:0;
  margin:0 0 4px;line-height:1.6;color:var(--os-mu)!important;
 }
 #app.workspace-mode #company-driver-workspace>form{
@@ -690,6 +694,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode #company-driver-workspace>form .button{width:100%;min-width:0}
 #app.workspace-mode #company-driver-workspace>form .hint{
  margin:0;padding:8px 0;background:transparent!important;
+ border:0!important;border-radius:0;
  font-size:12px;line-height:1.6;color:var(--os-mu)!important;
 }
 #app.workspace-mode #company-driver-workspace>.module-list{
