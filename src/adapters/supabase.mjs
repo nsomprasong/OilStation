@@ -1135,6 +1135,29 @@ export function createSupabaseAdapter(env) {
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:actorId,p_station_id:stationId}),
         }),
+      // Read-only, actor-scoped station/corporate customer and employee views.
+      stationCustomerOverview: async (actorId,stationId) =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_station_customer_overview',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:actorId,p_station_id:stationId}),
+        }),
+      stationFuelPlateReport: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_fuel_report_by_plate',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_company_id:d.companyId,p_plate:d.plate,p_limit:d.limit}),
+        }),
+      memberDirectory: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_scoped_member_directory',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_scope_type:d.scopeType,p_scope_id:d.scopeId}),
+        }),
+      memberChange: async d =>
+        serviceRequest(env,'/rest/v1/rpc/oilstation_scoped_member_change',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_membership_id:d.membershipId,
+            p_action:d.action,p_role_code:d.roleCode}),
+        }),
       corporateAccounts: async (userId) => {
         return serviceRequest(env, '/rest/v1/rpc/corporate_account_summaries', {
           method: 'POST', headers: { 'content-type': 'application/json' },
