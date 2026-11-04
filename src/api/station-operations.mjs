@@ -76,9 +76,9 @@ export function createStationOperationsApi({authenticate,db}){
    // Do not leak tenant IDs, auth records or SQL errors in public responses.
    if(['FORBIDDEN','PROTECTED_ROLE'].includes(error?.code)||/FORBIDDEN|PROTECTED_ROLE/.test(error?.message||''))
     return reply(403,{error:'permission_denied'});
-   if(/DRIVER_HAS_ACTIVE_COUPON/.test(error?.message||''))
+   if(/DRIVER_HAS_ACTIVE_COUPON/.test(error?.code||error?.message||''))
     return reply(409,{error:'driver_has_active_coupon'});
-   if(/FUTURE_SHIFT_EXISTS/.test(error?.message||''))
+   if(/FUTURE_SHIFT_EXISTS/.test(error?.code||error?.message||''))
     return reply(409,{error:'future_shift_exists'});
    if(/ALREADY_INACTIVE/.test(error?.code||error?.message||''))
     return reply(409,{error:'employee_already_inactive'});
