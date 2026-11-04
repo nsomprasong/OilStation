@@ -6,6 +6,8 @@ on:
       - supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
       - test/integration/hr-payroll-advance-guard-assertions.sql
       - test/integration/hr-payroll-dual-review-assertions.sql
+      - supabase/migrations/20261104080000_hr_station_module_access.sql
+      - test/integration/hr-production-module-entitlement.sql
       - supabase/migrations/20261101230000_hr_payroll_review_draft.sql
       - supabase/migrations/20261101233000_hr_payroll_manual_punch_provenance.sql
   push:
@@ -15,6 +17,8 @@ on:
       - supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
       - test/integration/hr-payroll-advance-guard-assertions.sql
       - test/integration/hr-payroll-dual-review-assertions.sql
+      - supabase/migrations/20261104080000_hr_station_module_access.sql
+      - test/integration/hr-production-module-entitlement.sql
       - supabase/migrations/20261101230000_hr_payroll_review_draft.sql
       - supabase/migrations/20261101233000_hr_payroll_manual_punch_provenance.sql
 permissions:
@@ -53,4 +57,6 @@ jobs:
               psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261104063000_hr_payroll_unreconciled_advance_draft_guard.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-payroll-advance-guard-assertions.sql
               psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-payroll-dual-review-assertions.sql
+              psql -v ON_ERROR_STOP=1 -f /work/supabase/migrations/20261104080000_hr_station_module_access.sql
+              psql -v ON_ERROR_STOP=1 -f /work/test/integration/hr-production-module-entitlement.sql
             '
