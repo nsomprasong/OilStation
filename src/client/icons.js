@@ -1,7 +1,7 @@
 import {
   createElement, Fuel, UsersRound, Wallet, CalendarDays, MapPin, QrCode,
   LogOut, ShieldCheck, Mail, ClipboardList, ScanLine, TicketCheck,
-  Building2, UserPlus, ReceiptText, Camera, CheckCircle2, Settings2, Menu, House, Power, Pencil, Plus, UserMinus, RefreshCw,
+  Building2, UserPlus, ReceiptText, Camera, CheckCircle2, Settings2, Menu, House, Power, Pencil, Plus, UserMinus, RefreshCw, Search,
 } from 'lucide';
 import { siGoogle, siFacebook } from 'simple-icons';
 
@@ -12,7 +12,7 @@ const UI = Object.freeze({
   clipboard:ClipboardList, scan:ScanLine, ticket:TicketCheck,
   building:Building2, 'user-plus':UserPlus, receipt:ReceiptText, 'map-pin':MapPin,
   camera:Camera, check:CheckCircle2, settings:Settings2, menu:Menu, home:House, power:Power, edit:Pencil, plus:Plus,
-  'user-minus':UserMinus, refresh:RefreshCw,
+  'user-minus':UserMinus, refresh:RefreshCw, search:Search,
 });
 const BRANDS = Object.freeze({ google:siGoogle, facebook:siFacebook });
 const SVG_NS='http://www.w3.org/2000/svg';

@@ -28,10 +28,10 @@ export function mountToolbarCredit({target,token,memberships=[],shell}={}){
  copy.append(label,amount);
  const select=document.createElement('select');select.className='os-toolbar-credit-select';select.hidden=true;
  select.setAttribute('aria-label','เลือกบัญชีวงเงินที่ต้องการแสดง');
- const refresh=document.createElement('button');refresh.type='button';refresh.className='os-toolbar-credit-refresh';
- refresh.textContent='↻';refresh.title='รีเฟรชวงเงินคงเหลือ';refresh.setAttribute('aria-label','รีเฟรชวงเงินคงเหลือ');
- const inner=document.createElement('div');inner.className='os-toolbar-credit-items';inner.append(copy,select,refresh);target.append(inner);
- if(scope.kind==='unlinked'){refresh.hidden=true;return;}
+ const inner=document.createElement('div');inner.className='os-toolbar-credit-items';
+ inner.append(copy,select);target.append(inner);
+ if(scope.kind==='unlinked')return;
+ let lastAttempt=0;
  let accounts=[],loadedAt=0,busy=false;
  const showSelected=()=>{
   const a=accounts.find(a=>a.id===select.value)||accounts[0];
@@ -47,7 +47,7 @@ export function mountToolbarCredit({target,token,memberships=[],shell}={}){
  };
  const load=async()=>{
   if(busy)return;
-  busy=true;refresh.disabled=true;
+  busy=true;lastAttempt=Date.now();
   if(!loadedAt)amount.textContent='กำลังโหลด…';
   const previous=select.value;
   try{
@@ -72,10 +72,23 @@ export function mountToolbarCredit({target,token,memberships=[],shell}={}){
    showSelected();loadedAt=Date.now();
   }catch{
    accounts=[];select.hidden=true;select.replaceChildren();
-   amount.textContent='ตรวจสอบยอดไม่ได้';copy.title='ไม่สามารถอ่านวงเงินจากระบบได้ กรุณารีเฟรช';
-  }finally{busy=false;refresh.disabled=false;}
+   amount.textContent='ตรวจสอบยอดไม่ได้';copy.title='ไม่สามารถอ่านวงเงินจากระบบได้';
+  }finally{busy=false;}
  };
- refresh.addEventListener('click',load);
- shell?.addEventListener('oilstation:screenchange',()=>{if(Date.now()-loadedAt>30000)void load();});
+ // Periodic read-only refresh; foreground focus and screen navigation also
+ // refresh stale balances. A removed toolbar stops its own polling/listeners.
+ const controller=new AbortController();
+ const refreshIfStale=()=>{
+  if(!target.isConnected){cleanup();return;}
+  if(document.visibilityState==='visible'&&Date.now()-lastAttempt>=30000)void load();
+ };
+ const poll=setInterval(()=>{
+  if(!target.isConnected){cleanup();return;}
+  if(document.visibilityState==='visible')void load();
+ },60000);
+ function cleanup(){clearInterval(poll);controller.abort();}
+ shell?.addEventListener('oilstation:screenchange',refreshIfStale,{signal:controller.signal});
+ document.addEventListener('visibilitychange',refreshIfStale,{signal:controller.signal});
+ window.addEventListener('focus',refreshIfStale,{signal:controller.signal});
  void load();
 }

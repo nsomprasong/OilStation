@@ -51,13 +51,20 @@ export function renderMobileNav(screens,counts={}){
    aria-label="${s.label}" title="${s.label}">
    <span class="os-nav-orb"><i data-ui-icon="${s.icon}"></i></span>
    <span class="os-nav-caption">${s.label}</span></button>`;
- const placeholders=Array.from({length:4-frequent.length},()=>
-   '<span class="os-mobile-tab os-nav-orb-placeholder" aria-hidden="true"></span>').join('');
+ const home=`<button class="os-mobile-tab os-nav-orb-item is-current" type="button" data-ws-go="overview" aria-current="page">
+     <span class="os-nav-orb"><i data-ui-icon="home"></i></span><span class="os-nav-caption">Home</span></button>`;
+ // Always reserve five positions; center and distribute fewer authorized
+ // actions rather than leaving all empty space to the right.
+ const actions=[home,...frequent.map(item)];
+ const positions={1:[2],2:[1,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4]}[actions.length];
+ const slots=Array.from({length:5},(_,i)=>{
+  const index=positions.indexOf(i);
+  return index<0?'<span class="os-mobile-tab os-nav-orb-placeholder" aria-hidden="true"></span>':
+   actions[index];
+ });
  return `<nav class="os-mobile-bottom" aria-label="เมนูนำทางที่ใช้บ่อย">
   <div class="os-mobile-dock-inner">
-   <button class="os-mobile-tab os-nav-orb-item is-current" type="button" data-ws-go="overview" aria-current="page">
-     <span class="os-nav-orb"><i data-ui-icon="home"></i></span><span class="os-nav-caption">Home</span></button>
-   ${frequent.map(item).join('')}${placeholders}
+   ${slots.join('')}
   </div>
  </nav>`;
 }

@@ -234,3 +234,29 @@ test('Gold sweep decorates green navigation and headings without blocking contro
   await page.screenshot({path:info.outputPath('gold-lined-corporate-'+width+'.png'),animations:'disabled'});
  }
 });
+
+test('mobile header balance and profile share a row; three actions spread evenly',async({page})=>{
+ for(const width of [320,390,430]){
+  await page.setViewportSize({width,height:844});
+  await page.goto('/');
+  const role=[{scopeType:'corporate_company',role:'corporate_admin',corporateCompanyId:'company'}];
+  await mountShell(page,role,'corporate');
+  await page.evaluate(()=>{
+   document.querySelector('#os-toolbar-credit').innerHTML=
+    '<div class="os-toolbar-credit-items"><span class="os-toolbar-credit-copy"><span class="os-toolbar-credit-label">วงเงินคงเหลือ</span><strong class="os-toolbar-credit-amount">กำลังโหลด…</strong></span></div>';
+   document.querySelector('#os-toolbar-profile').innerHTML=
+    '<div class="os-profile"><button class="os-profile-trigger"><span class="os-profile-avatar">บ</span><span class="os-profile-summary"><strong>บัญชีทดสอบ</strong></span></button></div>';
+  });
+  const state=await page.evaluate(()=>{
+   const rect=id=>document.querySelector(id).getBoundingClientRect();
+   const c=rect('.os-toolbar-credit'),p=rect('.os-toolbar-profile');
+   return {sharedRow:Math.abs(c.y-p.y)<12,notOverlapping:c.right<=p.left+1,
+     pageWidth:document.documentElement.scrollWidth,screenWidth:document.documentElement.clientWidth,
+     nav:[...document.querySelectorAll('.os-mobile-bottom .os-mobile-tab')].map(x=>x.hasAttribute('data-ws-go'))};
+  });
+  expect(state.sharedRow).toBe(true);
+  expect(state.notOverlapping).toBe(true);
+  expect(state.pageWidth).toBeLessThanOrEqual(state.screenWidth+2);
+  expect(state.nav).toEqual([true,false,true,false,true]);
+ }
+});

@@ -22,7 +22,7 @@ test('visual layout uses one project token system, inset cards and icon logout',
  const shell=read('src/client/workspace-layout.js');
  assert.match(css,/--os-r:16px;\s*--os-r-sm:12px;\s*--os-control-r:10px/);
  assert.match(css,/--os-section-pad:20px/);
- assert.match(css,/\.os-directory-controls\{display:grid/);
+ assert.match(css,/\.os-directory-controls\{display:block/);
  assert.match(css,/\.os-directory-dialog\{/);
  assert.match(css,/\.ws-widget>section>\.module-item\{[\s\S]*?margin-inline:8px/);
  for(const x of ['os-credit-grid','os-report-table','os-directory-table',
@@ -72,4 +72,15 @@ test('the single workspace page header and menu gradients share one canonical st
  assert.match(members,/el\('div','os-member-actions'\)/);
  assert.doesNotMatch(members,/os-member-toolbar-title|os-member-list-head/);
  assert.doesNotMatch(css,/\.os-member-toolbar\{|\.os-member-list-head\{/);
+});
+
+test('member directory uses one search field and embedded magnifying glass',()=>{
+ const c=read('src/client/member-directory.js'),css=read('public/oilstation.css');
+ assert.match(c,/controls=node\('form','os-directory-controls'\)/);
+ assert.match(c,/actionButton\('search','ค้นหาสมาชิก'/);
+ assert.match(c,/controls\.addEventListener\('submit'/);
+ assert.doesNotMatch(c,/const (?:role|state|order)=node\('select'/);
+ assert.match(css,/\.os-member-directory-host\{[^}]*padding-top:18px/);
+ assert.match(css,/\.os-directory-search-submit\{/);
+ assert.doesNotMatch(css,/\.os-directory-refresh\{/);
 });

@@ -235,12 +235,15 @@ test('Live member directory is compact, searchable, role-scoped and safe on phon
   await root.locator('.os-directory-search').fill('driver');
   await expect(root.locator('tbody tr')).toHaveCount(1);
   await root.locator('.os-directory-search').fill('');
-  await root.locator('.os-directory-filter').first().selectOption('corporate_admin');
+  await expect(root.locator('.os-directory-search')).toHaveCount(1);
+  await expect(root.locator('.os-directory-filter')).toHaveCount(0);
+  await expect(root.locator('.os-directory-search-submit')).toHaveCount(1);
+  await root.locator('.os-directory-search').fill('ผู้ดูแลบริษัท');
+  await root.locator('.os-directory-search-submit').click();
   await expect(root.locator('tbody tr')).toHaveCount(1);
-  await root.locator('.os-directory-filter').first().selectOption('all');
-  await root.locator('.os-directory-filter').nth(1).selectOption('inactive');
+  await root.locator('.os-directory-search').fill('ชื่อที่ไม่มีอยู่');
   await expect(root.locator('.os-directory-empty')).toContainText('ไม่พบ');
-  await root.locator('.os-directory-filter').nth(1).selectOption('all');
+  await root.locator('.os-directory-search').fill('');
   if(width===1440){
    await root.getByRole('button',{name:'ปิดสิทธิ์ QA c01-driver'}).click();
    await expect(root.locator('.os-directory-dialog')).toBeVisible();
