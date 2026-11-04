@@ -25,29 +25,22 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
   token=null,scopeType=null,scopeId=null,canChange=false}={}){
  if(!target)return;
  const page=el('div','os-member-page');
- const toolbar=el('header','os-member-toolbar');
- const intro=el('div','os-member-intro');
- intro.append(el('p','os-member-eyebrow','สมาชิกและสิทธิ์'),
-  el('h3','os-member-toolbar-title','จัดการบัญชีผู้ใช้งาน'),
-  el('p','os-member-intro-copy','เชิญสมาชิก กำหนดบทบาท และจัดการสิทธิ์การเข้าใช้งานตามขอบเขต'));
- toolbar.append(intro);
+ const list=el('section','os-member-list');
+ list.setAttribute('aria-label','รายการบัญชีและสิทธิ์ที่ได้รับอนุญาต');
+ // The workspace renders the single visible page heading. Keep only task
+ // controls here: this is an action bar, not a second hero or section title.
+ const actions=el('div','os-member-actions');
+ const badge=el('span','os-member-count','0 รายการ');
+ badge.setAttribute('aria-live','polite');
  const canManage=Boolean(inviteControl||qaHost);
  let create=null,dialog=null;
  if(canManage){
   create=button('button primary os-member-create','เพิ่มสมาชิก','user-plus');
   create.setAttribute('aria-haspopup','dialog');
-  toolbar.append(create);
+  actions.append(create);
  }
- page.append(toolbar);
- const list=el('section','os-member-list');
- list.setAttribute('aria-label','รายการที่สร้างจากหน้านี้');
- const head=el('header','os-member-list-head');
- const copy=el('div');
- copy.append(el('h3',null,'กิจกรรมการเชิญล่าสุด'),el('p',null,
-  'แสดงคำเชิญและบัญชี QA ที่สร้างสำเร็จในหน้านี้เท่านั้น ไม่ใช่รายชื่อสมาชิกทั้งหมดของบริษัท'));
- head.append(copy);
- const badge=el('span','os-member-count','0 รายการ');
- head.append(badge);list.append(head);
+ actions.append(badge);
+ list.append(actions);
  const search=el('input','os-member-search');
  search.type='search';search.placeholder='ค้นหารายการที่สร้างในหน้านี้…';
  search.setAttribute('aria-label','ค้นหารายการที่สร้างในหน้านี้');
@@ -96,8 +89,6 @@ export function mountMemberInvitations({target,inviteControl=null,qaHost=null,re
   directory=mountMemberDirectory({
    target:directoryTarget,token,scopeType,scopeId,canChange,
    onLoaded:count=>{
-    head.querySelector('h3').textContent='รายชื่อบัญชีผู้ใช้งาน';
-    head.querySelector('p').textContent='จัดการบัญชีล็อกอินตามสิทธิ์ ไม่กระทบประวัติพนักงาน HR และเงินเดือน';
     badge.textContent=count===null?'ไม่พร้อมใช้งาน':count+' รายการ';
    },
   });
