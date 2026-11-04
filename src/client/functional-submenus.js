@@ -139,6 +139,24 @@ export function installFunctionalSubmenus(root){
   const found=available.find(p=>p.id===id);
   if(!found)return false;
   state.selected=id;
+  if(key==='corporate'){
+   // The one page header follows the selected task, rather than claiming
+   // "บัญชีบริษัท" and "ออกคูปอง" on all four different workspaces.
+   const screen=root.querySelector('[data-ws-screen="corporate"]');
+   const heading=screen?.querySelector('.ws-screen-head h2');
+   const description=screen?.querySelector('.ws-screen-head p');
+   const descriptions={
+    account:'ยอดพร้อมใช้และบัญชีเติมน้ำมันที่เชื่อมกับบริษัท',
+    topup:'แจ้งการโอนเงินและแนบหลักฐานให้สถานีตรวจสอบ',
+    'qa-topup':'จัดการคำขอเครดิตทดสอบภายในขอบเขตที่ได้รับอนุญาต',
+    driver:'กำหนดทะเบียนรถที่คนขับใช้งานก่อนออกคูปอง',
+    coupon:'กำหนดปั๊ม ชนิดน้ำมัน คนขับ และวงเงินคูปอง',
+    report:'รายการเติมน้ำมันที่เสร็จจริง แยกตามทะเบียนรถ',
+   };
+   if(heading&&heading.textContent!==found.label)heading.textContent=found.label;
+   if(description&&description.textContent!==descriptions[id])
+    description.textContent=descriptions[id]||found.label;
+  }
   for(const p of state.panes){
    if(!p.wrapper||p.wrapper===p.nodes[0])continue;
    const active=p===found;
