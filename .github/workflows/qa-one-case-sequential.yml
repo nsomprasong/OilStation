@@ -1,4 +1,4 @@
-name: "QA serialized new-case batch"
+name: "QA serialized exactly six new UAT cases"
 on:
   push:
     branches: [main]
@@ -27,15 +27,15 @@ jobs:
           fetch-depth: 2
       - uses: actions/setup-node@v4
         with: {node-version-file: .nvmrc}
-      - name: Select 2-6 newly added QA cases only; never rerun passed specs
+      - name: Select exactly six newly added QA cases only; never rerun passed specs
         shell: bash
         run: |
           set -euo pipefail
           git diff --name-status HEAD^ HEAD -- e2e/ > /tmp/qa-batch-e2e-changes.tsv
           mapfile -t all < <(awk 'NF {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
           mapfile -t changed < <(awk '$1=="A" && $2 ~ /^e2e\/qa\.case-[a-z0-9-]+\.pw\.mjs$/ {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
-          if (( ${#changed[@]} < 2 || ${#changed[@]} > 6 )); then
-            echo "::error::Batch must add 2-6 new isolated QA specs, got ${#changed[@]}"; exit 1
+          if (( ${#changed[@]} != 6 )); then
+            echo "::error::Batch must add exactly SIX new isolated QA specs, got ${#changed[@]}"; exit 1
           fi
           if (( ${#all[@]} != ${#changed[@]} )); then
             echo "::error::A prior spec changed or an unapproved e2e file is included"; exit 1
@@ -51,8 +51,8 @@ jobs:
             fi
           done
           mapfile -t sorted < <(printf '%s\n' "${ids[@]}" | sort -n)
-          if (( 10#${sorted[0]} < 23 )); then
-            echo "::error::Cannot rerun cases 001-022"; exit 1
+          if (( 10#${sorted[0]} < 39 )); then
+            echo "::error::Cannot rerun passed cases 001-038"; exit 1
           fi
           for ((i=1; i<${#sorted[@]}; i++)); do
             if (( 10#${sorted[i]} != 10#${sorted[i-1]} + 1 )); then
@@ -92,7 +92,8 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t specs < .qa-new-batch-specs.txt
-          test "${#specs[@]}" -eq "$QA_BATCH_COUNT"
+          test "${#specs[@]}" -eq 6
+          test "$QA_BATCH_COUNT" -eq 6
           npm run test:e2e -- "${specs[@]}" --workers=1 --reporter=list | tee /tmp/oilstation-qa-batch.log
           grep -Eq "[[:space:]]${QA_BATCH_COUNT} passed \(" /tmp/oilstation-qa-batch.log || {
             echo "::error::Not every new case passed"; exit 1
