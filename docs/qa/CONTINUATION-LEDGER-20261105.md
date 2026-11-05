@@ -24,7 +24,8 @@
 | **OS-QA-ST-CUSTOMER-CREATE-VALIDATION-004** | s01b-owner, mobile Customers > Create account; invalid required/email/tax/billing-day inputs | Validated form visibility and native/custom input rejection with no writes | **PASS — 1/1 browser run 41994519937** after PR #161 fix; see `docs/qa/runs/OS-QA-ST-CUSTOMER-CREATE-VALIDATION-004.md` |
 | **OS-QA-ST-MEMBER-DIRECTORY-005** | s01b-owner, mobile Invitations > Member Directory; single search by email/name/role | Scoped GET; true table count, search, empty state, reset; no member writes | **PASS — 1/1 browser run 41995524307**, evidence in `docs/qa/runs/OS-QA-ST-MEMBER-DIRECTORY-005.md` |
 | **OS-QA-ST-INVITE-VALIDATION-006** | s01b-owner, mobile Invitations > Add Member > Email invitation drawer | Six allowed roles, blank/invalid email guards, close; no invitation write | **PASS — 1/1 browser run 41996206907**, details in `docs/qa/runs/OS-QA-ST-INVITE-VALIDATION-006.md` |
-| **OS-QA-ST-MEMBER-EDIT-UI-007** | s01b-owner, mobile Invitations > directory > edit member | Open authorized edit dialog, check choices and cancel; do not post a role change | **NOT TESTED — next single case** |
+| **OS-QA-ST-MEMBER-EDIT-UI-007** | s01b-owner, mobile Invitations > directory > edit member | Review editor, choose temporary role, cancel, reload unchanged; protected owner | **PASS — 1/1 browser run 42006256893**, see `docs/qa/runs/OS-QA-ST-MEMBER-EDIT-UI-007.md` |
+| **OS-QA-ST-MEMBER-DEACTIVATE-CANCEL-008** | s01b-owner, mobile Invitations > manager > deactivate confirmation | View warning, cancel and verify manager still active; owner protected; no writes | **NOT TESTED — next single case** |
 
 ## Case queue — not yet executed, do not mass-run
 
@@ -35,7 +36,8 @@
 | COMPLETE | Station s01b Customers account creation **validation** case **004** | PASS 1/1, genuine invalid-input browser and no write; not a positive create |
 | COMPLETE | Station s01b Invitations member directory read/search case **005** | PASS 1/1, scoped seven-member GET + search/empty/reset, no write |
 | COMPLETE | Station s01b Invitation drawer invalid input **006** | PASS 1/1, protected 6 roles, invalid email and cancellation, no writes |
-| P1 | Station s01b member role editor UI review/cancel **007** | One station owner; do not save or change role; inspect same scoped members only |
+| COMPLETE | Station s01b member role editor UI review/cancel **007** | PASS 1/1, role draft cancelled and server role unchanged, no writes |
+| P1 | Station s01b member deactivation dialog review/cancel **008** | One owner, inspect confirmation warning and cancel; no revocation |
 | P1 | Station Customer new account, existing link, credit, fuel prices, pump, Plan, Invitations; each **separate** read/validation/write case | Each case needs exact QA manifest; do not mutate existing customer data without verified recovery |
 | P1 | Station HR People, Attendance, Review, OT, substitution, Leave, Payroll; **individual bounded QA-HR** cases | Live HR explicitly denies QA actors; use separately scoped approved QA lane; never weaken normal auth |
 | P1 | Corporate topup, QR issuance/reservation, plate/photo verification, completed fueling and reporting | Protected QA-only transaction flow with rollback/compensation and audit; no real bank/fuel operations |
