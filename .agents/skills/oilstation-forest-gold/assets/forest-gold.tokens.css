@@ -1,0 +1,36 @@
+/*
+ * Forest & Gold — portable opt-in token preset.
+ * Import into a destination app ONLY when desired; no component selectors,
+ * no global body styles, and no shadow overrides.
+ * In OilStation, use the existing --os-* tokens in public/oilstation.css instead.
+ */
+.forest-gold-theme {
+  --fg-page: #EAE7DF;
+  --fg-forest: #10271E;
+  --fg-deep-forest: #0C1D17;
+  --fg-card: #F7F5EF;
+  --fg-card-inset: #F0EDE5;
+  --fg-ink: #1B2A24;
+  --fg-muted: #59685F;
+  --fg-border: #CCD0C5;
+  --fg-border-soft: #DDE0D6;
+  --fg-emerald: #194635;
+  --fg-emerald-deep: #174735;
+  --fg-gold: #BD9A5E;
+  --fg-gold-ink: #75572D;
+  --fg-gold-line: rgba(231,190,122,.78);
+  --fg-gold-line-soft: rgba(231,190,122,.26);
+  --fg-input: #FFFDF8;
+  --fg-hover: #E3EBE1;
+  --fg-on-dark: #FFFDF8;
+  --fg-success: #176143;
+  --fg-warning: #87571E;
+  --fg-danger: #A13734;
+  --fg-radius: 16px;
+  --fg-radius-sm: 12px;
+  --fg-control-radius: 10px;
+  --fg-font: "Noto Sans Thai","Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --fg-page-gradient: linear-gradient(155deg,#F7F5EF 0%,#EAE7DF 54%,#E0EAE2 100%);
+  --fg-menu-gradient: linear-gradient(170deg,#0E271D 0%,#174635 53%,#2B6049 100%);
+  --fg-header-gradient: linear-gradient(112deg,#102D23 0%,#194635 50%,#2B634D 100%);
+}
