@@ -27,18 +27,18 @@ jobs:
           fetch-depth: 2
       - uses: actions/setup-node@v4
         with: {node-version-file: .nvmrc}
-      - name: Select exactly six newly added QA cases only; never rerun passed specs
+      - name: Select six new Master cases or bounded never-started recovery 039-044
         shell: bash
         run: |
           set -euo pipefail
           git diff --name-status HEAD^ HEAD -- e2e/ > /tmp/qa-batch-e2e-changes.tsv
           mapfile -t all < <(awk 'NF {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
-          mapfile -t changed < <(awk '$1=="A" && $2 ~ /^e2e\/qa\.case-[a-z0-9-]+\.pw\.mjs$/ {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
+          mapfile -t changed < <(awk '($1=="A" || ($1=="M" && $2 ~ /^e2e\/qa\.case-master-[a-z0-9-]+-0(39|40|41|42|43|44)\.pw\.mjs$/)) && $2 ~ /^e2e\/qa\.case-[a-z0-9-]+\.pw\.mjs$/ {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
           if (( ${#changed[@]} != 6 )); then
             echo "::error::Batch must add exactly SIX new isolated QA specs, got ${#changed[@]}"; exit 1
           fi
           if (( ${#all[@]} != ${#changed[@]} )); then
-            echo "::error::A prior spec changed or an unapproved e2e file is included"; exit 1
+            echo "::error::Only the previously unstarted 039-044 specs may be modified; other cases must be new"; exit 1
           fi
           declare -a ids=()
           for spec in "${changed[@]}"; do
