@@ -23,6 +23,7 @@
   --os-ok:#176143;       --os-warn:#87571E;     --os-danger:#A13734;
   --os-r:16px;           --os-r-sm:12px;          --os-control-r:10px;
   --os-gap:16px;         --os-section-pad:20px;
+  --os-inset-gap:8px;    --os-card-gap:12px;       --os-task-gap:16px;
   /* Shared gradient palette: a light work surface with forest-green navigation. */
   --os-gradient-page:linear-gradient(155deg,#F7F5EF 0%,#EAE7DF 54%,#E0EAE2 100%);
   --os-gradient-menu:linear-gradient(170deg,#0E271D 0%,#174635 53%,#2B6049 100%);
@@ -323,6 +324,32 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-report-header{display:flex;align-items:center;justify-content:space-between;
  gap:14px;padding:14px 18px;background:var(--os-on);
  border:1px solid var(--os-line);border-radius:var(--os-r);flex-wrap:wrap}
+/* Station customer summary and completed-fuel report have the same emerald
+   principal card header as the selected page, with a quiet 1px gold rule.
+   Other modules retain pale headers to avoid repeating a green block everywhere. */
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header){
+ position:relative;isolation:isolate;
+ background:var(--os-gradient-header);border-color:var(--os-side-border);
+ color:var(--os-side-tx);
+}
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)::before{
+ content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+ background:radial-gradient(ellipse 850px 180px at -120px 196px,
+   transparent 85.35%,var(--os-gold-line-soft) 85.58% 85.81%,transparent 86.08%);
+}
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)::after{
+ content:"";position:absolute;bottom:0;left:18px;right:18px;height:1px;pointer-events:none;
+ background:linear-gradient(90deg,var(--os-gold-line),var(--os-gold-line-soft),transparent);
+}
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)>*{
+ position:relative;z-index:1;
+}
+#app.workspace-mode .os-midnight-layout [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) h3{
+ color:var(--os-side-tx)!important;
+}
+#app.workspace-mode .os-midnight-layout [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) p{
+ color:#E1EEE5!important;
+}
 #app.workspace-mode .os-credit-head h3,
 #app.workspace-mode .os-report-header h3{margin:0 0 4px;color:var(--os-ac);font-size:18px}
 #app.workspace-mode .os-credit-head p,
@@ -332,7 +359,8 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-credit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));
  gap:12px;padding:0 8px}
 #app.workspace-mode .os-credit-account{min-width:0;padding:18px;background:#FFFDF8;
- border:1px solid var(--os-line);border-radius:var(--os-r-sm)}
+ border:1px solid var(--os-line);border-top:2px solid var(--os-gold-line-soft);
+ border-radius:var(--os-r-sm)}
 #app.workspace-mode .os-credit-account h4{font-size:15px;color:var(--os-tx);margin:0 0 12px}
 #app.workspace-mode .os-credit-account .os-credit-available{font-size:clamp(23px,2.3vw,29px);
  color:var(--os-ac);font-weight:800;margin:0;font-variant-numeric:tabular-nums}
@@ -785,10 +813,11 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .invite-form button{min-height:40px}
 #app.workspace-mode .os-station-layout{
   display:grid;grid-template-columns:minmax(300px,.94fr) minmax(380px,1.25fr);
-  gap:24px;align-items:start;
+  gap:var(--os-task-gap);align-items:start;min-width:0;
 }
 #app.workspace-mode .os-create-station,#app.workspace-mode .os-station-directory{
-  padding:22px;background:var(--os-card);border:1px solid var(--os-line);border-radius:10px;
+  padding:var(--os-section-pad);background:var(--os-card);
+  border:1px solid var(--os-line);border-radius:var(--os-r);
 }
 #app.workspace-mode .os-onboarding-label{
   display:inline-block;font-weight:800;letter-spacing:.04em;margin-bottom:8px;
@@ -799,10 +828,13 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
   display:grid;grid-template-columns:1fr;gap:14px;
 }
 #app.workspace-mode #new-station-form .module-choices{gap:13px;margin:0}
-#app.workspace-mode .os-station-card{background:var(--os-card);border-radius:9px;border:1px solid var(--os-line);display:grid;gap:9px}
+#app.workspace-mode .os-station-card{
+ background:var(--os-input);border-radius:var(--os-r-sm);border:1px solid var(--os-line);
+ display:grid;gap:10px;min-width:0;
+}
 #app.workspace-mode .os-station-card-name{font-size:15px;font-weight:750}
 #app.workspace-mode .os-station-card-meta{font-size:12px;line-height:1.6}
-#app.workspace-mode .os-station-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}
+#app.workspace-mode .os-station-actions{display:flex;gap:var(--os-inset-gap);flex-wrap:wrap;margin-top:12px}
 #app.workspace-mode .os-station-actions>.button{min-width:145px}
 #app.workspace-mode .os-station-actions .invite-control{margin:0}
 #app.workspace-mode .os-station-actions .invite-form{max-width:100%}
@@ -1013,7 +1045,12 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
   margin-inline-start:auto;border-radius:9px;
 }
 #app.workspace-mode .os-plan-manager{grid-column:1/-1;border-radius:18px;padding:clamp(16px,2.6vw,25px);background:var(--os-card)}
-#app.workspace-mode .os-plan-manager-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+#app.workspace-mode .os-plan-manager-header{
+ display:flex;justify-content:space-between;align-items:center;gap:var(--os-task-gap);flex-wrap:wrap;
+ margin:0 0 16px;padding:14px 16px;border:1px solid var(--os-line-soft);
+ border-left:3px solid var(--os-gold);border-radius:var(--os-r-sm);
+ background:linear-gradient(105deg,#E3EEE5 0%,#F7F5EF 64%,#F1E9D7 100%);
+}
 #app.workspace-mode .os-plan-manager-header h3{font-size:18px;margin:0 0 4px;color:var(--os-ok)}
 #app.workspace-mode .os-plan-manager-header p{color:var(--os-mu);font-size:12px;line-height:1.65;margin:0}
 #app.workspace-mode .os-plan-vat-notice{font-size:12px;line-height:1.65;padding:11px 13px;margin:13px 0 0;border:1px solid var(--os-line);border-radius:11px;background:var(--os-card);color:var(--os-warn)}
@@ -1096,8 +1133,82 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 }
 #app.workspace-mode .os-toolbar-logout:focus-visible,
 #app.workspace-mode .os-sales-workspace :is(button,select,textarea,input):focus-visible{outline:3px solid var(--os-ac);outline-offset:2px}
+/* Platform support and audit use the same inset card/table rhythm as station
+   credit and customer reports. Table overflow stays inside the work card. */
+#app.workspace-mode [data-ws-screen="support"] .os-support,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity{
+ display:grid;gap:var(--os-card-gap);min-width:0;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-toolbar,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-header{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+ gap:var(--os-card-gap);padding:14px 16px;
+ border:1px solid var(--os-line-soft);border-left:3px solid var(--os-gold);
+ border-radius:var(--os-r-sm);
+ background:linear-gradient(105deg,#E3EEE5 0%,#F7F5EF 64%,#F1E9D7 100%);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-toolbar .os-section-copy{
+ flex:1 1 300px;min-width:0;margin:0;font-size:13px;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-toolbar .button{margin:0;min-height:44px}
+#app.workspace-mode [data-ws-screen="support"] .os-support-status,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-status{
+ margin:0;padding:10px 12px;border:1px solid var(--os-line-soft);
+ border-radius:var(--os-r-sm);background:var(--os-on);color:var(--os-ac);
+ font-size:12px;line-height:1.6;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>h3,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity h3{
+ margin:5px 0 0;padding-bottom:10px;
+ border-bottom:1px solid var(--os-gold-line-soft);
+ font-size:16px;color:var(--os-ac);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>.module-list{
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--os-card-gap);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>.module-list .module-item{
+ display:grid;gap:4px;min-width:0;padding:14px 16px;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>.module-list .module-item small{
+ font-size:12px;color:var(--os-mu);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-table-scroll,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-table-wrap{
+ width:100%;max-width:100%;min-width:0;overflow-x:auto;
+ border:1px solid var(--os-line);border-radius:var(--os-r-sm);
+ background:var(--os-input);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-table-scroll .os-activity-table{
+ min-width:620px;
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-header{
+ display:grid;gap:3px;
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-header p{
+ margin:0;color:var(--os-mu);font-size:12px;
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-tools{
+ display:flex;align-items:end;flex-wrap:wrap;gap:var(--os-card-gap);
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-tools label{
+ display:grid;gap:7px;flex:1 1 220px;max-width:400px;font-size:13px;color:var(--os-mu);
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-tools select{min-height:44px}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-table-wrap .os-activity-table{
+ min-width:620px;table-layout:auto;
+}
+@media(max-width:620px){
+ #app.workspace-mode [data-ws-screen="support"] .os-support-toolbar .button,
+ #app.workspace-mode [data-ws-screen="activity"] .os-activity-tools .button{width:100%}
+}
 #app.workspace-mode .os-sales-workspace{display:grid;gap:16px}
-#app.workspace-mode .os-sales-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+#app.workspace-mode .os-sales-head{
+ display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+ gap:var(--os-card-gap);padding:14px 16px;margin:0 0 var(--os-card-gap);
+ border:1px solid var(--os-line-soft);border-left:3px solid var(--os-gold);
+ border-radius:var(--os-r-sm);
+ background:linear-gradient(105deg,#E3EEE5 0%,#F7F5EF 64%,#F1E9D7 100%);
+}
 #app.workspace-mode .os-sales-head h3{margin:0 0 5px;font-size:19px;color:var(--os-ok)}
 #app.workspace-mode .os-sales-head p{margin:0;color:var(--os-mu);font-size:13px}
 #app.workspace-mode .os-sales-head .button{width:auto;margin:0}
@@ -1115,11 +1226,18 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-sales-disclosure summary:focus-visible{outline:3px solid var(--os-ac);outline-offset:2px}
 #app.workspace-mode .os-sales-back{width:auto!important;max-width:100%;margin:0 0 12px!important;min-height:40px}
 #app.workspace-mode .os-sales-subsection .os-inspection{margin-top:0}
-#app.workspace-mode .os-sales-panel>h4{color:var(--os-ok);font-size:16px;margin:0 0 13px}
+#app.workspace-mode .os-sales-panel>h4{
+ color:var(--os-ac);font-size:16px;margin:0 0 16px;padding:0 0 12px;
+ border-bottom:1px solid var(--os-gold-line-soft);
+}
 #app.workspace-mode .os-sales-secondary{font-size:12px;line-height:1.7}
 #app.workspace-mode .os-sales-status{font-size:13px;min-height:20px;margin:3px 0}
 #app.workspace-mode .os-sales-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,265px),1fr));gap:10px}
-#app.workspace-mode .os-sales-card{background:var(--os-card);border:1px solid var(--os-line);border-radius:12px;padding:14px;min-width:0;overflow-wrap:anywhere}
+#app.workspace-mode .os-sales-card{
+ background:var(--os-input);border:1px solid var(--os-line);
+ border-top:2px solid var(--os-gold-line-soft);
+ border-radius:var(--os-r-sm);padding:14px 16px;min-width:0;overflow-wrap:anywhere;
+}
 #app.workspace-mode .os-sales-card strong{color:var(--os-ok);display:block;font-size:14px;margin-bottom:7px}
 #app.workspace-mode .os-sales-card p{color:var(--os-mu);font-size:12px;margin:5px 0}
 #app.workspace-mode .os-sales-transfer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -1149,7 +1267,9 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-functional-pane[hidden],
 #app.workspace-mode .os-functional-nav:empty,
 #app.workspace-mode .os-functional-nav button[hidden]{display:none!important}
-#app.workspace-mode .os-functional-pane{min-width:0;width:100%;max-width:100%}
+#app.workspace-mode .os-functional-pane{
+ display:grid;gap:var(--os-task-gap);min-width:0;width:100%;max-width:100%;
+}
 #app.workspace-mode .os-station-layout:has(>.os-functional-pane),
 #app.workspace-mode .saas-simple-layout:has(>.os-functional-pane){display:block!important}
 #app.workspace-mode .os-station-layout>.os-functional-pane,
@@ -1188,16 +1308,25 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
   background:var(--mid-card)!important;color:var(--mid-text)!important;
   border:0!important;border-radius:11px!important;
 }
+/* Structural surfaces use 16px; inset records use 12px. The old
+   one-size-fits-all 14px compatibility override broke the design hierarchy. */
 #app.workspace-mode .os-midnight-layout :is(
-  .ws-widget>section,.os-sales-panel,.os-sales-card,.saas-simple-card,
+  .ws-widget>section,.os-sales-panel,.saas-simple-card,
   .os-create-station,.os-station-directory,.billing-panel,.owner-plan-onboarding,
-  .os-plan-card,.os-plan-editor,.os-record-card,.os-editable-card,.os-station-card,
-  .fuel-row,.module-item,.plate-review-card,.fuel-review-card,
-  .os-mobile-summary-card,.os-mobile-page-content>.ws-widget:not(:empty)
+  .os-plan-editor,.os-mobile-summary-card,
+  .os-mobile-page-content>.ws-widget:not(:empty)
 ){
   color:var(--mid-text)!important;background:var(--mid-card)!important;
-  border:1px solid var(--os-line)!important;border-radius:14px!important;
-  box-shadow:0 4px 18px -17px #10271e66!important;
+  border:1px solid var(--os-line)!important;border-radius:var(--os-r)!important;
+  box-shadow:0 6px 22px -20px #10271e66!important;
+}
+#app.workspace-mode .os-midnight-layout :is(
+  .os-sales-card,.os-plan-card,.os-record-card,.os-editable-card,.os-station-card,
+  .fuel-row,.module-item,.plate-review-card,.fuel-review-card
+){
+  color:var(--mid-text)!important;background:var(--os-input)!important;
+  border:1px solid var(--os-line)!important;border-radius:var(--os-r-sm)!important;
+  box-shadow:0 4px 16px -17px #10271e55!important;
 }
 #app.workspace-mode .os-midnight-layout :is(.os-sales-panel,.ws-widget>section,.os-create-station,.billing-panel,.saas-simple-card){
   padding:20px!important
@@ -1380,18 +1509,35 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .os-desktop-brand img{width:37px;height:37px;object-fit:contain}
 .os-desktop-brand strong{display:block;font-size:18px;line-height:1.2;color:var(--os-side-tx)}
 .os-desktop-brand small{display:block;font-size:10px;letter-spacing:.16em;color:var(--os-side-mu)}
-.os-desktop-side-nav{display:grid;gap:4px}
-.os-desktop-side-link{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:0 12px;border:0;border-radius:var(--os-r-sm);
-  background:none;color:var(--os-side-mu);font-size:14px;font-weight:500;text-align:left}
-.os-desktop-side-link:hover{background:var(--os-side-hover);color:var(--os-side-tx)}
-.os-desktop-side-link.is-current,.os-desktop-side-link[aria-current=page]{background:var(--os-bg);color:var(--os-ac);font-weight:700}
-.os-desktop-side-icon{display:grid;place-items:center;flex:none}
-.os-desktop-side-link.is-current .os-desktop-side-icon{color:var(--os-ac)}
+.os-desktop-side-nav{display:grid;gap:6px;padding:2px 0 8px}
+.os-desktop-side-link{
+ display:flex;align-items:center;gap:11px;width:100%;min-height:48px;padding:5px 10px;
+ border:1px solid transparent;border-radius:var(--os-r-sm);position:relative;
+ background:transparent;color:var(--os-side-mu);font-size:13px;font-weight:600;text-align:left;
+ transition:background-color .15s,border-color .15s,color .15s;
+}
+.os-desktop-side-link:hover{background:var(--os-side-hover);border-color:var(--os-side-border);color:var(--os-side-tx)}
+.os-desktop-side-link.is-current,.os-desktop-side-link[aria-current=page]{
+ background:linear-gradient(115deg,#FFFDF8 0%,#EAE7DF 100%);
+ box-shadow:inset 3px 0 0 var(--os-gold);border-color:#E4D8C3;
+ color:var(--os-ac);font-weight:750;
+}
+.os-desktop-side-link:focus-visible{outline:3px solid #EBD7AD;outline-offset:2px}
+.os-desktop-side-icon{
+ display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:10px;
+ background:rgba(255,253,248,.08);color:#E0E9DF;
+}
+.os-desktop-side-link.is-current .os-desktop-side-icon{
+ background:var(--os-on);color:var(--os-ac);
+}
 .os-desktop-side-copy{min-width:0;overflow-wrap:anywhere}
 .os-desktop-side-footer{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px;font-size:12px;color:var(--os-side-mu)}
 .os-side-status-dot{width:8px;height:8px;border-radius:50%;background:#84CFA2;flex:none}
 
-.ws-main{min-width:0;display:flex;flex-direction:column;padding:0 clamp(24px,3.4vw,48px) 64px}
+.ws-main{
+ min-width:0;display:flex;flex-direction:column;
+ padding:0 clamp(24px,3.4vw,48px) 64px;
+}
 .ws-toolbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;min-height:72px;
   background-color:var(--os-side);background-image:var(--os-gradient-menu);color:var(--os-side-tx);backdrop-filter:blur(8px);border-bottom:1px solid var(--os-side-border);margin:0 calc(-1*clamp(24px,3.4vw,48px));padding:12px clamp(24px,3.4vw,48px);isolation:isolate}
 /* Decorative arcs cannot intercept input or clip the account profile popover. */
@@ -1426,6 +1572,10 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 /* The corporate pane owns its page title; suppress the redundant workspace
    scope label above its functional navigation without hiding profile controls. */
 #app.workspace-mode .ws-layout[data-active-screen="corporate"] .ws-header{display:none}
+/* One task-specific green heading is sufficient on every non-Home page.
+   Keep the already-tested corporate case and remove the redundant scope strip
+   from Platform, Sales and Station screens as well. */
+#app.workspace-mode .ws-layout:not([data-active-screen="overview"]):not([data-active-screen="corporate"]) .ws-header{display:none}
 .ws-header h1:empty{display:none}
 .ws-overline{margin:0 0 4px;font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--os-gold-ink)}
 .ws-header h1{font-size:15px;font-weight:500;color:var(--os-mu);letter-spacing:0;margin:0;min-height:1.35em}
@@ -1434,13 +1584,37 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 
 /* functional sub-navigation (tabs) */
 .ws-context-host{min-width:0}
-.os-functional-nav{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:12px 0 4px;padding-bottom:5px;scrollbar-width:thin;scrollbar-color:var(--os-line) transparent}
+.os-functional-nav{
+ display:flex;flex-wrap:nowrap;overflow-x:auto;gap:var(--os-inset-gap);
+ margin:12px 0 8px;padding:3px 0 7px;
+ scrollbar-width:thin;scrollbar-color:var(--os-line) transparent;
+ scroll-padding-inline:6px;scroll-snap-type:x proximity;
+}
 .os-functional-nav:empty{display:none}
-.os-category-tab{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 0 12px;border:1px solid var(--os-line);border-radius:99px;
-  background:none;color:var(--os-mu);font-size:14px;font-weight:600;white-space:nowrap}
-.os-category-tab:hover{background:var(--os-hover);color:var(--os-tx)}
-.os-category-tab .os-nav-orb{display:grid;place-items:center}
-.os-category-tab.active,.os-category-tab[aria-pressed=true]{background-color:var(--os-ac);background-image:var(--os-gradient-menu);border-color:var(--os-ac);color:var(--os-ac-ink);box-shadow:0 4px 12px -9px #10271e88}
+.os-category-tab{
+ display:inline-flex;align-items:center;flex:none;gap:8px;min-height:48px;
+ padding:5px 16px 5px 7px;border:1px solid var(--os-line);
+ border-radius:99px;background:linear-gradient(135deg,#FFFDF8,#F0EDE5);
+ color:var(--os-tx);font-size:13px;font-weight:650;white-space:nowrap;
+ scroll-snap-align:start;
+}
+.os-category-tab:hover{background:var(--os-hover);border-color:var(--os-gold);color:var(--os-ac)}
+.os-category-tab:focus-visible{outline:3px solid var(--os-gold);outline-offset:2px}
+.os-category-tab .os-nav-orb{
+ display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%;
+ color:var(--os-ac);border:1px solid #D8C9A8;
+ background:radial-gradient(circle at 30% 20%,#FFFDF8 0%,#E7E8DA 85%);
+ box-shadow:0 2px 5px #10271e19;
+}
+.os-category-tab .os-nav-caption{line-height:1.2}
+.os-category-tab.active,.os-category-tab[aria-pressed=true]{
+ background-color:var(--os-ac);background-image:var(--os-gradient-menu);
+ border-color:var(--os-ac);color:var(--os-ac-ink);
+ box-shadow:0 4px 12px -9px #10271e88;
+}
+.os-category-tab.active .os-nav-orb,.os-category-tab[aria-pressed=true] .os-nav-orb{
+ background:var(--os-card);border-color:var(--os-gold-line);color:var(--os-ac);
+}
 
 /* screens */
 .ws-content{min-width:0}
@@ -1448,7 +1622,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .ws-screen-head{margin:20px 0 22px;padding:0 0 18px;border-bottom:1px solid var(--os-line-soft)}
 /* A single gradient page heading is shared by every authorized non-Home screen. */
 #app.workspace-mode .ws-screen:not([data-ws-screen="overview"])>.ws-screen-head{
- margin:20px 0 18px;padding:20px 24px;
+ margin:12px 0 16px;padding:18px 22px;
  border:1px solid var(--os-side-border);border-radius:var(--os-r);
  background-color:var(--os-ac);background-image:var(--os-gradient-header);
  color:var(--os-side-tx);position:relative;isolation:isolate;
@@ -1476,7 +1650,7 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .ws-screen-head h2{font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin:0 0 6px}
 .ws-screen-head h2:focus{outline:none}
 .ws-screen-head p{margin:0;color:var(--os-mu);font-size:14px}
-.ws-widget{min-width:0}
+.ws-widget{min-width:0;max-width:100%}
 .ws-widget:empty{display:none}
 .ws-widget+.ws-widget:not(:empty){margin-top:24px}
 .os-functional-pane{min-width:0}
@@ -1489,12 +1663,21 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 /* overview (desktop) */
 .ws-overview-columns{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:32px;align-items:start}
 .ws-quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:var(--os-gap)}
-.ws-quick{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;text-align:left;padding:18px;border:1px solid var(--os-line);border-radius:var(--os-r);background:var(--os-card);color:var(--os-tx);min-height:92px}
-.ws-quick:hover{border-color:var(--os-ac);background:var(--os-card-2)}
+.ws-quick{
+ display:flex;align-items:flex-start;justify-content:space-between;gap:12px;text-align:left;
+ padding:20px;border:1px solid var(--os-line);border-top:2px solid var(--os-gold-line-soft);
+ border-radius:var(--os-r);background:var(--os-card);color:var(--os-tx);min-height:96px;
+}
+.ws-quick:hover{border-color:var(--os-ac);background:var(--os-hover)}
+.ws-quick:focus-visible{outline:3px solid var(--os-gold);outline-offset:2px}
 .ws-quick-copy strong{display:block;font-size:15px;margin-bottom:4px}
 .ws-quick-copy small{display:block;color:var(--os-mu);font-size:12px;line-height:1.55}
 .ws-quick-arrow{color:var(--os-ac);font-size:22px;line-height:1}
-.ws-overview-side{padding:20px;border:1px solid var(--os-line);border-radius:var(--os-r);background:var(--os-card)}
+.ws-overview-side{
+ padding:20px;border:1px solid var(--os-line);border-top:2px solid var(--os-gold-line-soft);
+ border-radius:var(--os-r);background:var(--os-card);
+ box-shadow:0 6px 22px -20px #10271e66;
+}
 .scope-list{display:flex;flex-wrap:wrap;gap:8px}
 .scope-chip{padding:7px 12px;border-radius:99px;background:var(--os-on);color:var(--os-ac);font-size:12px;font-weight:650}
 .module-list{display:grid;gap:10px}
@@ -1607,12 +1790,25 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
     background:linear-gradient(90deg,transparent,var(--os-gold-line) 32%,transparent);
   }
   .os-mobile-dock-inner{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;max-width:540px;margin-inline:auto;align-items:center;justify-items:center;justify-content:center;position:relative;z-index:1}
-  .os-mobile-tab{display:grid;justify-items:center;align-content:center;gap:3px;min-width:0;width:100%;min-height:56px;padding:4px 2px;border:0;border-radius:12px;background:none;color:var(--os-side-mu)}
-  .os-mobile-tab .os-nav-orb{display:grid;place-items:center;width:44px;height:28px;border-radius:99px}
+  .os-mobile-tab{
+    display:grid;justify-items:center;align-content:center;gap:3px;
+    min-width:0;width:100%;min-height:56px;padding:4px 2px;
+    border:0;border-radius:12px;background:transparent;color:var(--os-side-mu);
+  }
+  .os-mobile-tab .os-nav-orb{
+    display:grid;place-items:center;width:44px;height:28px;border-radius:99px;
+    border:1px solid rgba(247,245,239,.13);background:rgba(247,245,239,.06);
+  }
   .os-mobile-tab .app-icon{width:21px;height:21px}
-  .os-mobile-tab .os-nav-caption{max-width:100%;font-size:11px;font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .os-mobile-tab .os-nav-caption{
+    max-width:100%;font-size:11px;font-weight:600;line-height:1.2;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
   .os-mobile-tab.is-current,.os-mobile-tab[aria-current=page]{color:var(--os-side-tx)}
-  .os-mobile-tab.is-current .os-nav-orb,.os-mobile-tab[aria-current=page] .os-nav-orb{background:var(--os-bg);color:var(--os-ac)}
+  .os-mobile-tab.is-current .os-nav-orb,.os-mobile-tab[aria-current=page] .os-nav-orb{
+    border-color:var(--os-gold-line);background:var(--os-bg);color:var(--os-ac);
+    box-shadow:0 2px 9px #07171055;
+  }
   .os-nav-orb-placeholder{visibility:hidden}
 
   /* auth on phones: preserve the angled split while keeping the real sign-in controls reachable */

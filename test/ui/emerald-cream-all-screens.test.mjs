@@ -40,7 +40,10 @@ test('green navigation, ivory content and form inputs stay separate by surface',
  assert.match(css,/\.ws-layout\{[^}]*background-image:var\(--os-gradient-page\)/);
  assert.match(css,/\.ws-screen:not\(\[data-ws-screen="overview"\]\)>\.ws-screen-head\{/);
  assert.match(css,/\.ws-toolbar\{[\s\S]*?background-image:var\(--os-gradient-menu\)/);
- assert.match(css,/\.os-desktop-side-link\.is-current[^}]*background:var\(--os-bg\)/);
+ // Selected destinations retain an ivory surface, now with the approved
+ // warm Cream gradient and gold active edge rather than a flat card colour.
+ assert.match(css,/\.os-desktop-side-link\.is-current[^}]*background:linear-gradient\(115deg,#FFFDF8 0%,#EAE7DF 100%\)/);
+ assert.match(css,/\.os-desktop-side-link\.is-current[^}]*box-shadow:inset 3px 0 0 var\(--os-gold\)/);
  assert.match(css,/\.os-mobile-bottom\{position:fixed;[\s\S]*?background-image:var\(--os-gradient-menu\)/);
  assert.match(css,/\.os-mobile-tab\.is-current[^}]*color:var\(--os-side-tx\)/);
  assert.match(css,/\.os-category-tab\.active[^}]*background-image:var\(--os-gradient-menu\)/);

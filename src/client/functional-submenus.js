@@ -44,6 +44,20 @@ const DESCRIPTORS={
  invitations:{kind:'single',label:'เชิญสมาชิก',icon:'user-plus'},
 };
 
+// Keep the active task's title in sync with its real functional submenu.
+// The parent navigation and breadcrumb remain the authorized workspace label.
+const taskTitles=new Set(['sales','stations','billing','customers','hr']);
+const taskDescriptions={
+ sales:{team:'สมาชิกทีมขายและสิทธิ์ที่ได้รับ',assignment:'สถานีที่อยู่ในความรับผิดชอบตามสิทธิ์',transfer:'ย้ายผู้ดูแลพร้อมตรวจสอบผลและประวัติ',commission:'ยอดค่าคอมมิชชั่นที่บันทึกจริง ไม่ใช่ยอดอนุมัติจ่าย'},
+ stations:{create:'สร้างบัญชีสถานีใหม่ตามสิทธิ์',directory:'รายการสถานีที่บัญชีนี้มีสิทธิ์ดูแล',fuel:'กำหนดสินค้าและราคาของสถานี'},
+ billing:{plans:'ดูแพ็กเกจและเงื่อนไขที่บันทึกไว้',editor:'เพิ่มหรือแก้ไขข้อมูลแพ็กเกจ',tax:'ตรวจสอบและแก้ไขนโยบายภาษี'},
+ customers:{credit:'ยอดพร้อมใช้และบัญชีลูกค้าของสถานี',new:'เปิดบัญชีบริษัทลูกค้าและเชิญผู้ดูแล',link:'ส่งคำขอเชื่อมบริษัทที่มีอยู่แล้ว',report:'รายการเติมน้ำมันที่จบจริง แยกทะเบียนรถ'},
+ hr:{people:'รายชื่อและข้อมูลพนักงาน',access:'ตั้งค่าบัญชีและการลงเวลาตามพื้นที่',
+  payees:'ผู้รับเงินและการเบิกล่วงหน้า',leave:'การลาและสถานะคำขอ',
+  schedule:'ตารางกะที่ได้รับอนุญาต',replacement:'การเข้ากะทดแทน',
+  overtime:'ยื่นคำขอทำงานล่วงเวลา','pending-ot':'คำขอ OT ที่รอการตรวจสอบ',
+  approvals:'รายการงานที่รออนุมัติตามสิทธิ์'}
+};
 const pane=(id,label,icon,nodes)=>({id,label,icon,nodes});
 const wrapPane=entry=>{
  const first=entry.nodes[0];
@@ -156,6 +170,14 @@ export function installFunctionalSubmenus(root){
    if(heading&&heading.textContent!==found.label)heading.textContent=found.label;
    if(description&&description.textContent!==descriptions[id])
     description.textContent=descriptions[id]||found.label;
+  }
+  if(taskTitles.has(key)){
+   const screen=root.querySelector('[data-ws-screen="'+key+'"]');
+   const heading=screen?.querySelector('.ws-screen-head h2');
+   const description=screen?.querySelector('.ws-screen-head p');
+   const copy=taskDescriptions[key]?.[found.id];
+   if(heading&&heading.textContent!==found.label)heading.textContent=found.label;
+   if(description&&copy&&description.textContent!==copy)description.textContent=copy;
   }
   for(const p of state.panes){
    if(!p.wrapper||p.wrapper===p.nodes[0])continue;

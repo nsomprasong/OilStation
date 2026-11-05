@@ -7,6 +7,7 @@ export function mountPlatformSupport({target,token}){
  const wrap=node('section',undefined,'os-support');
  const intro=node('p','อ่านได้เฉพาะสถานะปั๊มและเหตุการณ์ที่ได้รับอนุญาต ไม่มีสิทธิ์แก้ไขบัญชีหรือการเงิน','os-section-copy');
  const refresh=node('button','รีเฟรช','button secondary');refresh.type='button';
+ const toolbar=node('div',undefined,'os-support-toolbar');toolbar.append(intro,refresh);
  const status=node('p','กำลังตรวจสอบสิทธิ์…','os-support-status');status.setAttribute('role','status');
  const label=node('h3','ปั๊มที่ตรวจสอบได้');
  const list=node('div',undefined,'module-list');
@@ -17,7 +18,8 @@ export function mountPlatformSupport({target,token}){
  for(const h of ['ปั๊ม','เหตุการณ์','เวลา'])tr.append(node('th',h));
  thead.append(tr);
  const tbody=node('tbody');table.append(thead,tbody);
- wrap.append(intro,refresh,status,label,list,eventLabel,table);target.append(wrap);
+ const tableScroll=node('div',undefined,'os-support-table-scroll');tableScroll.append(table);
+ wrap.append(toolbar,status,label,list,eventLabel,tableScroll);target.append(wrap);
  let busy=false;
  async function load(){
   if(busy)return;busy=true;refresh.disabled=true;status.textContent='กำลังโหลดข้อมูล…';
