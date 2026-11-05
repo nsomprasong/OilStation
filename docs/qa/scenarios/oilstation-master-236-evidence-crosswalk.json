@@ -33,9 +33,9 @@
         "X-08-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_READY_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-002",
@@ -49,9 +49,9 @@
         "P-03-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-003",
@@ -65,9 +65,9 @@
         "P-04-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-004",
@@ -81,9 +81,9 @@
         "P-06-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-005",
@@ -97,9 +97,9 @@
         "P-10-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-006",
@@ -113,9 +113,9 @@
         "P-13-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-007",
@@ -129,9 +129,9 @@
         "S-01-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-008",
@@ -145,9 +145,9 @@
         "S-03-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-009",
@@ -161,9 +161,9 @@
         "S-04-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-010",
@@ -177,9 +177,9 @@
         "S-09-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-011",
@@ -193,9 +193,9 @@
         "S-11-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-012",
@@ -209,9 +209,9 @@
         "S-15-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-013",
@@ -225,9 +225,9 @@
         "S-19-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-014",
@@ -241,9 +241,9 @@
         "S-22-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-015",
@@ -257,9 +257,9 @@
         "C-02-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-016",
@@ -273,9 +273,9 @@
         "C-04-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-017",
@@ -289,9 +289,9 @@
         "C-07-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-018",
@@ -305,9 +305,9 @@
         "C-11-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-019",
@@ -321,9 +321,9 @@
         "C-12-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-020",
@@ -337,9 +337,9 @@
         "X-02-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-021",
@@ -353,9 +353,9 @@
         "X-04-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-022",
@@ -369,9 +369,9 @@
         "X-05-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-023",
@@ -385,9 +385,9 @@
         "X-07-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "TEST-6-024",
@@ -401,9 +401,9 @@
         "X-09-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
-      "mayExecute": true,
-      "guard": "Preflight each target; no accepted live write without safe fixture; one Preview deploy + one serial Chromium run"
+      "status": "PREFLIGHT_REQUIRED_NOT_YET_EXECUTED",
+      "mayExecute": false,
+      "guard": "Exactly SIX new Master acceptance IDs, each independently validated. Preflight endpoints/role/fixtures and safe non-mutating scope. Require explicit isolated fixture+rollback for accepted business writes. Do not run before preflight."
     },
     {
       "batchId": "HOLD-6-001",
@@ -417,7 +417,7 @@
         "P-07-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -433,7 +433,7 @@
         "P-11-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -449,7 +449,7 @@
         "S-05-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -465,7 +465,7 @@
         "S-08-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -481,7 +481,7 @@
         "S-12-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -497,7 +497,7 @@
         "S-14-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -513,7 +513,7 @@
         "S-16-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -529,7 +529,7 @@
         "S-19-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -545,7 +545,7 @@
         "C-03-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -561,7 +561,7 @@
         "C-06-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -577,7 +577,7 @@
         "C-09-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -593,7 +593,7 @@
         "X-07-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -607,7 +607,7 @@
         "X-10-F"
       ],
       "count": 4,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Do not execute until named blocker removed and safety manifest verified"
     },
@@ -621,7 +621,7 @@
         "S-06-F"
       ],
       "count": 4,
-      "status": "NOT_STARTED",
+      "status": "ON_HOLD",
       "mayExecute": false,
       "guard": "Revise obsolete acceptance and get owner approval"
     }
@@ -6957,6 +6957,12 @@
     "blockUnverifiedFinanceAndHR": true,
     "blockedCasesAreNotRunnable": true,
     "smallFinalGroupIsNotRunnableUntilConsolidatedOrOwnerOverrides": true,
-    "noFullProductionClaim": true
+    "noFullProductionClaim": true,
+    "existingRunnerAcceptsTwoToSix": true,
+    "changeRunnerToExactlySixWhenFirstBatchSpecsAreMerged": true,
+    "noDeployForDocsOnlyChange": true,
+    "noBatchCurrentlyExecuted": true,
+    "blockedCannotBeIncludedInNextBatch": true,
+    "positiveWriteMayBeNotRunnableWithoutFixture": true
   }
 }
