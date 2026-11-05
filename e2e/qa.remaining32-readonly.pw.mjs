@@ -1,5 +1,4 @@
 import {test,expect} from '@playwright/test';
-import {createHmac} from 'node:crypto';
 
 // Protected production-preview QA: read-only, existing fixed accounts only.
 // No DB service credentials, screenshots, videos or browser traces.
@@ -46,18 +45,17 @@ const identities=stations.flatMap(station=>[
 ]);
 if(identities.length!==32||new Set(identities.map(x=>x.alias)).size!==32)
  throw Error('Fixed 32-role identity matrix unexpectedly changed');
-function password(identity){
- const secret=process.env['OILSTATION_QA_'+identity.station.sales.toUpperCase()+'_PASSWORD'];
- if(!secret)throw Error('Missing protected Sales QA credential');
- return createHmac('sha256',secret)
-  .update('OilStation QA station role account 20261031/v1/'+identity.alias)
-  .digest('base64url').slice(0,30)+'a9!';
+// Fixed QA-only password is supplied through protected GitHub environment.
+function password(){
+ const v=process.env.OILSTATION_QA_REVIEW_PASSWORD;
+ if(!v)throw Error('Missing protected review credential');
+ return v;
 }
 test.use({headless:true,trace:'off',screenshot:'off',video:'off'});
 test.beforeEach(()=>{
  test.skip(process.env.OILSTATION_QA_REMAINING32_RUN!=='true',
   'Protected QA main-branch workflow only');
- if(!process.env.OILSTATION_QA_SALES01_PASSWORD||!process.env.OILSTATION_QA_SALES02_PASSWORD)
+ if(!process.env.OILSTATION_QA_REVIEW_PASSWORD)
   throw Error('Missing protected QA credentials');
 });
 for(const identity of identities){
