@@ -1,0 +1,69 @@
+name: "QA serialized next case only"
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'e2e/qa.case-*.pw.mjs'
+      - '.github/workflows/qa-one-case-sequential.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: oilstation-qa-one-next-case-serial
+  cancel-in-progress: false
+jobs:
+  one-case:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_SINGLE_CASE_RUN: 'true'
+      OILSTATION_QA_REVIEW_PASSWORD: ${{ secrets.OILSTATION_QA_REVIEW_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Select exactly the one changed isolated case (never rerun passed suites)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-only HEAD^ HEAD -- e2e/ | grep -E '^e2e/qa\.case-[a-z0-9-]+\.pw\.mjs$' || true)
+          if [ "${#changed[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly ONE modified single-case spec, got ${#changed[@]}"; exit 1
+          fi
+          echo "CASE_SPEC=${changed[0]}" >> "$GITHUB_ENV"
+          echo "Selected only one case: ${changed[0]}"
+      - name: Confirm matching guarded preview deploy was successful
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '[.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push")] | .[0].conclusion // ""')"
+            if [ "$result" = success ]; then exit 0; fi
+            if [ "$result" = failure ] || [ "$result" = cancelled ]; then
+              echo "::error::Guarded preview deployment failed"; exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::Matching preview deploy not confirmed"; exit 1
+      - name: Validate protected QA Secret exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OILSTATION_QA_REVIEW_PASSWORD" || {
+            echo "::error::Missing protected QA review Secret"; exit 1; }
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run the selected case ONLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:e2e -- "$CASE_SPEC" --reporter=list
