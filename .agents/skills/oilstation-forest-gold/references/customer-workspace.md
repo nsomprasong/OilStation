@@ -6,7 +6,7 @@ Source: src/client/workspace-layout.js, src/client/functional-submenus.js, src/c
 
 - Cream-to-sage gradient canvas. On desktop, dark forest permission-filtered left sidebar and compact dark top toolbar.
 - Header uses a deep emerald gradient and subtle gold arc / bottom rule. Avoid duplicate headings: the corporate pane's selected functional task owns the title, so the redundant global scope heading is suppressed.
-- Directly under the top header, one horizontal row of contextual **functional** tabs (not every individual record as a tab). Green gradient active pill; other tabs quiet/light; on phone allow horizontal scrolling.
+- After the toolbar and before the selected-task green page heading in the current DOM, one horizontal row of contextual **functional** tabs (not every individual record as a tab). Green gradient active pill; other tabs quiet/light; on phone allow horizontal scrolling.
 - **Only one active task pane**. Inactive panes stay mounted but hidden to preserve unsaved input and active workflows. Navigation never bypasses permission enforcement.
 - The work card uses cream surface, thin neutral border, 16px radius, inset card 12px radius, 8px gutter, no piled-up heavy shadows.
 
