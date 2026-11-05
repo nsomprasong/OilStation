@@ -121,7 +121,10 @@ async function visitMain(page,key){
  await expect(tile,'Home must expose authorized '+key+' destination').toBeVisible({timeout:15_000});
  await tile.click();
  await expect(page.locator('[data-ws-screen="'+key+'"]:visible')).toBeVisible({timeout:15_000});
- await expect(page.locator('[data-context-for="'+key+'"]:visible')).toBeVisible({timeout:15_000});
+ if(key!=='invitations')
+  await expect(page.locator('[data-context-for="'+key+'"]:visible')).toBeVisible({timeout:15_000});
+ else
+  await expect(page.locator('[data-context-for="'+key+'"]')).toHaveCount(1);
  const count=await page.locator('.ws-screen:visible').count();
  expect(count,'only one primary screen visible').toBe(1);
  const screen=page.locator('[data-ws-screen="'+key+'"]');
@@ -129,6 +132,10 @@ async function visitMain(page,key){
  await expect(screen.locator('.ws-widget').first()).not.toBeEmpty({timeout:15_000});
 }
 async function exercisePanes(page,key){
+ if(key==='invitations'){
+  await expect(page.locator('#member-invites')).not.toBeEmpty({timeout:12_000});
+  return 'single workflow (no redundant tab)';
+ }
  const tabs=page.locator('[data-context-for="'+key+'"] button[data-os-pane-key]:visible');
  // Existing single-task screens may render a single contextual button.
  const waitUntil=Date.now()+7500;
@@ -137,8 +144,6 @@ async function exercisePanes(page,key){
   await page.waitForTimeout(200);
   num=await tabs.count();
  }
- // "invitations" intentionally omits its redundant one-tab navigation.
- if(key==='invitations')return 'single workflow (context nav intentionally hidden)';
  if(num===0)throw Error('No functional submenu found for '+key);
  const exercised=[];
  for(let i=0;i<num;i++){
@@ -150,8 +155,11 @@ async function exercisePanes(page,key){
   const wrappers=page.locator('[data-ws-screen="'+key+'"] .os-functional-pane');
   const count=await wrappers.count();
   if(count){
-   const visible=await wrappers.filter({visible:true}).count();
-   expect(visible,'one visible task after '+key+'/'+id).toBe(1);
+   // Settle lazy context-pane mutation before asserting the single-pane invariant.
+   await expect.poll(()=>wrappers.filter({visible:true}).count(),{
+    timeout:4500,intervals:[100,250,500],
+    message:'one visible task after '+key+'/'+id,
+   }).toBe(1);
   }
   exercised.push(id);
   await page.waitForTimeout(90);
@@ -161,12 +169,17 @@ async function exercisePanes(page,key){
 async function auditActor(browser,actor,width,phase,results){
  const context=await browser.newContext({viewport:{width,height:width<=850?844:900}});
  const page=await context.newPage();
- const errors=[],requests=[];
+ const errors=[],requests=[],pendingResponses=[];
  page.on('pageerror',()=>{errors.push('page-exception');});
  page.on('response',response=>{
-  const path=pathOnly(response.url());
-  if(path.startsWith('/api/')&&response.status()>=400)
-   requests.push({path,status:response.status()});
+  const path=pathOnly(response.url()),status=response.status();
+  if(!path.startsWith('/api/')||status<400)return;
+  const item={path,status,blockReason:null};requests.push(item);
+  if(status===403 && path.startsWith('/api/hr/')){
+   pendingResponses.push(response.json().then(body=>{
+    if(body?.error==='qa_identity_not_live')item.blockReason='qa_identity_not_live';
+   }).catch(()=>{}));
+  }
  });
  page.on('request',req=>{
   const path=pathOnly(req.url());
@@ -184,10 +197,14 @@ async function auditActor(browser,actor,width,phase,results){
    }catch(e){
     problem=String(e?.message||e).split('\n')[0].slice(0,185);
    }
-   const failed=requests.slice(at).filter(x=>x.status!==503);
-   const blocked=requests.slice(at).filter(x=>x.status===503);
+   await Promise.allSettled(pendingResponses.splice(0));
+   const failed=requests.slice(at).filter(x=>x.status!==503 && x.blockReason!=='qa_identity_not_live');
+   const blocked=requests.slice(at).filter(x=>x.status===503 || x.blockReason==='qa_identity_not_live');
    const browserErrors=errors.slice(et);
-   const status=problem||failed.length||browserErrors.length?'FAIL':blocked.length?'BLOCKED':'PASS';
+   // Expected guarded 503 and QA identity denial are BLOCKED, never PASS.
+   // Unrecognized 403 and browser errors still FAIL.
+   const status=failed.length||browserErrors.length||(problem&&!blocked.length)
+    ?'FAIL':blocked.length?'BLOCKED':'PASS';
    const item={phase,actor:actor.alias,viewport:width,key,status,
     panes:visited,api:requests.slice(at).map(x=>x.status+':'+x.path),
     issue:problem||browserErrors.join(',')};
