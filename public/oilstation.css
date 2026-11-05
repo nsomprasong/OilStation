@@ -324,6 +324,27 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-report-header{display:flex;align-items:center;justify-content:space-between;
  gap:14px;padding:14px 18px;background:var(--os-on);
  border:1px solid var(--os-line);border-radius:var(--os-r);flex-wrap:wrap}
+/* Station customer summary and completed-fuel report have the same emerald
+   principal card header as the selected page, with a quiet 1px gold rule.
+   Other modules retain pale headers to avoid repeating a green block everywhere. */
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header){
+ position:relative;isolation:isolate;
+ background:var(--os-gradient-header);border-color:var(--os-side-border);
+ color:var(--os-side-tx);
+}
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)::after{
+ content:"";position:absolute;bottom:0;left:18px;right:18px;height:1px;pointer-events:none;
+ background:linear-gradient(90deg,var(--os-gold-line),var(--os-gold-line-soft),transparent);
+}
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)>*{
+ position:relative;z-index:1;
+}
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) h3{
+ color:var(--os-side-tx)!important;
+}
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) p{
+ color:#E1EEE5!important;
+}
 #app.workspace-mode .os-credit-head h3,
 #app.workspace-mode .os-report-header h3{margin:0 0 4px;color:var(--os-ac);font-size:18px}
 #app.workspace-mode .os-credit-head p,
@@ -333,7 +354,8 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode .os-credit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));
  gap:12px;padding:0 8px}
 #app.workspace-mode .os-credit-account{min-width:0;padding:18px;background:#FFFDF8;
- border:1px solid var(--os-line);border-radius:var(--os-r-sm)}
+ border:1px solid var(--os-line);border-top:2px solid var(--os-gold-line-soft);
+ border-radius:var(--os-r-sm)}
 #app.workspace-mode .os-credit-account h4{font-size:15px;color:var(--os-tx);margin:0 0 12px}
 #app.workspace-mode .os-credit-account .os-credit-available{font-size:clamp(23px,2.3vw,29px);
  color:var(--os-ac);font-weight:800;margin:0;font-variant-numeric:tabular-nums}
@@ -1106,6 +1128,74 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 }
 #app.workspace-mode .os-toolbar-logout:focus-visible,
 #app.workspace-mode .os-sales-workspace :is(button,select,textarea,input):focus-visible{outline:3px solid var(--os-ac);outline-offset:2px}
+/* Platform support and audit use the same inset card/table rhythm as station
+   credit and customer reports. Table overflow stays inside the work card. */
+#app.workspace-mode [data-ws-screen="support"] .os-support,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity{
+ display:grid;gap:var(--os-card-gap);min-width:0;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-toolbar,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-header{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+ gap:var(--os-card-gap);padding:14px 16px;
+ border:1px solid var(--os-line-soft);border-left:3px solid var(--os-gold);
+ border-radius:var(--os-r-sm);
+ background:linear-gradient(105deg,#E3EEE5 0%,#F7F5EF 64%,#F1E9D7 100%);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-toolbar .os-section-copy{
+ flex:1 1 300px;min-width:0;margin:0;font-size:13px;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-toolbar .button{margin:0;min-height:44px}
+#app.workspace-mode [data-ws-screen="support"] .os-support-status,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-status{
+ margin:0;padding:10px 12px;border:1px solid var(--os-line-soft);
+ border-radius:var(--os-r-sm);background:var(--os-on);color:var(--os-ac);
+ font-size:12px;line-height:1.6;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>h3,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity h3{
+ margin:5px 0 0;padding-bottom:10px;
+ border-bottom:1px solid var(--os-gold-line-soft);
+ font-size:16px;color:var(--os-ac);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>.module-list{
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--os-card-gap);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>.module-list .module-item{
+ display:grid;gap:4px;min-width:0;padding:14px 16px;
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support>.module-list .module-item small{
+ font-size:12px;color:var(--os-mu);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-table-scroll,
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-table-wrap{
+ width:100%;max-width:100%;min-width:0;overflow-x:auto;
+ border:1px solid var(--os-line);border-radius:var(--os-r-sm);
+ background:var(--os-input);
+}
+#app.workspace-mode [data-ws-screen="support"] .os-support-table-scroll .os-activity-table{
+ min-width:620px;
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-header{
+ display:grid;gap:3px;
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-header p{
+ margin:0;color:var(--os-mu);font-size:12px;
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-tools{
+ display:flex;align-items:end;flex-wrap:wrap;gap:var(--os-card-gap);
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-tools label{
+ display:grid;gap:7px;flex:1 1 220px;max-width:400px;font-size:13px;color:var(--os-mu);
+}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-tools select{min-height:44px}
+#app.workspace-mode [data-ws-screen="activity"] .os-activity-table-wrap .os-activity-table{
+ min-width:620px;table-layout:auto;
+}
+@media(max-width:620px){
+ #app.workspace-mode [data-ws-screen="support"] .os-support-toolbar .button,
+ #app.workspace-mode [data-ws-screen="activity"] .os-activity-tools .button{width:100%}
+}
 #app.workspace-mode .os-sales-workspace{display:grid;gap:16px}
 #app.workspace-mode .os-sales-head{
  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
