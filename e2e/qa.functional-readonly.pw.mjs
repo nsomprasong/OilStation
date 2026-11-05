@@ -35,6 +35,25 @@ function password(station,alias){
   .update('OilStation QA station role account 20261031/v1/'+alias)
   .digest('base64url').slice(0,30)+'a9!';
 }
+/** Detect the app's own QA auth message instead of waiting 45s for Home. */
+async function waitForQaWorkspace(page){
+ const status=async()=>{
+  if(await page.locator('[data-ws-screen="overview"]:visible').count())return 'ready';
+  const notice=page.locator('#notice[data-tone="error"]:visible');
+  if(await notice.count()){
+   const message=(await notice.textContent())||'';
+   return message.includes('ชื่อผู้ใช้หรือรหัสผ่านทดสอบไม่ถูกต้อง')
+    ?'auth-credentials-rejected':'auth-service-or-form-error';
+  }
+  if(await page.locator('#reason:visible').count())return 'workspace-startup-error';
+  return 'pending';
+ };
+ await expect.poll(status,{timeout:38000,intervals:[150,350,600,1000],
+  message:'QA login must reach Home or an explicit safe failure state'}).not.toBe('pending');
+ const result=await status();
+ if(result!=='ready')throw Error('QA_LOGIN_'+result);
+}
+
 async function login(page,station,alias,role,scopeId,scopeField){
  await page.goto(BASE,{waitUntil:'domcontentloaded'});
  await expect(page.locator('.os-auth-frame')).toBeVisible({timeout:45000});
@@ -44,7 +63,7 @@ async function login(page,station,alias,role,scopeId,scopeField){
  await page.locator('#qa-login-alias').fill(alias);
  await page.locator('#qa-login-password').fill(password(station,alias));
  await page.locator('#qa-login-form button[type=submit]').click();
- await expect(page.locator('[data-ws-go="overview"]:visible').first()).toBeVisible({timeout:35000});
+ await waitForQaWorkspace(page);
  const token=await page.evaluate(()=>{
   for(const key of Object.keys(localStorage)){
    if(!key.startsWith('sb-')||!key.endsWith('-auth-token'))continue;
