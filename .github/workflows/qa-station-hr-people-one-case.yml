@@ -1,0 +1,55 @@
+name: "QA one case - Station s01a HR People"
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/qa-station-hr-people-one-case.yml
+      - e2e/qa.station-hr-people.one-case.pw.mjs
+  workflow_dispatch: # Explicit rerun of this ONE case only
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: oilstation-qa-station-s01a-hr-people-one-case
+  cancel-in-progress: false
+jobs:
+  hr-people-one-case:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_ONE_CASE: OS-QA-ST-HR-PEOPLE-001
+      OILSTATION_QA_REVIEW_PASSWORD: ${{ secrets.OILSTATION_QA_REVIEW_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Confirm deployed guarded Preview for this exact commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            outcome="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '[.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push")] | .[0].conclusion // ""')"
+            if [ "$outcome" = success ]; then exit 0; fi
+            if [ "$outcome" = failure ] || [ "$outcome" = cancelled ]; then
+              echo "::error::Required guarded production preview deployment did not pass"; exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::No matching guarded preview deploy"; exit 1
+      - name: Require the protected rotated QA credential without revealing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OILSTATION_QA_REVIEW_PASSWORD" || {
+            echo "::error::Protected QA review Secret missing"; exit 1; }
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Execute exactly ONE mobile HR People read-only case
+        run: npm run test:e2e -- e2e/qa.station-hr-people.one-case.pw.mjs --reporter=list
