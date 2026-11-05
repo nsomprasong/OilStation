@@ -27,7 +27,8 @@
 | **OS-QA-ST-MEMBER-EDIT-UI-007** | s01b-owner, mobile Invitations > directory > edit member | Review editor, choose temporary role, cancel, reload unchanged; protected owner | **PASS — 1/1 browser run 42006256893**, see `docs/qa/runs/OS-QA-ST-MEMBER-EDIT-UI-007.md` |
 | **OS-QA-ST-MEMBER-DEACTIVATE-CANCEL-008** | s01b-owner, mobile Invitations > manager > deactivate confirmation | Warning, cancel, member still active; protected owner; no writes | **PASS — 1/1 browser run 42006986846**, see `docs/qa/runs/OS-QA-ST-MEMBER-DEACTIVATE-CANCEL-008.md` |
 | **OS-QA-ST-MEMBER-ROLE-WRITE-009** | s01b-owner, one QA-only attendant role change and restore | UI/API write then mandatory API restore; exact two audit transitions; no HR/finance mutation | **PASS — 1/1 browser run 42012265036** after role validation fix PR #169; see `docs/qa/runs/OS-QA-ST-MEMBER-ROLE-WRITE-009.md` |
-| **OS-QA-ST-MEMBER-CROSS-SCOPE-DENIAL-010** | s01a-owner, attempt to edit s01b QA member by API | Forbidden 403 on foreign member POST and directory GET, no new audit | **NOT TESTED — next single case** |
+| **OS-QA-ST-MEMBER-CROSS-SCOPE-DENIAL-010** | s01a-owner, attempt to edit s01b QA member by API | 403 on foreign member POST and directory GET; no audit | **PASS — 1/1 browser run 42013264806**, see `docs/qa/runs/OS-QA-ST-MEMBER-CROSS-SCOPE-DENIAL-010.md` |
+| **OS-QA-ST-MEMBER-ROLE-ESCALATION-DENIAL-011** | s01b-owner, attempt to grant platform_superadmin to QA attendant | Disallowed role returns 400, existing member role/active state unchanged, no audit | **NOT TESTED — next single case** |
 
 ## Case queue — not yet executed, do not mass-run
 
@@ -41,7 +42,8 @@
 | COMPLETE | Station s01b member role editor UI review/cancel **007** | PASS 1/1, role draft cancelled and server role unchanged, no writes |
 | COMPLETE | Station s01b member deactivation dialog review/cancel **008** | PASS 1/1, warning/cancel/active role preserved and no writes |
 | COMPLETE | Station s01b member role change + rollback **009** | PASS 1/1, fixed role allowlist, exact two audit events, role and data restored |
-| P1 | Station s01a owner cross-scope member modification deny **010** | One foreign synthetic member ID, read/POST 403, no audit/writes |
+| COMPLETE | Station s01a owner cross-scope member modification deny **010** | PASS 1/1; foreign read + write both 403; no audit delta |
+| P1 | Station s01b role allowlist privilege-escalation deny **011** | One disallowed platform role request to QA attendant; 400 and no data change |
 | P1 | Station Customer new account, existing link, credit, fuel prices, pump, Plan, Invitations; each **separate** read/validation/write case | Each case needs exact QA manifest; do not mutate existing customer data without verified recovery |
 | P1 | Station HR People, Attendance, Review, OT, substitution, Leave, Payroll; **individual bounded QA-HR** cases | Live HR explicitly denies QA actors; use separately scoped approved QA lane; never weaken normal auth |
 | P1 | Corporate topup, QR issuance/reservation, plate/photo verification, completed fueling and reporting | Protected QA-only transaction flow with rollback/compensation and audit; no real bank/fuel operations |
