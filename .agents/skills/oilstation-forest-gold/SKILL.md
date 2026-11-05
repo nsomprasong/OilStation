@@ -51,8 +51,9 @@ This skill includes **35 named source-mapped components** and the full customer-
 6. references/navigation-and-actions.md — sidebar, contextual tabs, bottom dock, profile, buttons, search.
 7. references/layout-and-spacing.md — exact source-declared measurements, breakpoints, gutters, normalized scale.
 8. references/screen-blueprints.md — six corporate task panes and four station-customer screens, entire composition.
-9. assets/component-registry.json — 35 source-mapped components for programmatic reuse.
-10. assets/forest-gold.tokens.css, assets/component-patterns.css, assets/component-gallery.html — optional standalone specimen, never an automatic production import.
+9. references/qa-matrix.md — full viewport / role / component states and screenshot evidence checklist.
+10. assets/component-registry.json — 35 source-mapped components for programmatic reuse.
+11. assets/forest-gold.tokens.css, assets/component-patterns.css, assets/component-gallery.html — optional standalone specimen, never an automatic production import.
 
 ## Execution workflow
 
@@ -60,7 +61,7 @@ This skill includes **35 named source-mapped components** and the full customer-
 2. **Define the contract.** Apply the token roles from references/tokens.md. Preserve the palette relationships and hierarchy; remap naming if the target already has a semantic token system. Never add a second overlapping theme or append an override patchwork.
 3. **Choose the applicable composition.** For login, use references/login.md. For entire customer screens use references/customer-workspace.md and references/screen-blueprints.md. For each visible card/action/layout follow component-anatomy.md, navigation-and-actions.md and layout-and-spacing.md. Apply only components genuinely needed.
 4. **Honor operational truth.** Keep server-sourced balances, entitlement-gated tabs, real pending/error/empty states, intact form state while changing panes, approval confirmation and clear monetary units. Design is not authorization.
-5. **Make responsive and accessible.** Desktop and Android widths, tab/keyboard focus, 200% zoom, safe-area insets, reduced motion, correct Thai wrapping and readable currency.
+5. **Make responsive and accessible.** Desktop and Android widths, tab/keyboard focus, 200% zoom, safe-area insets, reduced motion, correct Thai wrapping and readable currency. Use references/qa-matrix.md for viewport-by-viewport and role-by-role acceptance.
 6. **Look and fix.** Review actual rendered screens at 1440, 1024, 390, 360 and 320 px, inspect overflow and functional states, run the project's CI/browser checks. Only report what you verified.
 
 ## Visual invariants
