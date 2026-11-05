@@ -44,3 +44,27 @@ test('reject invalid price and missing identifiers',async()=>{
  assert.equal((await a.handle(a.req('/api/station-fuel-config','POST',{...data,publicPrice:'33.50',stationId:'foo'}))).status,400);
  assert.equal(a.calls.length,0);
 });
+
+
+// Regression for real Master S-03-V: the SQL RPC rejects an unknown product ID.
+// HTTP must return a safe not-found error rather than a generic 503 or success.
+// This fake DB never writes; the legitimate update test above remains unchanged.
+test('unknown station fuel product maps DB NOT_FOUND to safe HTTP 404',async()=>{
+ const a=createApi({
+  authenticate:async token=>token==='good'?{id:U}:null,
+  db:{
+   memberships:async()=>[{user_id:U,scope_type:'station',station_id:S,
+     active:true,role_code:'station_owner',extra_permissions:{}}],
+   configureFuel:async()=>{const e=new Error('supabase_request_failed');e.code='NOT_FOUND';throw e;},
+  },
+ });
+ const res=await a(new Request(BASE+'/api/station-fuel-config',{
+  method:'POST',
+  headers:{authorization:'Bearer good','content-type':'application/json',
+   origin:BASE},
+  body:JSON.stringify({stationId:S,stationFuelId:'00000000-0000-4000-8000-000000000056',
+    enabled:false,publicPrice:'32.50'}),
+ }));
+ assert.equal(res.status,404);
+ assert.deepEqual(await res.json(),{error:'fuel_not_found'});
+});
