@@ -19,13 +19,15 @@
 
 | Case ID | Actor / page | Expected observable result | Status |
 |---|---|---|---|
-| **OS-QA-ST-CUSTOMER-REPORT-002** | s01b-owner, 390px, Home > Customers > Fuel Report; empty/completed history and plate filter | Exactly one visible Report pane, scoped GET responds and matches baseline (0 completed sessions for s01b), no writes | NOT TESTED — planned isolated browser run |
+| **OS-QA-ST-CUSTOMER-REPORT-002** | s01b-owner, mobile Customers > Fuel Report, empty history and plate filter | One report pane, GET 0 completed sessions, plate filter and no writes | **PASS — 1/1 browser run 41987875581**; see `docs/qa/runs/OS-QA-ST-CUSTOMER-REPORT-002.md` |
+| **OS-QA-ST-CUSTOMER-CREDIT-003** | s01b-owner, mobile Customers > Credit, three existing corporate accounts | Cards/amount breakdown/refresh reconcile against real scoped GET, no writes | **NOT TESTED — next case** |
 
 ## Case queue — not yet executed, do not mass-run
 
 | Priority | Future test target | Gate |
 |---|---|---|
-| P1 | Station s01b Customers report case **002** | Single read-only case and matching DB recheck |
+| COMPLETE | Station s01b Customers report case **002** | PASS 1/1 read-only scoped Browser + SQL, do not repeat |
+| P1 | Station s01b Customers credit case **003** | One actor, one task, read-only balance/refresh reconciliation |
 | P1 | Station Customer new account, existing link, credit, fuel prices, pump, Plan, Invitations; each **separate** read/validation/write case | Each case needs exact QA manifest; do not mutate existing customer data without verified recovery |
 | P1 | Station HR People, Attendance, Review, OT, substitution, Leave, Payroll; **individual bounded QA-HR** cases | Live HR explicitly denies QA actors; use separately scoped approved QA lane; never weaken normal auth |
 | P1 | Corporate topup, QR issuance/reservation, plate/photo verification, completed fueling and reporting | Protected QA-only transaction flow with rollback/compensation and audit; no real bank/fuel operations |
