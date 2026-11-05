@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forest & Gold — Customer UI Design Gallery (static)</title>
+<link rel="stylesheet" href="forest-gold.tokens.css">
+<link rel="stylesheet" href="component-patterns.css">
+<style>
+/* Preview framing only; not a product implementation. */
+.forest-gold-theme .fg-gallery-caption{margin:0 0 16px;padding:11px 14px;border:1px dashed var(--fg-border);border-radius:12px;background:var(--fg-card);font-size:12px}
+.forest-gold-theme .fg-gallery-section-title{font-size:17px;margin:16px 0 8px}
+.forest-gold-theme .fg-gallery-stack{display:grid;gap:16px}
+.forest-gold-theme .fg-gallery-chip{padding:4px 9px;border-radius:99px;background:var(--fg-hover);color:var(--fg-emerald);font-size:11px}
+.forest-gold-theme .fg-gallery-dock-icon{font-size:20px;line-height:1}
+</style>
+</head>
+<body style="margin:0">
+<div class="forest-gold-theme">
+<div class="fg-shell">
+<aside class="fg-sidebar" aria-label="ตัวอย่างเมนู Desktop">
+  <div class="fg-brand"><span class="fg-brand-mark" aria-hidden="true">◈</span><span>Forest & Gold</span></div>
+  <nav class="fg-sidebar-nav" aria-label="ตัวอย่างเมนูหลัก">
+    <span class="fg-side-link" data-active="true">▣ &nbsp; บัญชีบริษัท</span>
+    <span class="fg-side-link">▤ &nbsp; รายงาน</span>
+    <span class="fg-side-link">⌁ &nbsp; การตั้งค่า</span>
+  </nav>
+  <small style="margin-top:auto;color:#C6D5CA">ตัวอย่าง Design Skill เท่านั้น</small>
+</aside>
+<div class="fg-main">
+  <div class="fg-toolbar" aria-label="ตัวอย่าง Toolbar">
+    <div class="fg-toolbar-credit"><small>วงเงินคงเหลือ</small><strong>— ฿</strong></div>
+    <div class="fg-profile"><span class="fg-avatar">ต</span><span class="fg-profile-name">ตัวอย่างผู้ใช้</span></div>
+    <span class="fg-logout" aria-label="ตัวอย่างปุ่มออกจากระบบ">⏻</span>
+  </div>
+  <main class="fg-content">
+    <p class="fg-gallery-caption"><strong>Design specimen:</strong> แสดงรูปแบบ UI เท่านั้น ไม่มีข้อมูลลูกค้าจริง ไม่มีการล็อกอิน โอนเงิน ออกคูปอง หรือกดปุ่มทำงาน ตัวเลขและ QR จะไม่ถูกสร้างขึ้น</p>
+    <section class="fg-page-head" aria-label="ตัวอย่าง Page Header">
+      <span class="fg-eyebrow">WORKSPACE / CUSTOMER</span>
+      <h1>บัญชีบริษัท</h1><p>ชุดตัวอย่างสีเขียว Cream Gold — หัวข้อเดียวต่อหน้าจอ</p>
+    </section>
+    <nav class="fg-tabs" aria-label="ตัวอย่างเมนูย่อย">
+      <span class="fg-tab" data-active="true">▣ บัญชีบริษัท</span>
+      <span class="fg-tab">▤ แจ้งเติมเงิน</span>
+      <span class="fg-tab">◌ รถและคนขับ</span>
+      <span class="fg-tab">▧ ออกคูปอง</span>
+      <span class="fg-tab">▥ รายงานเติมน้ำมัน</span>
+    </nav>
+    <div class="fg-pane">
+      <div class="fg-banner">วงเงินพร้อมใช้: — ฿ <small>(แสดงยอดจริงเมื่อเชื่อม API)</small></div>
+      <h2 class="fg-gallery-section-title">การ์ดบัญชีและข้อมูลยอด</h2>
+      <div class="fg-grid">
+        <article class="fg-card fg-card--balance">
+          <div class="fg-card-body">
+            <strong>ชื่อบัญชีสถานี</strong>
+            <strong class="fg-value">— ฿</strong>
+            <span class="fg-label">วงเงินพร้อมใช้หลังหักยอดคูปองที่กันไว้</span>
+            <div class="fg-details"><span>ยอดคูปองที่กัน</span><strong>—</strong><span>ยอดค้างชำระ</span><strong>—</strong></div>
+          </div>
+          <div class="fg-card-foot"><span class="fg-button fg-button--secondary">ตรวจสอบยอด</span></div>
+        </article>
+        <article class="fg-card">
+          <header class="fg-card-head fg-card-head--green"><h2>Card Header สีเขียวและเส้นทอง</h2></header>
+          <div class="fg-card-body"><p class="fg-hint">ตัวอย่าง Card Header หลัก ใช้กับกลุ่มข้อมูลสำคัญ ไม่ใช้ซ้ำทุกการ์ดย่อย</p>
+            <section class="fg-card fg-card--inset"><div class="fg-card-body"><strong>การ์ดข้อมูลย่อย</strong><small class="fg-label">ขอบมน 12px และมีระยะห่างจากการ์ดนอก</small></div></section>
+          </div>
+        </article>
+      </div>
+      <h2 class="fg-gallery-section-title">ตัวอย่างฟอร์มและปุ่ม</h2>
+      <section class="fg-card" aria-label="ตัวอย่างคูปอง">
+        <header class="fg-card-head"><h3>ออกคูปอง (ตัวอย่างหน้าตา ไม่ทำงาน)</h3><span class="fg-gallery-chip">UI Only</span></header>
+        <div class="fg-card-body">
+          <div class="fg-form">
+            <label class="fg-field">เลือกปั๊มน้ำมัน <input class="fg-input" disabled placeholder="เลือกสถานี" aria-label="ตัวอย่างสถานี"></label>
+            <label class="fg-field">ประเภทน้ำมัน <input class="fg-input" disabled placeholder="เลือกชนิดน้ำมัน" aria-label="ตัวอย่างชนิดน้ำมัน"></label>
+            <label class="fg-field">วงเงินคูปอง <input class="fg-input" disabled placeholder="จำนวนเงิน (บาท)" aria-label="ตัวอย่างวงเงิน"></label>
+            <label class="fg-field">คนขับรถ <input class="fg-input" disabled placeholder="เลือกจากผู้มีสิทธิ์" aria-label="ตัวอย่างคนขับ"></label>
+            <p class="fg-hint fg-form-full">การออกจริงต้องตรวจสิทธิ์ รถ ทะเบียน และกันวงเงินฝั่งเซิร์ฟเวอร์</p>
+            <div class="fg-form-full"><span class="fg-button fg-button--primary">ออกคูปองและกันวงเงิน</span> <span class="fg-button fg-button--secondary">ยกเลิก</span> <span class="fg-button fg-button--danger">ลบ</span></div>
+          </div>
+        </div>
+      </section>
+      <h2 class="fg-gallery-section-title">ตัวอย่างรายงานและสถานะ</h2>
+      <section class="fg-card">
+        <header class="fg-card-head"><h3>รายงานการเติมน้ำมัน</h3></header>
+        <div class="fg-card-body">
+          <div class="fg-search"><span aria-hidden="true">⌕</span><input type="search" disabled placeholder="ค้นหาชื่อ อีเมล หรือบทบาท (ตัวอย่างรูปแบบค้นหา)" aria-label="ตัวอย่างช่องค้นหา"></div>
+          <div class="fg-table-wrap"><table class="fg-table">
+            <thead><tr><th>วันที่</th><th>ทะเบียนรถ</th><th>ชนิดน้ำมัน</th><th class="fg-num">จำนวนลิตร</th><th class="fg-num">ยอดเงิน</th></tr></thead>
+            <tbody><tr><td colspan="5" style="text-align:center;color:var(--fg-muted)">ไม่มีข้อมูลจริง — ตัวอย่างรูปแบบตาราง</td></tr></tbody>
+          </table></div>
+          <div class="fg-note">ข้อมูลกำลังโหลด / สถานะปกติ</div>
+          <div class="fg-note fg-note--warning">รายการอยู่ระหว่างตรวจสอบ</div>
+          <div class="fg-note fg-note--error">เกิดข้อผิดพลาด — แสดงสาเหตุและการลองใหม่</div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</div>
+<div class="fg-mobile-dock" aria-label="ตัวอย่างเมนูมือถือ">
+  <div class="fg-dock-grid">
+    <span class="fg-dock-item" data-active="true"><span class="fg-dock-orb fg-gallery-dock-icon">⌂</span><span class="fg-dock-caption">Home</span></span>
+    <span class="fg-dock-item"><span class="fg-dock-orb fg-gallery-dock-icon">▣</span><span class="fg-dock-caption">บัญชี</span></span>
+    <span class="fg-dock-item"><span class="fg-dock-orb fg-gallery-dock-icon">▤</span><span class="fg-dock-caption">รายงาน</span></span>
+    <span class="fg-dock-item"><span class="fg-dock-orb fg-gallery-dock-icon">◌</span><span class="fg-dock-caption">ลูกค้า</span></span>
+    <span class="fg-dock-item"><span class="fg-dock-orb fg-gallery-dock-icon">☷</span><span class="fg-dock-caption">เมนู</span></span>
+  </div>
+</div>
+</div>
+</body>
+</html>
