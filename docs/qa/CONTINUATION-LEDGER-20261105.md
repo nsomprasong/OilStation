@@ -26,7 +26,8 @@
 | **OS-QA-ST-INVITE-VALIDATION-006** | s01b-owner, mobile Invitations > Add Member > Email invitation drawer | Six allowed roles, blank/invalid email guards, close; no invitation write | **PASS — 1/1 browser run 41996206907**, details in `docs/qa/runs/OS-QA-ST-INVITE-VALIDATION-006.md` |
 | **OS-QA-ST-MEMBER-EDIT-UI-007** | s01b-owner, mobile Invitations > directory > edit member | Review editor, choose temporary role, cancel, reload unchanged; protected owner | **PASS — 1/1 browser run 42006256893**, see `docs/qa/runs/OS-QA-ST-MEMBER-EDIT-UI-007.md` |
 | **OS-QA-ST-MEMBER-DEACTIVATE-CANCEL-008** | s01b-owner, mobile Invitations > manager > deactivate confirmation | Warning, cancel, member still active; protected owner; no writes | **PASS — 1/1 browser run 42006986846**, see `docs/qa/runs/OS-QA-ST-MEMBER-DEACTIVATE-CANCEL-008.md` |
-| **OS-QA-ST-MEMBER-ROLE-WRITE-009** | One isolated fictional QA staff membership; Station Admin role update + recovery | Change role on dedicated safe synthetic staff ID, verify scoped API/DB/audit and restore original role; no real staff/payroll links | **NOT TESTED — verify safe dedicated fixture, recovery and release gates before executing** |
+| **OS-QA-ST-MEMBER-ROLE-WRITE-009** | s01b-owner, one QA-only attendant role change and restore | UI/API write then mandatory API restore; exact two audit transitions; no HR/finance mutation | **PASS — 1/1 browser run 42012265036** after role validation fix PR #169; see `docs/qa/runs/OS-QA-ST-MEMBER-ROLE-WRITE-009.md` |
+| **OS-QA-ST-MEMBER-CROSS-SCOPE-DENIAL-010** | s01a-owner, attempt to edit s01b QA member by API | Forbidden 403 on foreign member POST and directory GET, no new audit | **NOT TESTED — next single case** |
 
 ## Case queue — not yet executed, do not mass-run
 
@@ -39,7 +40,8 @@
 | COMPLETE | Station s01b Invitation drawer invalid input **006** | PASS 1/1, protected 6 roles, invalid email and cancellation, no writes |
 | COMPLETE | Station s01b member role editor UI review/cancel **007** | PASS 1/1, role draft cancelled and server role unchanged, no writes |
 | COMPLETE | Station s01b member deactivation dialog review/cancel **008** | PASS 1/1, warning/cancel/active role preserved and no writes |
-| P1 | Station s01b member role change + rollback **009** | Dedicated fake staff account only; preflight data links, positive write, scoped audit, restore original role; do not touch live employee payroll |
+| COMPLETE | Station s01b member role change + rollback **009** | PASS 1/1, fixed role allowlist, exact two audit events, role and data restored |
+| P1 | Station s01a owner cross-scope member modification deny **010** | One foreign synthetic member ID, read/POST 403, no audit/writes |
 | P1 | Station Customer new account, existing link, credit, fuel prices, pump, Plan, Invitations; each **separate** read/validation/write case | Each case needs exact QA manifest; do not mutate existing customer data without verified recovery |
 | P1 | Station HR People, Attendance, Review, OT, substitution, Leave, Payroll; **individual bounded QA-HR** cases | Live HR explicitly denies QA actors; use separately scoped approved QA lane; never weaken normal auth |
 | P1 | Corporate topup, QR issuance/reservation, plate/photo verification, completed fueling and reporting | Protected QA-only transaction flow with rollback/compensation and audit; no real bank/fuel operations |
