@@ -1,4 +1,5 @@
 import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN: actual guard is in the shared protected browser harness.
 const MASTER_UAT_ID='P-09-V';
 masterCase({id:MASTER_UAT_ID,description:'third-sales-alias-rejection',
  check:async({page,auth,headers,expect,BASE})=>{
