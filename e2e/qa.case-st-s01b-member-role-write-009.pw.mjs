@@ -73,8 +73,10 @@ test(CASE+': synthetic staff edit, persistence, restore @qa-one-case',async({pag
   browserSaveAttempted=true;
   await dialog.getByRole('button',{name:'บันทึกบทบาท'}).click();
   const result=await responsePromise;
+  const responseBody=await result.json().catch(()=>({}));
+  if(result.status()!==200)console.log('QA_CASE '+CASE+' WRITE_HTTP_'+result.status()+': '+String(responseBody.error||'no_error_code'));
   expect(result.status(),'scoped member write must succeed').toBe(200);
-  expect((await result.json()).result?.success).toBe(true);
+  expect(responseBody.result?.success).toBe(true);
   await expect(dialog).not.toBeVisible();
   await expect(row.locator('.os-directory-role-label')).toHaveText('พนักงานหน้าลาน',{timeout:14000});
   expect((await find())?.role,'role persisted at backend').toBe(TEMP);
