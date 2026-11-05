@@ -1,0 +1,55 @@
+name: "QA one case - Station s01b Customer Fuel Report"
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/qa-station-s01b-customer-report-one-case.yml
+      - e2e/qa.station-s01b-customer-report.one-case.pw.mjs
+  workflow_dispatch: # only this exact case; do not invoke 3-group or 98-role suites
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: oilstation-qa-station-s01b-report-one-case
+  cancel-in-progress: false
+jobs:
+  station-report-one-case:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_ONE_CASE: OS-QA-ST-CUSTOMER-REPORT-002
+      OILSTATION_QA_REVIEW_PASSWORD: ${{ secrets.OILSTATION_QA_REVIEW_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Confirm matching guarded preview deployment completed
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            outcome="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '[.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push")] | .[0].conclusion // ""')"
+            if [ "$outcome" = success ]; then exit 0; fi
+            if [ "$outcome" = failure ] || [ "$outcome" = cancelled ]; then
+              echo "::error::Guarded preview deployment failed"; exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::Matching preview deployment not confirmed"; exit 1
+      - name: Verify existence of protected rotated QA Secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OILSTATION_QA_REVIEW_PASSWORD" || {
+            echo "::error::Missing QA review Secret"; exit 1; }
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Execute exactly one Station Customer Report browser case
+        run: npm run test:e2e -- e2e/qa.station-s01b-customer-report.one-case.pw.mjs --reporter=list
