@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/qa-functional-readonly-on-merge.yml
       - e2e/qa.functional-readonly.pw.mjs
+      - e2e/qa.full-screen-readonly.pw.mjs
 permissions:
   contents: read
   actions: read
@@ -16,10 +17,12 @@ jobs:
   real-functional-browser:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 100
     environment: oilstation-qa
     env:
       OILSTATION_QA_FUNCTIONAL_READONLY_RUN: 'true'
+      OILSTATION_QA_THREE_GROUP_SWEEP: 'true'
+      OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
       OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
       OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
     steps:
@@ -52,5 +55,31 @@ jobs:
           test -n "$OILSTATION_QA_SALES02_PASSWORD" || { echo '::error::QA Sales02 secret missing'; exit 1; }
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
-      - name: Real UI navigation and authorized read-only workflows across 4 stations/12 companies
+      - name: Three groups, every permitted main screen and contextual task, live read-only browser
+        run: npm run test:e2e -- e2e/qa.full-screen-readonly.pw.mjs --reporter=list
+      - name: Existing approved functional read-only journeys against same deployed main
+        if: always()
         run: npm run test:e2e -- --grep '@qa-functional' --reporter=list
+      - name: Encrypt protected browser evidence (never upload plaintext JWT screenshots/traces)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OILSTATION_QA_EVIDENCE_PASSPHRASE" || {
+            echo "::error::Protected evidence encryption secret missing"; exit 1; }
+          mkdir -p playwright-report test-results
+          tar -czf qa-20261105-three-group-evidence.tar.gz playwright-report test-results
+          printf '%s' "$OILSTATION_QA_EVIDENCE_PASSPHRASE" |
+            gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+              --symmetric --cipher-algo AES256 \
+              --output qa-20261105-three-group-evidence.tar.gz.gpg qa-20261105-three-group-evidence.tar.gz
+          rm -rf qa-20261105-three-group-evidence.tar.gz playwright-report test-results
+      - name: Upload encrypted live QA evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilstation-qa-three-group-evidence-encrypted
+          path: qa-20261105-three-group-evidence.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 14
+
