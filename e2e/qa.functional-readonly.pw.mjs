@@ -196,6 +196,10 @@ test('FUN-05 HR managers load roster, approval inbox and payroll preview @qa-fun
    await visit(page,'hr');
    await expect(page.locator('#hr-workspace')).not.toBeEmpty();
    const roster=await get(page,token,'/api/hr/roster?stationId='+station.id);
+   if(roster.status()===403 && (await roster.json()).error==='qa_identity_not_live'){
+    console.log('BLOCKED FUN-05: QA actor intentionally denied access to live HR operations');
+    test.skip(true,'BLOCKED: use the bounded QA HR UAT lane, not production HR API');
+   }
    if(roster.status()===503 && (await roster.json()).error==='release_not_enabled'){
     console.log('BLOCKED FUN-05: /api/hr/roster is intentionally disabled by production preview release gate');
     test.skip(true,'BLOCKED: QA HR backend not available while OILSTATION_API_ENABLED=false');

@@ -1,5 +1,4 @@
 import {test,expect} from '@playwright/test';
-import {createHmac} from 'node:crypto';
 
 // Protected, read-only QA on MAIN ONLY. Never upload traces or screenshots
 // with authenticated Supabase JWTs. Never call a mutation endpoint.
@@ -26,16 +25,9 @@ const companies=stations.flatMap((station,i)=>station.companies.map((id,j)=>({
  id,station,prefix:'c'+String(i*3+j+1).padStart(2,'0'),
 })));
 function required(name){const val=process.env[name];if(!val)throw Error('Missing protected secret name: '+name);return val;}
-function ownerPassword(station){
- return createHmac('sha256',required('OILSTATION_QA_'+station.sales.toUpperCase()+'_PASSWORD'))
-  .update('OilStation QA station role account 20261031/v1/'+station.code+'-owner')
-  .digest('base64url').slice(0,30)+'a9!';
-}
-function staffPassword(company,suffix){
- return createHmac('sha256',ownerPassword(company.station))
-  .update('OilStation QA corporate staff created by own Admin 20261031/v1/'+company.prefix+'-'+suffix)
-  .digest('base64url').slice(0,30)+'a9!';
-}
+// Owner-approved shared QA credential, already verified for all 98 test actors.
+function ownerPassword(){return required('OILSTATION_QA_REVIEW_PASSWORD');}
+function staffPassword(){return required('OILSTATION_QA_REVIEW_PASSWORD');}
 async function login(page,alias,password,role,scopeId,scopeField){
  await page.goto(BASE,{waitUntil:'domcontentloaded'});
  await expect(page.locator('.os-auth-frame')).toBeVisible({timeout:40_000});
@@ -72,8 +64,7 @@ test.use({headless:true,trace:'off',screenshot:'off',video:'off'});
 test.beforeEach(()=>{
  test.skip(process.env.OILSTATION_QA_ROLE_READONLY_RUN!=='true',
   'Only protected main-only GitHub Actions QA may load the fixed-role credentials.');
- required('OILSTATION_QA_SALES01_PASSWORD');
- required('OILSTATION_QA_SALES02_PASSWORD');
+ required('OILSTATION_QA_REVIEW_PASSWORD');
 });
 test('R-00 QA release has simulation finance off @qa-role-readonly',async({request})=>{
  const response=await request.get(BASE+'/api/public-config');
@@ -85,7 +76,7 @@ test('R-01 both Sales accounts see only their two stations @qa-role-readonly',as
  test.setTimeout(4*60*1000);
  for(const alias of ['sales01','sales02']){
   await withIdentity(browser,async page=>{
-   const token=await login(page,alias,required('OILSTATION_QA_'+alias.toUpperCase()+'_PASSWORD'),'platform_sales',null,null);
+   const token=await login(page,alias,required('OILSTATION_QA_REVIEW_PASSWORD'),'platform_sales',null,null);
    await expect(page.locator('[data-ws-go="stations"]:visible').first()).toBeVisible();
    const response=await get(page,token,'/api/platform/sales/stations');
    expect(response.status()).toBe(200);

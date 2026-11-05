@@ -20,8 +20,7 @@ jobs:
     environment: oilstation-qa
     env:
       OILSTATION_QA_ROLE_READONLY_RUN: 'true'
-      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
-      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+      OILSTATION_QA_REVIEW_PASSWORD: ${{ secrets.OILSTATION_QA_REVIEW_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,7 +47,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in OILSTATION_QA_SALES01_PASSWORD OILSTATION_QA_SALES02_PASSWORD; do
+          for key in OILSTATION_QA_REVIEW_PASSWORD; do
             test -n "${!key}" || { echo "::error::Missing secret name $key"; exit 1; }
           done
       - run: npm install --ignore-scripts --no-audit --no-fund
