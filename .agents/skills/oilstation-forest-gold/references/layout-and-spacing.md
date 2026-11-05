@@ -20,7 +20,7 @@ Additional existing source values: form vertical gap 14/15, coupon-form row-gap 
 ## Card nesting and white space
 
 - Outer page header x-padding 24px (customer page 22px), y-padding 20px (customer 18px), radius 16px.
-- Below header: margin-bottom 18px (customer 14px), with horizontally scrolling task tabs nearby. **Do not add a second repeated heading** above the active card.
+- Current corporate DOM order: sticky toolbar → horizontal contextual tabs → task-specific green heading → active pane. Header margin-bottom is 18px (customer 14px). **Do not add a second repeated heading** above the active card.
 - Main task panel: reference 16px padding, then 8px gutters before inset elements, with normalized outer radius 16 and inner radius 12. Current legacy selectors can yield 14px on actual operational cards; see component-anatomy.md.
 - Card contents: title (15–18px) → 8–12px subordinate text → line divider where meaningful → data/action with 12–16px gap.
 - Grid card to card: usually 12px; related sections 16px; distinct app sections 24px.
@@ -33,8 +33,8 @@ Additional existing source values: form vertical gap 14/15, coupon-form row-gap 
 Viewport 1440 / 1280 / 1024
 ┌─ Desktop sidebar 248px ─┬─ Workspace main (minmax(0,1fr)) ──────────────────┐
 │ Brand                    │ Sticky 72px toolbar [balance] [profile] [logout]│
-│ Role-filtered modules    │ Optional context / page heading                │
-│ Selected destination     │ Horizontal task tabs                            │
+│ Role-filtered modules    │ Horizontal task tabs                            │
+│ Selected destination     │ Screen-specific green page heading              │
 │ Footer status            │ ONE active pane                                 │
 │                          │   Cream cards / form / records / reports        │
 └──────────────────────────┴─────────────────────────────────────────────────┘
@@ -89,8 +89,8 @@ At max-width **480px**:
 ## Vertical spacing recipe — new project
 
 1. Sticky toolbar occupies its own top strip: no extra search bar jammed above it.
-2. Page title follows with 12–20px top margin, 14–18px bottom; if that screen already has a task-specific title do not render a redundant global heading.
-3. Contextual tab row uses 8px gaps and small 5px lower breathing room; active pane starts promptly after selected task.
+2. Contextual tab row follows toolbar in current DOM, with 8px gaps and small 5px lower breathing room.
+3. Page title follows tabs with 12–20px top margin and 14–18px bottom. Do not render a redundant global heading; active pane starts promptly after it.
 4. Pane content has 16–20px padding, with adjacent separate cards 12–16px apart and inset cards 8px from panel edges.
 5. CTA aligns to the form edge or spans entire mobile width as needed; final CTA cannot be hidden behind dock.
 6. Readable footer/empty/status messages maintain 10–14px separation from last control.
