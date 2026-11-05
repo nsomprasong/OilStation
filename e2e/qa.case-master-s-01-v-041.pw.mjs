@@ -1,5 +1,5 @@
 import {masterCase,STATION_B} from '../scripts/qa/master-six-harness.mjs';
-// OILSTATION_QA_BATCH_RUN: actual guard is in the shared protected browser harness.
+// OILSTATION_QA_BATCH_RUN: retry only this never-started case after shared helper fixture error; protected guard runs inside test callback.
 const MASTER_UAT_ID='S-01-V';
 masterCase({id:MASTER_UAT_ID,description:'station-id-required-validation',alias:'s01b-owner',role:'station_owner',scopeType:'station',scopeId:STATION_B,
  check:async({page,auth,headers,expect,BASE})=>{
