@@ -23,7 +23,8 @@
 | **OS-QA-ST-CUSTOMER-CREDIT-003** | s01b-owner, mobile Customers > Credit, three existing corporate accounts | All 6 money values per account reconcile to scoped GET; refresh and no writes | **PASS — 1/1 browser run 41988952559**, documented in `docs/qa/runs/OS-QA-ST-CUSTOMER-CREDIT-003.md` |
 | **OS-QA-ST-CUSTOMER-CREATE-VALIDATION-004** | s01b-owner, mobile Customers > Create account; invalid required/email/tax/billing-day inputs | Validated form visibility and native/custom input rejection with no writes | **PASS — 1/1 browser run 41994519937** after PR #161 fix; see `docs/qa/runs/OS-QA-ST-CUSTOMER-CREATE-VALIDATION-004.md` |
 | **OS-QA-ST-MEMBER-DIRECTORY-005** | s01b-owner, mobile Invitations > Member Directory; single search by email/name/role | Scoped GET; true table count, search, empty state, reset; no member writes | **PASS — 1/1 browser run 41995524307**, evidence in `docs/qa/runs/OS-QA-ST-MEMBER-DIRECTORY-005.md` |
-| **OS-QA-ST-INVITE-VALIDATION-006** | s01b-owner, mobile Invitations > Add Member > Email invitation drawer | Authorized staff role choices, missing/malformed email guards, close, no invite write | **NOT TESTED — next single case** |
+| **OS-QA-ST-INVITE-VALIDATION-006** | s01b-owner, mobile Invitations > Add Member > Email invitation drawer | Six allowed roles, blank/invalid email guards, close; no invitation write | **PASS — 1/1 browser run 41996206907**, details in `docs/qa/runs/OS-QA-ST-INVITE-VALIDATION-006.md` |
+| **OS-QA-ST-MEMBER-EDIT-UI-007** | s01b-owner, mobile Invitations > directory > edit member | Open authorized edit dialog, check choices and cancel; do not post a role change | **NOT TESTED — next single case** |
 
 ## Case queue — not yet executed, do not mass-run
 
@@ -33,7 +34,8 @@
 | COMPLETE | Station s01b Customers credit case **003** | PASS 1/1, 3 cards × 6 values and refresh |
 | COMPLETE | Station s01b Customers account creation **validation** case **004** | PASS 1/1, genuine invalid-input browser and no write; not a positive create |
 | COMPLETE | Station s01b Invitations member directory read/search case **005** | PASS 1/1, scoped seven-member GET + search/empty/reset, no write |
-| P1 | Station s01b Invitation drawer invalid input **006** | One owner, native invalid email only, no invitation POST |
+| COMPLETE | Station s01b Invitation drawer invalid input **006** | PASS 1/1, protected 6 roles, invalid email and cancellation, no writes |
+| P1 | Station s01b member role editor UI review/cancel **007** | One station owner; do not save or change role; inspect same scoped members only |
 | P1 | Station Customer new account, existing link, credit, fuel prices, pump, Plan, Invitations; each **separate** read/validation/write case | Each case needs exact QA manifest; do not mutate existing customer data without verified recovery |
 | P1 | Station HR People, Attendance, Review, OT, substitution, Leave, Payroll; **individual bounded QA-HR** cases | Live HR explicitly denies QA actors; use separately scoped approved QA lane; never weaken normal auth |
 | P1 | Corporate topup, QR issuance/reservation, plate/photo verification, completed fueling and reporting | Protected QA-only transaction flow with rollback/compensation and audit; no real bank/fuel operations |
