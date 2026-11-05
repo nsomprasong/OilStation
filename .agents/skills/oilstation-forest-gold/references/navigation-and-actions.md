@@ -5,7 +5,7 @@
 ## Navigation depth: there are only distinct responsibilities
 
 1. **Primary destination navigation:** Desktop = permission-filtered left sidebar; mobile = bottom Home+frequent dock. It switches the workspace.
-2. **Contextual functional navigation:** One horizontally scrolling row of tabs under toolbar / page heading for **actual tasks within the selected workspace**. It switches the active task card, *not the entire module*.
+2. **Contextual functional navigation:** One horizontally scrolling row of tabs after toolbar and before the task-specific green page heading in the current DOM for **actual tasks within the selected workspace**. It switches the active task card, *not the entire module*.
 3. **In-card actions:** Submit, edit, upload proof, inspect, refresh data, cancel. These are not navigation tabs.
 
 No duplicate top-level menu in a submenu. No permanent hamburger or floating scan button added to satisfy a template. Home shows the authorized full catalogue; non-Home shows only its tasks. A data-record card is never promoted to its own navigation tab.
