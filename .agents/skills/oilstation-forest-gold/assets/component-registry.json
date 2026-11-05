@@ -1,0 +1,247 @@
+{
+  "name": "oilstation-forest-gold",
+  "version": "2.0.0",
+  "extracted": "2026-11-05; source declared CSS/DOM, NOT browser-computed screenshot",
+  "scope": "portable design-only reference; NOT production import",
+  "design": {
+    "palette": {
+      "page": "#EAE7DF",
+      "sidebar": "#10271E",
+      "card": "#F7F5EF",
+      "inner": "#F0EDE5",
+      "primary": "#194635",
+      "gold": "#BD9A5E",
+      "border": "#CCD0C5"
+    },
+    "normalizedRadiiPx": {
+      "outer": 16,
+      "inner": 12,
+      "control": 10
+    },
+    "spacingPx": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      32,
+      48
+    ],
+    "breakpointsPx": {
+      "mobile": 850,
+      "driverStack": 960,
+      "couponStack": 680,
+      "narrow": 480
+    }
+  },
+  "taskTabs": {
+    "corporate": [
+      "บัญชีบริษัท",
+      "แจ้งเติมเงิน",
+      "เติมเงินทดสอบ",
+      "รถและคนขับ",
+      "ออกคูปอง",
+      "รายงานเติมน้ำมัน"
+    ],
+    "stationCustomers": [
+      "เครดิตลูกค้า",
+      "เปิดบัญชีบริษัท",
+      "เชื่อมบริษัทเดิม",
+      "รายงานเติมน้ำมัน"
+    ]
+  },
+  "components": [
+    {
+      "id": "shell",
+      "source": ".ws-layout",
+      "geometry": "248px + flexible; stack <=850px"
+    },
+    {
+      "id": "sidebar",
+      "source": ".os-desktop-sidebar",
+      "geometry": "248px wide; padding 24px 14px"
+    },
+    {
+      "id": "sidebar-link",
+      "source": ".os-desktop-side-link",
+      "geometry": "height >=46px, gap 12px, radius 12px"
+    },
+    {
+      "id": "toolbar",
+      "source": ".ws-toolbar",
+      "geometry": "height >=72px desktop, >=64px mobile"
+    },
+    {
+      "id": "toolbar-credit",
+      "source": ".os-toolbar-credit",
+      "geometry": "label/amount; refreshed server state"
+    },
+    {
+      "id": "profile",
+      "source": ".os-profile-trigger",
+      "geometry": "avatar 34px or 29px phone, popover"
+    },
+    {
+      "id": "profile-panel",
+      "source": ".os-profile-panel",
+      "geometry": "max 320px, pad 18px 20px"
+    },
+    {
+      "id": "logout",
+      "source": ".os-toolbar-logout",
+      "geometry": "44x44 desktop; 38x40 mobile (current)"
+    },
+    {
+      "id": "page-header",
+      "source": ".ws-screen-head",
+      "geometry": "pad 20px 24px / corporate 18px 22px"
+    },
+    {
+      "id": "task-tabs",
+      "source": ".os-functional-nav",
+      "geometry": "horizontal scroll, gap 8px"
+    },
+    {
+      "id": "task-tab",
+      "source": ".os-category-tab",
+      "geometry": "min-height 44px, pill shape"
+    },
+    {
+      "id": "mobile-dock",
+      "source": ".os-mobile-bottom",
+      "geometry": "72px plus safe area, <=850px only"
+    },
+    {
+      "id": "dock-tab",
+      "source": ".os-mobile-tab",
+      "geometry": "min-height 56px; orb 44x28px"
+    },
+    {
+      "id": "panel",
+      "source": ".panel",
+      "geometry": "16px radius; padding clamp(18px,2.4vw,28px)"
+    },
+    {
+      "id": "balance-card",
+      "source": ".balance-card",
+      "geometry": "pad 18px; 12px radius; 2px gold top"
+    },
+    {
+      "id": "credit-banner",
+      "source": ".os-credit-banner",
+      "geometry": "12px 16px padding; green 4px border"
+    },
+    {
+      "id": "credit-card",
+      "source": ".os-credit-account",
+      "geometry": "18px padding; 23–29px money"
+    },
+    {
+      "id": "record-card",
+      "source": ".module-item",
+      "geometry": "14px 16px padding; legacy radius overrides"
+    },
+    {
+      "id": "driver-panel",
+      "source": "#company-driver-workspace",
+      "geometry": "desktop 1fr + 225–280px; stack <=960px"
+    },
+    {
+      "id": "coupon-form",
+      "source": "#coupon-form",
+      "geometry": "2-col gap 14px 18px; <=680px single"
+    },
+    {
+      "id": "topup-form",
+      "source": "topup-upload-form",
+      "geometry": "bank/amount/slip form, DOM id source"
+    },
+    {
+      "id": "issued-qr",
+      "source": ".issue-result",
+      "geometry": "dashed card 18px pad; QR >=250px"
+    },
+    {
+      "id": "report-filters",
+      "source": ".os-report-filters",
+      "geometry": "gap 12px; field width 180–360px"
+    },
+    {
+      "id": "report-table",
+      "source": ".os-report-table-scroll",
+      "geometry": "border scroll; table min-width 650px"
+    },
+    {
+      "id": "directory-search",
+      "source": ".os-directory-search-wrap",
+      "geometry": "one input + inside magnifier"
+    },
+    {
+      "id": "primary",
+      "source": ".button.primary",
+      "geometry": "min-height 46px; x-padding 20px"
+    },
+    {
+      "id": "secondary",
+      "source": ".button.secondary",
+      "geometry": "neutral action"
+    },
+    {
+      "id": "destructive",
+      "source": ".button.destructive",
+      "geometry": "red + confirmation"
+    },
+    {
+      "id": "edit",
+      "source": ".os-card-edit",
+      "geometry": "min-height 44px, radius 12px"
+    },
+    {
+      "id": "fab",
+      "source": ".os-add-fab",
+      "geometry": "min-height 52px, above mobile dock"
+    },
+    {
+      "id": "notice",
+      "source": ".notice",
+      "geometry": "pad 11px 14px, radius 12px"
+    },
+    {
+      "id": "hint",
+      "source": ".hint",
+      "geometry": "pad 12px 14px, radius 12px"
+    },
+    {
+      "id": "confirm-dialog",
+      "source": ".os-logout-dialog",
+      "geometry": "max-width 400px"
+    },
+    {
+      "id": "home-summary",
+      "source": ".os-mobile-summary-card",
+      "geometry": "2 mobile columns; card pad 14px"
+    },
+    {
+      "id": "mobile-feature",
+      "source": ".os-mobile-feature",
+      "geometry": "2 mobile cols; min-height 96px"
+    }
+  ],
+  "sources": [
+    "public/oilstation.css",
+    "src/client/main.js",
+    "src/client/workspace-layout.js",
+    "src/client/mobile-home.js",
+    "src/client/functional-submenus.js",
+    "src/client/toolbar-credit.js",
+    "src/client/user-profile.js",
+    "src/client/station-customer-reports.js"
+  ],
+  "warnings": [
+    "Legacy CSS specificity/!important can change final computed radii.",
+    "Do not copy real identities, secrets, balances, valid QR, business logic, or permission checks.",
+    "HTML gallery is a static example only; measure real screenshots separately.",
+    "New project must intentionally import this skill; local repo skills are not globally registered."
+  ]
+}
