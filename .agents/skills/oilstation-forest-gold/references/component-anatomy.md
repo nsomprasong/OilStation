@@ -4,7 +4,7 @@
 
 ## Surface hierarchy (outer to inner)
 
-1. Page ground = warm ivory/sage gradient; no white full-screen slab.
+1. Page ground = warm ivory/sage gradient; no white full-screen slab. Current corporate DOM order: toolbar → contextual tabs → selected-task green page header → active pane.
 2. Green structural shell = sidebar/toolbar and task page header, with thin gold sweep.
 3. Functional surface = one active task panel for the selected contextual menu; avoid nesting every independent form in one long column.
 4. Card = quiet cream/ivory rounded rectangle, neutral border, slight or zero shadow.
