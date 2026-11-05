@@ -9,12 +9,6 @@ export const STATION_S02A='24dc4981-0e6f-4b86-bfd7-03717002d0be';
 export const STATION_S02B='02183a4e-47b0-4575-9f4f-74cec6553205';
 export const COMPANY_C01='4e6a3fc9-217d-4543-885b-113f1f3ba4c3';
 
-test.use({headless:true,viewport:{width:390,height:844},screenshot:'off',trace:'off',video:'off'});
-test.beforeEach(()=>{
- test.skip(process.env.OILSTATION_QA_BATCH_RUN!=='true','Protected Master UAT batch only');
- if(!process.env.OILSTATION_QA_REVIEW_PASSWORD)throw Error('Protected QA review Secret unavailable');
-});
-
 export async function qaLogin(page,alias,role=null,scopeType=null,scopeId=null) {
  await expect(page.locator('#qa-login-form')).toBeVisible({timeout:25000});
  await page.locator('#qa-login-alias').fill(alias);
@@ -40,6 +34,8 @@ export async function qaLogin(page,alias,role=null,scopeType=null,scopeId=null) 
 }
 export function masterCase({id,alias=null,role=null,scopeType=null,scopeId=null,description,check}){
  test('MASTER '+id+' '+description+' @qa-master-six',async({page})=>{
+  test.skip(process.env.OILSTATION_QA_BATCH_RUN!=='true','Protected Master UAT batch only');
+  if(!process.env.OILSTATION_QA_REVIEW_PASSWORD)throw Error('Protected QA review Secret unavailable');
   test.setTimeout(110000);
   const errors=[],uiWrites=[];
   page.on('pageerror',()=>errors.push('javascript_exception'));
