@@ -9,8 +9,8 @@ This is a design reference for **the whole customer-company screen**, not only a
 │ Forest sidebar  │ Forest top toolbar + fine gold sweep                      │
 │  logo / nav     │ [actual credit if allowed] [avatar + name] [logout icon] │
 │  selected       ├────────────────────────────────────────────────────────────┤
-│  destination    │ One compact task title + description in green header      │
-│                 │ [Account] [Top-up] [QA?] [Drivers?] [Coupon?] [Report]   │
+│  destination    │ [Account] [Top-up] [QA?] [Drivers?] [Coupon?] [Report]   │
+│                 │ One compact task title + description in green header      │
 │                 ├────────────────────────────────────────────────────────────┤
 │                 │ ONE selected task pane                                     │
 │                 │   ordered content / inset record cards / one main CTA     │
@@ -18,7 +18,7 @@ This is a design reference for **the whole customer-company screen**, not only a
 └─────────────────┴────────────────────────────────────────────────────────────┘
 ~~~
 
-The generic .ws-header is **suppressed** for corporate because its contextual task heading supplies the title. Do not duplicate the outer page title, functional-pane header and card header.
+The generic .ws-header is **suppressed** for corporate because its contextual task heading supplies the title. **Current DOM order is toolbar → contextual task tabs → screen-specific green page header → active pane**, as defined in renderWorkspaceShell (ws-context-host comes before ws-content). Do not duplicate the outer page title, functional-pane header and card header.
 
 ## Whole-screen phone skeleton
 
@@ -27,8 +27,8 @@ The generic .ws-header is **suppressed** for corporate because its contextual ta
 │ dark green / gold toolbar    │
 │ real credit | profile | exit │  (one row)
 ├──────────────────────────────┤
-│ concise current-task title   │
 │ [tab][tab][tab]  → scroll    │
+│ concise current-task title   │
 ├──────────────────────────────┤
 │ selected pane                │
 │  cream card                  │
