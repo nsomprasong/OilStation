@@ -34,9 +34,9 @@ Each row is a **plan, NOT execution evidence**. Rows are ordered to begin with a
 | Round | Master IDs to finish (6 each) | Readiness |
 |---|---|---|
 | `TEST-6-001` | `P-01-R` · `P-09-V` · `S-01-V` · `C-01-F` · `C-02-F` · `X-08-F` | Scoped read-only preflight needed |
-| `TEST-6-002` | `P-01-H` · `P-01-V` · `P-01-F` · `P-02-V` · `P-02-F` · `P-03-H` | Review role/API/rollback per case before run |
-| `TEST-6-003` | `P-03-V` · `P-03-R` · `P-03-F` · `P-04-H` · `P-04-V` · `P-04-R` | Review role/API/rollback per case before run |
-| `TEST-6-004` | `P-05-H` · `P-05-V` · `P-05-R` · `P-06-H` · `P-06-V` · `P-06-R` | Review role/API/rollback per case before run |
+| `TEST-6-002` | `P-01-F` · `P-01-V` · `P-09-R` · `P-11-R` · `S-01-F` · `C-12-F` | Safe read/negative/UI bounded preflight; no accepted finance writes |
+| `TEST-6-003` | `P-03-V` · `P-03-R` · `P-03-F` · `P-05-R` · `P-06-R` · `S-03-V` | Safe read/negative/UI bounded preflight; no accepted finance writes |
+| `TEST-6-004` | `S-03-R` · `S-21-R` · `C-01-R` · `S-22-V` · `X-05-F` · `X-06-R` | Safe read/negative/UI bounded preflight; no accepted finance writes |
 | `TEST-6-005` | `P-07-R` · `P-09-H` · `P-09-R` · `P-09-F` · `P-10-V` · `P-10-R` | Review role/API/rollback per case before run |
 | `TEST-6-006` | `P-10-F` · `P-11-R` · `P-12-R` · `P-13-H` · `P-13-V` · `P-13-R` | Review role/API/rollback per case before run |
 | `TEST-6-007` | `P-13-F` · `P-14-V` · `P-14-F` · `P-15-R` · `P-15-F` · `S-01-H` | Review role/API/rollback per case before run |
