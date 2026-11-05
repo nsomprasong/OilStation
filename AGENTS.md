@@ -16,6 +16,12 @@ Use the **approved OilStation Login emerald/cream/gold palette** as visual autho
 - Code authority: `src/client/workspace-layout.js`, `src/client/workspace-categories.js`, `src/client/mobile-home.js`, `src/client/nav-preferences.js`, `src/client/functional-submenus.js`, `public/oilstation.css`. Preserve the code-level/CI assertions in `test/ui/navigation-standard.test.mjs` and `test/ui/functional-submenus.test.mjs`.
 - No changes to customer money, invitation, authorization, or workflow API behavior while adjusting navigation. Do not resurrect old sidebar/floating hamburger markup to make obsolete tests pass.
 
+## Approved reusable Forest & Gold design skill (5 November 2026)
+
+For visual work on Login, customer-company credit/QR/report workspaces, and consistent green/cream/gold styling throughout OilStation, **read and follow .agents/skills/oilstation-forest-gold/SKILL.md first**. It documents the approved Login + corporate-customer appearance, token values, responsive toolbar/profile/dock rules, gold-line motif and cross-project adoption. Its four references and optional token preset form a portable, standalone package.
+
+This skill sets **visual identity**, while the already-installed design-taste-frontend skill supplies complementary app-screen craftsmanship and visual QA. Keep one canonical public/oilstation.css in OilStation and never paste the portable preset in as a second theme. No UI or business behavior is changed by adding the skill. For other repositories, copy its whole directory and explicitly register it in their agent instructions; a repository-local skill is not automatically globally installed.
+
 ## Frontend skill
 
 For frontend design, layout, styling, accessibility, redesign, or visual QA, use the project-installed **design-taste-frontend** skill at `.agents/skills/design-taste-frontend/SKILL.md`, copied from `Leonxlnx/taste-skill`.
