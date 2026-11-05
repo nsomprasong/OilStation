@@ -24,7 +24,7 @@ test(CASE+': s01b-hr protected permission boundary @qa-batch',async({page})=>{
  const get=await page.request.get(BASE+'/api/station/billing/options?stationId='+SCOPE,{headers});
  expect(get.status()).toBe(403);expect(await get.json()).toEqual({error:'permission_denied'});
  console.log('QA_CASE '+CASE+' NON_OWNER_PLAN_READ_DENIED_PASS: 403');
- const post=await page.request.post(BASE+'/api/station/billing/select',{headers:{...headers,origin:BASE,'content-type':'application/json'},data:{stationId:SCOPE,planId:'00000000-0000-4000-8000-0000000000029',paymentMethod:'card'}});
+ const post=await page.request.post(BASE+'/api/station/billing/select',{headers:{...headers,origin:BASE,'content-type':'application/json'},data:{stationId:SCOPE,planId:'00000000-0000-4000-8000-000000000029',paymentMethod:'card'}});
  expect(post.status()).toBe(403);expect(await post.json()).toEqual({error:'permission_denied'});
  console.log('QA_CASE '+CASE+' NON_OWNER_PLAN_WRITE_DENIED_PASS: 403');
  expect(writes,'browser UI must not submit mutations').toEqual([]);expect(errors).toEqual([]);
