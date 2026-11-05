@@ -195,8 +195,12 @@ export function installFunctionalSubmenus(root){
   return true;
  }
  function syncState(state){
+  // Progressive creation hides #customer-create until its task is selected.
+  // Keep its authorized New Company tab visible so the tab can emit
+  // os:create-show; hidden record/action panels in other tasks stay excluded.
   const available=state.panes.filter(p=>p.wrapper?.isConnected&&
-    !p.nodes[0]?.hidden&&(p.id!=='fuel'||p.nodes[0]?.childElementCount));
+    ((state.key==='customers'&&p.id==='new')||!p.nodes[0]?.hidden)&&
+    (p.id!=='fuel'||p.nodes[0]?.childElementCount));
   // A single invitation workflow does not need a fake one-item tab.
   // Hide only its contextual nav; preserve its mounted forms and the standard
   // non-Home workflow selection for all other screens.

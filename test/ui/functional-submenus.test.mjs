@@ -143,3 +143,13 @@ test('corporate tabs update their single real page heading and retain all form p
  assert.match(main,/report.hidden=false/);
  assert.doesNotMatch(main,/class="section-title">บัญชีเติมน้ำมันของบริษัท/);
 });
+
+test('progressively hidden New Customer form retains its authorized functional tab',()=>{
+ const source=read('src/client/functional-submenus.js');
+ const progressive=read('src/client/progressive-workspace.js');
+ // The hidden create form itself must not remove its tab; the tab opens it.
+ assert.match(source,/state\.key==='customers'&&p\.id==='new'/);
+ assert.match(source,/form\.dispatchEvent\(new Event\('os:create-show'\)\)/);
+ assert.match(progressive,/const show=\(\)=>\{[\s\S]*?surface\.hidden=false/);
+ assert.match(progressive,/form\.dataset\.osCreateReady='true'/);
+});
