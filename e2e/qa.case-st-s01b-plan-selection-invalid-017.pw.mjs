@@ -71,7 +71,7 @@ test(CASE+': reject malformed billing plan requests without saving @qa-one-case'
    data:{stationId:STATION,planId:'not-a-uuid',paymentMethod:'card'}}),
   400,'invalid_plan_selection');
  await testReject('MALFORMED_JSON',
-  page.request.post(selectUrl,{headers:jsonHeaders,data:'{'}),
+  page.request.post(selectUrl,{headers:jsonHeaders,data:Buffer.from('{')}),
   400,'invalid_json');
  await testReject('CROSS_ORIGIN',
   page.request.post(selectUrl,{headers:{...jsonHeaders,origin:'https://untrusted.invalid'},
