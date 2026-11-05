@@ -1,4 +1,5 @@
 import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN: actual guard is in the shared protected browser harness.
 const MASTER_UAT_ID='P-01-R';
 masterCase({id:MASTER_UAT_ID,description:'guest-admin-deep-link-boundary',alias:'sales01',role:'platform_sales',scopeType:'platform',
  check:async({page,auth,headers,expect,BASE})=>{
