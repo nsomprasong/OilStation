@@ -49,7 +49,7 @@ test(CASE+': s01b-finance role boundary @qa-batch',async({page})=>{
  console.log('QA_CASE '+CASE+' FINANCE_MANAGER_PLAN_READ_DENIED_PASS: 403');
  const denied=await page.request.post(BASE+'/api/station/billing/select',{
   headers:{...headers,origin:BASE,'content-type':'application/json'},
-  data:{stationId:SCOPE,planId:'00000000-0000-4000-8000-0000000000026',paymentMethod:'card'},
+  data:{stationId:SCOPE,planId:'00000000-0000-4000-8000-000000000026',paymentMethod:'card'},
  });
  expect(denied.status(),'owner-only plan selection POST denied').toBe(403);
  expect(await denied.json()).toEqual({error:'permission_denied'});
