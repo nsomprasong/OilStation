@@ -50,7 +50,10 @@ test('OS-QA-ST-CUSTOMER-CREATE-VALIDATION-004: invalid create inputs never produ
  await page.locator('[data-ws-screen="overview"] [data-ws-go="customers"]:visible').first().click();
  await expect(page.locator('[data-ws-screen="customers"]:visible')).toBeVisible();
  const tab=page.locator('[data-context-for="customers"] button[data-os-pane-key="new"]');
+ // Regression: previously the New Company tab disappeared when the
+ // progressive form was hidden. Keep it present, enabled and operable.
  await expect(tab).toBeVisible({timeout:14_000});
+ await expect(tab).toBeEnabled();
  await tab.click();
  await expect(tab).toHaveAttribute('aria-pressed','true');
  const active=page.locator('[data-ws-screen="customers"] .os-functional-pane:visible');
