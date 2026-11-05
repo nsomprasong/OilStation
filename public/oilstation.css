@@ -332,6 +332,11 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  background:var(--os-gradient-header);border-color:var(--os-side-border);
  color:var(--os-side-tx);
 }
+#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)::before{
+ content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+ background:radial-gradient(ellipse 850px 180px at -120px 196px,
+   transparent 85.35%,var(--os-gold-line-soft) 85.58% 85.81%,transparent 86.08%);
+}
 #app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)::after{
  content:"";position:absolute;bottom:0;left:18px;right:18px;height:1px;pointer-events:none;
  background:linear-gradient(90deg,var(--os-gold-line),var(--os-gold-line-soft),transparent);
@@ -339,10 +344,10 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 #app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header)>*{
  position:relative;z-index:1;
 }
-#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) h3{
+#app.workspace-mode .os-midnight-layout [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) h3{
  color:var(--os-side-tx)!important;
 }
-#app.workspace-mode [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) p{
+#app.workspace-mode .os-midnight-layout [data-ws-screen="customers"] :is(.os-credit-head,.os-report-header) p{
  color:#E1EEE5!important;
 }
 #app.workspace-mode .os-credit-head h3,
@@ -1529,7 +1534,10 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
 .os-desktop-side-footer{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px;font-size:12px;color:var(--os-side-mu)}
 .os-side-status-dot{width:8px;height:8px;border-radius:50%;background:#84CFA2;flex:none}
 
-.ws-main{min-width:0;display:flex;flex-direction:column;padding:0 clamp(24px,3.4vw,48px) 64px}
+.ws-main{
+ min-width:0;display:flex;flex-direction:column;
+ padding:0 clamp(24px,3.4vw,48px) 64px;
+}
 .ws-toolbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;min-height:72px;
   background-color:var(--os-side);background-image:var(--os-gradient-menu);color:var(--os-side-tx);backdrop-filter:blur(8px);border-bottom:1px solid var(--os-side-border);margin:0 calc(-1*clamp(24px,3.4vw,48px));padding:12px clamp(24px,3.4vw,48px);isolation:isolate}
 /* Decorative arcs cannot intercept input or clip the account profile popover. */
@@ -1782,12 +1790,25 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
     background:linear-gradient(90deg,transparent,var(--os-gold-line) 32%,transparent);
   }
   .os-mobile-dock-inner{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;max-width:540px;margin-inline:auto;align-items:center;justify-items:center;justify-content:center;position:relative;z-index:1}
-  .os-mobile-tab{display:grid;justify-items:center;align-content:center;gap:3px;min-width:0;width:100%;min-height:56px;padding:4px 2px;border:0;border-radius:12px;background:none;color:var(--os-side-mu)}
-  .os-mobile-tab .os-nav-orb{display:grid;place-items:center;width:44px;height:28px;border-radius:99px}
+  .os-mobile-tab{
+    display:grid;justify-items:center;align-content:center;gap:3px;
+    min-width:0;width:100%;min-height:56px;padding:4px 2px;
+    border:0;border-radius:12px;background:transparent;color:var(--os-side-mu);
+  }
+  .os-mobile-tab .os-nav-orb{
+    display:grid;place-items:center;width:44px;height:28px;border-radius:99px;
+    border:1px solid rgba(247,245,239,.13);background:rgba(247,245,239,.06);
+  }
   .os-mobile-tab .app-icon{width:21px;height:21px}
-  .os-mobile-tab .os-nav-caption{max-width:100%;font-size:11px;font-weight:600;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .os-mobile-tab .os-nav-caption{
+    max-width:100%;font-size:11px;font-weight:600;line-height:1.2;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
   .os-mobile-tab.is-current,.os-mobile-tab[aria-current=page]{color:var(--os-side-tx)}
-  .os-mobile-tab.is-current .os-nav-orb,.os-mobile-tab[aria-current=page] .os-nav-orb{background:var(--os-bg);color:var(--os-ac)}
+  .os-mobile-tab.is-current .os-nav-orb,.os-mobile-tab[aria-current=page] .os-nav-orb{
+    border-color:var(--os-gold-line);background:var(--os-bg);color:var(--os-ac);
+    box-shadow:0 2px 9px #07171055;
+  }
   .os-nav-orb-placeholder{visibility:hidden}
 
   /* auth on phones: preserve the angled split while keeping the real sign-in controls reachable */
