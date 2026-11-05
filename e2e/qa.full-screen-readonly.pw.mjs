@@ -1,5 +1,4 @@
 import {test,expect} from '@playwright/test';
-import {createHmac} from 'node:crypto';
 
 // QA-20261105-THREE-GROUP-READONLY-001
 // Real protected browser → actual live guarded preview → EXISTING QA actors only.
@@ -34,42 +33,37 @@ const need=name=>{
  if(!v)throw Error('Missing secret NAME '+name);
  return v;
 };
-const hmac=(seed,message)=>createHmac('sha256',seed).update(message)
- .digest('base64url').slice(0,30)+'a9!';
-const salesSecret=s=>need('OILSTATION_QA_'+s.sales.toUpperCase()+'_PASSWORD');
-const stationPassword=(s,alias)=>hmac(salesSecret(s),
- 'OilStation QA station role account 20261031/v1/'+alias);
-const companyPassword=(c,role)=>hmac(stationPassword(c.station,c.station.code+'-owner'),
- 'OilStation QA corporate staff created by own Admin 20261031/v1/'+c.alias+'-'+role);
+// Owner-approved 98-account QA review credential. Never log its value.
+const reviewPassword=()=>need('OILSTATION_QA_REVIEW_PASSWORD');
 const actorSales=alias=>({
  alias,station:stations.find(s=>s.sales===alias),
  role:'platform_sales',scopeType:'platform',scopeId:null,field:null,
- password:()=>salesSecret(stations.find(s=>s.sales===alias)),
+ password:reviewPassword,
  pages:expected.sales
 });
 const actorStation=(s,suffix='owner')=>{
  const role=suffix==='owner'?'station_owner':suffix==='hr'?'hr_manager':suffix;
  return {alias:s.code+'-'+suffix,station:s,role,scopeType:'station',
-  scopeId:s.id,field:'stationId',password:()=>stationPassword(s,s.code+'-'+suffix),
+  scopeId:s.id,field:'stationId',password:reviewPassword,
   pages:expected[suffix==='owner'?'stationOwner':suffix]};
 };
 const actorOrg=(s)=>({
  alias:s.org+'-owner',station:s,role:'organization_owner',scopeType:'organization',
  scopeId:s.orgId,field:'organizationId',
- password:()=>stationPassword(s,s.org+'-owner'),pages:expected.organizationOwner
+ password:reviewPassword,pages:expected.organizationOwner
 });
 const actorCompany=(c,suffix='admin')=>({
  alias:c.alias+'-'+suffix,station:c.station,
  role:({admin:'corporate_admin',issuer:'coupon_issuer',driver:'driver'})[suffix],
  scopeType:'corporate_company',scopeId:c.id,field:'corporateCompanyId',
- password:()=>companyPassword(c,suffix),
+ password:reviewPassword,
  pages:expected[suffix==='admin'?'corporateAdmin':suffix]
 });
 test.use({headless:true,trace:'retain-on-failure',screenshot:'only-on-failure',video:'off'});
 test.beforeEach(()=>{
  test.skip(process.env.OILSTATION_QA_THREE_GROUP_SWEEP!=='true',
   'Live screen sweep is restricted to the GitHub protected main-branch QA environment');
- need('OILSTATION_QA_SALES01_PASSWORD');need('OILSTATION_QA_SALES02_PASSWORD');
+ need('OILSTATION_QA_REVIEW_PASSWORD');
 });
 
 /** Detect the app's own QA auth message instead of waiting 45s for Home. */

@@ -23,8 +23,7 @@ jobs:
       OILSTATION_QA_FUNCTIONAL_READONLY_RUN: 'true'
       OILSTATION_QA_THREE_GROUP_SWEEP: 'true'
       OILSTATION_QA_EVIDENCE_PASSPHRASE: ${{ secrets.OILSTATION_QA_EVIDENCE_PASSPHRASE }}
-      OILSTATION_QA_SALES01_PASSWORD: ${{ secrets.OILSTATION_QA_SALES01_PASSWORD }}
-      OILSTATION_QA_SALES02_PASSWORD: ${{ secrets.OILSTATION_QA_SALES02_PASSWORD }}
+      OILSTATION_QA_REVIEW_PASSWORD: ${{ secrets.OILSTATION_QA_REVIEW_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,8 +50,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$OILSTATION_QA_SALES01_PASSWORD" || { echo '::error::QA Sales01 secret missing'; exit 1; }
-          test -n "$OILSTATION_QA_SALES02_PASSWORD" || { echo '::error::QA Sales02 secret missing'; exit 1; }
+          test -n "$OILSTATION_QA_REVIEW_PASSWORD" || { echo '::error::QA review password secret missing'; exit 1; }
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - name: Three groups, every permitted main screen and contextual task, live read-only browser

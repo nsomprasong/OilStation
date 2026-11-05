@@ -1,5 +1,4 @@
 import {test,expect} from '@playwright/test';
-import {createHmac} from 'node:crypto';
 
 // This suite exercises the ACTUAL deployed UI and authorized GETs in the
 // owner's four existing fictional QA stations and twelve fictional companies.
@@ -19,21 +18,10 @@ const stations=[
 const companies=stations.flatMap((station,i)=>station.companies.map((id,j)=>({
   id,station,alias:'c'+String(i*3+j+1).padStart(2,'0')
 })));
-function password(station,alias){
- const secret=process.env['OILSTATION_QA_'+station.sales.toUpperCase()+'_PASSWORD'];
- if(!secret)throw Error('Protected QA Sales secret unavailable');
- if(alias===station.sales)return secret;
- if(alias.startsWith('c')){
-  const owner=createHmac('sha256',secret)
-   .update('OilStation QA station role account 20261031/v1/'+station.code+'-owner')
-   .digest('base64url').slice(0,30)+'a9!';
-  return createHmac('sha256',owner)
-   .update('OilStation QA corporate staff created by own Admin 20261031/v1/'+alias)
-   .digest('base64url').slice(0,30)+'a9!';
- }
- return createHmac('sha256',secret)
-  .update('OilStation QA station role account 20261031/v1/'+alias)
-  .digest('base64url').slice(0,30)+'a9!';
+function password(){
+ const v=process.env.OILSTATION_QA_REVIEW_PASSWORD;
+ if(!v)throw Error('Missing protected QA review password');
+ return v;
 }
 /** Detect the app's own QA auth message instead of waiting 45s for Home. */
 async function waitForQaWorkspace(page){
@@ -101,7 +89,7 @@ test.use({headless:true,trace:'off',screenshot:'off',video:'off'});
 test.beforeEach(()=>{
  test.skip(process.env.OILSTATION_QA_FUNCTIONAL_READONLY_RUN!=='true',
   'Protected main-only UAT runner for fixed QA accounts');
- if(!process.env.OILSTATION_QA_SALES01_PASSWORD||!process.env.OILSTATION_QA_SALES02_PASSWORD)
+ if(!process.env.OILSTATION_QA_REVIEW_PASSWORD)
   throw Error('Missing protected QA role credentials');
 });
 test('FUN-00 guarded production preview remains nonpayable after login deploy @qa-functional',async({request})=>{
