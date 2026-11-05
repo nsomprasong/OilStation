@@ -1,0 +1,32 @@
+import {test,expect} from '@playwright/test';
+// Isolated never-run case 030, guarded and serial within batch 027-030.
+const BASE='https://oilstation.goldensoft.cloud',CASE='OS-QA-ROLE-BOUNDARY-030',SCOPE='76388e2c-ef36-4656-808b-7d0fbd1d2c35';
+test.use({headless:true,viewport:{width:390,height:844},screenshot:'off',trace:'off',video:'off'});
+test.beforeEach(()=>{test.skip(process.env.OILSTATION_QA_BATCH_RUN!=='true','Protected batch only');if(!process.env.OILSTATION_QA_REVIEW_PASSWORD)throw Error('Protected QA secret required');});
+test(CASE+': s01b-attendant protected permission boundary @qa-batch',async({page})=>{
+ test.setTimeout(105000);const errors=[],writes=[];
+ page.on('pageerror',()=>errors.push('javascript_exception'));
+ page.on('request',req=>{try{const u=new URL(req.url());if(u.origin===BASE&&u.pathname.startsWith('/api/')&&!['GET','HEAD','OPTIONS'].includes(req.method()))writes.push([u.pathname,req.method()]);}catch{}});
+ expect((await page.goto(BASE,{waitUntil:'domcontentloaded'}))?.status()).toBe(200);
+ await expect(page.locator('#qa-login-form')).toBeVisible({timeout:25000});
+ await page.locator('#qa-login-alias').fill('s01b-attendant');
+ await page.locator('#qa-login-password').fill(process.env.OILSTATION_QA_REVIEW_PASSWORD);
+ await page.locator('#qa-login-form button[type="submit"]').click();
+ await expect(page.locator('[data-ws-screen="overview"]:visible')).toBeVisible({timeout:30000});
+ const token=await page.evaluate(()=>{for(const k of Object.keys(localStorage)){if(!k.startsWith('sb-')||!k.endsWith('-auth-token'))continue;try{const s=JSON.parse(localStorage.getItem(k));if(s?.access_token)return s.access_token;}catch{}}return null;});
+ expect(token).toBeTruthy();const headers={authorization:'Bearer '+token};
+ const who=await page.request.get(BASE+'/api/me',{headers});expect(who.status()).toBe(200);
+ const m=(await who.json()).memberships;expect(m).toHaveLength(1);
+ expect(m[0].role).toBe('attendant');expect(m[0].scopeType).toBe('station');expect(m[0].stationId).toBe(SCOPE);
+ console.log('QA_CASE '+CASE+' AUTH_AND_SCOPE_PASS');
+ await expect(page.locator('[data-ws-screen="overview"] [data-ws-go="pump"]:visible').first()).toBeVisible();
+ await expect(page.locator('[data-ws-go="plan"]')).toHaveCount(0);
+ const get=await page.request.get(BASE+'/api/station/billing/options?stationId='+SCOPE,{headers});
+ expect(get.status()).toBe(403);expect(await get.json()).toEqual({error:'permission_denied'});
+ console.log('QA_CASE '+CASE+' NON_OWNER_PLAN_READ_DENIED_PASS: 403');
+ const post=await page.request.post(BASE+'/api/station/billing/select',{headers:{...headers,origin:BASE,'content-type':'application/json'},data:{stationId:SCOPE,planId:'00000000-0000-4000-8000-0000000000030',paymentMethod:'card'}});
+ expect(post.status()).toBe(403);expect(await post.json()).toEqual({error:'permission_denied'});
+ console.log('QA_CASE '+CASE+' NON_OWNER_PLAN_WRITE_DENIED_PASS: 403');
+ expect(writes,'browser UI must not submit mutations').toEqual([]);expect(errors).toEqual([]);
+ console.log('QA_CASE '+CASE+' RESULT: AUTH_AND_SCOPE_PASS + ROLE_PERMISSION_PASS + NO_UI_WRITES');
+});
