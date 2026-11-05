@@ -60,6 +60,24 @@ jobs:
             fi
           done
           printf '%s\n' "${changed[@]}" > .qa-new-batch-specs.txt
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const matrix=JSON.parse(readFileSync('docs/qa/scenarios/oilstation-master-236-evidence-crosswalk.json','utf8'));
+          const files=readFileSync('.qa-new-batch-specs.txt','utf8').trim().split('\n');
+          const ids=files.map(f=>{
+            const src=readFileSync(f,'utf8');
+            return src.match(/MASTER_UAT_ID='([PSCX]-\d{2}-[HVRF])'/)?.[1];
+          });
+          if(ids.length!==6||ids.some(x=>!x)||new Set(ids).size!==6)
+            throw Error('Every spec needs a unique literal MASTER_UAT_ID');
+          const batch=matrix.batches.find(b=>b.lane==='TEST_QUEUE'&&
+            b.caseIds.length===6&&b.caseIds.every(x=>ids.includes(x)));
+          if(!batch)throw Error('Master IDs must match a single TEST_QUEUE six-case batch');
+          if(ids.some(id=>!matrix.cases.some(x=>x.id===id&&
+             ['PARTIAL','NOT_TESTED'].includes(x.matchedStatus))))
+            throw Error('No prior PASS, blocked, obsolete or owner-skipped Master case allowed');
+          console.log('Approved Master UAT batch: '+batch.batchId+' '+ids.join(', '));
+          NODE
           echo "QA_BATCH_COUNT=${#changed[@]}" >> "$GITHUB_ENV"
           printf 'Selected new cases only: %s\n' "${changed[@]}"
       - name: Confirm matching guarded preview deploy was successful
