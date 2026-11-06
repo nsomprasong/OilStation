@@ -79,6 +79,7 @@ export function createStationBankApi({authenticate,db,bankEncryptionKey}){
    }
    if(details){
     const secured=await db.corporateTopupBankTransferDetails({actorId:actor.id,accountId,bankId});
+    if(secured.bankCode==='PROMPTPAY')return json(403,{error:'promptpay_qr_only'});
     const number=await decryptStationBankNumber(secured.encryptedNumber,bankEncryptionKey);
     return json(200,{bank:{id:secured.id,bankCode:secured.bankCode,
      accountName:secured.accountName,accountNumber:number}});
