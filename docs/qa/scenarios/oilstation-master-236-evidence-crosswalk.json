@@ -1234,7 +1234,9 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-011",
+      "packageChangeGateIssue": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "P-05-V",
@@ -1305,7 +1307,9 @@
       "evidenceAssessment": "Subscription, provider, paid invoice and commission writes need bounded test-mode payment fixtures and reversible state.",
       "blocker": "QA_BILLING_GATE",
       "action": "NOT_RUN",
-      "batch": "HOLD-6-001"
+      "batch": "HOLD-6-001",
+      "packageChangeGateIssue": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "P-06-H",
@@ -4622,7 +4626,9 @@
       "evidenceAssessment": "Accepted owner checkout and rollback explicitly held for synthetic isolated checkout fixture and verified recovery.",
       "blocker": "POSITIVE_CHECKOUT_020",
       "action": "NOT_RUN",
-      "batch": "HOLD-6-009"
+      "batch": "HOLD-6-009",
+      "packageChangeGateIssue": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "S-21-V",
@@ -4720,7 +4726,9 @@
       "evidenceAssessment": "Accepted owner checkout and rollback explicitly held for synthetic isolated checkout fixture and verified recovery.",
       "blocker": "POSITIVE_CHECKOUT_020",
       "action": "NOT_RUN",
-      "batch": "HOLD-6-009"
+      "batch": "HOLD-6-009",
+      "packageChangeGateIssue": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "S-22-H",
@@ -7496,5 +7504,16 @@
   },
   "policyNote": "Queue 002-004 reordered 2026-11-05 for execution safety: defer positive station creation and billing mutation lacking recovery; prioritize scoped read/validation/role/reload acceptance. No previously completed Master PASS repeated. These batches are planned not yet executed.",
   "currentQueueCheckpoint": "2026-11-06: nine verified 6-case Master Chromium batches completed (54 bounded Master IDs). TEST-6-010 fresh Corporate tax validation, credit banner, denied foreign-driver assignment, driver mobile QR, unsaved Sales draft navigation, unauthorized tab leak. OAuth, SaaS module gate, positive finance/Payroll remain pending.",
-  "executionSafety": "All counters are original snapshot until individual full acceptance checked; a bounded case passing does not mean full Master variant PASS. Historical six-case Master specs 039–062 are recorded as completed to prevent replay. Do not use run 005 to mutate verified baseline or enable finance."
+  "executionSafety": "All counters are original snapshot until individual full acceptance checked; a bounded case passing does not mean full Master variant PASS. Historical six-case Master specs 039–062 are recorded as completed to prevent replay. Do not use run 005 to mutate verified baseline or enable finance.",
+  "packageChangeGate": {
+    "issueUrl": "https://github.com/nsomprasong/OilStation/issues/205",
+    "detail": "docs/qa/plans/2026-11-06-saas-package-change-effective-date-addendum.md",
+    "verificationDate": "2026-11-06",
+    "positiveExistingPlanSwitch": "BLOCKED",
+    "positiveEffectiveStartDateSelection": "BLOCKED",
+    "observedLiveNegativeContract": "existing trialing/active/grace/overdue subscription rejected by station_select_saas_plan prior to checkout write; existing owner API rejects startsAt/effectiveOn extension",
+    "requiredPositiveEvidence": "approved reversible QA station fixture, explicit effective date/proration policy, new scheduler/storage/owner UI, exact activation boundary, no double billing, protected old invoice snapshot, retry/cancel + independent before/after DB proof",
+    "releaseImpact": "Do not count read-only price quotation, 409 rejection or 400 unsupported startsAt as successful package change / new package effective start date",
+    "originalMasterCaseCount": 236
+  }
 }
