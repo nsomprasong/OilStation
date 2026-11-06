@@ -1108,6 +1108,22 @@ export function createSupabaseAdapter(env) {
             p_request_id:d.requestId,p_approved:d.approved,
             p_station_ids:d.allowed.station,p_company_ids:d.allowed.corporate_company}),
         }),
+      stationSetTopupAmountOptions: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_set_topup_amount_options',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_amounts:d.amounts}),
+        }),
+      stationGetTopupAmountOptions: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_get_topup_amount_options',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+        }),
+      corporateTopupAmountOptions: async d=>serviceRequest(env,
+        '/rest/v1/rpc/corporate_topup_amount_options',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_account_id:d.accountId}),
+        }),
       stationRegisterTopupBank: async d=>serviceRequest(env,
         '/rest/v1/rpc/station_register_topup_bank',{
           method:'POST',headers:{'content-type':'application/json'},
@@ -1137,7 +1153,7 @@ export function createSupabaseAdapter(env) {
           }),
         }),
       canUploadTopup: async d=>serviceRequest(env,
-        '/rest/v1/rpc/authorize_corporate_topup_upload',{
+        '/rest/v1/rpc/authorize_corporate_topup_preset_upload',{
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({
             p_actor_id:d.actorId,p_account_id:d.accountId,
