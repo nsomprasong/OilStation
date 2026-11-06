@@ -1219,7 +1219,9 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-010"
+      "batch": "TEST-6-010",
+      "packageChangeAddendum": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "P-05-V",
@@ -1290,7 +1292,9 @@
       "evidenceAssessment": "Subscription, provider, paid invoice and commission writes need bounded test-mode payment fixtures and reversible state.",
       "blocker": "QA_BILLING_GATE",
       "action": "NOT_RUN",
-      "batch": "HOLD-6-001"
+      "batch": "HOLD-6-001",
+      "packageChangeAddendum": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "P-06-H",
@@ -4601,7 +4605,9 @@
       "evidenceAssessment": "Accepted owner checkout and rollback explicitly held for synthetic isolated checkout fixture and verified recovery.",
       "blocker": "POSITIVE_CHECKOUT_020",
       "action": "NOT_RUN",
-      "batch": "HOLD-6-009"
+      "batch": "HOLD-6-009",
+      "packageChangeAddendum": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "S-21-V",
@@ -4699,7 +4705,9 @@
       "evidenceAssessment": "Accepted owner checkout and rollback explicitly held for synthetic isolated checkout fixture and verified recovery.",
       "blocker": "POSITIVE_CHECKOUT_020",
       "action": "NOT_RUN",
-      "batch": "HOLD-6-009"
+      "batch": "HOLD-6-009",
+      "packageChangeAddendum": "https://github.com/nsomprasong/OilStation/issues/205",
+      "packageChangePositiveStatus": "BLOCKED"
     },
     {
       "id": "S-22-H",
@@ -7475,5 +7483,19 @@
   },
   "policyNote": "Queue 002-004 reordered 2026-11-05 for execution safety: defer positive station creation and billing mutation lacking recovery; prioritize scoped read/validation/role/reload acceptance. No previously completed Master PASS repeated. These batches are planned not yet executed.",
   "currentQueueCheckpoint": "2026-11-06 -- nine scoped verified Master six-case batches complete (054 case IDs), new TEST-6-010 P-05-H P-07-R P-13-R P-15-R S-11-V S-22-F. OAuth, admin plan revision editor, real finance/payroll release gate not cleared.",
-  "executionSafety": "All counters are original snapshot until individual full acceptance checked; a bounded case passing does not mean full Master variant PASS. Historical six-case Master specs 039–062 are recorded as completed to prevent replay. Do not use run 005 to mutate verified baseline or enable finance."
+  "executionSafety": "All counters are original snapshot until individual full acceptance checked; a bounded case passing does not mean full Master variant PASS. Historical six-case Master specs 039–062 are recorded as completed to prevent replay. Do not use run 005 to mutate verified baseline or enable finance.",
+  "packageChangeGate": {
+    "issueUrl": "https://github.com/nsomprasong/OilStation/issues/205",
+    "detail": "docs/qa/plans/2026-11-06-saas-package-change-effective-date-addendum.md",
+    "verificationDate": "2026-11-06",
+    "currentPositiveSwitch": "BLOCKED",
+    "currentStartDateSchedule": "BLOCKED",
+    "negativeTests": [
+      "POST owner selection with startsAt -> 400 invalid_plan_selection (does not save start date)",
+      "valid replacement plan for station with trialing subscription -> 409 plan_selection_unavailable (does not replace plan)"
+    ],
+    "pending": "Prove active→scheduled replacement (monthly/yearly/QR+HR), choose future start date, midnight activation, no gap/double charge, idempotency, cancel, prior invoice snapshot, timezone and optional prorate/reversal under reversible QA fixture",
+    "releaseImpact": "Full Production package-change UAT not complete; do not label priced plan read as switch PASS",
+    "original236ScenarioCountUnchanged": true
+  }
 }
