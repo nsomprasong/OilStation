@@ -216,7 +216,9 @@ export default {
           if(qaFinanceEnabled(env)||(
             qaIsEnabled(env)&&
             (['/api/corporate/drivers','/api/corporate/driver-vehicle',
-             '/api/driver/coupons','/api/my-accounts'].includes(url.pathname)||
+             '/api/driver/coupons','/api/my-accounts',
+             '/api/corporate/wallet-integrity','/api/station/scan-qr',
+             '/api/topup/banks'].includes(url.pathname)||
              /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(url.pathname)))){
             const result=await createQaOperationsApi({
               env,...createSupabaseAdapter(env)})(request);
