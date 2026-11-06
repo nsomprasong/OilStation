@@ -11,7 +11,7 @@ await expect(page.locator('[data-ws-screen="sales"]:visible')).toBeVisible();
 const tab=page.locator('[data-context-for="sales"] button[data-os-pane-key="commission"]');
 await expect(tab).toBeVisible();await tab.click();
 const header=page.locator('[data-ws-screen="sales"] .os-sales-head button');
-await expect(header).toBeVisible();
+await expect(header).toBeVisible();await expect(header).toBeEnabled({timeout:20000});
 const refresh=page.waitForResponse(r=>r.url()===endpoint&&r.request().method()==='GET',{timeout:18000});
 await header.click();const resp=await refresh;expect(resp.status()).toBe(200);
 const later=(await resp.json()).result;
