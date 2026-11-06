@@ -241,7 +241,9 @@ export default {
           return createProductionHrOperationsApi({
             env,...createSupabaseAdapter(env)})(request);
         if(url.pathname==='/api/station/billing/options' ||
-             url.pathname==='/api/station/billing/select')
+             url.pathname==='/api/station/billing/select' ||
+             url.pathname==='/api/station/billing/change/schedule' ||
+             url.pathname==='/api/station/billing/change/cancel')
             return createStationSaasOnboardingApi(createSupabaseAdapter(env))(request);
         } catch {
           return new Response(JSON.stringify({error:'service_not_configured'}),{
