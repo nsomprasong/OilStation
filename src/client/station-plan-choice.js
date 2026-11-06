@@ -51,6 +51,11 @@ export function mountStationPlanChoice({target,token,stationId}){
   if(!chosen||currentTerm.planId===current){
    switchResult.textContent='เลือกแพ็กเกจใหม่ที่ต่างจากแพ็กเกจปัจจุบันเพื่อดูวันเริ่มตัวอย่าง';return;
   }
+  if(switchDate.value&&(!Number.isInteger(currentTerm.anchorDay)||
+     currentTerm.anchorDay<1||currentTerm.anchorDay>31)){
+   switchResult.textContent='ยังไม่สามารถคำนวณวันเริ่มอนาคตได้ เพราะไม่มีข้อมูลวันยึดรอบต่ออายุจากเซิร์ฟเวอร์ กรุณาดูตัวอย่างวันสิ้นรอบปัจจุบันแทน';
+   return;
+  }
   try{
    const end=new Date(currentTerm.periodEnd);
    const sample=previewSubscriptionPlanChange({
@@ -58,7 +63,7 @@ export function mountStationPlanChoice({target,token,stationId}){
     currentBillingFrequency:currentTerm.frequency,nextBillingFrequency:chosen.frequency,
     currentPeriodEndUtc:currentTerm.periodEnd,
     requestedStartOn:switchDate.value||null,
-    anchorDay:end.getUTCDate(),
+    anchorDay:currentTerm.anchorDay||end.getUTCDate(),
     mode:switchDate.value?'future_renewal':'next_renewal',
     nowUtc:new Date().toISOString(),
    });
