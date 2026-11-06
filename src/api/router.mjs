@@ -549,6 +549,7 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       // Do not leak SQL details, bank/account references, keys, or stack traces.
       if (error && typeof error === 'object' && error.code === 'INSUFFICIENT_FUNDS') return fail(409, 'insufficient_funds');
       if (error && typeof error === 'object' && error.code === 'FORBIDDEN') return fail(403, 'permission_denied');
+      if (error && typeof error === 'object' && error.code === 'NOT_FOUND') return fail(404, 'not_found');
       if (error?.code==='SALES_STATION_LIMIT_REACHED') return fail(409,'sales_station_limit_reached');
       if (error && typeof error === 'object' && error.code === 'INVALID_REQUEST') return fail(400, 'invalid_coupon_request');
       if (error && typeof error === 'object' && error.code === 'INVITE_INVALID') return fail(400, 'invalid_or_expired_invitation');
