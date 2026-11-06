@@ -289,16 +289,16 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "S-04-R",
-        "S-04-F",
+        "S-15-R",
         "S-05-R",
-        "S-06-V",
+        "S-16-R",
         "S-06-R",
         "S-07-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Six new cases 117-122. Read-only own station and forbidden foreign role/resource gates only, malformed-but-structurally-valid scan denied before inspection, protected QA HR foreign shift action denied before DB; no accepted writes."
     },
     {
       "batchId": "TEST-6-015",
@@ -324,7 +324,7 @@
         "S-11-R",
         "S-12-R",
         "S-13-R",
-        "S-15-R",
+        "S-04-F",
         "S-16-V"
       ],
       "count": 6,
@@ -336,7 +336,7 @@
       "batchId": "TEST-6-017",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-16-R",
+        "S-06-V",
         "S-17-R",
         "S-17-F",
         "S-18-R",
@@ -2978,7 +2978,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-014"
+      "batch": "TEST-6-016"
     },
     {
       "id": "S-05-H",
@@ -3124,7 +3124,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-014"
+      "batch": "TEST-6-017"
     },
     {
       "id": "S-06-R",
@@ -3993,7 +3993,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-014"
     },
     {
       "id": "S-15-F",
@@ -4111,7 +4111,7 @@
       "evidenceAssessment": "Temporary QA HR employee/shift work done in historic scoped run; production HR still rejects QA actors and full variant not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-017"
+      "batch": "TEST-6-014"
     },
     {
       "id": "S-16-F",
