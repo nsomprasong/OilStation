@@ -6,6 +6,36 @@ CREATE INDEX IF NOT EXISTS saas_change_invoice_lookup
  ON public.station_subscription_change_requests(payment_invoice_id)
  WHERE payment_invoice_id IS NOT NULL;
 
+CREATE OR REPLACE FUNCTION public.station_saas_cancel_change(
+ p_actor_id uuid,p_station_id uuid,p_change_id uuid
+) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $fn$
+DECLARE v_change public.station_subscription_change_requests%ROWTYPE;
+BEGIN
+ IF p_actor_id IS NULL OR NOT EXISTS(SELECT 1 FROM public.memberships m
+   WHERE m.user_id=p_actor_id AND m.active AND m.scope_type='station'
+    AND m.station_id=p_station_id AND m.role_code IN ('station_owner','owner'))
+ THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FORBIDDEN'; END IF;
+ PERFORM 1 FROM public.stations s WHERE s.id=p_station_id FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ SELECT * INTO v_change FROM public.station_subscription_change_requests
+  WHERE id=p_change_id AND station_id=p_station_id FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ IF v_change.status='cancelled' THEN
+  RETURN jsonb_build_object('changeId',v_change.id,'status','cancelled','replayed',true);
+ END IF;
+ -- Once paid, never silently refund or cancel. Staff must resolve payment via separate process.
+ IF v_change.status<>'pending' OR v_change.payment_status<>'unconfirmed'
+    OR v_change.payment_invoice_id IS NOT NULL
+    OR v_change.requested_effective_at<=clock_timestamp()
+ THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
+ UPDATE public.station_subscription_change_requests
+  SET status='cancelled',cancelled_at=clock_timestamp()
+  WHERE id=v_change.id;
+ RETURN jsonb_build_object('changeId',v_change.id,'status','cancelled','replayed',false);
+END $fn$;
+
+
 CREATE OR REPLACE FUNCTION public.platform_link_saas_change_invoice(
  p_actor_id uuid,p_change_id uuid,p_invoice_id uuid
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
