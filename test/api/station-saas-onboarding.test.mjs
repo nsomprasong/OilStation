@@ -12,6 +12,8 @@ const mock=(error=null)=>{
   db:{
    stationSaasPlanOptions:async d=>{calls.push(['options',d]);if(error)throw {code:error};return {plans:[]};},
    stationSaasSelectPlan:async d=>{calls.push(['select',d]);if(error)throw {code:error};return {status:'pending_payment'};},
+   stationSaasScheduleChange:async d=>{calls.push(['schedule',d]);if(error)throw {code:error};return {status:'pending'};},
+   stationSaasCancelChange:async d=>{calls.push(['cancel',d]);if(error)throw {code:error};return {status:'cancelled'};},
   },
  });
  return {calls,handler};
@@ -79,4 +81,49 @@ test('existing subscription conflict returns 409 and does not impersonate succes
  assert.equal(response.status,409);
  assert.deepEqual(await response.json(),{error:'plan_selection_unavailable'});
  assert.equal(calls.length,1);
+});
+
+test('owner can schedule at exact UTC renewal and cancel with scoped station id',async()=>{
+ const {calls,handler}=mock();
+ const input={stationId:station,nextPlanId:plan,paymentMethod:'promptpay',
+  effectiveAt:'2026-12-01T00:00:00.000Z',idempotencyKey:'aa11bb22cc33'};
+ const req=(path,data)=>handler(new Request(base+path,{method:'POST',
+  headers:{authorization:'Bearer valid','content-type':'application/json'},
+  body:JSON.stringify(data)}));
+ const scheduled=await req('/api/station/billing/change/schedule',input);
+ assert.equal(scheduled.status,200);
+ assert.deepEqual(calls[0],['schedule',{actorId:actor,...input}]);
+ const cancelled=await req('/api/station/billing/change/cancel',{stationId:station,changeId:plan});
+ assert.equal(cancelled.status,200);
+ assert.deepEqual(calls[1],['cancel',{actorId:actor,stationId:station,changeId:plan}]);
+});
+test('invalid schedule dates, arbitrary amount, unauthorized and wrong-role blocked before DB call',async()=>{
+ const {calls,handler}=mock();
+ const input={stationId:station,nextPlanId:plan,paymentMethod:'card',
+  effectiveAt:'2026-12-01T00:00:00Z',idempotencyKey:'aa11bb22cc33'};
+ for(const patch of [
+  {effectiveAt:'2026-02-30T00:00:00Z'},
+  {effectiveAt:'2026-12-01T00:00:00+07:00'},
+  {effectiveAt:'not-a-date'}, {idempotencyKey:'a'},
+  {amountSatang:'1'}, {nextPlanId:'bad'}, {paymentMethod:'cash'},
+ ]){
+  const r=await handler(new Request(base+'/api/station/billing/change/schedule',{
+   method:'POST',headers:{authorization:'Bearer valid','content-type':'application/json'},
+   body:JSON.stringify({...input,...patch})}));
+  assert.equal(r.status,400);
+ }
+ const bad=await handler(new Request(base+'/api/station/billing/change/schedule',{
+  method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(input)}));
+ assert.equal(bad.status,401);
+ assert.equal(calls.length,0);
+});
+test('schedule DB permission fails closed; idempotency conflict is 409',async()=>{
+ for(const [error,status] of [['FORBIDDEN',403],['IDEMPOTENCY_CONFLICT',409]]){
+  const {handler}=mock(error);
+  const r=await handler(new Request(base+'/api/station/billing/change/schedule',{
+   method:'POST',headers:{authorization:'Bearer valid','content-type':'application/json'},
+   body:JSON.stringify({stationId:station,nextPlanId:plan,paymentMethod:'card',
+    effectiveAt:'2026-12-01T00:00:00Z',idempotencyKey:'aa11bb22cc33'})}));
+  assert.equal(r.status,status);
+ }
 });
