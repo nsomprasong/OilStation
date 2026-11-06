@@ -32,6 +32,11 @@ function json(status, body) {
 }
 function fail(status, code) { return json(status, { error: code }); }
 function permittedMember(m) { return m && m.active === true; }
+function canReviewStationTopup(m){
+ return permittedMember(m)&&m.scope_type==='station'&&Boolean(m.station_id)&&(
+  ['station_owner','owner','manager','cashier','finance_manager'].includes(m.role_code)||
+  m.extra_permissions?.approve_topup===true);
+}
 function canIssue(m, companyId) {
   return permittedMember(m) &&
     m.scope_type === 'corporate_company' &&
@@ -129,6 +134,7 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
           scopeType: m.scope_type, organizationId: m.organization_id,
           stationId: m.station_id, corporateCompanyId: m.corporate_company_id,
           role: m.role_code,
+          canApproveTopup:canReviewStationTopup(m),
         })) });
       }
       if (path === '/api/hr/request-substitute' || path === '/api/hr/review-substitute'
