@@ -240,17 +240,17 @@
       "batchId": "TEST-6-011",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "P-04-H",
-        "P-04-V",
-        "P-04-R",
-        "P-05-H",
-        "P-06-H",
-        "P-07-R"
+        "C-11-H",
+        "C-11-R",
+        "C-11-F",
+        "C-12-R",
+        "S-22-H",
+        "S-22-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PREFLIGHT_SAFE_CORPORATE_REPORT_AND_MOBILE",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Exactly six new cases 099–104, existing scoped c01/c02 and station QA owners; all read/report/status only, no POST/financial writes; 12/12 CI, one SHA-matched Guarded Preview, serial protected Chromium 6/6 plus independent DB baseline."
     },
     {
       "batchId": "TEST-6-012",
@@ -354,8 +354,8 @@
       "caseIds": [
         "S-20-V",
         "S-20-R",
-        "S-22-H",
-        "S-22-R",
+        "P-06-H",
+        "P-07-R",
         "C-01-V",
         "C-02-V"
       ],
@@ -387,9 +387,9 @@
         "C-08-R",
         "C-10-H",
         "C-10-R",
-        "C-11-H",
+        "P-04-H",
         "C-11-V",
-        "C-11-R"
+        "P-04-V"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -400,9 +400,9 @@
       "batchId": "TEST-6-021",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "C-11-F",
+        "P-04-R",
         "C-12-V",
-        "C-12-R",
+        "P-05-H",
         "X-01-H",
         "X-01-V",
         "X-01-F"
@@ -1148,7 +1148,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-020"
     },
     {
       "id": "P-04-V",
@@ -1180,7 +1180,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-020"
     },
     {
       "id": "P-04-R",
@@ -1196,7 +1196,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-021"
     },
     {
       "id": "P-04-F",
@@ -1234,7 +1234,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-021"
     },
     {
       "id": "P-05-V",
@@ -1337,7 +1337,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-018"
     },
     {
       "id": "P-06-V",
@@ -1500,7 +1500,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-018"
     },
     {
       "id": "P-07-F",
@@ -4752,7 +4752,7 @@
       "evidenceAssessment": "Mobile role menus and selected validation tested; all keyboard/offline/resume acceptance not fully met.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-011"
     },
     {
       "id": "S-22-V",
@@ -4825,7 +4825,7 @@
       "evidenceAssessment": "Mobile role menus and selected validation tested; all keyboard/offline/resume acceptance not fully met.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-011"
     },
     {
       "id": "S-22-F",
@@ -6048,7 +6048,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-011"
     },
     {
       "id": "C-11-V",
@@ -6152,7 +6152,7 @@
       "evidenceAssessment": "Authorized read-side/QR reservations and selected 403s proved; complete issuer, accounting, credit and historical end-to-end variants not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-011"
     },
     {
       "id": "C-11-F",
@@ -6168,7 +6168,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-021"
+      "batch": "TEST-6-011"
     },
     {
       "id": "C-12-H",
@@ -6288,7 +6288,7 @@
       "evidenceAssessment": "Authorized read-side/QR reservations and selected 403s proved; complete issuer, accounting, credit and historical end-to-end variants not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-021"
+      "batch": "TEST-6-011"
     },
     {
       "id": "C-12-F",
@@ -7494,7 +7494,7 @@
     "blockedCannotBeIncludedInNextBatch": true,
     "positiveWriteMayBeNotRunnableWithoutFixture": true
   },
-  "policyNote": "Queue 002-004 reordered 2026-11-05 for execution safety: defer positive station creation and billing mutation lacking recovery; prioritize scoped read/validation/role/reload acceptance. No previously completed Master PASS repeated. These batches are planned not yet executed.",
+  "policyNote": "Batch 011 prioritized six safe, never-run scoped Corporate fuel report tenant/read/refresh and mobile navigation/API guards, swapping original package-activation/admin billing variants into existing later queued rounds; no Master count change or earlier PASS rerun. P-04 entitlement, P-05/P-06/P-07 platform admin and positive SaaS switch remain gated until approved safe end-to-end fixtures and correct billing entitlement.",
   "currentQueueCheckpoint": "2026-11-06: nine verified 6-case Master Chromium batches completed (54 bounded Master IDs). TEST-6-010 fresh Corporate tax validation, credit banner, denied foreign-driver assignment, driver mobile QR, unsaved Sales draft navigation, unauthorized tab leak. OAuth, SaaS module gate, positive finance/Payroll remain pending.",
   "executionSafety": "All counters are original snapshot until individual full acceptance checked; a bounded case passing does not mean full Master variant PASS. Historical six-case Master specs 039–062 are recorded as completed to prevent replay. Do not use run 005 to mutate verified baseline or enable finance."
 }
