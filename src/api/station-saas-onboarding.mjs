@@ -35,7 +35,7 @@ export function createStationSaasOnboardingApi({authenticate,db}){
     schedule?(exact(['stationId','nextPlanId','paymentMethod','effectiveAt','idempotencyKey'])&&
       UUID.test(body.stationId??'')&&UUID.test(body.nextPlanId??'')&&
       ['card','promptpay'].includes(body.paymentMethod)&&
-      typeof body.effectiveAt==='string'&&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$/.test(body.effectiveAt)&&
+      typeof body.effectiveAt==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(body.effectiveAt)&&
       Number.isFinite(Date.parse(body.effectiveAt))&&new Date(body.effectiveAt).toISOString().slice(0,10)===body.effectiveAt.slice(0,10)&&
       typeof body.idempotencyKey==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(body.idempotencyKey)):
      (exact(['stationId','changeId'])&&UUID.test(body.stationId??'')&&UUID.test(body.changeId??''));
