@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "scope": "OILSTATION_PACKAGE_CHANGE_EFFECTIVE_DATE_EXTENSION",
+  "createdOn": "2026-11-06",
+  "status": "BLOCKED_NOT_IMPLEMENTED_NO_LIVE_SWITCH_TESTS_RUN",
+  "observedProduction": {
+    "stationSubscriptionModel": "station_subscriptions holds current plan_id, starts_at, current_period_end, status; no scheduled_next_plan, effective_start or change-requests table",
+    "activeSwitchApi": "station_select_saas_plan rejects any trialing/active/grace/overdue subscription with INVALID_REQUEST",
+    "ownerUi": "station-plan-choice.js offers initial plan/payment selection only; no current plan end or next start date field",
+    "sampleStatus": "one QA station subscription trialing; no safely reversible paid switch",
+    "financeGate": "guarded Production Preview; do not call bank/Stripe, do not write live subscription or invoice while tests blocked"
+  },
+  "defaultProposal": {
+    "mode": "end_of_current_billing_period",
+    "effectiveInstant": "the exact current_period_end instant (end exclusive), not naive midnight in Asia/Bangkok",
+    "dateDisplayTimezone": "Asia/Bangkok",
+    "customFutureDate": "allowed only with explicit old-plan continuation/renewal coverage and consistent payment window; validate date before any write",
+    "immediateMidCycle": "defer until explicit proration/credit and consent policy is implemented",
+    "dateFormat": "ISO YYYY-MM-DD input; visible localized date plus correct start time",
+    "noDoubleBill": "one invoice period claim per station/subscription billing window, immutable issued invoice history",
+    "authorization": "station owner only, exact station scope and audited change request",
+    "optimisticConcurrency": "subscription version/period-lock, idempotent request ID; duplicate submit returns same outcome"
+  },
+  "existingMasterScenarioLinks": [
+    "P-04-F",
+    "P-04-R",
+    "P-05-F",
+    "P-06-F",
+    "P-07-H",
+    "P-07-V",
+    "P-07-F"
+  ],
+  "cases": [
+    {
+      "id": "PC-01",
+      "group": "PKG-SWITCH-ROUND-A",
+      "masterId": "P-04-F",
+      "owner": "เจ้าของปั๊มที่มี subscription=active",
+      "title": "เปลี่ยนรายเดือนเป็นรายปี ณ วันสิ้นรอบ",
+      "expected": "แสดงแพ็กเกจเดิม/วันสิ้นรอบ; เลือกรายปี; แพ็กเกจเดิมคงสิทธิ์ถึง current_period_end แบบ end-exclusive และเริ่มรายปีที่ instant เดียวกัน",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-02",
+      "group": "PKG-SWITCH-ROUND-A",
+      "masterId": "P-04-F",
+      "owner": "เจ้าของปั๊มที่มี subscription=active",
+      "title": "เปลี่ยนรายปีเป็นรายเดือน ณ วันสิ้นรอบ",
+      "expected": "สิทธิ์รายปีเดิมไม่หายก่อนสิ้นรอบ; รายเดือนเริ่มตรงขอบเขตวันสิ้นรอบ; ไม่เกิดช่วงว่างหรือเปิดสองแพ็กเกจพร้อมกัน",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-03",
+      "group": "PKG-SWITCH-ROUND-A",
+      "masterId": "P-05-F",
+      "owner": "เจ้าของปั๊ม",
+      "title": "กำหนดวันเริ่มแพ็กเกจในอนาคต",
+      "expected": "รองรับวันที่เลือกใน timezone Asia/Bangkok พร้อมแสดงทั้งวันที่และเวลาเริ่มจริง; ถ้าเลยรอบเดิมต้องกำหนดความคุ้มครองของรอบคั่นให้ชัดเจนและไม่คิดซ้ำ",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-04",
+      "group": "PKG-SWITCH-ROUND-A",
+      "masterId": "P-06-F",
+      "owner": "เจ้าของปั๊ม",
+      "title": "เริ่มทันทีระหว่างรอบ",
+      "expected": "ต้องแสดง preview ส่วนต่าง/credit/proration ที่ตรวจสอบได้ ก่อนยืนยัน; ถ้าไม่รองรับให้ปิดตัวเลือกนี้และอธิบาย ไม่เริ่ม/หักทันทีโดยไม่ยินยอม",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-05",
+      "group": "PKG-SWITCH-ROUND-A",
+      "masterId": "P-05-F",
+      "owner": "เจ้าของปั๊ม",
+      "title": "วันที่ย้อนหลังหรือก่อนสิ้นรอบ",
+      "expected": "invalid calendar date, past, before current-period end, overlapping or unsupported cycle boundary ส่ง error 400/409 โดยไม่แก้ subscription/invoice/audit",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-06",
+      "group": "PKG-SWITCH-ROUND-A",
+      "masterId": "P-04-V",
+      "owner": "เจ้าของปั๊ม",
+      "title": "เปลี่ยนไปแพ็กเกจเดิมหรือ archived",
+      "expected": "same-plan, archived, inactive, no compatible modules denied without pending change or charge; billable modules must be covered by target plan",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-07",
+      "group": "PKG-SWITCH-ROUND-B",
+      "masterId": "P-07-V",
+      "owner": "เจ้าของปั๊ม 2 sessions",
+      "title": "เลือกซ้ำและส่งคำขอพร้อมกัน",
+      "expected": "same idempotency key must produce one pending switch; same key with different payload rejects; no duplicate payment, invoice, commission",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-08",
+      "group": "PKG-SWITCH-ROUND-B",
+      "masterId": "P-04-F",
+      "owner": "เจ้าของปั๊ม",
+      "title": "เปลี่ยนใจ/ยกเลิกก่อนวันเริ่ม",
+      "expected": "cancel or reschedule pending switch via authorized workflow; restore old plan until new effective instant; audit old/new plan, actor, timestamps",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-09",
+      "group": "PKG-SWITCH-ROUND-B",
+      "masterId": "P-05-F",
+      "owner": "เจ้าของปั๊ม/ฝ่ายบัญชี",
+      "title": "ราคา VAT และส่วนลดในวันเริ่มใหม่",
+      "expected": "quote uses reviewed version applicable on new start date with month/year, VAT inclusive/exclusive and PromptPay 2%; immutable snapshot, prior issued invoices untouched",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-10",
+      "group": "PKG-SWITCH-ROUND-B",
+      "masterId": "P-04-R",
+      "owner": "เจ้าของปั๊ม A, cashier B, Sales",
+      "title": "สิทธิ์ข้ามสถานีและบทบาท",
+      "expected": "only owner for exact station may schedule/cancel; API 403 for foreign station, non-owner and unlinked tenant regardless UI",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-11",
+      "group": "PKG-SWITCH-ROUND-B",
+      "masterId": "P-07-F",
+      "owner": "ฝ่ายบัญชี/ระบบ",
+      "title": "ปิดรอบและเปิดแพ็กเกจใหม่แบบ atomic",
+      "expected": "at due effective instant old plan ends and new plan starts once in an atomic transaction; retries do not double charge; usage/HR entitlements correctly switch only after billing policy satisfied",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    },
+    {
+      "id": "PC-12",
+      "group": "PKG-SWITCH-ROUND-B",
+      "masterId": "P-07-H",
+      "owner": "Owner/Platform billing",
+      "title": "หลายสถานีในกลุ่มเรียกเก็บเดียว",
+      "expected": "changing one station's package/effective date must preserve other stations' subscription, grouped invoice periods, commission ownership and yearly prepay adjustments",
+      "status": "BLOCKED_IMPLEMENTATION",
+      "testPhase": "isolated SQL transactional rollback, authenticated preview UI, read-only production verification after feature available",
+      "requiredEvidence": [
+        "exact actor and station scope",
+        "before/after subscription and package change",
+        "effective UTC instant and Bangkok display",
+        "no overwritten invoice snapshot",
+        "audit actor old/new effective date",
+        "no duplicate billing or unintended side effects"
+      ]
+    }
+  ]
+}
