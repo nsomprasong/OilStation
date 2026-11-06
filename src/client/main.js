@@ -1664,7 +1664,7 @@ function dashboard(data, session, publicConfig={}) {
  const hrManager=memberships.find(m=>m.scopeType==='station'&&
   m.role==='hr_manager'&&m.stationId);
  const financeManager=memberships.find(m=>m.scopeType==='station'&&
-  m.stationId&&(m.canApproveTopup===true||['station_owner','owner','manager','cashier','finance_manager'].includes(m.role)));
+  m.stationId&&(m.role==='finance_manager'||(m.role!=='cashier'&&m.canApproveTopup===true)));
  if(station||hrManager){
   const stationId=(station||hrManager).stationId;
   register('hr',()=>hrWorkspace(session.access_token,stationId,document.getElementById('hr-workspace')));
