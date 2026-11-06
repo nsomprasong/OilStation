@@ -5,3 +5,11 @@ test('same authoritative snapshot accepted',()=>assert.equal(cmp({expected:base,
 test('different plan, station, status or end time blocks stale switch',()=>{for(const patch of [{planId:'new'},{stationId:'foreign'},{status:'cancelled'},{periodEnd:'2027-01-01T00:00:00Z'}])assert.equal(cmp({expected:base,actual:{...base,...patch}}).matches,false);});
 test('same instant in offset notation is accepted',()=>assert.equal(cmp({expected:base,actual:{...base,periodEnd:'2026-12-01T07:00:00+07:00'}}).matches,true));
 test('missing or invalid source rejected',()=>{assert.throws(()=>cmp({expected:base,actual:null}));assert.throws(()=>cmp({expected:base,actual:{...base,periodEnd:'bad'}}));});
+
+test('normalized invalid ISO dates and start after end cannot pass stale guard',()=>{
+ for(const bad of ['2026-02-30T00:00:00Z','2026-12-01T24:00:00Z',
+ '2026-12-01T00:00:00+15:00']){
+  assert.throws(()=>cmp({expected:base,actual:{...base,periodEnd:bad}}));
+ }
+ assert.throws(()=>cmp({expected:base,actual:{...base,startsAt:'2027-01-01T00:00:00Z'}}),/invalid subscription term/);
+});
