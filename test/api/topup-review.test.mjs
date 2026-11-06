@@ -5,14 +5,14 @@ const USER='11111111-1111-4111-8111-111111111111';
 const REQUEST='22222222-2222-4222-8222-222222222222';
 const STATION='33333333-3333-4333-8333-333333333333';
 const URL='https://oilstation.goldensoft.cloud/api/topup/review';
-function app(role='manager'){
+function app(role='manager',permissions={}){
  const calls=[];
  const api=createApi({
   authenticate:async token=>token==='valid'?{id:USER}:null,
   db:{
    memberships:async()=>[{user_id:USER,active:true,
      scope_type:role==='corporate_admin'?'corporate_company':'station',
-     station_id:STATION,role_code:role,extra_permissions:{}}],
+     station_id:STATION,role_code:role,extra_permissions:permissions}],
    reviewTopup:async d=>{calls.push(d);return {requestId:REQUEST,status:d.approved?'approved':'rejected',
      replayed:false,paidDebtSatang:'0',addedPrepaidSatang:d.approved?'25000':'0'};},
   },
@@ -57,4 +57,28 @@ test('corporate users cannot approve even when they know top-up request ID',asyn
   requestId:REQUEST,approved:true,bankReceived:true,bankReference:'TX-000123',
  }))).status,403);
  assert.equal(a.calls.length,0);
+});
+
+test('explicit delegated approve_topup permission allows station staff to review and read own inbox',async()=>{
+ const a=app('pump_staff',{approve_topup:true});
+ const r=await a.api(a.request({requestId:REQUEST,approved:true,bankReceived:true,
+  bankReference:'TESTBANK-123456'}));
+ assert.equal(r.status,200);
+ assert.equal(a.calls.length,1);
+});
+test('unrelated station staff cannot review topups without explicit delegation',async()=>{
+ const a=app('pump_staff');
+ const r=await a.api(a.request({requestId:REQUEST,approved:true,bankReceived:true,
+  bankReference:'TESTBANK-123456'}));
+ assert.equal(r.status,403);
+ assert.equal(a.calls.length,0);
+});
+test('trusted membership response conveys only delegated approval capability, never extra permissions',async()=>{
+ const a=app('pump_staff',{approve_topup:true,secret_note:'not_for_browser'});
+ const r=await a.api(new Request('https://oilstation.goldensoft.cloud/api/me',{
+  headers:{authorization:'Bearer valid'},
+ }));
+ assert.equal(r.status,200);
+ const b=await r.json();assert.equal(b.memberships[0].canApproveTopup,true);
+ assert.equal(JSON.stringify(b).includes('secret_note'),false);
 });
