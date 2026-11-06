@@ -18,9 +18,9 @@
     "specReview": 4,
     "skipped": 2,
     "verifiedPass": 10,
-    "remainingTestQueue": 102,
-    "completedMasterIds": 42,
-    "remainingTestBatches": 17
+    "remainingTestQueue": 96,
+    "completedMasterIds": 48,
+    "remainingTestBatches": 16
   },
   "batchSize": 6,
   "batches": [
@@ -177,7 +177,7 @@
     },
     {
       "batchId": "TEST-6-008",
-      "lane": "TEST_QUEUE",
+      "lane": "COMPLETED_SCOPE",
       "caseIds": [
         "S-01-H",
         "S-02-V",
@@ -187,9 +187,14 @@
         "C-07-F"
       ],
       "count": 6,
-      "status": "SAFE_SCOPE_AND_READONLY_PREFLIGHT",
+      "status": "BROWSER_SCOPE_VERIFIED_NOT_AUTO_MASTER_PASS",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI.",
+      "completionEvidence": {
+        "sha": "d616cce0de2062113338f8c8272d562954771cdc",
+        "url": "https://github.com/nsomprasong/OilStation/actions/runs/42148054386",
+        "note": "5 PASS 081–085 at run 42147179101 + exact one failed 086 recovery PASS run 42148054386; frozen 4 QA stations 12 corporate links prepaid 2820 satang"
+      }
     },
     {
       "batchId": "TEST-6-009",
@@ -199,53 +204,53 @@
         "P-02-V",
         "P-02-F",
         "P-03-H",
-        "P-04-H",
-        "P-04-V"
+        "P-10-V",
+        "S-02-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PREFLIGHT_READY_SAFE_ONBOARDING",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-010",
       "lane": "TEST_QUEUE",
       "caseIds": [
+        "P-04-H",
+        "P-04-V",
         "P-04-R",
         "P-05-H",
         "P-06-H",
-        "P-07-R",
-        "P-09-H",
-        "P-09-F"
+        "P-07-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-011",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "P-10-V",
+        "P-09-H",
+        "P-09-F",
         "P-10-R",
         "P-10-F",
         "P-13-H",
-        "P-13-R",
-        "P-15-R"
+        "P-13-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-012",
       "lane": "TEST_QUEUE",
       "caseIds": [
+        "P-15-R",
         "P-15-F",
         "S-01-R",
-        "S-02-H",
         "S-03-H",
         "S-04-H",
         "S-04-V"
@@ -253,7 +258,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-013",
@@ -269,7 +274,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-014",
@@ -285,7 +290,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-015",
@@ -301,7 +306,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-016",
@@ -317,7 +322,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-017",
@@ -333,7 +338,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-018",
@@ -349,7 +354,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-019",
@@ -365,7 +370,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-020",
@@ -381,7 +386,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-021",
@@ -397,7 +402,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-022",
@@ -413,7 +418,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-023",
@@ -429,7 +434,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "TEST-6-024",
@@ -445,7 +450,7 @@
       "count": 6,
       "status": "NOT_STARTED",
       "mayExecute": false,
-      "guard": "Exactly six new Master case specs, existing authorized identities; no accepted business writes; protect original production baseline. One Preview, serial Chromium after CI."
+      "guard": "Only 6 never-tested Master acceptance specs; real QA role verification; one SHA-matched Guarded Preview; serial Chromium; no accepted financial/station/membership writes"
     },
     {
       "batchId": "HOLD-6-001",
@@ -1091,7 +1096,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-009"
+      "batch": "TEST-6-010"
     },
     {
       "id": "P-04-V",
@@ -1123,7 +1128,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-009"
+      "batch": "TEST-6-010"
     },
     {
       "id": "P-04-R",
@@ -1585,7 +1590,7 @@
       "evidenceAssessment": "Related real Sales, permission and station onboarding evidence exists, but this precise complete Master variant has untested boundaries.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-010"
+      "batch": "TEST-6-011"
     },
     {
       "id": "P-09-V",
@@ -1683,7 +1688,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-010"
+      "batch": "TEST-6-011"
     },
     {
       "id": "P-10-H",
@@ -1742,7 +1747,7 @@
       "evidenceAssessment": "Related real Sales, permission and station onboarding evidence exists, but this precise complete Master variant has untested boundaries.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-009"
     },
     {
       "id": "P-10-R",
@@ -2347,7 +2352,7 @@
       "evidenceAssessment": "Related real Sales, permission and station onboarding evidence exists, but this precise complete Master variant has untested boundaries.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-011"
+      "batch": "TEST-6-012"
     },
     {
       "id": "P-15-F",
@@ -2411,7 +2416,15 @@
       "evidenceAssessment": "Multiple station views and selected permission denials verified; exact station switch/accepted invitations/cancellation variant incomplete.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-008"
+      "batch": "TEST-6-008",
+      "executionEvidence": {
+        "status": "BOUNDED_BROWSER_PASS",
+        "details": {
+          "sha": "d616cce0de2062113338f8c8272d562954771cdc",
+          "url": "https://github.com/nsomprasong/OilStation/actions/runs/42148054386",
+          "note": "5 PASS 081–085 at run 42147179101 + exact one failed 086 recovery PASS run 42148054386; frozen 4 QA stations 12 corporate links prepaid 2820 satang"
+        }
+      }
     },
     {
       "id": "S-01-V",
@@ -2541,7 +2554,7 @@
       "evidenceAssessment": "Multiple station views and selected permission denials verified; exact station switch/accepted invitations/cancellation variant incomplete.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-012"
+      "batch": "TEST-6-009"
     },
     {
       "id": "S-02-V",
@@ -2573,7 +2586,15 @@
       "evidenceAssessment": "Multiple station views and selected permission denials verified; exact station switch/accepted invitations/cancellation variant incomplete.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-008"
+      "batch": "TEST-6-008",
+      "executionEvidence": {
+        "status": "BOUNDED_BROWSER_PASS",
+        "details": {
+          "sha": "d616cce0de2062113338f8c8272d562954771cdc",
+          "url": "https://github.com/nsomprasong/OilStation/actions/runs/42148054386",
+          "note": "5 PASS 081–085 at run 42147179101 + exact one failed 086 recovery PASS run 42148054386; frozen 4 QA stations 12 corporate links prepaid 2820 satang"
+        }
+      }
     },
     {
       "id": "S-02-R",
@@ -3788,7 +3809,15 @@
       "evidenceAssessment": "Correct credit display/reconciliation with scope observed, but credit term writes and unauthorized ledger query remain.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-008"
+      "batch": "TEST-6-008",
+      "executionEvidence": {
+        "status": "BOUNDED_BROWSER_PASS",
+        "details": {
+          "sha": "d616cce0de2062113338f8c8272d562954771cdc",
+          "url": "https://github.com/nsomprasong/OilStation/actions/runs/42148054386",
+          "note": "5 PASS 081–085 at run 42147179101 + exact one failed 086 recovery PASS run 42148054386; frozen 4 QA stations 12 corporate links prepaid 2820 satang"
+        }
+      }
     },
     {
       "id": "S-14-F",
@@ -4938,7 +4967,15 @@
       "evidenceAssessment": "Corporate scoped membership/driver roster and cross-scope denials verified; full profile/link/invitation lifecycle not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-008"
+      "batch": "TEST-6-008",
+      "executionEvidence": {
+        "status": "BOUNDED_BROWSER_PASS",
+        "details": {
+          "sha": "d616cce0de2062113338f8c8272d562954771cdc",
+          "url": "https://github.com/nsomprasong/OilStation/actions/runs/42148054386",
+          "note": "5 PASS 081–085 at run 42147179101 + exact one failed 086 recovery PASS run 42148054386; frozen 4 QA stations 12 corporate links prepaid 2820 satang"
+        }
+      }
     },
     {
       "id": "C-02-F",
@@ -5393,7 +5430,15 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-008"
+      "batch": "TEST-6-008",
+      "executionEvidence": {
+        "status": "BOUNDED_BROWSER_PASS",
+        "details": {
+          "sha": "d616cce0de2062113338f8c8272d562954771cdc",
+          "url": "https://github.com/nsomprasong/OilStation/actions/runs/42148054386",
+          "note": "5 PASS 081–085 at run 42147179101 + exact one failed 086 recovery PASS run 42148054386; frozen 4 QA stations 12 corporate links prepaid 2820 satang"
+        }
+      }
     },
     {
       "id": "C-07-R",
@@ -5497,7 +5542,15 @@
       "evidenceAssessment": "Authorized read-side/QR reservations and selected 403s proved; complete issuer, accounting, credit and historical end-to-end variants not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-008"
+      "batch": "TEST-6-008",
+      "executionEvidence": {
+        "status": "BOUNDED_BROWSER_PASS",
+        "details": {
+          "sha": "d616cce0de2062113338f8c8272d562954771cdc",
+          "url": "https://github.com/nsomprasong/OilStation/actions/runs/42148054386",
+          "note": "5 PASS 081–085 at run 42147179101 + exact one failed 086 recovery PASS run 42148054386; frozen 4 QA stations 12 corporate links prepaid 2820 satang"
+        }
+      }
     },
     {
       "id": "C-08-H",
@@ -7368,6 +7421,6 @@
     "positiveWriteMayBeNotRunnableWithoutFixture": true
   },
   "policyNote": "Queue 002-004 reordered 2026-11-05 for execution safety: defer positive station creation and billing mutation lacking recovery; prioritize scoped read/validation/role/reload acceptance. No previously completed Master PASS repeated. These batches are planned not yet executed.",
-  "currentQueueCheckpoint": "2026-11-06: seven verified six-case Master Chrome batches (042 scoped case IDs) completed; next TEST-6-008 scoped four QA station-owner reads, invalid invitation tokens, foreign station credit, exact 12 station links, zero-balance states and reload credit-ledger agreement; no positive finance writes",
+  "currentQueueCheckpoint": "2026-11-06 -- Eight verified six-case batches 001-008. TEST-6-009 prioritized to safe role Home/dock, third station quota, simulated network failure before station submit, brand staged fuel read, existing request idempotent replay, station owner invitation controls. P-04-H/V subscription/disabled-module release gating remains untested/pending.",
   "executionSafety": "All counters are original snapshot until individual full acceptance checked; a bounded case passing does not mean full Master variant PASS. Historical six-case Master specs 039–062 are recorded as completed to prevent replay. Do not use run 005 to mutate verified baseline or enable finance."
 }
