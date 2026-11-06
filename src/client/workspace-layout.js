@@ -11,7 +11,7 @@ export function selectWorkspaceScreens(memberships=[]){
  const support=has('platform',['platform_support']);
  const b=memberships.some(m=>m.scopeType==='organization'&&m.organizationId&&['organization_owner','organization_manager','owner','manager','billing_manager'].includes(m.role));
  const s=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager'].includes(m.role));
- const finance=memberships.some(m=>m.scopeType==='station'&&m.stationId&&m.canApproveTopup===true);
+ const finance=memberships.some(m=>m.scopeType==='station'&&m.stationId&&(m.canApproveTopup===true||['station_owner','owner','manager','cashier','finance_manager'].includes(m.role)));
  const hr=memberships.some(m=>m.scopeType==='station'&&m.stationId&&m.role==='hr_manager');
  const pump=memberships.some(m=>m.scopeType==='station'&&m.stationId&&['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role));
  const attendance=memberships.some(m=>m.scopeType==='station'&&m.stationId);
