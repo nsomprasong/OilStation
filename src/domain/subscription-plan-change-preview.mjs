@@ -24,7 +24,14 @@ function dateOnly(value){
  return value;
 }
 function instant(value){
- if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value))
+ const match=typeof value==='string'&&
+  /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(Z|([+-])(\d{2}):(\d{2}))$/.exec(value);
+ if(!match)throw new RangeError('invalid period-end instant');
+ try{dateOnly(match[1]);}catch{throw new RangeError('invalid period-end instant');}
+ const hour=Number(match[2]),minute=Number(match[3]),second=Number(match[4]);
+ const offsetHour=Number(match[7]||0),offsetMinute=Number(match[8]||0);
+ if(hour>23||minute>59||second>59||offsetHour>14||offsetMinute>59||
+    (offsetHour===14&&offsetMinute!==0))
   throw new RangeError('invalid period-end instant');
  const d=new Date(value);
  if(!Number.isFinite(d.getTime()))throw new RangeError('invalid period-end instant');
