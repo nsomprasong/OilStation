@@ -414,6 +414,11 @@ export default {
           console.error('oilstation_coupon_expiry_failed');
         }),
       ];
+      // Billing transitions remain inactive unless separately release-gated.
+      if(env.OILSTATION_SAAS_TRANSITION_ENABLED==='true'){
+        tasks.push(db.applyDueSaasChanges(20).catch(()=>
+          console.error('oilstation_saas_transition_failed')));
+      }
       if (env.LINE_NOTIFICATIONS_ENABLED === 'true' && env.LINE_CHANNEL_ACCESS_TOKEN) {
         tasks.push(drainLineNotifications({
           db, accessToken:env.LINE_CHANNEL_ACCESS_TOKEN,limit:10,
