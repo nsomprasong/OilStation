@@ -13,7 +13,7 @@ function isDate(value){if(typeof value!=='string'||!DATE.test(value))return fals
  d.toISOString().slice(0,10)===value;}
 const code=v=>typeof v==='string'&&/^[a-z][a-z0-9_-]{2,39}$/.test(v);
 const name=v=>typeof v==='string'&&v.trim().length>=2&&v.trim().length<=120;
-const time=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(v)&&Number.isFinite(Date.parse(v));
+const time=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(v)&&\n Number.isFinite(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v.slice(0,10);
 const routes={
  '/api/platform/billing/overview':'GET',
  '/api/platform/billing/plan-editor':'GET',
