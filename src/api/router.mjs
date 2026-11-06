@@ -496,8 +496,7 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
             || body.bankReference.trim().length<6
             || body.bankReference.length>120)))
           return fail(400,'invalid_topup_review');
-        if(!active.some(m=>m.scope_type==='station' &&
-          ['station_owner','owner','manager','cashier','finance_manager'].includes(m.role_code)))
+        if(!active.some(canReviewStationTopup))
           return fail(403,'permission_denied');
         return json(200,{result:await db.reviewTopup({
           actorId:user.id,requestId:body.requestId,approved:body.approved,
@@ -517,8 +516,7 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       if (path === '/api/topup/pending') {
         const stationId=url.searchParams.get('stationId');
         if (!UUID.test(stationId??'')) return fail(400,'invalid_station');
-        if (!active.some(m=>m.scope_type==='station' && m.station_id===stationId &&
-          ['station_owner','owner','manager','cashier','finance_manager'].includes(m.role_code))) {
+        if (!active.some(m=>canReviewStationTopup(m)&&m.station_id===stationId)) {
           return fail(403,'permission_denied');
         }
         return json(200,{requests:await db.stationPendingTopups(user.id,stationId)});
