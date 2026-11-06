@@ -44,3 +44,14 @@ test('reject invalid price and missing identifiers',async()=>{
  assert.equal((await a.handle(a.req('/api/station-fuel-config','POST',{...data,publicPrice:'33.50',stationId:'foo'}))).status,400);
  assert.equal(a.calls.length,0);
 });
+
+test('unknown station fuel maps SQL NOT_FOUND to safe HTTP 404',async()=>{
+ const a=app();
+ const handle=createApi({authenticate:async()=>({id:U}),db:{
+  memberships:async()=>[{user_id:U,scope_type:'station',station_id:S,active:true,role_code:'station_owner',extra_permissions:{}}],
+  configureFuel:async()=>{const e=new Error('supabase_request_failed');e.code='NOT_FOUND';throw e;}
+ }});
+ const res=await handle(a.req('/api/station-fuel-config','POST',{stationId:S,stationFuelId:'00000000-0000-4000-8000-000000000056',enabled:false,publicPrice:'32.50'}));
+ assert.equal(res.status,404);
+ assert.deepEqual(await res.json(),{error:'not_found'});
+});
