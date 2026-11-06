@@ -304,26 +304,26 @@
       "batchId": "TEST-6-015",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-08-R",
-        "P-15-F",
-        "S-09-F",
-        "S-10-V",
-        "S-10-R",
-        "S-07-R"
+        "P-04-H",
+        "P-07-R",
+        "C-04-H",
+        "C-10-H",
+        "S-11-V",
+        "S-13-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Six new 123-128 only; read-only app/SaaS/member/driver records and guaranteed rejected invalid customer terms, no accepted business/financial/HR writes, unrelated positive package transitions still blocked."
     },
     {
       "batchId": "TEST-6-016",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-11-V",
+        "S-10-R",
         "S-04-R",
         "S-12-R",
-        "S-13-R",
+        "S-07-R",
         "S-04-F",
         "S-16-V"
       ],
@@ -355,7 +355,7 @@
         "S-20-V",
         "S-20-R",
         "P-06-H",
-        "P-07-R",
+        "P-15-F",
         "C-01-V",
         "C-02-V"
       ],
@@ -369,7 +369,7 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "S-06-R",
-        "C-04-H",
+        "S-09-F",
         "C-04-V",
         "C-05-V",
         "C-05-R",
@@ -385,9 +385,9 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "S-05-R",
-        "C-10-H",
+        "S-10-V",
         "S-04-H",
-        "P-04-H",
+        "S-08-R",
         "P-10-F",
         "P-04-V"
       ],
@@ -1148,7 +1148,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-015"
     },
     {
       "id": "P-04-V",
@@ -1500,7 +1500,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-015"
     },
     {
       "id": "P-07-F",
@@ -2447,7 +2447,7 @@
       "evidenceAssessment": "Related real Sales, permission and station onboarding evidence exists, but this precise complete Master variant has untested boundaries.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-015"
+      "batch": "TEST-6-018"
     },
     {
       "id": "S-01-H",
@@ -3248,7 +3248,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-015"
+      "batch": "TEST-6-016"
     },
     {
       "id": "S-07-F",
@@ -3330,7 +3330,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-015"
+      "batch": "TEST-6-020"
     },
     {
       "id": "S-08-F",
@@ -3480,7 +3480,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-015"
+      "batch": "TEST-6-019"
     },
     {
       "id": "S-10-H",
@@ -3518,7 +3518,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-015"
+      "batch": "TEST-6-020"
     },
     {
       "id": "S-10-R",
@@ -3534,7 +3534,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-015"
+      "batch": "TEST-6-016"
     },
     {
       "id": "S-10-F",
@@ -3599,7 +3599,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-015"
     },
     {
       "id": "S-11-R",
@@ -3790,7 +3790,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-015"
     },
     {
       "id": "S-13-F",
@@ -5188,7 +5188,7 @@
       "evidenceAssessment": "Corporate scoped membership/driver roster and cross-scope denials verified; full profile/link/invitation lifecycle not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-015"
     },
     {
       "id": "C-04-V",
@@ -5942,7 +5942,7 @@
       "evidenceAssessment": "Authorized read-side/QR reservations and selected 403s proved; complete issuer, accounting, credit and historical end-to-end variants not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-015"
     },
     {
       "id": "C-10-V",
