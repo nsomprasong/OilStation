@@ -329,7 +329,20 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
       line.textContent=bank.bankCode+' · '+bank.accountName;
       const detail=document.createElement('p');detail.className='module-subtitle';
       detail.textContent='บัญชี '+(bank.accountNumberMasked||'โปรดติดต่อปั๊มเพื่อขอเลขบัญชี');
-      item.append(line,detail);view.appendChild(item);
+      const reveal=document.createElement('button');reveal.type='button';
+      reveal.className='button secondary';reveal.textContent='ดูเลขบัญชีรับโอน';
+      reveal.addEventListener('click',async()=>{
+        reveal.disabled=true;detail.textContent='กำลังตรวจสอบสิทธิ์…';
+        try{
+          const r=await getApi('/api/topup/bank-details?'+new URLSearchParams({
+            accountId:id,bankId:bank.id}),accessToken);
+          if(!r.ok||!/^\d{8,20}$/.test(r.data?.bank?.accountNumber||''))
+            throw new Error('account_unavailable');
+          detail.textContent='เลขบัญชี '+r.data.bank.accountNumber+' · '+r.data.bank.accountName;
+        }catch{detail.textContent='ไม่สามารถแสดงเลขบัญชีได้ โปรดติดต่อปั๊มก่อนโอน';}
+        finally{reveal.disabled=false;}
+      });
+      item.append(line,detail,reveal);view.appendChild(item);
       const opt=document.createElement('option');opt.value=bank.id;
       opt.textContent=bank.bankCode+' · '+bank.accountName+' · '+(bank.accountNumberMasked||'');
       bankSelect.appendChild(opt);
@@ -784,6 +797,61 @@ async function stationFinanceWorkspace(token,stationId,target) {
     <div id="pending-topup-list" class="module-list" aria-live="polite"></div>
     <p id="finance-error" class="notice" role="status" hidden></p>
   `;
+  // Bank-receiver management requires station owner/manager authorization.
+  const bankSetup=document.createElement('section');bankSetup.className='module-item';
+  bankSetup.innerHTML='<h3>บัญชีรับโอนของปั๊ม</h3>';
+  const bankList=document.createElement('div');bankList.className='module-list';
+  const form=document.createElement('form');form.className='coupon-form';
+  const field=(label,name,max)=>{
+    const outer=document.createElement('label');outer.className='field';
+    outer.append(document.createTextNode(label));
+    const input=document.createElement('input');input.name=name;input.maxLength=max;
+    input.required=true;input.autocomplete='off';outer.append(input);form.append(outer);
+    return input;
+  };
+  const code=field('รหัสธนาคาร (เช่น KBANK)','bankCode',20);
+  const holder=field('ชื่อบัญชีรับโอน','accountName',120);
+  const number=field('เลขบัญชีธนาคาร (8–20 หลัก)','accountNumber',20);
+  number.inputMode='numeric';number.pattern='[0-9]{8,20}';
+  const primaryLabel=document.createElement('label');
+  const primary=document.createElement('input');primary.type='checkbox';primary.checked=true;
+  primaryLabel.append(primary,document.createTextNode(' บัญชีรับเงินหลัก'));
+  const save=document.createElement('button');save.type='submit';
+  save.className='button primary';save.textContent='บันทึกบัญชีรับโอน';
+  const bankStatus=document.createElement('p');bankStatus.setAttribute('role','status');
+  form.append(primaryLabel,save,bankStatus);
+  bankSetup.append(bankList,form);target.prepend(bankSetup);
+  async function loadBankSetup(){
+    const r=await getApi('/api/station/topup/banks?stationId='+encodeURIComponent(stationId),token);
+    if(!r.ok||!Array.isArray(r.data?.banks)){bankSetup.hidden=true;return;}
+    bankSetup.hidden=false;bankList.replaceChildren();
+    if(!r.data.banks.length){
+      const empty=document.createElement('p');
+      empty.textContent='ยังไม่มีบัญชีรับโอน ลูกค้ายังส่งคำขอเติมเงินไม่ได้';
+      bankList.append(empty);
+    }
+    for(const b of r.data.banks){
+      const item=document.createElement('p');
+      item.textContent=b.bankCode+' · '+b.accountName+' · '+b.accountNumberMasked+
+       (b.isPrimary?' (บัญชีหลัก)':'')+(b.active?'':' (ปิดใช้)');
+      bankList.append(item);
+    }
+  }
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();save.disabled=true;
+    bankStatus.textContent='กำลังเข้ารหัสและบันทึกข้อมูล…';
+    try{
+      const body={stationId,bankCode:code.value.trim().toUpperCase(),
+       accountName:holder.value.trim(),accountNumber:number.value.trim(),
+       isPrimary:primary.checked};
+      const r=await getApi('/api/station/topup/banks',token,{method:'POST',body:JSON.stringify(body)});
+      if(!r.ok)throw new Error('bank_registration_failed');
+      form.reset();bankStatus.textContent='บันทึกบัญชีรับเงินแล้ว';
+      await loadBankSetup();
+    }catch{bankStatus.textContent='บันทึกไม่ได้ โปรดตรวจสิทธิ์และคีย์เข้ารหัสใน Worker';}
+    finally{save.disabled=false;}
+  });
+  loadBankSetup().catch(()=>{bankSetup.hidden=true;});
   const list=target.querySelector('#pending-topup-list');
   const error=target.querySelector('#finance-error');
   const refresh=target.querySelector('#finance-refresh');
