@@ -25,6 +25,7 @@ const routes={
  '/api/platform/billing/tax':'POST',
  '/api/platform/billing/group':'POST',
  '/api/platform/billing/subscription':'POST',
+ '/api/platform/billing/link-change-invoice':'POST',
  '/api/platform/billing/draft':'POST',
  '/api/platform/billing/issue':'POST',
 };
@@ -60,6 +61,8 @@ function valid(path,d){
   return exact(d,['organizationId','name','stationIds'])&&UUID.test(d.organizationId)&&name(d.name)&&
    Array.isArray(d.stationIds)&&d.stationIds.length>=1&&d.stationIds.length<=50&&
    d.stationIds.every(x=>UUID.test(x))&&new Set(d.stationIds).size===d.stationIds.length;
+ case '/api/platform/billing/link-change-invoice':
+  return exact(d,['changeId','invoiceId'])&&UUID.test(d.changeId)&&UUID.test(d.invoiceId);
  case '/api/platform/billing/subscription':
   return exact(d,['stationId','planId','startsAt','periodEnd'])&&
    UUID.test(d.stationId)&&UUID.test(d.planId)&&time(d.startsAt)&&time(d.periodEnd)&&
@@ -117,6 +120,8 @@ export function createPlatformBillingApi({authenticate,db}){
      result=await db.platformSaasTaxPolicy({actorId:actor.id,...data});break;
     case '/api/platform/billing/group':
      result=await db.platformSaasGroup({actorId:actor.id,...data});break;
+    case '/api/platform/billing/link-change-invoice':
+     result=await db.platformLinkSaasChangeInvoice({actorId:actor.id,...data});break;
     case '/api/platform/billing/subscription':
      result=await db.platformSaasSubscription({actorId:actor.id,...data});break;
     case '/api/platform/billing/draft':
