@@ -369,9 +369,11 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
     topupForm.hidden=false;
     await displayTopupPaymentInstructions();
   }
-  let paymentSerial=0;
+  let paymentSerial=0,confirmedInstructions=null;
   async function displayTopupPaymentInstructions(){
     const serial=++paymentSerial;
+    confirmedInstructions=null;
+    $('topup-upload-btn').disabled=true;
     const panel=$('topup-payment-instructions');panel.replaceChildren();
     const bankId=$('topup-bank').value,amountSatang=$('topup-amount').value;
     if(!accountSelect.value||!bankId||!amountSatang)return;
@@ -399,6 +401,8 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
       const note=document.createElement('p');note.className='hint';
       note.textContent='โปรดตรวจยอดและบัญชีปลายทางก่อนโอน บันทึกสลิปเพื่อให้ปั๊มตรวจเงินเข้าจริง';
       panel.append(note);
+      confirmedInstructions={accountId:accountSelect.value,bankId,amountSatang};
+      $('topup-upload-btn').disabled=false;
     }catch{if(serial===paymentSerial)panel.textContent='ยังไม่สามารถแสดงข้อมูลโอนได้ กรุณาตรวจสอบกับปั๊ม';}
   }
   $('topup-bank').addEventListener('change',displayTopupPaymentInstructions);
@@ -412,6 +416,9 @@ async function corporateWorkspace(accessToken,{qaFinanceMode=false,canIssueCoupo
     const status=(text,error=false)=>{
       notice.textContent=text;notice.dataset.tone=error?'error':'neutral';notice.hidden=false;
     };
+    if(!confirmedInstructions||confirmedInstructions.accountId!==accountId||
+      confirmedInstructions.bankId!==bankId||confirmedInstructions.amountSatang!==satang)
+      return status('กรุณาตรวจข้อมูลการโอนและยอดเงินที่ระบบสร้างให้ก่อนส่งสลิป',true);
     if(!accountId||!bankId||!satang||BigInt(satang)<100n||BigInt(satang)>100000000000n)
       return status('กรุณาตรวจสอบบัญชีและจำนวนเงินที่โอน',true);
     if(!file||!['image/jpeg','image/png'].includes(file.type)||file.size<64||file.size>5*1024*1024)
