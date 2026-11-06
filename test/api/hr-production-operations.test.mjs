@@ -7,6 +7,9 @@ const S1='e22fb5ff-1878-446f-ab8d-585115e8a1a9';
 const S2='76388e2c-ef36-4656-808b-7d0fbd1d2c35';
 const A='11111111-1111-4111-8111-111111111111';
 const E='22222222-2222-4222-8222-222222222222';
+const QA={OILSTATION_QA_MODE_ENABLED:'true',OILSTATION_QA_RUN_ID:'QA-20261031-PLATFORM-001',
+ OILSTATION_QA_STATION_IDS:[S1,S2,'24dc4981-0e6f-4b86-bfd7-03717002d0be',
+  '02183a4e-47b0-4575-9f4f-74cec6553205'].join(',')};
 const LIVE={OILSTATION_DEPLOY_TARGET:'production',
  OILSTATION_PREVIEW_LOGIN_ENABLED:'true',
  OILSTATION_PREVIEW_OPERATIONS_ENABLED:'true',
@@ -18,7 +21,7 @@ const req=(path,body,extra={})=>new Request(BASE+path,{
  ...(body?{body:JSON.stringify(body)}:{}),
 });
 function mock({role='hr_manager',qa=false,station=S1,second=null,module=true,
-  extra={}}={}){
+  extra={},envExtras={}}={}){
  const calls=[];
  const memberships=[{active:true,scope_type:'station',station_id:station,role_code:role},
   ...(second?[{active:true,scope_type:'station',station_id:second,role_code:role}]:[])];
@@ -34,7 +37,7 @@ function mock({role='hr_manager',qa=false,station=S1,second=null,module=true,
   ...extra,
  };
  return {calls,handler:createProductionHrOperationsApi({
-  env:{...LIVE},authenticate:async token=>{
+  env:{...LIVE,...envExtras},authenticate:async token=>{
    calls.push('auth');return token==='station_actor'?{id:A,isQa:qa}:null;},db,
  })};
 }
@@ -75,6 +78,25 @@ test('QA actors cannot use real HR even when member of same station',async()=>{
  const r=await d.handler(req('/api/hr/roster?stationId='+S1));
  assert.equal(r.status,403);
  assert.deepEqual(d.calls,['auth'],'QA must not reach station tables');
+});
+test('QA reads own entitled roster but NEVER writes a shift or reads foreign station',async()=>{
+ const d=mock({qa:true,envExtras:QA});
+ const own=await d.handler(req('/api/hr/roster?stationId='+S1));
+ assert.equal(own.status,200);assert.deepEqual((await own.json()).roster.employees,[]);
+ const foreign=await d.handler(req('/api/hr/roster?stationId='+S2));
+ assert.equal(foreign.status,403);
+ assert.deepEqual(await foreign.json(),{error:'cross_station_forbidden'});
+ for(const stationId of [S2,S1]){
+  const resp=await d.handler(req('/api/hr/assign-shift',{
+    stationId,employeeId:E,templateId:E,date:'2026-11-15'}));
+  assert.equal(resp.status,403);
+  assert.deepEqual(await resp.json(),{error:stationId===S2?
+    'cross_station_forbidden':'qa_hr_write_disabled'});
+ }
+ assert.deepEqual(d.calls.filter(x=>x==='roster'),['roster']);
+ const blocked=mock({qa:true,envExtras:QA,module:false});
+ assert.equal((await blocked.handler(req('/api/hr/roster?stationId='+S1))).status,403);
+ assert.equal(blocked.calls.includes('roster'),false);
 });
 test('cross-station, invalid explicit station and inactive role denied before HR RPC',async()=>{
  const d=mock();

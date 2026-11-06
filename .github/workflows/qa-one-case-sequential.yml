@@ -33,7 +33,7 @@ jobs:
           set -euo pipefail
           git diff --name-status HEAD^ HEAD -- e2e/ > /tmp/qa-batch-e2e-changes.tsv
           mapfile -t all < <(awk 'NF {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
-          mapfile -t changed < <(awk '($1=="A" || ($1=="M" && $2 ~ /^e2e\/qa\.case-master-[a-z0-9-]+-(0(39|41|56|86|90|92)|115)\.pw\.mjs$/)) && $2 ~ /^e2e\/qa\.case-[a-z0-9-]+\.pw\.mjs$/ {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
+          mapfile -t changed < <(awk '($1=="A" || ($1=="M" && $2 ~ /^e2e\/qa\.case-master-[a-z0-9-]+-((0(39|41|56|86|90|92)|109|114|116|118|120|127)|115)\.pw\.mjs$/)) && $2 ~ /^e2e\/qa\.case-[a-z0-9-]+\.pw\.mjs$/ {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
           if (( ${#changed[@]} != 6 && ${#changed[@]} != 2 && ${#changed[@]} != 1 )); then
             echo "::error::Expected six new cases, exact retry 039+041 or 090+092, failed 056 or 086 only; got ${#changed[@]}"; exit 1
           fi
@@ -66,8 +66,14 @@ jobs:
           if (( 10#${sorted[0]} < 39 )); then
             echo "::error::Cannot rerun passed cases 001-038"; exit 1
           fi
+          failed_recovery=false
+          if (( ${#changed[@]} == 6 )) &&
+             [[ "$(printf '%s,' "${sorted[@]}")" == '109,114,116,118,120,127,' ]]; then
+            failed_recovery=true
+          fi
           for ((i=1; i<${#sorted[@]}; i++)); do
-            if (( ${#changed[@]} == 6 && 10#${sorted[i]} != 10#${sorted[i-1]} + 1 )); then
+            if (( ${#changed[@]} == 6 && 10#${sorted[i]} != 10#${sorted[i-1]} + 1 )) &&
+               [[ "$failed_recovery" != true ]]; then
               echo "::error::Batch cases must have unique consecutive IDs"; exit 1
             fi
           done
@@ -84,10 +90,16 @@ jobs:
           const retry056=ids.length===1&&ids[0]==='S-03-V';
           const retry086=ids.length===1&&ids[0]==='C-07-F';
           const retry115=ids.length===1&&ids[0]==='S-09-H';
+          const failedSix=[['C-07-R','TEST-6-012'],['S-04-V','TEST-6-013'],
+            ['C-10-R','TEST-6-013'],['S-15-R','TEST-6-014'],
+            ['S-16-R','TEST-6-014'],['S-11-V','TEST-6-015']];
+          const retryFailedSix=ids.length===6&&failedSix.every(([id,batchId])=>
+            ids.includes(id)&&matrix.batches.some(b=>b.batchId===batchId&&b.caseIds.includes(id)));
           const retry090092=ids.length===2&&ids.includes('P-03-H')&&ids.includes('S-02-H');
           if((ids.length!==6&&!retry&&!retry056&&!retry086&&!retry115&&!retry090092)||ids.some(x=>!x)||new Set(ids).size!==ids.length)
             throw Error('Six new Master cases or exact failed 039/041/056/086/090+092 retry required');
-          const batch=matrix.batches.find(b=>b.lane==='TEST_QUEUE'&&
+          const batch=retryFailedSix?{batchId:'RECOVERY-012-015'}:
+            matrix.batches.find(b=>b.lane==='TEST_QUEUE'&&
             ((ids.length===6&&b.caseIds.length===6&&b.caseIds.every(x=>ids.includes(x)))||
               (retry&&b.batchId==='TEST-6-001')||(retry056&&b.batchId==='TEST-6-003')||(retry086&&b.batchId==='TEST-6-008')||(retry115&&b.batchId==='TEST-6-013')||(retry090092&&b.batchId==='TEST-6-009')));
           if(!batch)throw Error('IDs do not match approved Master batch or exact retry');

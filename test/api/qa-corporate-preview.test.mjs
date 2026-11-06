@@ -55,6 +55,16 @@ test('cross-station owner, fake qa name, wrong credit and wrong email rejected w
  }
  assert.equal(a.calls.length,0);
 });
+test('invalid company payment terms return exact error without creating fixture',async()=>{
+ const a=app();
+ for(const [terms,day] of [[-1,15],[366,15],[30,32]]){
+  const res=await a.route(post({...payload(),paymentTermsDays:terms,
+    dueMode:'statement',statementCloseDay:day}));
+  assert.equal(res.status,400);
+  assert.deepEqual(await res.json(),{error:'invalid_customer'});
+ }
+ assert.equal(a.calls.length,0);
+});
 test('only synthetic QA actor can use tightly scoped preview while finance remains off',async()=>{
  assert.equal((await app({authenticate:async()=>null}).route(post(payload()))).status,403);
  assert.equal((await app({authenticate:async()=>({id:'user',isQa:false})}).route(post(payload()))).status,403);
