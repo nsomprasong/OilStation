@@ -18,7 +18,8 @@ export function shapeSaasOwnerChangeHistory({rows,plans,maxItems=20}){
   const time=valid?Date.parse(raw):NaN;
   const status=STATUS.has(x.status)?x.status:'unknown';
   const paymentStatus=PAYMENT.has(x.paymentStatus)?x.paymentStatus:'unknown';
-  return Object.freeze({name:names.get(x.nextPlanId)||'แพ็กเกจใหม่',status,
+  return Object.freeze({id:typeof x.id==='string'&&/^[0-9a-f-]{36}$/i.test(x.id)?x.id:null,
+   name:names.get(x.nextPlanId)||'แพ็กเกจใหม่',status,
    paymentStatus,effectiveAt:Number.isFinite(time)?new Date(time).toISOString():null,
    viewOnly:true});
  }));
