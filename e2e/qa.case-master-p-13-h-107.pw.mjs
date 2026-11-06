@@ -1,0 +1,6 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN protected by masterCase. No UI POSTs.
+const MASTER_UAT_ID='P-13-H';
+masterCase({id:MASTER_UAT_ID,description:'new bounded P-13-H authorized workflow',alias:'sales02',role:'platform_sales',scopeType:'platform',check:async({page,headers,expect,BASE})=>{
+const r=await page.request.get(BASE+'/api/platform/sales/workspace',{headers});expect(r.status()).toBe(200);const data=(await r.json()).result;expect(data.isAdmin).toBe(false);expect(data.people).toHaveLength(1);expect(data.assignments).toHaveLength(2);expect([...data.assignments,...data.commissions,...data.collectedCustomers].every(x=>x.salesId===data.people[0].id)).toBe(true);await page.locator('[data-ws-screen="overview"] [data-ws-go="sales"]:visible').first().click();const tab=page.locator('[data-context-for="sales"] button[data-os-pane-key="commission"]');await expect(tab).toBeVisible();await tab.click();const pane=page.locator('[data-ws-screen="sales"] .os-functional-pane[data-os-pane="commission"]');await expect(pane).toBeVisible();await expect(pane).toContainText('ไม่ใช่ยอดอนุมัติจ่าย');console.log('MASTER_CASE P-13-H SELF_COMMISSION_EVIDENCE_AND_UI_PASS (admin invoice trace pending)');
+}});

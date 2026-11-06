@@ -1,0 +1,7 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+import {qaLogin} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN protected by masterCase. No UI POSTs.
+const MASTER_UAT_ID='P-13-R';
+masterCase({id:MASTER_UAT_ID,description:'new bounded P-13-R authorized workflow',alias:'sales02',role:'platform_sales',scopeType:'platform',check:async({page,headers,expect,BASE})=>{
+const own=await page.request.get(BASE+'/api/platform/sales/workspace',{headers});expect(own.status()).toBe(200);const snapshot=(await own.json()).result;expect(snapshot.people).toHaveLength(1);const ctx=await page.context().browser().newContext();try{const p=await ctx.newPage();await p.goto(BASE,{waitUntil:'domcontentloaded'});const other=await qaLogin(p,'sales01','platform_sales','platform');const r=await p.request.get(BASE+'/api/platform/sales/workspace',{headers:other.headers});expect(r.status()).toBe(200);const id=(await r.json()).result.people[0].id;expect(id).not.toBe(snapshot.people[0].id);const res=await page.request.get(BASE+'/api/platform/sales/workspace?salesUserId='+id,{headers});expect(res.status()).toBe(200);const forged=(await res.json()).result;for(const k of ['people','assignments','commissions','collectedCustomers'])expect(forged[k]).toEqual(snapshot[k]);}finally{await ctx.close();}console.log('MASTER_CASE P-13-R FORGED_SALES_ID_CANNOT_CHANGE_SERVER_COMMISSION_SCOPE_PASS');
+}});
