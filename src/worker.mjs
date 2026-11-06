@@ -218,7 +218,10 @@ export default {
             (['/api/corporate/drivers','/api/corporate/driver-vehicle',
              '/api/driver/coupons','/api/my-accounts',
              '/api/corporate/wallet-integrity','/api/station/scan-qr',
-             '/api/topup/banks'].includes(url.pathname)||
+             '/api/topup/banks',
+             // Photo inbox/status bytes are read-only and SQL-permissioned.
+             '/api/evidence/plate/reviews','/api/evidence/plate/photo',
+             '/api/evidence/plate/status'].includes(url.pathname)||
              /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(url.pathname)))){
             const result=await createQaOperationsApi({
               env,...createSupabaseAdapter(env)})(request);
