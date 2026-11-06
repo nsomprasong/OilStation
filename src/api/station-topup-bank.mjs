@@ -101,7 +101,8 @@ export function createStationBankApi({authenticate,db,bankEncryptionKey}){
   }catch(e){
    if(e?.code==='FORBIDDEN')return json(403,{error:'permission_denied'});
    if(e?.code==='NOT_FOUND')return json(404,{error:'not_found'});
-   if(e?.code==='INVALID_REQUEST')return json(409,{error:'bank_registration_conflict'});
+   if(e?.code==='INVALID_REQUEST')return (quote||options||stationOptions)?
+    json(400,{error:'invalid_topup_amount'}):json(409,{error:'bank_registration_conflict'});
    return json(503,{error:'bank_service_unavailable'});
   }
  };
