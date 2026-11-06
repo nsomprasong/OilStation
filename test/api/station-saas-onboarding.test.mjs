@@ -57,3 +57,30 @@ test('DB permission errors never expose private plan data',async()=>{
  assert.equal(r.status,403);
  assert.deepEqual(await r.json(),{error:'permission_denied'});
 });
+
+test('existing owner plan selection cannot silently accept a replacement effective start date',async()=>{
+ const {calls,handler}=mock();
+ for(const extra of [
+  {startsAt:'2026-12-01T00:00:00Z'},
+  {effectiveOn:'2026-12-01'},
+  {newPlanStartsAt:'2026-12-01T00:00:00Z'},
+ ]){
+  const res=await handler(new Request(base+'/api/station/billing/select',{
+   method:'POST',headers:{authorization:'Bearer valid','content-type':'application/json'},
+   body:JSON.stringify({stationId:station,planId:plan,paymentMethod:'card',...extra}),
+  }));
+  assert.equal(res.status,400,'unexpected start date must not be silently ignored');
+  assert.deepEqual(await res.json(),{error:'invalid_plan_selection'});
+ }
+ assert.equal(calls.length,0,'unsupported scheduling must not touch any billing RPC');
+});
+test('existing subscription conflict is reported as 409 rather than pretending switch succeeded',async()=>{
+ const {calls,handler}=mock('INVALID_REQUEST');
+ const res=await handler(new Request(base+'/api/station/billing/select',{
+  method:'POST',headers:{authorization:'Bearer valid','content-type':'application/json'},
+  body:JSON.stringify({stationId:station,planId:plan,paymentMethod:'card'}),
+ }));
+ assert.equal(res.status,409);
+ assert.deepEqual(await res.json(),{error:'plan_selection_unavailable'});
+ assert.equal(calls.length,1);
+});
