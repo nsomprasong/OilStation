@@ -1,4 +1,5 @@
-/** Invited station owner's simple plan/payment choice. No charge is initiated. */
+/** Invited station owner's plan choice and read-only replacement preview. No charge is initiated. */
+import {previewSubscriptionPlanChange} from '../domain/subscription-plan-change-preview.mjs';
 const baht=v=>{
  if(!/^(?:0|[1-9]\d{0,15})$/.test(String(v??'')))return '—';
  const n=BigInt(v);return (n/100n).toLocaleString('th-TH')+'.'+(n%100n).toString().padStart(2,'0')+' บาท';
@@ -22,23 +23,59 @@ export function mountStationPlanChoice({target,token,stationId}){
   label.append(input,document.createTextNode(' '+title));payment.append(label);
  }
  const quote=node('div');quote.className='owner-plan-quote';
+ const switchPreview=node('section');switchPreview.className='owner-plan-change-preview';
+ const switchHeading=node('h4','ตัวอย่างการเปลี่ยนแพ็กเกจ (ยังไม่บันทึก)');
+ const switchLabel=node('label','วันเริ่มแพ็กเกจใหม่ (ไม่ระบุ = สิ้นรอบปัจจุบัน)');
+ const switchDate=node('input');switchDate.type='date';switchDate.setAttribute('aria-label','วันเริ่มแพ็กเกจใหม่');
+ switchLabel.append(switchDate);
+ const switchResult=node('p');switchResult.setAttribute('role','note');
+ const switchWarning=node('p','เป็นการคำนวณตัวอย่างเท่านั้น ยังไม่บันทึกคำขอ ไม่เปลี่ยนสิทธิ์ และไม่ตัดเงิน');
+ switchWarning.className='hint';
+ switchPreview.append(switchHeading,switchLabel,switchResult,switchWarning);
+ switchPreview.hidden=true;
  const button=node('button','ยืนยันแพ็กเกจและวิธีชำระเงิน');button.className='button primary';button.type='button';
  const status=node('p');status.setAttribute('role','status');status.className='owner-plan-status';
  const info=node('p','ระบบบันทึกตัวเลือกไว้ก่อน โดยยังไม่ตัดเงินหรือเริ่ม Subscription จนกว่าจะมีการยืนยันการชำระเงิน');info.className='hint';
- section.append(steps,station,caption,subscriptionNotice,plans,payment,quote,button,status,info);target.append(section);
- let rows=[],current=null,activeSubscription=false;
+ section.append(steps,station,caption,subscriptionNotice,plans,payment,quote,switchPreview,button,status,info);target.append(section);
+ let rows=[],current=null,activeSubscription=false,currentTerm=null;
  const day=value=>{
   const date=new Date(value);
   return Number.isFinite(date.valueOf())?
    new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(date):'—';
  };
  const selectedMethod=()=>payment.querySelector('input:checked')?.value||'card';
+ const viewSchedule=()=>{
+  switchPreview.hidden=!activeSubscription;
+  if(!activeSubscription||!currentTerm)return;
+  const chosen=rows.find(row=>row.id===current);
+  if(!chosen||currentTerm.planId===current){
+   switchResult.textContent='เลือกแพ็กเกจใหม่ที่ต่างจากแพ็กเกจปัจจุบันเพื่อดูวันเริ่มตัวอย่าง';return;
+  }
+  try{
+   const end=new Date(currentTerm.periodEnd);
+   const sample=previewSubscriptionPlanChange({
+    currentPlanId:currentTerm.planId,nextPlanId:chosen.id,
+    currentBillingFrequency:currentTerm.frequency,nextBillingFrequency:chosen.frequency,
+    currentPeriodEndUtc:currentTerm.periodEnd,
+    requestedStartOn:switchDate.value||null,
+    anchorDay:end.getUTCDate(),
+    mode:switchDate.value?'future_renewal':'next_renewal',
+    nowUtc:new Date().toISOString(),
+   });
+   switchResult.textContent='แพ็กเกจเดิมสิ้นสุด '+day(sample.oldPlanUntilExclusiveUtc)+
+    ' · แพ็กเกจใหม่เริ่ม '+day(sample.newPlanEffectiveAtUtc)+
+    ' · ต่ออายุแพ็กเกจเดิมระหว่างรอ '+sample.oldPlanRenewalsBeforeSwitch+' รอบ'+
+    ' (เวลาไทย; ยังไม่ใช่การยืนยัน)';
+  }catch{
+   switchResult.textContent='วันเริ่มที่เลือกใช้ไม่ได้ ต้องตรงกับวันต่ออายุของแพ็กเกจเดิม และไม่ย้อนหลัง';
+  }
+ };
  const viewPrice=()=>{
   const chosen=rows.find(row=>row.id===current);
-  if(!chosen){quote.textContent='กรุณาเลือกแพ็กเกจ';button.disabled=true;return;}
+  if(!chosen){quote.textContent='กรุณาเลือกแพ็กเกจ';button.disabled=true;viewSchedule();return;}
   const q=chosen[selectedMethod()];
   quote.replaceChildren();
-  if(!q){quote.textContent='ยังไม่มีราคาสำหรับแพ็กเกจนี้';button.disabled=true;return;}
+  if(!q){quote.textContent='ยังไม่มีราคาสำหรับแพ็กเกจนี้';button.disabled=true;viewSchedule();return;}
   button.disabled=activeSubscription;
   const details=node('div');
   details.append(node('p','ราคาบริการ '+baht(q.subtotalSatang)),
@@ -46,6 +83,7 @@ export function mountStationPlanChoice({target,token,stationId}){
    node('p','VAT '+baht(q.taxSatang)));
   const total=node('strong','ยอดตามแพ็กเกจ '+baht(q.totalSatang));
   quote.append(details,total);
+  viewSchedule();
  };
  const request=async(path,body)=>{
   const init={cache:'no-store',headers:{authorization:'Bearer '+token}};
@@ -61,7 +99,7 @@ export function mountStationPlanChoice({target,token,stationId}){
    station.textContent=result.stationName||'ปั๊มน้ำมันของคุณ';
    rows=result.plans||[];
    const prior=result.selected;
-   const currentTerm=result.subscription||null;
+   currentTerm=result.subscription||null;
    activeSubscription=!!currentTerm&&['trialing','active','grace','overdue'].includes(currentTerm.status);
    if(activeSubscription){
     subscriptionNotice.textContent='แพ็กเกจปัจจุบัน: '+(currentTerm.planName||'—')+
@@ -94,6 +132,7 @@ export function mountStationPlanChoice({target,token,stationId}){
   }catch{status.textContent='โหลดแพ็กเกจไม่สำเร็จ กรุณาตรวจสิทธิ์เจ้าของปั๊มหรือติดต่อผู้ดูแล';button.disabled=true;}
  }
  payment.addEventListener('change',viewPrice);
+ switchDate.addEventListener('change',viewSchedule);
  button.addEventListener('click',async()=>{
   if(!current||activeSubscription)return;
   button.disabled=true;status.textContent='กำลังบันทึกตัวเลือก…';
@@ -105,7 +144,7 @@ export function mountStationPlanChoice({target,token,stationId}){
     'บันทึกเรียบร้อย · รอชำระเงิน '+baht(data.amountSatang)+' (ยังไม่ได้ตัดเงิน)':
     'บันทึกสำเร็จ';
   }catch{status.textContent='บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';}
-  finally{button.disabled=false;}
+  finally{button.disabled=activeSubscription;}
  });
  load().catch(()=>{status.textContent='โหลดข้อมูลไม่ได้';});
 }
