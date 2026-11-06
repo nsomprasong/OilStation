@@ -1,0 +1,7 @@
+# Owner-visible SaaS subscription term — PKG-CHG-01 (read-only) — 2026-11-06
+
+The existing owner plan page showed only **plan checkout intent**, not the actual current Subscription. Owners of already subscribed stations were shown a generic failing Save button. This adds a read-only DB owner-scoped `subscription` object to the existing plan options RPC with current plan name, frequency, status, `startsAt` and `periodEnd`, and renders it in station-local Thailand time. While the subscription is trialing/active/grace/overdue, *the existing initial-plan select button is disabled*, and the page explains why a new effective-date/paid transition cannot yet be submitted. Quotes remain viewable and no payment or plan-switch writes are created. Foreign roles must remain forbidden by existing SQL.
+
+This is **PKG-CHG-01/read-only prerequisite only** for Issue #205. PKG-CHG-02–14 remain blocked. Next steps: choose approved next-period-only (no silent proration) vs permitted future date policy, implement versioned transition intent/scheduler/idempotent activation and payment confirmation, then run isolated positive end-to-end tests without touching live active subscription QA-S01-A. No Full Production claim.
+
+Security: function remains SECURITY DEFINER with explicit owner membership, empty search_path, and service_role-only EXECUTE; historical invoices untouched. The migration is idempotent and only replaces read-only function behavior, not tables or data. Deploy DB migration separately with independent before/after Subscription and invoice counts.
