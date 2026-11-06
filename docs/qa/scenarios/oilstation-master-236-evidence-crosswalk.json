@@ -384,17 +384,17 @@
       "batchId": "TEST-6-020",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-05-R",
-        "S-10-V",
-        "S-04-H",
-        "S-08-R",
-        "P-10-F",
-        "S-10-R"
+        "S-20-R",
+        "X-02-H",
+        "X-04-H",
+        "X-04-V",
+        "X-06-F",
+        "X-07-H"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Fresh 153–158 only; cashier payroll gate, fresh-login data, SQL replay/mismatch constraints and active release block, attendance retry source, real scoped Sales audit. No accepted HR/finance/business writes."
     },
     {
       "batchId": "TEST-6-021",
@@ -405,7 +405,7 @@
         "S-06-V",
         "S-17-R",
         "S-20-V",
-        "S-20-R"
+        "S-05-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -416,7 +416,7 @@
       "batchId": "TEST-6-022",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "X-02-H",
+        "S-10-V",
         "S-09-F",
         "S-17-F",
         "C-05-V",
@@ -433,11 +433,11 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "P-09-F",
-        "X-04-H",
-        "X-04-V",
+        "S-04-H",
+        "S-08-R",
         "S-12-R",
-        "X-06-F",
-        "X-07-H"
+        "P-10-F",
+        "S-10-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -1858,7 +1858,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-023"
     },
     {
       "id": "P-11-H",
@@ -2898,7 +2898,7 @@
       "evidenceAssessment": "Synthetic QR reservation/inspection and pump UI checked; signed scan variants, hold release or exact wrong-company mutation not all passed.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-023"
     },
     {
       "id": "S-04-V",
@@ -3064,7 +3064,7 @@
       "evidenceAssessment": "Synthetic QR reservation/inspection and pump UI checked; signed scan variants, hold release or exact wrong-company mutation not all passed.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-021"
     },
     {
       "id": "S-05-F",
@@ -3330,7 +3330,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-023"
     },
     {
       "id": "S-08-F",
@@ -3518,7 +3518,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-022"
     },
     {
       "id": "S-10-R",
@@ -3534,7 +3534,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-023"
     },
     {
       "id": "S-10-F",
@@ -4568,7 +4568,7 @@
       "evidenceAssessment": "Some reviewer/replay/SQL authorization proved, but exact role-reversal, punch, payroll lines and browser gates incomplete.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-021"
+      "batch": "TEST-6-020"
     },
     {
       "id": "S-20-F",
@@ -6465,7 +6465,7 @@
       "evidenceAssessment": "Real Chromium with scoped roles, selected write+revert and DB/403 evidence exists; complete all-roles write/trace contracts not met.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-022"
+      "batch": "TEST-6-020"
     },
     {
       "id": "X-02-V",
@@ -6689,7 +6689,7 @@
       "evidenceAssessment": "Selected idempotency, UI, audit and sanitized HTTP error checks passed, not the entire cross-module variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-023"
+      "batch": "TEST-6-020"
     },
     {
       "id": "X-04-V",
@@ -6731,7 +6731,7 @@
       "evidenceAssessment": "Selected idempotency, UI, audit and sanitized HTTP error checks passed, not the entire cross-module variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-023"
+      "batch": "TEST-6-020"
     },
     {
       "id": "X-04-R",
@@ -7103,7 +7103,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-023"
+      "batch": "TEST-6-020"
     },
     {
       "id": "X-07-H",
@@ -7145,7 +7145,7 @@
       "evidenceAssessment": "Selected idempotency, UI, audit and sanitized HTTP error checks passed, not the entire cross-module variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-023"
+      "batch": "TEST-6-020"
     },
     {
       "id": "X-07-V",
