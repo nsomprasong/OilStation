@@ -32,15 +32,18 @@ export function mountStationPlanChoice({target,token,stationId}){
  const switchDate=node('input');switchDate.type='date';switchDate.setAttribute('aria-label','วันเริ่มแพ็กเกจใหม่');
  switchLabel.append(switchDate);
  const switchResult=node('p');switchResult.setAttribute('role','note');
- const switchWarning=node('p','เป็นการคำนวณตัวอย่างเท่านั้น ยังไม่บันทึกคำขอ ไม่เปลี่ยนสิทธิ์ และไม่ตัดเงิน');
+ const switchWarning=node('p','บันทึกคำขอได้เฉพาะวันสิ้นรอบปัจจุบัน และยังไม่ตัดเงินหรือเปลี่ยนสิทธิ์จนกว่าจะยืนยันการชำระเงิน');
  switchWarning.className='hint';
- switchPreview.append(switchHeading,switchLabel,switchResult,switchWarning);
+ const scheduleButton=node('button','บันทึกคำขอเปลี่ยนแพ็กเกจ');
+ scheduleButton.className='button secondary';scheduleButton.type='button';scheduleButton.disabled=true;
+ switchPreview.append(switchHeading,switchLabel,switchResult,switchWarning,scheduleButton);
  switchPreview.hidden=true;
  const button=node('button','ยืนยันแพ็กเกจและวิธีชำระเงิน');button.className='button primary';button.type='button';
  const status=node('p');status.setAttribute('role','status');status.className='owner-plan-status';
  const info=node('p','ระบบบันทึกตัวเลือกไว้ก่อน โดยยังไม่ตัดเงินหรือเริ่ม Subscription จนกว่าจะมีการยืนยันการชำระเงิน');info.className='hint';
  section.append(steps,station,caption,subscriptionNotice,recentChanges,plans,payment,quote,switchPreview,button,status,info);target.append(section);
  let rows=[],current=null,activeSubscription=false,currentTerm=null,selectionSaved=false;
+ let pendingChange=null,scheduleAt=null,scheduling=false;
  const day=value=>{
   const date=new Date(value);
   return Number.isFinite(date.valueOf())?
@@ -48,6 +51,7 @@ export function mountStationPlanChoice({target,token,stationId}){
  };
  const selectedMethod=()=>payment.querySelector('input:checked')?.value||'card';
  const viewSchedule=()=>{
+  scheduleAt=null;scheduleButton.disabled=true;
   switchPreview.hidden=!activeSubscription;
   if(!activeSubscription||!currentTerm)return;
   const chosen=rows.find(row=>row.id===current);
@@ -70,6 +74,8 @@ export function mountStationPlanChoice({target,token,stationId}){
     mode:switchDate.value?'future_renewal':'next_renewal',
     nowUtc:new Date().toISOString(),
    });
+   if(sample.newPlanEffectiveAtUtc===new Date(currentTerm.periodEnd).toISOString()&&
+      !pendingChange){scheduleAt=sample.newPlanEffectiveAtUtc;scheduleButton.disabled=scheduling;}
    switchResult.textContent='แพ็กเกจเดิมสิ้นสุด '+day(sample.oldPlanUntilExclusiveUtc)+
     ' · แพ็กเกจใหม่เริ่ม '+day(sample.newPlanEffectiveAtUtc)+
     ' · ต่ออายุแพ็กเกจเดิมระหว่างรอ '+sample.oldPlanRenewalsBeforeSwitch+' รอบ'+
@@ -115,13 +121,26 @@ export function mountStationPlanChoice({target,token,stationId}){
     recentChanges.append(node('h4','ประวัติคำขอเปลี่ยนแพ็กเกจ (อ่านอย่างเดียว)'));
     const list=node('ul');
     for(const change of changes){
-     list.append(node('li',change.name+
+     const entry=node('li');
+     entry.append(node('span',change.name+
       ' · '+change.status+' · เริ่ม '+
       (change.effectiveAt?day(change.effectiveAt):'—')+' (เวลาไทย)'));
+     if(change.status==='pending'&&change.paymentStatus==='unconfirmed'){
+      const revoke=node('button','ยกเลิกคำขอ');revoke.type='button';
+      revoke.className='button secondary';
+      revoke.addEventListener('click',async()=>{
+       revoke.disabled=true;
+       try{await request('/api/station/billing/change/cancel',{stationId,changeId:change.id});
+        await load();}catch{status.textContent='ยกเลิกคำขอไม่สำเร็จ';revoke.disabled=false;}
+      });
+      entry.append(revoke);
+     }
+     list.append(entry);
     }
     recentChanges.append(list);
    }
    const prior=result.selected;
+   pendingChange=changes.find(x=>x.status==='pending')||null;
    currentTerm=result.subscription||null;
    activeSubscription=!!currentTerm&&['trialing','active','grace','overdue'].includes(currentTerm.status);
    if(activeSubscription){
@@ -150,10 +169,23 @@ export function mountStationPlanChoice({target,token,stationId}){
    }
    viewPrice();
    status.textContent=activeSubscription?
-    'การเปลี่ยนแพ็กเกจต้องกำหนดวันเริ่มใหม่และยืนยันการชำระเงินก่อน ระบบยังไม่เปิดการสลับแพ็กเกจอัตโนมัติ':
+    pendingChange?'มีคำขอเปลี่ยนแพ็กเกจรอดำเนินการแล้ว (ยังไม่ตัดเงินและยังไม่เปลี่ยนสิทธิ์)':'เลือกแพ็กเกจใหม่เพื่อบันทึกคำขอเริ่มในรอบต่ออายุถัดไป':
     prior?'บันทึกแพ็กเกจไว้แล้ว · สถานะรอชำระเงิน (ยังไม่ถูกเรียกเก็บเงิน)':'';
   }catch{status.textContent='โหลดแพ็กเกจไม่สำเร็จ กรุณาตรวจสิทธิ์เจ้าของปั๊มหรือติดต่อผู้ดูแล';button.disabled=true;}
  }
+ scheduleButton.addEventListener('click',async()=>{
+  if(!activeSubscription||!scheduleAt||pendingChange||scheduling||!current)return;
+  scheduling=true;scheduleButton.disabled=true;
+  status.textContent='กำลังบันทึกคำขอเปลี่ยนแพ็กเกจ…';
+  try{
+   await request('/api/station/billing/change/schedule',{
+    stationId,nextPlanId:current,paymentMethod:selectedMethod(),
+    effectiveAt:scheduleAt,idempotencyKey:crypto.randomUUID(),
+   });
+   await load();
+  }catch{status.textContent='บันทึกคำขอไม่สำเร็จ กรุณาตรวจวันเริ่มหรือคำขอเดิม';}
+  finally{scheduling=false;viewSchedule();}
+ });
  payment.addEventListener('change',viewPrice);
  switchDate.addEventListener('change',viewSchedule);
  button.addEventListener('click',async()=>{
