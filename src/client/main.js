@@ -1664,7 +1664,7 @@ function dashboard(data, session, publicConfig={}) {
  const hrManager=memberships.find(m=>m.scopeType==='station'&&
   m.role==='hr_manager'&&m.stationId);
  const financeManager=memberships.find(m=>m.scopeType==='station'&&
-  m.role==='finance_manager'&&m.stationId);
+  m.stationId&&m.canApproveTopup===true);
  if(station||hrManager){
   const stationId=(station||hrManager).stationId;
   register('hr',()=>hrWorkspace(session.access_token,stationId,document.getElementById('hr-workspace')));
