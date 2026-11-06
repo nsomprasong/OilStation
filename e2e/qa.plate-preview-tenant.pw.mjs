@@ -5,6 +5,7 @@ const PHOTO='06533350-9254-4613-b272-7fcb00bc0656';
 const authReq=(page,path,headers)=>page.request.get(BASE+path,{headers});
 
 // FAILED_ONLY_RETRY_S06R: QA finance-off POST is 503 release_not_enabled, not a 404.
+// WORKFLOW_YAML_REPAIR_S06R: only this failed specimen, never older passed cases.
 test('S-06-R fresh QA owner A can read photo while foreign station B cannot see private bytes @qa-photo-readonly',async({browser})=>{
  test.setTimeout(110000);
  test.skip(!process.env.OILSTATION_QA_REVIEW_PASSWORD,'Protected station owner QA secret required');
