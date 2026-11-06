@@ -1,4 +1,4 @@
-import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+import {masterCase,STATION_B} from '../scripts/qa/master-six-harness.mjs';
 // OILSTATION_QA_BATCH_RUN protected by shared helper.
 const MASTER_UAT_ID='X-06-H';
 masterCase({id:MASTER_UAT_ID,description:'cross-module-readonly-pages-finish-without-js-errors',alias:'s01b-owner',role:'station_owner',scopeType:'station',scopeId:STATION_B,
