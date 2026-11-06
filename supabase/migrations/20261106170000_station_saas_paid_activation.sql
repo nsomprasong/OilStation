@@ -56,7 +56,8 @@ BEGIN
    WHERE l.invoice_id=p_invoice_id AND l.station_id=c.station_id
     AND (l.price_snapshot->>'planId' IS DISTINCT FROM c.next_plan_id::text OR
       l.price_snapshot->>'serviceStart' IS DISTINCT FROM
-       (c.requested_effective_at AT TIME ZONE 'UTC')::date::text))
+       (c.requested_effective_at AT TIME ZONE 'UTC')::date::text OR
+      l.price_snapshot->'targetModules' IS DISTINCT FROM to_jsonb(c.target_modules)))
  THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
  UPDATE public.station_subscription_change_requests
   SET payment_invoice_id=p_invoice_id WHERE id=c.id;
@@ -68,7 +69,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $fn$
 DECLARE v_station record;c public.station_subscription_change_requests%ROWTYPE;
  v_old public.station_subscriptions%ROWTYPE;v_invoice public.saas_invoices%ROWTYPE;
- v_frequency text;v_new_end timestamptz;v_new_id uuid;
+ v_frequency text;v_new_end timestamptz;v_new_id uuid;v_module text;
  v_done integer:=0;v_scanned integer:=0;
 BEGIN
  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 50
@@ -84,7 +85,8 @@ BEGIN
   SELECT * INTO c FROM public.station_subscription_change_requests x
    WHERE x.station_id=v_station.id AND x.status='pending'
    ORDER BY x.requested_effective_at,x.id LIMIT 1 FOR UPDATE;
-  IF NOT FOUND OR c.payment_invoice_id IS NULL OR c.payment_status='failed'
+  IF NOT FOUND OR c.payment_invoice_id IS NULL OR c.payment_status='failed' OR
+   c.target_modules IS NULL OR cardinality(c.target_modules) NOT BETWEEN 1 AND 2
   THEN CONTINUE; END IF;
   SELECT * INTO v_invoice FROM public.saas_invoices
    WHERE id=c.payment_invoice_id FOR SHARE;
@@ -117,6 +119,16 @@ BEGIN
     current_period_end,status)
    VALUES(c.station_id,c.next_plan_id,c.requested_effective_at,v_new_end,'active')
    RETURNING id INTO v_new_id;
+  -- Entitlements change in the SAME transaction as the new paid subscription.
+  UPDATE public.station_modules SET status='disabled',valid_until=c.requested_effective_at
+   WHERE station_id=c.station_id AND NOT (module_code=ANY(c.target_modules))
+    AND status<>'disabled';
+  FOREACH v_module IN ARRAY c.target_modules LOOP
+   INSERT INTO public.station_modules(station_id,module_code,status,valid_from,valid_until)
+   VALUES(c.station_id,v_module,'enabled',c.requested_effective_at,NULL)
+   ON CONFLICT (station_id,module_code) DO UPDATE
+     SET status='enabled',valid_from=EXCLUDED.valid_from,valid_until=NULL;
+  END LOOP;
   UPDATE public.station_subscription_change_requests
    SET status='applied',payment_status='confirmed',applied_at=clock_timestamp()
    WHERE id=c.id;
