@@ -368,17 +368,17 @@
       "batchId": "TEST-6-019",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-06-R",
-        "S-09-F",
+        "P-04-R",
         "C-04-V",
-        "C-05-V",
-        "C-05-R",
-        "P-09-F"
+        "X-02-V",
+        "X-03-H",
+        "X-07-V",
+        "X-03-F"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Exactly six new 147-152; invalid invite tokens, denied foreign fuel price edit, support role access, read-only wallet verbs, server role after reload; no accepted business writes."
     },
     {
       "batchId": "TEST-6-020",
@@ -400,7 +400,7 @@
       "batchId": "TEST-6-021",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "P-04-R",
+        "S-06-R",
         "S-07-R",
         "S-06-V",
         "S-17-R",
@@ -417,9 +417,9 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "X-02-H",
-        "X-02-V",
+        "S-09-F",
         "S-17-F",
-        "X-03-H",
+        "C-05-V",
         "P-06-H",
         "S-18-R"
       ],
@@ -432,7 +432,7 @@
       "batchId": "TEST-6-023",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "X-03-F",
+        "P-09-F",
         "X-04-H",
         "X-04-V",
         "S-12-R",
@@ -448,7 +448,7 @@
       "batchId": "TEST-6-024",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "X-07-V",
+        "C-05-R",
         "S-04-F",
         "X-09-H",
         "S-16-V",
@@ -1196,7 +1196,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-021"
+      "batch": "TEST-6-019"
     },
     {
       "id": "P-04-F",
@@ -1740,7 +1740,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-023"
     },
     {
       "id": "P-10-H",
@@ -3156,7 +3156,7 @@
       "evidenceAssessment": "Photo-only UI and reserve/report reads observed; full private photo scope and settled fuel session not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-021"
     },
     {
       "id": "S-06-F",
@@ -3480,7 +3480,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-022"
     },
     {
       "id": "S-10-H",
@@ -5299,7 +5299,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-022"
     },
     {
       "id": "C-05-R",
@@ -5326,7 +5326,7 @@
       "evidenceAssessment": "Corporate scoped membership/driver roster and cross-scope denials verified; full profile/link/invitation lifecycle not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-024"
     },
     {
       "id": "C-05-F",
@@ -6481,7 +6481,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-022"
+      "batch": "TEST-6-019"
     },
     {
       "id": "X-02-R",
@@ -6567,7 +6567,7 @@
       "evidenceAssessment": "Real Chromium with scoped roles, selected write+revert and DB/403 evidence exists; complete all-roles write/trace contracts not met.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-022"
+      "batch": "TEST-6-019"
     },
     {
       "id": "X-03-V",
@@ -6647,7 +6647,7 @@
       "evidenceAssessment": "Real Chromium with scoped roles, selected write+revert and DB/403 evidence exists; complete all-roles write/trace contracts not met.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-023"
+      "batch": "TEST-6-019"
     },
     {
       "id": "X-04-H",
@@ -7161,7 +7161,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-024"
+      "batch": "TEST-6-019"
     },
     {
       "id": "X-07-R",

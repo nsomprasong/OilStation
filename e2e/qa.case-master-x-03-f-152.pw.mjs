@@ -1,0 +1,6 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN guarded fresh cases.
+const MASTER_UAT_ID='X-03-F';
+masterCase({id:MASTER_UAT_ID,description:'new bounded X-03-F authorized evidence',alias:'c01-admin',role:'corporate_admin',scopeType:'corporate_company',scopeId:'4e6a3fc9-217d-4543-885b-113f1f3ba4c3',check:async({page,headers,expect,BASE})=>{
+const before=await page.request.get(BASE+'/api/me',{headers});expect(before.status()).toBe(200);const original=(await before.json()).memberships;expect(original).toHaveLength(1);await page.reload({waitUntil:'domcontentloaded'});await expect(page.locator('[data-ws-screen="overview"]:visible')).toBeVisible({timeout:25000});const token=await page.evaluate(()=>{for(const key of Object.keys(localStorage)){if(!key.startsWith('sb-')||!key.endsWith('-auth-token'))continue;const v=JSON.parse(localStorage.getItem(key));if(v?.access_token)return v.access_token;}return null;});expect(token).toBeTruthy();const fresh=await page.request.get(BASE+'/api/me',{headers:{authorization:'Bearer '+token}});expect(fresh.status()).toBe(200);expect((await fresh.json()).memberships).toEqual(original);console.log('MASTER_CASE X-03-F AUTH_SESSION_RELOAD_STILL_REQUIRES_SERVER_MEMBERSHIP_PASS (revocation event not triggered)');
+}});
