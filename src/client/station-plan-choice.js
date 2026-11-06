@@ -31,27 +31,37 @@ export function mountStationPlanChoice({target,token,stationId}){
  const switchLabel=node('label','วันเริ่มแพ็กเกจใหม่ (ไม่ระบุ = สิ้นรอบปัจจุบัน)');
  const switchDate=node('input');switchDate.type='date';switchDate.setAttribute('aria-label','วันเริ่มแพ็กเกจใหม่');
  switchLabel.append(switchDate);
+ const moduleChoice=node('fieldset');moduleChoice.className='owner-plan-module-choice';
+ moduleChoice.append(node('legend','โมดูลที่ต้องการในแพ็กเกจใหม่'));
+ for(const [code,labelText] of [['qr_coupon','คูปอง QR'],['hr_payroll','HR และเงินเดือน']]){
+  const label=node('label');const checkbox=node('input');checkbox.type='checkbox';
+  checkbox.value=code;checkbox.name='next-module';
+  label.append(checkbox,document.createTextNode(' '+labelText));moduleChoice.append(label);
+ }
  const switchResult=node('p');switchResult.setAttribute('role','note');
+ const switchPrice=node('p');switchPrice.setAttribute('role','status');
  const switchWarning=node('p','บันทึกคำขอได้เฉพาะวันสิ้นรอบปัจจุบัน และยังไม่ตัดเงินหรือเปลี่ยนสิทธิ์จนกว่าจะยืนยันการชำระเงิน');
  switchWarning.className='hint';
  const scheduleButton=node('button','บันทึกคำขอเปลี่ยนแพ็กเกจ');
  scheduleButton.className='button secondary';scheduleButton.type='button';scheduleButton.disabled=true;
- switchPreview.append(switchHeading,switchLabel,switchResult,switchWarning,scheduleButton);
+ switchPreview.append(switchHeading,moduleChoice,switchLabel,switchResult,switchPrice,switchWarning,scheduleButton);
  switchPreview.hidden=true;
  const button=node('button','ยืนยันแพ็กเกจและวิธีชำระเงิน');button.className='button primary';button.type='button';
  const status=node('p');status.setAttribute('role','status');status.className='owner-plan-status';
  const info=node('p','ระบบบันทึกตัวเลือกไว้ก่อน โดยยังไม่ตัดเงินหรือเริ่ม Subscription จนกว่าจะมีการยืนยันการชำระเงิน');info.className='hint';
  section.append(steps,station,caption,subscriptionNotice,recentChanges,plans,payment,quote,switchPreview,button,status,info);target.append(section);
  let rows=[],current=null,activeSubscription=false,currentTerm=null,selectionSaved=false;
- let pendingChange=null,scheduleAt=null,scheduling=false;
+ let pendingChange=null,scheduleAt=null,scheduling=false,quoteSerial=0,quotedModulesKey=null;
  const day=value=>{
   const date=new Date(value);
   return Number.isFinite(date.valueOf())?
    new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(date):'—';
  };
  const selectedMethod=()=>payment.querySelector('input:checked')?.value||'card';
+ const selectedModules=()=>[...moduleChoice.querySelectorAll('input:checked')].map(x=>x.value).sort();
  const viewSchedule=()=>{
-  scheduleAt=null;scheduleButton.disabled=true;
+  const sequence=++quoteSerial;
+  scheduleAt=null;quotedModulesKey=null;switchPrice.textContent='';scheduleButton.disabled=true;
   switchPreview.hidden=!activeSubscription;
   if(!activeSubscription||!currentTerm)return;
   const chosen=rows.find(row=>row.id===current);
@@ -75,7 +85,29 @@ export function mountStationPlanChoice({target,token,stationId}){
     nowUtc:new Date().toISOString(),
    });
    if(sample.newPlanEffectiveAtUtc===new Date(currentTerm.periodEnd).toISOString()&&
-      !pendingChange){scheduleAt=sample.newPlanEffectiveAtUtc;scheduleButton.disabled=scheduling;}
+      !pendingChange&&selectedModules().length){
+    const targetModules=selectedModules();const key=targetModules.join(',');
+    switchPrice.textContent='กำลังตรวจสอบราคาจริงจากเซิร์ฟเวอร์…';
+    request('/api/station/billing/change/quote',{
+     stationId,nextPlanId:chosen.id,paymentMethod:selectedMethod(),targetModules,
+    }).then(data=>{
+     if(sequence!==quoteSerial)return;
+     if(new Date(data.effectiveAt).toISOString()!==sample.newPlanEffectiveAtUtc||
+       (data.targetModules||[]).join(',')!==key)throw new Error('quote_changed');
+     scheduleAt=sample.newPlanEffectiveAtUtc;quotedModulesKey=key;
+     switchPrice.textContent='ราคาที่จะเรียกเก็บ '+baht(data.quote?.totalSatang)+
+      ' · VAT '+baht(data.quote?.taxSatang)+' · ยังไม่ตัดเงิน';
+     scheduleButton.disabled=scheduling;
+    }).catch(()=>{
+     if(sequence!==quoteSerial)return;
+     switchPrice.textContent='ยังไม่มีใบเสนอราคาที่ใช้ได้กับโมดูลที่เลือก';
+     scheduleButton.disabled=true;
+    });
+   }else if(!selectedModules().length){
+    switchPrice.textContent='กรุณาเลือกอย่างน้อยหนึ่งโมดูล';
+   }else if(sample.newPlanEffectiveAtUtc!==new Date(currentTerm.periodEnd).toISOString()){
+    switchPrice.textContent='ขณะนี้บันทึกได้เฉพาะวันเริ่มที่ตรงกับสิ้นรอบปัจจุบัน';
+   }
    switchResult.textContent='แพ็กเกจเดิมสิ้นสุด '+day(sample.oldPlanUntilExclusiveUtc)+
     ' · แพ็กเกจใหม่เริ่ม '+day(sample.newPlanEffectiveAtUtc)+
     ' · ต่ออายุแพ็กเกจเดิมระหว่างรอ '+sample.oldPlanRenewalsBeforeSwitch+' รอบ'+
@@ -112,6 +144,9 @@ export function mountStationPlanChoice({target,token,stationId}){
    const result=await request('/api/station/billing/options?stationId='+encodeURIComponent(stationId));
    station.textContent=result.stationName||'ปั๊มน้ำมันของคุณ';
    rows=result.plans||[];
+   const enabled=Array.isArray(result.enabledModules)?result.enabledModules:[];
+   for(const item of moduleChoice.querySelectorAll('input[type=checkbox]'))
+    item.checked=enabled.includes(item.value);
    recentChanges.replaceChildren();
    const changes=shapeSaasOwnerChangeHistory({
     rows:Array.isArray(result.recentChanges)?result.recentChanges:[],plans:rows,
@@ -174,13 +209,15 @@ export function mountStationPlanChoice({target,token,stationId}){
   }catch{status.textContent='โหลดแพ็กเกจไม่สำเร็จ กรุณาตรวจสิทธิ์เจ้าของปั๊มหรือติดต่อผู้ดูแล';button.disabled=true;}
  }
  scheduleButton.addEventListener('click',async()=>{
-  if(!activeSubscription||!scheduleAt||pendingChange||scheduling||!current)return;
+  if(!activeSubscription||!scheduleAt||pendingChange||scheduling||!current||
+     !quotedModulesKey||quotedModulesKey!==selectedModules().join(','))return;
   scheduling=true;scheduleButton.disabled=true;
   status.textContent='กำลังบันทึกคำขอเปลี่ยนแพ็กเกจ…';
   try{
    await request('/api/station/billing/change/schedule',{
     stationId,nextPlanId:current,paymentMethod:selectedMethod(),
     effectiveAt:scheduleAt,idempotencyKey:crypto.randomUUID(),
+    targetModules:selectedModules(),
    });
    await load();
   }catch{status.textContent='บันทึกคำขอไม่สำเร็จ กรุณาตรวจวันเริ่มหรือคำขอเดิม';}
@@ -188,6 +225,7 @@ export function mountStationPlanChoice({target,token,stationId}){
  });
  payment.addEventListener('change',viewPrice);
  switchDate.addEventListener('change',viewSchedule);
+ moduleChoice.addEventListener('change',viewSchedule);
  button.addEventListener('click',async()=>{
   if(!current||activeSubscription||selectionSaved)return;
   button.disabled=true;status.textContent='กำลังบันทึกตัวเลือก…';
