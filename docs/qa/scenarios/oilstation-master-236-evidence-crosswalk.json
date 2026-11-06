@@ -257,16 +257,16 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "P-09-H",
-        "P-09-F",
         "P-10-R",
-        "P-10-F",
         "P-13-H",
-        "P-13-R"
+        "P-13-R",
+        "C-07-R",
+        "C-11-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Six new cases 105–110; no accepted financial or business writes; bounded positive Sales and Corporate reads plus denied role boundaries, separate gated SHA-matched preview and serial Chromium."
     },
     {
       "batchId": "TEST-6-013",
@@ -373,7 +373,7 @@
         "C-04-V",
         "C-05-V",
         "C-05-R",
-        "C-07-R"
+        "P-09-F"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -388,7 +388,7 @@
         "C-10-H",
         "C-10-R",
         "P-04-H",
-        "C-11-V",
+        "P-10-F",
         "P-04-V"
       ],
       "count": 6,
@@ -1740,7 +1740,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-012"
+      "batch": "TEST-6-019"
     },
     {
       "id": "P-10-H",
@@ -1858,7 +1858,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-012"
+      "batch": "TEST-6-020"
     },
     {
       "id": "P-11-H",
@@ -5564,7 +5564,7 @@
       "evidenceAssessment": "Authorized read-side/QR reservations and selected 403s proved; complete issuer, accounting, credit and historical end-to-end variants not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-012"
     },
     {
       "id": "C-07-F",
@@ -6100,7 +6100,7 @@
       "evidenceAssessment": "Authorized read-side/QR reservations and selected 403s proved; complete issuer, accounting, credit and historical end-to-end variants not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-012"
     },
     {
       "id": "C-11-R",
