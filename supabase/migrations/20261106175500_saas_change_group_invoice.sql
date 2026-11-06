@@ -50,8 +50,7 @@ BEGIN
    WHERE id=c.next_plan_id AND active;
   IF v_freq NOT IN ('monthly','yearly') OR v_freq IS NULL
   THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='INVALID_REQUEST';END IF;
-  v_next_end:=p_effective_at+
-   CASE WHEN v_freq='monthly' THEN interval '1 month' ELSE interval '1 year' END;
+  v_next_end:=public.saas_next_period_end_utc(p_effective_at,v_freq);
   IF v_end IS NULL OR v_end<(v_next_end AT TIME ZONE 'UTC')::date
    THEN v_end:=(v_next_end AT TIME ZONE 'UTC')::date;END IF;
   -- No duplicate station billing for this new starting period, including ordinary group invoices.
