@@ -23,6 +23,10 @@ export function createQaOperationsApi({env,authenticate,db}){
   const readOnlyCompany=path==='/api/my-accounts'||
     /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path)||
     path==='/api/corporate/wallet-integrity';
+  // Plate review inbox, private photo and status are scoped read-only QA paths.
+  // Upload and review POST remain inaccessible until an independent finance gate.
+  const readOnlyPlate=['/api/evidence/plate/reviews',
+    '/api/evidence/plate/photo','/api/evidence/plate/status'].includes(path);
   // Disabled money operations permit only role/format denial, never settlement.
   const negativeOnly=['/api/station/scan-qr','/api/topup/banks'].includes(path);
   // Driver assignment/inbox does not move money, so it can be tested before
@@ -30,7 +34,7 @@ export function createQaOperationsApi({env,authenticate,db}){
   // the independent finance gate.
   const driverPreview=qaIsEnabled(env)&&
     env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true';
-  if(!qaFinanceEnabled(env)&&!((driverOnly||readOnlyCompany||negativeOnly)&&driverPreview))
+  if(!qaFinanceEnabled(env)&&!((driverOnly||readOnlyCompany||readOnlyPlate||negativeOnly)&&driverPreview))
     return json(404,'not_found');
   const corp=path==='/api/my-accounts'||path==='/api/coupons'||
     /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path)||
