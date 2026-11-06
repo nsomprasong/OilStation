@@ -32,7 +32,7 @@ test('PKG-CHG-01 owner sees actual term; foreign owner denied; legacy switch rem
   await expect(panel).toBeVisible();
   await expect(panel.locator('.owner-plan-current-term')).toContainText('แพ็กเกจปัจจุบัน',{timeout:25000});
   await expect(panel.locator('.owner-plan-current-term')).toContainText('Standard รายเดือน');
-  await expect(panel.locator('.owner-plan-current-term')).toContainText('2026');
+  await expect(panel.locator('.owner-plan-current-term')).toContainText('2569');
   await expect(panel.getByRole('button',{name:'ยืนยันแพ็กเกจและวิธีชำระเงิน'})).toBeDisabled();
   await expect(panel.locator('[role="status"]')).toContainText('การเปลี่ยนแพ็กเกจต้องกำหนดวันเริ่มใหม่');
   const other=await b.newPage();
