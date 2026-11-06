@@ -7,7 +7,7 @@ await page.locator('[data-ws-screen="overview"] [data-ws-go="invitations"]:visib
 await expect(page.locator('[data-ws-screen="invitations"]:visible')).toBeVisible();
 const control=page.locator('#member-invites .invite-control').first();
 await expect(control).toBeVisible({timeout:18000});
-const toggle=control.locator('> button').first();await expect(toggle).toHaveText('เชิญสมาชิก');
+const toggle=control.locator(':scope > button').first();await expect(toggle).toHaveText('เชิญสมาชิก');
 await expect(toggle).toHaveAttribute('aria-expanded','false');
 await toggle.click();
 await expect(toggle).toHaveAttribute('aria-expanded','true');
