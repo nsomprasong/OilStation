@@ -11,6 +11,7 @@ export function mountStationPlanChoice({target,token,stationId}){
  const caption=node('p','คุณได้รับสิทธิ์เจ้าของปั๊มแล้ว เลือกแพ็กเกจและวิธีชำระเงินได้ที่นี่');
  const steps=node('p','ขั้นตอนที่ 3 — เลือกแพ็กเกจและวิธีชำระเงิน');steps.className='owner-plan-step';
  const station=node('h3','กำลังโหลดข้อมูลปั๊ม…');
+ const subscriptionNotice=node('p');subscriptionNotice.className='owner-plan-current-term';
  const plans=node('div');plans.className='owner-plan-list';
  const payment=node('fieldset');payment.className='owner-payment-methods';
  const legend=node('legend','เลือกช่องทางชำระเงิน');payment.append(legend);
@@ -24,8 +25,13 @@ export function mountStationPlanChoice({target,token,stationId}){
  const button=node('button','ยืนยันแพ็กเกจและวิธีชำระเงิน');button.className='button primary';button.type='button';
  const status=node('p');status.setAttribute('role','status');status.className='owner-plan-status';
  const info=node('p','ระบบบันทึกตัวเลือกไว้ก่อน โดยยังไม่ตัดเงินหรือเริ่ม Subscription จนกว่าจะมีการยืนยันการชำระเงิน');info.className='hint';
- section.append(steps,station,caption,plans,payment,quote,button,status,info);target.append(section);
- let rows=[],current=null;
+ section.append(steps,station,caption,subscriptionNotice,plans,payment,quote,button,status,info);target.append(section);
+ let rows=[],current=null,activeSubscription=false;
+ const day=value=>{
+  const date=new Date(value);
+  return Number.isFinite(date.valueOf())?
+   new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(date):'—';
+ };
  const selectedMethod=()=>payment.querySelector('input:checked')?.value||'card';
  const viewPrice=()=>{
   const chosen=rows.find(row=>row.id===current);
@@ -33,7 +39,7 @@ export function mountStationPlanChoice({target,token,stationId}){
   const q=chosen[selectedMethod()];
   quote.replaceChildren();
   if(!q){quote.textContent='ยังไม่มีราคาสำหรับแพ็กเกจนี้';button.disabled=true;return;}
-  button.disabled=false;
+  button.disabled=activeSubscription;
   const details=node('div');
   details.append(node('p','ราคาบริการ '+baht(q.subtotalSatang)),
    node('p','ส่วนลด '+baht(q.discountSatang)),
@@ -55,7 +61,15 @@ export function mountStationPlanChoice({target,token,stationId}){
    station.textContent=result.stationName||'ปั๊มน้ำมันของคุณ';
    rows=result.plans||[];
    const prior=result.selected;
-   current=prior?.planId||rows[0]?.id||null;
+   const currentTerm=result.subscription||null;
+   activeSubscription=!!currentTerm&&['trialing','active','grace','overdue'].includes(currentTerm.status);
+   if(activeSubscription){
+    subscriptionNotice.textContent='แพ็กเกจปัจจุบัน: '+(currentTerm.planName||'—')+
+      ' · สถานะ '+currentTerm.status+' · เริ่ม '+day(currentTerm.startsAt)+
+      ' · สิ้นสุดรอบ '+day(currentTerm.periodEnd)+
+      ' (เวลาไทย)';
+   }else subscriptionNotice.textContent='ยังไม่มี Subscription ที่เปิดใช้งาน';
+   current=currentTerm?.planId||prior?.planId||rows[0]?.id||null;
    if(prior?.paymentMethod){
     const matching=payment.querySelector('input[value="'+prior.paymentMethod+'"]');
     if(matching)matching.checked=true;
@@ -74,14 +88,14 @@ export function mountStationPlanChoice({target,token,stationId}){
     plans.append(item);
    }
    viewPrice();
-   status.textContent=prior?
-    'บันทึกแพ็กเกจไว้แล้ว · สถานะรอชำระเงิน (ยังไม่ถูกเรียกเก็บเงิน)':
-    '';
+   status.textContent=activeSubscription?
+    'การเปลี่ยนแพ็กเกจต้องกำหนดวันเริ่มใหม่และยืนยันการชำระเงินก่อน ระบบยังไม่เปิดการสลับแพ็กเกจอัตโนมัติ':
+    prior?'บันทึกแพ็กเกจไว้แล้ว · สถานะรอชำระเงิน (ยังไม่ถูกเรียกเก็บเงิน)':'';
   }catch{status.textContent='โหลดแพ็กเกจไม่สำเร็จ กรุณาตรวจสิทธิ์เจ้าของปั๊มหรือติดต่อผู้ดูแล';button.disabled=true;}
  }
  payment.addEventListener('change',viewPrice);
  button.addEventListener('click',async()=>{
-  if(!current)return;
+  if(!current||activeSubscription)return;
   button.disabled=true;status.textContent='กำลังบันทึกตัวเลือก…';
   try{
    const data=await request('/api/station/billing/select',{
