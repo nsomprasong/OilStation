@@ -90,3 +90,22 @@ test('cannot archive a plan with active subscription or pending checkout',async(
  assert.equal(r.status,409);
  assert.deepEqual(await r.json(),{error:'plan_in_use'});
 });
+
+test('strict initial plan start and end: impossible Gregorian dates rejected before SQL; leap day accepted',async()=>{
+ const a=mock();
+ const route='/api/platform/billing/subscription';
+ for(const body of [
+  {...items[3],startsAt:'2026-02-30T00:00:00Z',periodEnd:'2026-03-30T00:00:00Z'},
+  {...items[3],startsAt:'2026-02-29T00:00:00Z',periodEnd:'2026-03-29T00:00:00Z'},
+  {...items[3],startsAt:'2028-02-30T00:00:00Z',periodEnd:'2028-03-30T00:00:00Z'},
+  {...items[3],startsAt:'2028-02-29T00:00:00Z',periodEnd:'2028-02-30T00:00:00Z'},
+  {...items[3],startsAt:'2028-03-01T00:00:00Z',periodEnd:'2028-02-29T00:00:00Z'},
+ ]){const response=await a.handler(req(route,body));assert.equal(response.status,400);}
+ assert.equal(a.calls.length,0);
+ for(const body of [
+  {...items[3],startsAt:'2028-02-29T00:00:00Z',periodEnd:'2028-03-29T00:00:00Z'},
+  {...items[3],startsAt:'2026-02-28T00:00:00.000Z',periodEnd:'2026-03-28T00:00:00.000Z'}
+ ]){const response=await a.handler(req(route,body));assert.equal(response.status,200);}
+ assert.equal(a.calls.length,2);
+ assert.ok(a.calls.every(([kind])=>kind==='subscription'));
+});
