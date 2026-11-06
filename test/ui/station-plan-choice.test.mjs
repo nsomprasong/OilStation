@@ -22,3 +22,16 @@ test('owner chooser stores plan and method without client-submitted price or cha
  assert.match(source,/ยังไม่ตัดเงิน/);
  assert.doesNotMatch(source,/stripe\.confirmPayment|amountSatang:/gi);
 });
+
+test('existing-subscription plan change is preview-only, never POSTs a replacement',()=>{
+ const source=readFileSync(new URL('../../src/client/station-plan-choice.js',import.meta.url),'utf8');
+ assert.match(source,/previewSubscriptionPlanChange/);
+ assert.match(source,/currentPlanId:currentTerm\.planId,nextPlanId:chosen\.id/);
+ assert.match(source,/requestedStartOn:switchDate\.value\|\|null/);
+ assert.match(source,/nowUtc:new Date\(\)\.toISOString\(\)/);
+ assert.match(source,/switchPreview\.hidden=!activeSubscription/);
+ assert.match(source,/if\(!current\|\|activeSubscription\)return/);
+ assert.match(source,/button\.disabled=activeSubscription/);
+ assert.match(source,/ยังไม่บันทึกคำขอ ไม่เปลี่ยนสิทธิ์ และไม่ตัดเงิน/);
+ assert.doesNotMatch(source,/\/api\/station\/billing\/(?:switch|schedule|activate|cancel)/);
+});
