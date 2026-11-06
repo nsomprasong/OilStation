@@ -264,18 +264,32 @@ export function createSupabaseAdapter(env) {
           body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
             p_plan_id:d.planId,p_payment_method:d.paymentMethod}),
         }),
-      stationSaasScheduleChange: async d=>serviceRequest(env,
-        '/rest/v1/rpc/station_saas_schedule_change',{
+      stationSaasQuoteChange: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_saas_quote_change',{
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
             p_next_plan_id:d.nextPlanId,p_payment_method:d.paymentMethod,
-            p_effective_at:d.effectiveAt,p_idempotency_key:d.idempotencyKey}),
+            p_target_modules:d.targetModules}),
+        }),
+      stationSaasScheduleChange: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_saas_schedule_change_v2',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_next_plan_id:d.nextPlanId,p_payment_method:d.paymentMethod,
+            p_effective_at:d.effectiveAt,p_idempotency_key:d.idempotencyKey,
+            p_target_modules:d.targetModules}),
         }),
       stationSaasCancelChange: async d=>serviceRequest(env,
         '/rest/v1/rpc/station_saas_cancel_change',{
           method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
             p_change_id:d.changeId}),
+        }),
+      platformIssueSaasChangeGroupInvoice: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_issue_saas_change_group_invoice',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_billing_group_id:d.billingGroupId,
+            p_effective_at:d.effectiveAt,p_payment_method:d.paymentMethod}),
         }),
       platformLinkSaasChangeInvoice: async d=>serviceRequest(env,
         '/rest/v1/rpc/platform_link_saas_change_invoice',{
