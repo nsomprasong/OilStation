@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.station_plan_quote_for_modules(p_station_id uu
  RETURNS jsonb
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO ''
+ SET search_path=''
 AS $function$
 DECLARE
  v_modules integer;
