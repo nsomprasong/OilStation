@@ -1,5 +1,6 @@
 /** Invited station owner's plan choice and read-only replacement preview. No charge is initiated. */
 import {previewSubscriptionPlanChange} from '../domain/subscription-plan-change-preview.mjs';
+import {shapeSaasOwnerChangeHistory} from '../domain/subscription-change-history-display.mjs';
 const baht=v=>{
  if(!/^(?:0|[1-9]\d{0,15})$/.test(String(v??'')))return '—';
  const n=BigInt(v);return (n/100n).toLocaleString('th-TH')+'.'+(n%100n).toString().padStart(2,'0')+' บาท';
@@ -106,16 +107,17 @@ export function mountStationPlanChoice({target,token,stationId}){
    station.textContent=result.stationName||'ปั๊มน้ำมันของคุณ';
    rows=result.plans||[];
    recentChanges.replaceChildren();
-   const changes=Array.isArray(result.recentChanges)?result.recentChanges:[];
+   const changes=shapeSaasOwnerChangeHistory({
+    rows:Array.isArray(result.recentChanges)?result.recentChanges:[],plans:rows,
+   });
    recentChanges.hidden=changes.length===0;
    if(changes.length){
     recentChanges.append(node('h4','ประวัติคำขอเปลี่ยนแพ็กเกจ (อ่านอย่างเดียว)'));
     const list=node('ul');
     for(const change of changes){
-     const candidate=rows.find(row=>row.id===change.nextPlanId);
-     list.append(node('li',(candidate?.name||'แพ็กเกจใหม่')+
-      ' · '+String(change.status||'—')+
-      ' · เริ่ม '+day(change.effectiveAt)+' (เวลาไทย)'));
+     list.append(node('li',change.name+
+      ' · '+change.status+' · เริ่ม '+
+      (change.effectiveAt?day(change.effectiveAt):'—')+' (เวลาไทย)'));
     }
     recentChanges.append(list);
    }
