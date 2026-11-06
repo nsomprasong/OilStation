@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.station_saas_plan_options(p_actor_id uuid, p_s
  RETURNS jsonb
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO ''
+ SET search_path=''
 AS $function$
 DECLARE v_plans jsonb;v_station text;v_selected jsonb;v_subscription jsonb;v_recent_changes jsonb;v_enabled_modules jsonb;
 BEGIN
