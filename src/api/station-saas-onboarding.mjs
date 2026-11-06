@@ -12,24 +12,34 @@ export function createStationSaasOnboardingApi({authenticate,db}){
   const url=new URL(request.url);
   const read=url.pathname==='/api/station/billing/options';
   const choose=url.pathname==='/api/station/billing/select';
-  if(!read&&!choose)return json(404,{error:'not_found'});
+  const schedule=url.pathname==='/api/station/billing/change/schedule';
+  const cancel=url.pathname==='/api/station/billing/change/cancel';
+  if(!read&&!choose&&!schedule&&!cancel)return json(404,{error:'not_found'});
   if(request.method!==(read?'GET':'POST'))return json(405,{error:'method_not_allowed'});
   if(request.headers.get('origin')&&request.headers.get('origin')!==url.origin)
    return json(403,{error:'origin_forbidden'});
   const auth=/^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization')||'');
   if(!auth)return json(401,{error:'unauthenticated'});
   let body;
-  if(choose){
+  if(choose||schedule||cancel){
    if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
     return json(415,{error:'unsupported_media_type'});
    if(Number(request.headers.get('content-length'))>1024)return json(413,{error:'body_too_large'});
    const raw=await request.text();
    if(raw.length>1024)return json(413,{error:'body_too_large'});
    try{body=JSON.parse(raw);}catch{return json(400,{error:'invalid_json'});}
-   if(!body||Array.isArray(body)||Object.keys(body).length!==3||
-     !UUID.test(body.stationId??'')||!UUID.test(body.planId??'')||
-     !['card','promptpay'].includes(body.paymentMethod))
-    return json(400,{error:'invalid_plan_selection'});
+   const exact=fields=>body&&typeof body==='object'&&!Array.isArray(body)&&
+    Object.keys(body).length===fields.length&&fields.every(k=>Object.hasOwn(body,k));
+   const valid=choose?(exact(['stationId','planId','paymentMethod'])&&UUID.test(body.stationId??'')&&
+      UUID.test(body.planId??'')&&['card','promptpay'].includes(body.paymentMethod)):
+    schedule?(exact(['stationId','nextPlanId','paymentMethod','effectiveAt','idempotencyKey'])&&
+      UUID.test(body.stationId??'')&&UUID.test(body.nextPlanId??'')&&
+      ['card','promptpay'].includes(body.paymentMethod)&&
+      typeof body.effectiveAt==='string'&&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$/.test(body.effectiveAt)&&
+      Number.isFinite(Date.parse(body.effectiveAt))&&new Date(body.effectiveAt).toISOString().slice(0,10)===body.effectiveAt.slice(0,10)&&
+      typeof body.idempotencyKey==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(body.idempotencyKey)):
+     (exact(['stationId','changeId'])&&UUID.test(body.stationId??'')&&UUID.test(body.changeId??''));
+   if(!valid)return json(400,{error:'invalid_plan_selection'});
   }
   const stationId=read?url.searchParams.get('stationId'):body.stationId;
   if(!UUID.test(stationId??''))return json(400,{error:'invalid_station'});
@@ -39,11 +49,14 @@ export function createStationSaasOnboardingApi({authenticate,db}){
    if(read)return json(200,{result:await db.stationSaasPlanOptions({
      actorId:actor.id,stationId,
    })});
-   const result=await db.stationSaasSelectPlan({actorId:actor.id,...body});
+   const result=schedule?await db.stationSaasScheduleChange({actorId:actor.id,...body}):
+    cancel?await db.stationSaasCancelChange({actorId:actor.id,...body}):
+    await db.stationSaasSelectPlan({actorId:actor.id,...body});
    return json(200,{result});
   }catch(e){
    if(e?.code==='FORBIDDEN')return json(403,{error:'permission_denied'});
-   if(e?.code==='INVALID_REQUEST')return json(409,{error:'plan_selection_unavailable'});
+   if(e?.code==='INVALID_REQUEST'||e?.code==='IDEMPOTENCY_CONFLICT')
+    return json(409,{error:'plan_selection_unavailable'});
    return json(503,{error:'plan_selection_unavailable'});
   }
  };
