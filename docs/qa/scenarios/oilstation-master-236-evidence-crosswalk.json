@@ -288,17 +288,17 @@
       "batchId": "TEST-6-014",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-04-R",
+        "S-11-R",
         "S-15-R",
-        "S-05-R",
+        "C-08-R",
         "S-16-R",
-        "S-06-R",
-        "S-07-R"
+        "C-03-R",
+        "S-11-H"
       ],
       "count": 6,
       "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Six new cases 117-122. Read-only own station and forbidden foreign role/resource gates only, malformed-but-structurally-valid scan denied before inspection, protected QA HR foreign shift action denied before DB; no accepted writes."
+      "guard": "Six new cases 117–122 after preflight, only read/denied routes; no QR scanning, reserve, photo bytes or fuel completion attempted; optional HR scopes still protected."
     },
     {
       "batchId": "TEST-6-015",
@@ -309,7 +309,7 @@
         "S-09-F",
         "S-10-V",
         "S-10-R",
-        "S-11-H"
+        "S-07-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -321,7 +321,7 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "S-11-V",
-        "S-11-R",
+        "S-04-R",
         "S-12-R",
         "S-13-R",
         "S-04-F",
@@ -368,7 +368,7 @@
       "batchId": "TEST-6-019",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "C-03-R",
+        "S-06-R",
         "C-04-H",
         "C-04-V",
         "C-05-V",
@@ -384,7 +384,7 @@
       "batchId": "TEST-6-020",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "C-08-R",
+        "S-05-R",
         "C-10-H",
         "S-04-H",
         "P-04-H",
@@ -2962,7 +2962,7 @@
       "evidenceAssessment": "Synthetic QR reservation/inspection and pump UI checked; signed scan variants, hold release or exact wrong-company mutation not all passed.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-014"
+      "batch": "TEST-6-016"
     },
     {
       "id": "S-04-F",
@@ -3064,7 +3064,7 @@
       "evidenceAssessment": "Synthetic QR reservation/inspection and pump UI checked; signed scan variants, hold release or exact wrong-company mutation not all passed.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-014"
+      "batch": "TEST-6-020"
     },
     {
       "id": "S-05-F",
@@ -3156,7 +3156,7 @@
       "evidenceAssessment": "Photo-only UI and reserve/report reads observed; full private photo scope and settled fuel session not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-014"
+      "batch": "TEST-6-019"
     },
     {
       "id": "S-06-F",
@@ -3248,7 +3248,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-014"
+      "batch": "TEST-6-015"
     },
     {
       "id": "S-07-F",
@@ -3583,7 +3583,7 @@
       "evidenceAssessment": "Correct credit display/reconciliation with scope observed, but credit term writes and unauthorized ledger query remain.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-015"
+      "batch": "TEST-6-014"
     },
     {
       "id": "S-11-V",
@@ -3626,7 +3626,7 @@
       "evidenceAssessment": "Correct credit display/reconciliation with scope observed, but credit term writes and unauthorized ledger query remain.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-014"
     },
     {
       "id": "S-11-F",
@@ -5139,7 +5139,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-019"
+      "batch": "TEST-6-014"
     },
     {
       "id": "C-03-F",
@@ -5750,7 +5750,7 @@
       "evidenceAssessment": "Authorized read-side/QR reservations and selected 403s proved; complete issuer, accounting, credit and historical end-to-end variants not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-014"
     },
     {
       "id": "C-08-F",
