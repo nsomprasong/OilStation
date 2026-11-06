@@ -1,0 +1,63 @@
+name: "QA PKG-CHG-01 real active SaaS term, read-only"
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'e2e/qa.saas-current-term.pw.mjs'
+      - '.github/workflows/qa-saas-current-term.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: oilstation-qa-one-next-case-serial
+  cancel-in-progress: false
+jobs:
+  first-current-term-only:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: oilstation-qa
+    env:
+      OILSTATION_QA_REVIEW_PASSWORD: ${{ secrets.OILSTATION_QA_REVIEW_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with: {node-version-file: .nvmrc}
+      - name: Exact new read-only PKG-CHG-01 only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$OILSTATION_QA_REVIEW_PASSWORD"
+          changed="$(git diff --name-status HEAD^ HEAD -- e2e/)"
+          expected="$(printf 'A\te2e/qa.saas-current-term.pw.mjs')"
+          test "$changed" = "$expected" || { echo "::error::Only one NEW PKG-CHG-01 browser case may execute"; exit 1; }
+          grep -Fq 'PKG-CHG-01: first' e2e/qa.saas-current-term.pw.mjs
+      - name: Confirm matching SHA preview success
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=40" --jq '[.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push")] | .[0].conclusion // ""')"
+            if [ "$result" = success ]; then exit 0; fi
+            if [ "$result" = failure ] || [ "$result" = cancelled ]; then
+              echo "::error::SHA-matched Preview failed"; exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::Matching Preview unavailable"; exit 1
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test only current subscribed owner's UI, role denial and unchanged record
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:e2e -- e2e/qa.saas-current-term.pw.mjs --workers=1 --reporter=list | tee /tmp/oilstation-current-term.log
+          grep -Eq '[[:space:]]1 passed \(' /tmp/oilstation-current-term.log
+          grep -Fq 'PKG_CHG_01_ACTUAL_SUBSCRIPTION_TERM_UI_AND_FOREIGN_ROLE_DENIAL_PASS' /tmp/oilstation-current-term.log
