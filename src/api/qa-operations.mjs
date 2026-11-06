@@ -85,7 +85,7 @@ export function createQaOperationsApi({env,authenticate,db}){
       if(raw.length>2048)return json(413,'payload_too_large');
       body=JSON.parse(raw);
     }catch{return json(400,'invalid_qr');}
-    const shape=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.[0-9a-f]{64}$/i;
+    const shape=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[0-9a-f]{64}$/i;
     if(typeof body?.qrPayload!=='string'||!shape.test(body.qrPayload))
       return json(400,'invalid_qr');
     // A structurally valid QR NEVER reaches inspectQr while finance is OFF.
