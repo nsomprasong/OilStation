@@ -25,7 +25,11 @@ async function checkVisible(accounts){
 }
 await openCredit();await checkVisible(first);
 await page.reload({waitUntil:'domcontentloaded'});
-await expect(page.locator('[data-ws-screen="overview"]:visible')).toBeVisible({timeout:35000});
+// SessionStorage intentionally restores the last authorized 'customers' screen;
+// a reload is NOT expected to reset the shell to 'overview'.
+await expect(page.locator('[data-ws-screen="customers"]:visible')).toBeVisible({timeout:35000});
+await page.locator('[data-ws-go="overview"]:visible').first().click();
+await expect(page.locator('[data-ws-screen="overview"]:visible')).toBeVisible({timeout:15000});
 await openCredit();
 const second=await load();expect(second).toEqual(first);
 await checkVisible(second);
