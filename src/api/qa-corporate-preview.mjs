@@ -28,6 +28,12 @@ export function createQaCorporatePreviewApi({env,authenticate,db}){
   if(ids.length!==4||new Set(ids).size!==4)return json(503,{error:'qa_scope_unavailable'});
   const i=ids.indexOf(body.stationId);
   if(i<0)return json(403,{error:'qa_station_only'});
+  // Validate actual public term boundaries, but NEVER create non-QA fixtures.
+  if(!Number.isInteger(body.paymentTermsDays)||body.paymentTermsDays<0||
+     body.paymentTermsDays>365||
+     (body.dueMode==='statement'&&(!Number.isInteger(body.statementCloseDay)||
+       body.statementCloseDay<1||body.statementCloseDay>31)))
+    return json(400,{error:'invalid_customer'});
   const name=String(body.name||'').trim();
   const m=new RegExp('^'+NAMES[i]+'-C0([1-3])$').exec(name);
   const slot=m?Number(m[1]):0;

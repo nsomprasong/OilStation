@@ -11,6 +11,7 @@ import {createPayrollReadinessApi} from './hr-payroll-readiness.mjs';
 import {createPayrollPolicyApi} from './hr-payroll-policy.mjs';
 import {createPayrollDraftApi} from './hr-payroll-draft.mjs';
 import {createLeaveApi} from './hr-leave.mjs';
+import {qaIsEnabled,qaScopeAllowlist} from './qa-accounts.mjs';
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STAFF_ROLES=new Set([
@@ -89,7 +90,30 @@ export function createProductionHrOperationsApi({env,authenticate,db}){
    // Even if synthetic QA staff have valid station memberships they must
    // never use the real HR lane; temporary QA overrides are separate.
    if(!UUID.test(actor?.id||''))return response(401,'unauthenticated');
-   if(actor.isQa===true)return response(403,'qa_identity_not_live');
+   if(actor.isQa===true){
+    // QA can only READ its own entitled station roster or get a denied shift
+    // write. No successful QA HR mutation is possible in this production lane.
+    if(!qaIsEnabled(env)||!['/api/hr/roster','/api/hr/assign-shift'].includes(url.pathname))
+      return response(403,'qa_identity_not_live');
+    const allowed=qaScopeAllowlist(env).station;
+    if(allowed.length!==4||new Set(allowed).size!==4)
+      return response(503,'qa_scope_unavailable');
+    const qaMembers=(await db.memberships(actor.id)||[]).filter(m=>
+      m.active===true&&m.scope_type==='station'&&allowed.includes(m.station_id)&&
+      MANAGER_ROLES.has(m.role_code));
+    if(qaMembers.length!==1)return response(403,'qa_station_only');
+    const stationId=method==='GET'?url.searchParams.get('stationId'):body.stationId;
+    if(!UUID.test(stationId||''))return response(400,'invalid_station');
+    if(stationId!==qaMembers[0].station_id)
+      return response(403,'cross_station_forbidden');
+    if((await db.hrModuleEntitled({actorId:actor.id,stationId}))!==true)
+      return response(403,'hr_module_not_enabled');
+    if(method==='POST')return response(403,'qa_hr_write_disabled');
+    const roster=await db.hrRoster({actorId:actor.id,stationId});
+    return new Response(JSON.stringify({roster}),{status:200,headers:{
+      'content-type':'application/json; charset=utf-8',
+      'cache-control':'private,no-store','x-content-type-options':'nosniff'}});
+   }
    const memberships=await db.memberships(actor.id);
    if(!Array.isArray(memberships))return response(503,'hr_operations_unavailable');
    const own=memberships.filter(m=>m.active===true&&m.scope_type==='station'&&

@@ -13,8 +13,13 @@ export function qaFinanceEnabled(env){
 }
 export function createQaTopupSimulationApi({env,authenticate,db}){
  return async function handle(request){
-  if(!qaFinanceEnabled(env))return json(404,{error:'not_found'});
+  const financeEnabled=qaFinanceEnabled(env);
   const url=new URL(request.url),operation=url.pathname.slice(PREFIX.length);
+  // A QA driver must still receive role denial for the pending endpoint,
+  // but no authorized data may be returned when the finance gate is OFF.
+  if(!financeEnabled&&!(operation==='pending'&&qaIsEnabled(env)&&
+      env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true'))
+    return json(404,{error:'not_found'});
   if(!url.pathname.startsWith(PREFIX)||!['request','pending','review'].includes(operation))
    return json(404,{error:'not_found'});
   if(request.method!==(operation==='pending'?'GET':'POST'))
@@ -40,6 +45,7 @@ export function createQaTopupSimulationApi({env,authenticate,db}){
     if(!UUID.test(stationId??'')||!allow.station.includes(stationId))
      return json(403,{error:'qa_station_only'});
     if(!stationApprove(stationId))return json(403,{error:'permission_denied'});
+    if(!financeEnabled)return json(404,{error:'not_found'});
     return json(200,{requests:await db.qaPendingTopups({
       actorId:actor.id,qaRunId:env.OILSTATION_QA_RUN_ID,stationId,allowed:allow})});
    }

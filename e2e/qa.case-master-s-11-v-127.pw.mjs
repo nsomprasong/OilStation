@@ -1,5 +1,6 @@
 import {masterCase} from '../scripts/qa/master-six-harness.mjs';
 import {STATION_A} from '../scripts/qa/master-six-harness.mjs';
+// FAILED_ONLY_RECOVERY_20261106
 // OILSTATION_QA_BATCH_RUN new only; no accepted writes.
 const MASTER_UAT_ID='S-11-V';
 masterCase({id:MASTER_UAT_ID,description:'bounded S-11-V role and validation acceptance',alias:'s01a-owner',role:'station_owner',scopeType:'station',scopeId:'e22fb5ff-1878-446f-ab8d-585115e8a1a9',check:async({page,headers,expect,BASE})=>{

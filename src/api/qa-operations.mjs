@@ -21,18 +21,22 @@ export function createQaOperationsApi({env,authenticate,db}){
   // QA Corporate account/fuel list are read-only; necessary to select the
   // correct company for driver assignments before synthetic money is enabled.
   const readOnlyCompany=path==='/api/my-accounts'||
-    /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path);
+    /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path)||
+    path==='/api/corporate/wallet-integrity';
+  // Disabled money operations permit only role/format denial, never settlement.
+  const negativeOnly=['/api/station/scan-qr','/api/topup/banks'].includes(path);
   // Driver assignment/inbox does not move money, so it can be tested before
   // synthetic finance is activated. All other QA business routes still need
   // the independent finance gate.
   const driverPreview=qaIsEnabled(env)&&
     env.OILSTATION_PREVIEW_OPERATIONS_ENABLED==='true';
-  if(!qaFinanceEnabled(env)&&!((driverOnly||readOnlyCompany)&&driverPreview))
+  if(!qaFinanceEnabled(env)&&!((driverOnly||readOnlyCompany||negativeOnly)&&driverPreview))
     return json(404,'not_found');
   const corp=path==='/api/my-accounts'||path==='/api/coupons'||
     /^\/api\/my-accounts\/[a-f0-9-]{36}\/fuels$/i.test(path)||
     path==='/api/corporate/wallet-integrity'||
-    ['/api/corporate/drivers','/api/corporate/driver-vehicle'].includes(path);
+    ['/api/corporate/drivers','/api/corporate/driver-vehicle',
+      '/api/topup/banks'].includes(path);
   const driver=path==='/api/driver/coupons';
   const station=path==='/api/station/scan-qr'||
     ['/api/evidence/plate','/api/evidence/plate/reviews',
@@ -61,6 +65,32 @@ export function createQaOperationsApi({env,authenticate,db}){
    if(driver&&!memberships.some(m=>m.scope_type==='corporate_company'&&
        m.role_code==='driver'&&allow.corporate_company.includes(m.corporate_company_id)))
     return json(403,'qa_driver_only');
+   if(path==='/api/topup/banks'&&!qaFinanceEnabled(env)){
+    if(!memberships.some(m=>m.scope_type==='corporate_company'&&
+        ['corporate_admin','accountant','finance_manager'].includes(m.role_code)))
+      return json(403,'permission_denied');
+    return json(503,'qa_finance_disabled');
+   }
+   if(path==='/api/station/scan-qr'&&!qaFinanceEnabled(env)){
+    const operator=memberships.some(m=>m.scope_type==='station'&&
+      allow.station.includes(m.station_id)&&
+      ['station_owner','owner','manager','cashier','attendant','pump_staff'].includes(m.role_code));
+    if(!operator)return json(403,'permission_denied');
+    if(request.method!=='POST')return json(405,'method_not_allowed');
+    if(request.headers.get('origin')!==new URL(request.url).origin)
+      return json(403,'origin_forbidden');
+    if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
+      return json(415,'unsupported_media_type');
+    let body;try{const raw=await request.clone().text();
+      if(raw.length>2048)return json(413,'payload_too_large');
+      body=JSON.parse(raw);
+    }catch{return json(400,'invalid_qr');}
+    const shape=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.[0-9a-f]{64}$/i;
+    if(typeof body?.qrPayload!=='string'||!shape.test(body.qrPayload))
+      return json(400,'invalid_qr');
+    // A structurally valid QR NEVER reaches inspectQr while finance is OFF.
+    return json(503,'qa_finance_disabled');
+   }
    const deps={authenticate,db};
    if(driver||['/api/corporate/drivers','/api/corporate/driver-vehicle'].includes(path))
     return createDriverWorkspaceApi(deps)(request);
