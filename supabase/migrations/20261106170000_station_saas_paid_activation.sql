@@ -140,8 +140,7 @@ BEGIN
    WHERE id=c.next_plan_id AND active;
   IF v_frequency NOT IN ('monthly','yearly') OR v_frequency IS NULL
   THEN CONTINUE; END IF;
-  v_new_end:=c.requested_effective_at+
-   CASE WHEN v_frequency='monthly' THEN interval '1 month' ELSE interval '1 year' END;
+  v_new_end:=public.saas_next_period_end_utc(c.requested_effective_at,v_frequency);
   IF v_new_end<=clock_timestamp() THEN CONTINUE; END IF;
   -- Atomic old/new entitlement period transition, invoice and payment untouched.
   UPDATE public.station_subscriptions SET status='cancelled' WHERE id=v_old.id;
