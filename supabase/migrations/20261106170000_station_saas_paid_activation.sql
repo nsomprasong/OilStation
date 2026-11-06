@@ -167,6 +167,7 @@ BEGIN
  RETURN jsonb_build_object('scanned',v_scanned,'applied',v_done);
 END $fn$;
 
+REVOKE ALL ON FUNCTION public.station_saas_cancel_change(uuid,uuid,uuid) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.platform_link_saas_change_invoice(uuid,uuid,uuid)
  FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.oilstation_apply_due_saas_changes(integer)
