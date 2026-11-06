@@ -1,0 +1,6 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN guarded fresh cases.
+const MASTER_UAT_ID='X-07-V';
+masterCase({id:MASTER_UAT_ID,description:'new bounded X-07-V authorized evidence',alias:'c01-admin',role:'corporate_admin',scopeType:'corporate_company',scopeId:'4e6a3fc9-217d-4543-885b-113f1f3ba4c3',check:async({page,headers,expect,BASE})=>{
+const path=BASE+'/api/corporate/wallet-integrity?accountId=07de207d-97cd-4f46-9683-d431d057c583';const first=await page.request.get(path,{headers});expect(first.status()).toBe(200);const original=(await first.json()).integrity;expect(original.readOnly).toBe(true);const del=await page.request.delete(path,{headers});expect(del.status()).toBe(405);expect(await del.json()).toEqual({error:'method_not_allowed'});const patch=await page.request.patch(path,{headers:{...headers,origin:BASE,'content-type':'application/json'},data:{value:'0'}});expect(patch.status()).toBe(405);const after=await page.request.get(path,{headers});expect(after.status()).toBe(200);expect((await after.json()).integrity).toEqual(original);console.log('MASTER_CASE X-07-V FINANCIAL_WALLET_READONLY_DELETE_AND_PATCH_405_WITH_IDENTICAL_SNAPSHOT_PASS');
+}});

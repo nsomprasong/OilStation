@@ -1,0 +1,7 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+import {qaLogin,STATION_A,STATION_B} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN guarded fresh cases.
+const MASTER_UAT_ID='P-04-R';
+masterCase({id:MASTER_UAT_ID,description:'new bounded P-04-R authorized evidence',alias:'s01a-owner',role:'station_owner',scopeType:'station',scopeId:'e22fb5ff-1878-446f-ab8d-585115e8a1a9',check:async({page,headers,expect,BASE})=>{
+const own=await page.request.get(BASE+'/api/station-fuels?stationId='+STATION_A,{headers});expect(own.status()).toBe(200);const forbidden=await page.request.post(BASE+'/api/station-fuel-config',{headers:{...headers,origin:BASE,'content-type':'application/json'},data:{stationId:STATION_B,stationFuelId:'f3dae8b5-fbf1-407d-8531-0db2cac9dc3e',enabled:true,publicPrice:'33.50'}});expect(forbidden.status()).toBe(403);expect(await forbidden.json()).toEqual({error:'permission_denied'});const ctx=await page.context().browser().newContext();try{const p=await ctx.newPage();await p.goto(BASE,{waitUntil:'domcontentloaded'});const ownB=await qaLogin(p,'s01b-owner','station_owner','station',STATION_B);const r=await p.request.get(BASE+'/api/station-fuels?stationId='+STATION_B,{headers:ownB.headers});expect(r.status()).toBe(200);const list=(await r.json()).fuels;expect(list.some(x=>x.id==='f3dae8b5-fbf1-407d-8531-0db2cac9dc3e')).toBe(true);}finally{await ctx.close();}console.log('MASTER_CASE P-04-R STATION_A_CANNOT_MODIFY_STATION_B_FUEL_CONFIG_403_PASS (subscription module selection distinct)');
+}});

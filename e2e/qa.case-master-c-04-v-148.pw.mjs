@@ -1,0 +1,6 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN guarded fresh cases.
+const MASTER_UAT_ID='C-04-V';
+masterCase({id:MASTER_UAT_ID,description:'new bounded C-04-V authorized evidence',alias:'c01-admin',role:'corporate_admin',scopeType:'corporate_company',scopeId:'4e6a3fc9-217d-4543-885b-113f1f3ba4c3',check:async({page,headers,expect,BASE})=>{
+const path=BASE+'/api/invitations/accept';for(const token of ['tiny','contains spaces','!'.repeat(40)]){const res=await page.request.post(path,{headers:{...headers,origin:BASE,'content-type':'application/json'},data:{token}});expect(res.status()).toBe(400);expect(await res.json()).toEqual({error:'invalid_invitation'});}const before=await page.request.get(BASE+'/api/me',{headers});expect(before.status()).toBe(200);const duplicate={token:'tiny'};for(let i=0;i<2;i++){const r=await page.request.post(path,{headers:{...headers,origin:BASE,'content-type':'application/json'},data:duplicate});expect(r.status()).toBe(400);}const after=await page.request.get(BASE+'/api/me',{headers});expect(after.status()).toBe(200);expect((await after.json()).memberships).toEqual((await before.json()).memberships);console.log('MASTER_CASE C-04-V MALFORMED_INVITE_TOKENS_AND_REPEAT_DENIED_NO_MEMBERSHIP_CHANGE_PASS (genuine expired token still held)');
+}});
