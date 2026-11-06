@@ -1,4 +1,4 @@
-import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+import {masterCase,STATION_B} from '../scripts/qa/master-six-harness.mjs';
 // OILSTATION_QA_BATCH_RUN protected by shared helper.
 const MASTER_UAT_ID='X-05-V';
 masterCase({id:MASTER_UAT_ID,description:'mobile-no-global-overflow-and-empty-report',alias:'s01b-owner',role:'station_owner',scopeType:'station',scopeId:STATION_B,
