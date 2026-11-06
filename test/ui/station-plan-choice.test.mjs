@@ -23,7 +23,7 @@ test('owner chooser stores plan and method without client-submitted price or cha
  assert.doesNotMatch(source,/stripe\.confirmPayment|amountSatang:/gi);
 });
 
-test('existing-subscription plan change is preview-only, never POSTs a replacement',()=>{
+test('existing-subscription plan preview may save pending request but cannot immediately activate',()=>{
  const source=readFileSync(new URL('../../src/client/station-plan-choice.js',import.meta.url),'utf8');
  assert.match(source,/previewSubscriptionPlanChange/);
  assert.match(source,/currentPlanId:currentTerm\.planId,nextPlanId:chosen\.id/);
@@ -32,8 +32,9 @@ test('existing-subscription plan change is preview-only, never POSTs a replaceme
  assert.match(source,/switchPreview\.hidden=!activeSubscription/);
  assert.match(source,/if\(!current\|\|activeSubscription\|\|selectionSaved\)return/);
  assert.match(source,/button\.disabled=activeSubscription\|\|selectionSaved/);
- assert.match(source,/ยังไม่บันทึกคำขอ ไม่เปลี่ยนสิทธิ์ และไม่ตัดเงิน/);
- assert.doesNotMatch(source,/\/api\/station\/billing\/(?:switch|schedule|activate|cancel)/);
+ assert.match(source,/ยังไม่ตัดเงินหรือเปลี่ยนสิทธิ์/);
+ assert.match(source,/\/api\/station\/billing\/change\/schedule/);
+ assert.doesNotMatch(source,/\/api\/station\/billing\/change\/activate/);
 });
 
 test('future renewal preview requires actual subscription anchor; do not infer it from a clamped month end',()=>{
@@ -43,7 +44,7 @@ test('future renewal preview requires actual subscription anchor; do not infer i
  assert.match(source,/ไม่มีข้อมูลวันยึดรอบต่ออายุจากเซิร์ฟเวอร์/);
 });
 
-test('station owner sees only server-scoped readonly SaaS transition history',()=>{
+test('station owner sees scoped SaaS history and can cancel unconfirmed pending change',()=>{
  const source=readFileSync(new URL('../../src/client/station-plan-choice.js',import.meta.url),'utf8');
  assert.match(source,/Array\.isArray\(result\.recentChanges\)/);
  assert.match(source,/recentChanges\.hidden=changes\.length===0/);
@@ -51,7 +52,8 @@ test('station owner sees only server-scoped readonly SaaS transition history',()
  assert.match(source,/change\.name/);
  assert.match(source,/day\(change\.effectiveAt\)/);
  assert.match(source,/ประวัติคำขอเปลี่ยนแพ็กเกจ \(อ่านอย่างเดียว\)/);
- assert.doesNotMatch(source,/\/api\/station\/billing\/(?:schedule|change-request|cancel-change)/);
+ assert.match(source,/\/api\/station\/billing\/change\/cancel/);
+ assert.match(source,/change\.paymentStatus==='unconfirmed'/);
 });
 
 test('initial checkout prevents repeat POST after a successful pending-payment selection',()=>{
