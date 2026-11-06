@@ -49,6 +49,6 @@ test('group invoice uses saved quote with immutable amount and links pending req
  assert.match(group,/INSERT INTO public\.saas_invoices/);
  assert.match(group,/INSERT INTO public\.saas_invoice_lines/);
  assert.match(group,/payment_invoice_id=v_id/);
- assert.match(group,/GRANT EXECUTE .* TO service_role/);
- assert.doesNotMatch(group,/GRANT EXECUTE .* TO (?:anon|authenticated)/);
+ assert.match(group,/GRANT EXECUTE [\\s\\S]*? TO service_role/);
+ assert.doesNotMatch(group,/GRANT EXECUTE [\\s\\S]*? TO (?:anon|authenticated)/);
 });
