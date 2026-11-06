@@ -323,7 +323,10 @@ export default {
           return createPlatformBillingApi(deps)(request);
         }
         if (url.pathname === '/api/station/topup/banks' ||
-            url.pathname === '/api/topup/bank-details') {
+            url.pathname === '/api/topup/bank-details' ||
+            url.pathname === '/api/topup/payment-instructions' ||
+            url.pathname === '/api/topup/amount-options' ||
+            url.pathname === '/api/station/topup/amount-options') {
           return createStationBankApi({...deps,
             bankEncryptionKey:env.OILSTATION_BANK_ACCOUNT_KEY_B64})(request);
         }
