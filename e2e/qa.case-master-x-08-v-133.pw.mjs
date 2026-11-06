@@ -1,0 +1,7 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+import {readFileSync} from 'node:fs';
+// OILSTATION_QA_BATCH_RUN guarded new Master case only.
+const MASTER_UAT_ID='X-08-V';
+masterCase({id:MASTER_UAT_ID,description:'bounded X-08-V new safe QA acceptance',alias:'s01a-owner',role:'station_owner',scopeType:'station',scopeId:'e22fb5ff-1878-446f-ab8d-585115e8a1a9',check:async({page,headers,expect,BASE})=>{
+const health=await page.request.get(BASE+'/api/health');expect(health.status()).toBe(200);expect((await health.json()).status).toBe('ok');const ready=await page.request.get(BASE+'/api/ready');expect(ready.status()).toBe(503);expect((await ready.json()).ready).toBe(false);const publicConfig=await page.request.get(BASE+'/api/public-config');expect(publicConfig.status()).toBe(200);expect((await publicConfig.json()).qaFinanceSimEnabled).toBe(false);const financial=await page.request.get(BASE+'/api/coupons',{headers});expect(financial.status()).toBe(503);expect(await financial.json()).toEqual({error:'release_not_enabled'});const workflow=readFileSync('.github/workflows/production-preview.yml','utf8');expect(workflow).toContain('Validate preview-only runtime flags before deploying');expect(workflow).toContain('Check deployed Worker is still preview-only before deploy');console.log('MASTER_CASE X-08-V LIVE_RELEASE_NOT_READY_AND_FINANCE_DISABLED_GUARD_EVIDENCE_PASS (intentional CI-failure deploy not triggered)');
+}});

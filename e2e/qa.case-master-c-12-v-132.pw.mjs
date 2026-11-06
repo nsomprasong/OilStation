@@ -1,0 +1,6 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN guarded new Master case only.
+const MASTER_UAT_ID='C-12-V';
+masterCase({id:MASTER_UAT_ID,description:'bounded C-12-V new safe QA acceptance',alias:'c01-driver',role:'driver',scopeType:'corporate_company',scopeId:'4e6a3fc9-217d-4543-885b-113f1f3ba4c3',check:async({page,headers,expect,BASE})=>{
+await page.setViewportSize({width:390,height:844});const own=await page.request.get(BASE+'/api/driver/coupons',{headers});expect(own.status()).toBe(200);await page.locator('[data-ws-screen="overview"] [data-ws-go="driver"]:visible').first().click();const workspace=page.locator('#driver-workspace');await expect(workspace).toBeVisible();const status=workspace.locator('[role="status"]');await expect(status).toContainText('แสดงเฉพาะรถ',{timeout:20000});await page.context().setOffline(true);try{await workspace.getByRole('button',{name:'รีเฟรชคูปอง'}).click();await expect(status).toContainText('โหลดคูปองไม่สำเร็จ',{timeout:12000});}finally{await page.context().setOffline(false);}await workspace.getByRole('button',{name:'รีเฟรชคูปอง'}).click();await expect(status).toContainText('แสดงเฉพาะรถ',{timeout:20000});console.log('MASTER_CASE C-12-V MOBILE_DRIVER_OFFLINE_RETRY_RECOVERS_WITHOUT_NEW_QR_PASS (camera denial variant remains pending)');
+}});
