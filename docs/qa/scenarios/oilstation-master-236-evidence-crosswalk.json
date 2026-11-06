@@ -320,17 +320,17 @@
       "batchId": "TEST-6-016",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-10-R",
         "S-04-R",
-        "S-12-R",
-        "S-07-R",
-        "S-04-F",
-        "S-16-V"
+        "P-04-V",
+        "C-02-V",
+        "C-12-V",
+        "X-08-V",
+        "X-09-V"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Exactly six never-run cases 129-134; safe QR role denial, HR-disabled entitlement, 13th company rejection, offline driver retry, production release gate, anti-cleanup checks; no accepted financial/company/HR writes."
     },
     {
       "batchId": "TEST-6-017",
@@ -357,7 +357,7 @@
         "P-06-H",
         "P-15-F",
         "C-01-V",
-        "C-02-V"
+        "S-12-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -389,7 +389,7 @@
         "S-04-H",
         "S-08-R",
         "P-10-F",
-        "P-04-V"
+        "S-10-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -401,7 +401,7 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "P-04-R",
-        "C-12-V",
+        "S-07-R",
         "P-05-H",
         "X-01-H",
         "X-01-V",
@@ -449,9 +449,9 @@
       "lane": "TEST_QUEUE",
       "caseIds": [
         "X-07-V",
-        "X-08-V",
+        "S-04-F",
         "X-09-H",
-        "X-09-V",
+        "S-16-V",
         "X-09-R",
         "X-09-F"
       ],
@@ -1180,7 +1180,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-020"
+      "batch": "TEST-6-016"
     },
     {
       "id": "P-04-R",
@@ -2978,7 +2978,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-024"
     },
     {
       "id": "S-05-H",
@@ -3248,7 +3248,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-021"
     },
     {
       "id": "S-07-F",
@@ -3534,7 +3534,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-020"
     },
     {
       "id": "S-10-F",
@@ -3708,7 +3708,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-018"
     },
     {
       "id": "S-12-F",
@@ -4084,7 +4084,7 @@
       "evidenceAssessment": "Temporary QA HR employee/shift work done in historic scoped run; production HR still rejects QA actors and full variant not proven.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-016"
+      "batch": "TEST-6-024"
     },
     {
       "id": "S-16-R",
@@ -5014,7 +5014,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-016"
     },
     {
       "id": "C-02-R",
@@ -6236,7 +6236,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-021"
+      "batch": "TEST-6-016"
     },
     {
       "id": "C-12-R",
@@ -7251,7 +7251,7 @@
       "evidenceAssessment": "Deployment/retained QA data is observed; intentional failed gate, recovery/version and final no-cleanup-policy acceptance still need proof.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-024"
+      "batch": "TEST-6-016"
     },
     {
       "id": "X-08-R",
@@ -7348,7 +7348,7 @@
       "evidenceAssessment": "Deployment/retained QA data is observed; intentional failed gate, recovery/version and final no-cleanup-policy acceptance still need proof.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-024"
+      "batch": "TEST-6-016"
     },
     {
       "id": "X-09-R",
