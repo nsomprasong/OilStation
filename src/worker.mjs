@@ -28,6 +28,7 @@ import { createGpsAttendanceApi } from './api/attendance.mjs';
 import { createPlateVerificationApi } from './api/plate-verification.mjs';
 import { createWalletIntegrityApi } from './api/wallet-integrity.mjs';
 import { createTopupEvidenceApi } from './api/topup-evidence.mjs';
+import {createStationBankApi} from './api/station-topup-bank.mjs';
 import { createSupabaseAdapter } from './adapters/supabase.mjs';
 import { createSupabaseConnectivityProbe } from './api/supabase-connectivity.mjs';
 import {createQaAccountsApi,qaIsEnabled} from './api/qa-accounts.mjs';
@@ -320,6 +321,11 @@ export default {
         }
         if (url.pathname.startsWith('/api/platform/billing/')) {
           return createPlatformBillingApi(deps)(request);
+        }
+        if (url.pathname === '/api/station/topup/banks' ||
+            url.pathname === '/api/topup/bank-details') {
+          return createStationBankApi({...deps,
+            bankEncryptionKey:env.OILSTATION_BANK_ACCOUNT_KEY_B64})(request);
         }
         if (url.pathname === '/api/billing/invoices') {
           return createBillingInvoiceApi(deps)(request);
