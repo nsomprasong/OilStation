@@ -13,6 +13,8 @@ export function mountStationPlanChoice({target,token,stationId}){
  const steps=node('p','ขั้นตอนที่ 3 — เลือกแพ็กเกจและวิธีชำระเงิน');steps.className='owner-plan-step';
  const station=node('h3','กำลังโหลดข้อมูลปั๊ม…');
  const subscriptionNotice=node('p');subscriptionNotice.className='owner-plan-current-term';
+ const recentChanges=node('section');recentChanges.className='owner-plan-change-history';
+ recentChanges.hidden=true;
  const plans=node('div');plans.className='owner-plan-list';
  const payment=node('fieldset');payment.className='owner-payment-methods';
  const legend=node('legend','เลือกช่องทางชำระเงิน');payment.append(legend);
@@ -36,7 +38,7 @@ export function mountStationPlanChoice({target,token,stationId}){
  const button=node('button','ยืนยันแพ็กเกจและวิธีชำระเงิน');button.className='button primary';button.type='button';
  const status=node('p');status.setAttribute('role','status');status.className='owner-plan-status';
  const info=node('p','ระบบบันทึกตัวเลือกไว้ก่อน โดยยังไม่ตัดเงินหรือเริ่ม Subscription จนกว่าจะมีการยืนยันการชำระเงิน');info.className='hint';
- section.append(steps,station,caption,subscriptionNotice,plans,payment,quote,switchPreview,button,status,info);target.append(section);
+ section.append(steps,station,caption,subscriptionNotice,recentChanges,plans,payment,quote,switchPreview,button,status,info);target.append(section);
  let rows=[],current=null,activeSubscription=false,currentTerm=null;
  const day=value=>{
   const date=new Date(value);
@@ -103,6 +105,20 @@ export function mountStationPlanChoice({target,token,stationId}){
    const result=await request('/api/station/billing/options?stationId='+encodeURIComponent(stationId));
    station.textContent=result.stationName||'ปั๊มน้ำมันของคุณ';
    rows=result.plans||[];
+   recentChanges.replaceChildren();
+   const changes=Array.isArray(result.recentChanges)?result.recentChanges:[];
+   recentChanges.hidden=changes.length===0;
+   if(changes.length){
+    recentChanges.append(node('h4','ประวัติคำขอเปลี่ยนแพ็กเกจ (อ่านอย่างเดียว)'));
+    const list=node('ul');
+    for(const change of changes){
+     const candidate=rows.find(row=>row.id===change.nextPlanId);
+     list.append(node('li',(candidate?.name||'แพ็กเกจใหม่')+
+      ' · '+String(change.status||'—')+
+      ' · เริ่ม '+day(change.effectiveAt)+' (เวลาไทย)'));
+    }
+    recentChanges.append(list);
+   }
    const prior=result.selected;
    currentTerm=result.subscription||null;
    activeSubscription=!!currentTerm&&['trialing','active','grace','overdue'].includes(currentTerm.status);
