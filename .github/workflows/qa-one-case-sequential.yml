@@ -122,7 +122,7 @@ jobs:
           set -euo pipefail
           mapfile -t specs < .qa-new-batch-specs.txt
           test "${#specs[@]}" -eq "$QA_BATCH_COUNT"
-          test "$QA_BATCH_COUNT" -eq 2 || test "$QA_BATCH_COUNT" -eq 6
+          test "$QA_BATCH_COUNT" -eq 1 || test "$QA_BATCH_COUNT" -eq 2 || test "$QA_BATCH_COUNT" -eq 6
           npm run test:e2e -- "${specs[@]}" --workers=1 --reporter=list | tee /tmp/oilstation-qa-batch.log
           grep -Eq "[[:space:]]${QA_BATCH_COUNT} passed \(" /tmp/oilstation-qa-batch.log || {
             echo "::error::Not every new case passed"; exit 1
