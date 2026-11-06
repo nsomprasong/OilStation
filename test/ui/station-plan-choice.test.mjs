@@ -42,3 +42,13 @@ test('future renewal preview requires actual subscription anchor; do not infer i
  assert.match(source,/anchorDay:currentTerm\.anchorDay\|\|end\.getUTCDate\(\)/);
  assert.match(source,/ไม่มีข้อมูลวันยึดรอบต่ออายุจากเซิร์ฟเวอร์/);
 });
+
+test('station owner sees only server-scoped readonly SaaS transition history',()=>{
+ const source=readFileSync(new URL('../../src/client/station-plan-choice.js',import.meta.url),'utf8');
+ assert.match(source,/Array\.isArray\(result\.recentChanges\)/);
+ assert.match(source,/recentChanges\.hidden=changes\.length===0/);
+ assert.match(source,/change\.nextPlanId/);
+ assert.match(source,/day\(change\.effectiveAt\)/);
+ assert.match(source,/ประวัติคำขอเปลี่ยนแพ็กเกจ \(อ่านอย่างเดียว\)/);
+ assert.doesNotMatch(source,/\/api\/station\/billing\/(?:schedule|change-request|cancel-change)/);
+});
