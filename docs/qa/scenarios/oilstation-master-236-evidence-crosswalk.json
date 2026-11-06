@@ -352,17 +352,17 @@
       "batchId": "TEST-6-018",
       "lane": "TEST_QUEUE",
       "caseIds": [
-        "S-20-V",
-        "S-20-R",
-        "P-06-H",
         "P-15-F",
         "C-01-V",
-        "S-12-R"
+        "X-01-V",
+        "X-01-F",
+        "X-03-V",
+        "X-04-R"
       ],
       "count": 6,
-      "status": "NOT_STARTED",
+      "status": "PROTECTED_CHROMIUM_PREPARED",
       "mayExecute": false,
-      "guard": "Only six fresh Master acceptance specs and existing QA roles; all API POSTs must be denied; matching guarded Preview + serial protected Chrome; no accepted financial/HR writes"
+      "guard": "Exact six new 141–146: QA-off flag fail-closed, anonymous authorization, evidence screenshot, sanitized error, missing station scope, repeated unauthorized assignment; no active account disabling or accepted writes."
     },
     {
       "batchId": "TEST-6-019",
@@ -404,8 +404,8 @@
         "S-07-R",
         "S-06-V",
         "S-17-R",
-        "X-01-V",
-        "X-01-F"
+        "S-20-V",
+        "S-20-R"
       ],
       "count": 6,
       "status": "NOT_STARTED",
@@ -420,7 +420,7 @@
         "X-02-V",
         "S-17-F",
         "X-03-H",
-        "X-03-V",
+        "P-06-H",
         "S-18-R"
       ],
       "count": 6,
@@ -435,7 +435,7 @@
         "X-03-F",
         "X-04-H",
         "X-04-V",
-        "X-04-R",
+        "S-12-R",
         "X-06-F",
         "X-07-H"
       ],
@@ -1337,7 +1337,7 @@
       "evidenceAssessment": "Scoped entitlement/quote/commission read-side evidence exists; full Master business acceptance is not yet demonstrated.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-022"
     },
     {
       "id": "P-06-V",
@@ -3708,7 +3708,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-023"
     },
     {
       "id": "S-12-F",
@@ -4541,7 +4541,7 @@
       "evidenceAssessment": "Some reviewer/replay/SQL authorization proved, but exact role-reversal, punch, payroll lines and browser gates incomplete.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-021"
     },
     {
       "id": "S-20-R",
@@ -4568,7 +4568,7 @@
       "evidenceAssessment": "Some reviewer/replay/SQL authorization proved, but exact role-reversal, punch, payroll lines and browser gates incomplete.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-018"
+      "batch": "TEST-6-021"
     },
     {
       "id": "S-20-F",
@@ -6361,7 +6361,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-021"
+      "batch": "TEST-6-018"
     },
     {
       "id": "X-01-R",
@@ -6433,7 +6433,7 @@
       "evidenceAssessment": "Real Chromium with scoped roles, selected write+revert and DB/403 evidence exists; complete all-roles write/trace contracts not met.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-021"
+      "batch": "TEST-6-018"
     },
     {
       "id": "X-02-H",
@@ -6583,7 +6583,7 @@
       "evidenceAssessment": "No exact role + operation + expected result recorded for this Master UAT variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-022"
+      "batch": "TEST-6-018"
     },
     {
       "id": "X-03-R",
@@ -6773,7 +6773,7 @@
       "evidenceAssessment": "Selected idempotency, UI, audit and sanitized HTTP error checks passed, not the entire cross-module variant.",
       "blocker": null,
       "action": "NOT_RUN",
-      "batch": "TEST-6-023"
+      "batch": "TEST-6-018"
     },
     {
       "id": "X-04-F",
