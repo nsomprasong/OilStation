@@ -98,3 +98,19 @@ test('package change preview never defaults to an old hard-coded clock',()=>{
  const {nowUtc, ...withoutClock}=base;
  assert.throws(()=>previewSubscriptionPlanChange(withoutClock),/invalid period-end instant/);
 });
+
+test('package preview rejects normalized impossible ISO calendar dates, clock fields and offsets',()=>{
+ for(const bad of [
+  '2026-02-30T00:00:00Z','2026-02-29T00:00:00Z',
+  '2026-13-01T00:00:00Z','2026-11-31T00:00:00Z',
+  '2026-12-01T24:00:00Z','2026-12-01T12:60:00Z',
+  '2026-12-01T12:30:60Z','2026-12-01T12:00:00+15:00',
+  '2026-12-01T12:00:00+14:30','2026-12-01T12:00:00-02:60',
+ ]){
+  assert.throws(()=>previewSubscriptionPlanChange({...base,currentPeriodEndUtc:bad}),/invalid period-end instant/,bad);
+  assert.throws(()=>previewSubscriptionPlanChange({...base,nowUtc:bad}),/invalid period-end instant/,bad);
+ }
+ const valid=previewSubscriptionPlanChange({...base,
+  currentPeriodEndUtc:'2026-12-01T07:00:00+07:00'});
+ assert.equal(valid.newPlanEffectiveAtUtc,'2026-12-01T00:00:00.000Z');
+});
