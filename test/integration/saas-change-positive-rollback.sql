@@ -3,6 +3,7 @@
 DO $qa$
 DECLARE s public.station_subscriptions%ROWTYPE; owner_id uuid; group_id uuid; target_plan uuid;
  inv uuid:=gen_random_uuid(); due_at timestamptz:=clock_timestamp()-interval '5 minutes';
+ attempt_id uuid:=gen_random_uuid();event_id text;payment_id text;
  change_id uuid;v jsonb;active_id uuid;
 BEGIN
  SELECT * INTO s FROM public.station_subscriptions WHERE status IN ('trialing','active','grace','overdue')
@@ -18,14 +19,16 @@ BEGIN
  INSERT INTO public.saas_invoices(id,billing_group_id,invoice_number,subtotal_satang,discount_satang,
   tax_satang,total_satang,status,paid_at,issued_at,pricing_snapshot)
  VALUES(inv,group_id,'QA-ROLLBACK-'||replace(inv::text,'-',''),10000,0,700,10700,
-  'paid',clock_timestamp(),clock_timestamp(),jsonb_build_object(
+  'issued',NULL,clock_timestamp(),jsonb_build_object(
    'qaOnly',true,'currency','thb','paymentMethod','card','vatMode','exclusive',
    'serviceStart',(due_at AT TIME ZONE 'UTC')::date,
    'serviceEnd',((due_at+interval '1 year') AT TIME ZONE 'UTC')::date));
- INSERT INTO public.saas_payment_attempts(invoice_id,payment_method,amount_satang,
-  stripe_payment_intent_id,idempotency_key,status,settled_at)
- VALUES(inv,'card',10700,'pi_QArollback'||replace(inv::text,'-',''),
-  'qa-rollback-payment-'||inv::text,'succeeded',clock_timestamp());
+ payment_id:='pi_QArollback'||replace(inv::text,'-','');
+ event_id:='evt_QArollback'||replace(inv::text,'-','');
+ INSERT INTO public.saas_payment_attempts(id,invoice_id,payment_method,amount_satang,
+  stripe_payment_intent_id,idempotency_key,status)
+ VALUES(attempt_id,inv,'card',10700,payment_id,
+  'qa-rollback-payment-'||inv::text,'created');
  INSERT INTO public.station_subscription_change_requests(station_id,requested_by,
   current_subscription_id,current_plan_id,next_plan_id,old_period_end_snapshot,
   requested_effective_at,renewal_anchor_day,idempotency_key,request_fingerprint,
@@ -35,6 +38,12 @@ BEGIN
   jsonb_build_object('totalSatang','10700','paymentMethod','card'),
   'pending','unconfirmed',ARRAY['qr_coupon'],inv)
  RETURNING id INTO change_id;
+ v:=public.oilstation_apply_due_saas_changes(20);
+ IF (v->>'applied')::int<>0 THEN RAISE EXCEPTION 'unpaid invoice activated';END IF;
+ PERFORM public.record_stripe_signed_event(event_id,'payment_intent.succeeded',repeat('a',64),false);
+ v:=public.reconcile_saas_test_paid_event(event_id,payment_id,inv,attempt_id,
+   10700,10700,'thb','succeeded',false);
+ IF v->>'status'<>'paid' THEN RAISE EXCEPTION 'test provider event not reconciled';END IF;
  v:=public.oilstation_apply_due_saas_changes(20);
  IF (v->>'applied')::int<>1 THEN RAISE EXCEPTION 'due application failed %',v;END IF;
  SELECT id INTO active_id FROM public.station_subscriptions
@@ -50,5 +59,5 @@ BEGIN
  THEN RAISE EXCEPTION 'QR/HR entitlements not switched';END IF;
  v:=public.oilstation_apply_due_saas_changes(20);
  IF (v->>'applied')::int<>0 THEN RAISE EXCEPTION 'duplicate activation on replay';END IF;
- RAISE NOTICE 'PASS: synthetic paid ledger activated once; QR/HR changed';
+ RAISE NOTICE 'PASS: synthetic signed-event reconciliation activated once; QR/HR changed';
 END $qa$;
