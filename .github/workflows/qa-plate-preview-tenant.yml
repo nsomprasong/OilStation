@@ -26,13 +26,42 @@ jobs:
           fetch-depth: 2
       - uses: actions/setup-node@v4
         with: {node-version-file: .nvmrc}
-      - name: Verify exact fresh private-photo test and protected QA secret
+      - name: Verify exact failed S-06-R-only retry and protected QA secret
         shell: bash
         run: |
           set -euo pipefail
           test -n "$OILSTATION_QA_REVIEW_PASSWORD"
           test "$(git diff --name-status HEAD^ HEAD -- e2e/ | wc -l)" -eq 1
-          git diff --name-status HEAD^ HEAD -- e2e/ | grep -Fx $'A\te2e/qa.plate-preview-tenant.pw.mjs'
+          git diff --name-status HEAD^ HEAD -- e2e/ | grep -Fx 
+          grep -Fq "S-06-R fresh QA" e2e/qa.plate-preview-tenant.pw.mjs
+      - name: Confirm same-SHA guarded Production Preview
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=30" --jq '[.workflow_runs[] | select(.name=="OilStation Production Preview" and .event=="push")] | .[0].conclusion // ""')"
+            if [ "$result" = success ]; then exit 0; fi
+            if [ "$result" = failure ] || [ "$result" = cancelled ]; then
+              echo "::error::Preview failed, no QA run"; exit 1
+            fi
+            sleep 10
+          done
+          echo "::error::Preview not verified"; exit 1
+      - name: Install pinned dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run ONLY fresh read-only station photo isolation test
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:e2e -- e2e/qa.plate-preview-tenant.pw.mjs --workers=1 --reporter=list | tee /tmp/oilstation-qa-photo-read.log
+          grep -Eq '[[:space:]]1 passed \(' /tmp/oilstation-qa-photo-read.log
+          grep -q 'MASTER_CASE S-06-R AUTHORIZED_PRIVATE_PLATE_READ_AND_FOREIGN_STATION_403_PASS' /tmp/oilstation-qa-photo-read.log
+M\te2e/qa.plate-preview-tenant.pw.mjs'
+          grep -Fq 'FAILED_ONLY_RETRY_S06R' e2e/qa.plate-preview-tenant.pw.mjs
           grep -Fq "S-06-R fresh QA" e2e/qa.plate-preview-tenant.pw.mjs
       - name: Confirm same-SHA guarded Production Preview
         shell: bash
