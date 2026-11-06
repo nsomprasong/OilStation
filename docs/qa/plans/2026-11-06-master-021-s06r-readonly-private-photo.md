@@ -1,0 +1,5 @@
+# Real S-06-R private plate access, guarded one-off
+
+This is a fresh previously-unexecuted original Master case (not redoing any case in 001–158). It is run **alone** because the other original 021 cases still require positive finance/HR fixture releases. Reusing a six-case batch with fake negative substitutes would incorrectly claim they passed. Narrow case: real QA-S01-A owner reads existing photo and verified manual decision, QA-S01-B owner cannot read this private photo/status/review inbox (all HTTP 403); corporate admin denied; manual review POST stays unavailable 404 under finance off; no accepted writes, no exposing image bytes in logs/artifacts.
+
+Existing private photo `06533350-9254-4613-b272-7fcb00bc0656` and storage object confirmed by read-only live Supabase SQL. The workflow enforces one exact new file, same SHA Guarded Production Preview, Protected Secret, serialized single Chromium, no other e2e changed. This only advances **S-06-R negative authorization**, not S-06-V blurred photo behavior, nor proof of full fueling flow, and is not one of the 6-case clean-pass rounds.
