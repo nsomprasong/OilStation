@@ -12,6 +12,7 @@ const mock=(error=null)=>{
   db:{
    stationSaasPlanOptions:async d=>{calls.push(['options',d]);if(error)throw {code:error};return {plans:[]};},
    stationSaasSelectPlan:async d=>{calls.push(['select',d]);if(error)throw {code:error};return {status:'pending_payment'};},
+   stationSaasQuoteChange:async d=>{calls.push(['quote',d]);if(error)throw {code:error};return {quote:{totalSatang:'10000'}};},
    stationSaasScheduleChange:async d=>{calls.push(['schedule',d]);if(error)throw {code:error};return {status:'pending'};},
    stationSaasCancelChange:async d=>{calls.push(['cancel',d]);if(error)throw {code:error};return {status:'cancelled'};},
   },
@@ -86,7 +87,7 @@ test('existing subscription conflict returns 409 and does not impersonate succes
 test('owner can schedule at exact UTC renewal and cancel with scoped station id',async()=>{
  const {calls,handler}=mock();
  const input={stationId:station,nextPlanId:plan,paymentMethod:'promptpay',
-  effectiveAt:'2026-12-01T00:00:00.000Z',idempotencyKey:'aa11bb22cc33'};
+  effectiveAt:'2026-12-01T00:00:00.000Z',idempotencyKey:'aa11bb22cc33',targetModules:['hr_payroll','qr_coupon']};
  const req=(path,data)=>handler(new Request(base+path,{method:'POST',
   headers:{authorization:'Bearer valid','content-type':'application/json'},
   body:JSON.stringify(data)}));
@@ -100,12 +101,14 @@ test('owner can schedule at exact UTC renewal and cancel with scoped station id'
 test('invalid schedule dates, arbitrary amount, unauthorized and wrong-role blocked before DB call',async()=>{
  const {calls,handler}=mock();
  const input={stationId:station,nextPlanId:plan,paymentMethod:'card',
-  effectiveAt:'2026-12-01T00:00:00Z',idempotencyKey:'aa11bb22cc33'};
+  effectiveAt:'2026-12-01T00:00:00Z',idempotencyKey:'aa11bb22cc33',targetModules:['hr_payroll','qr_coupon']};
  for(const patch of [
   {effectiveAt:'2026-02-30T00:00:00Z'},
   {effectiveAt:'2026-12-01T00:00:00+07:00'},
   {effectiveAt:'not-a-date'}, {idempotencyKey:'a'},
   {amountSatang:'1'}, {nextPlanId:'bad'}, {paymentMethod:'cash'},
+  {targetModules:[]},{targetModules:['qr_coupon','hr_payroll']},
+  {targetModules:['qr_coupon','qr_coupon']},{targetModules:['invalid']},
  ]){
   const r=await handler(new Request(base+'/api/station/billing/change/schedule',{
    method:'POST',headers:{authorization:'Bearer valid','content-type':'application/json'},
@@ -123,7 +126,21 @@ test('schedule DB permission fails closed; idempotency conflict is 409',async()=
   const r=await handler(new Request(base+'/api/station/billing/change/schedule',{
    method:'POST',headers:{authorization:'Bearer valid','content-type':'application/json'},
    body:JSON.stringify({stationId:station,nextPlanId:plan,paymentMethod:'card',
-    effectiveAt:'2026-12-01T00:00:00Z',idempotencyKey:'aa11bb22cc33'})}));
+    effectiveAt:'2026-12-01T00:00:00Z',idempotencyKey:'aa11bb22cc33',targetModules:['hr_payroll','qr_coupon']})}));
   assert.equal(r.status,status);
  }
+});
+
+test('owner quote has canonical module list and price is always server-generated',async()=>{
+ const {handler,calls}=mock();const data={stationId:station,nextPlanId:plan,
+  paymentMethod:'card',targetModules:['hr_payroll','qr_coupon']};
+ const send=body=>handler(new Request(base+'/api/station/billing/change/quote',{
+  method:'POST',headers:{authorization:'Bearer valid','content-type':'application/json'},
+  body:JSON.stringify(body)}));
+ const ok=await send(data);assert.equal(ok.status,200);
+ assert.deepEqual(calls[0],['quote',{actorId:actor,...data}]);
+ for(const body of [{...data,amountSatang:'1'},{...data,targetModules:[]},
+  {...data,targetModules:['qr_coupon','hr_payroll']},{...data,targetModules:['hr_payroll','hr_payroll']}])
+  assert.equal((await send(body)).status,400);
+ assert.equal(calls.length,1);
 });

@@ -12,16 +12,17 @@ export function createStationSaasOnboardingApi({authenticate,db}){
   const url=new URL(request.url);
   const read=url.pathname==='/api/station/billing/options';
   const choose=url.pathname==='/api/station/billing/select';
+  const quote=url.pathname==='/api/station/billing/change/quote';
   const schedule=url.pathname==='/api/station/billing/change/schedule';
   const cancel=url.pathname==='/api/station/billing/change/cancel';
-  if(!read&&!choose&&!schedule&&!cancel)return json(404,{error:'not_found'});
+  if(!read&&!choose&&!quote&&!schedule&&!cancel)return json(404,{error:'not_found'});
   if(request.method!==(read?'GET':'POST'))return json(405,{error:'method_not_allowed'});
   if(request.headers.get('origin')&&request.headers.get('origin')!==url.origin)
    return json(403,{error:'origin_forbidden'});
   const auth=/^Bearer\s+(\S+)$/i.exec(request.headers.get('authorization')||'');
   if(!auth)return json(401,{error:'unauthenticated'});
   let body;
-  if(choose||schedule||cancel){
+  if(choose||quote||schedule||cancel){
    if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
     return json(415,{error:'unsupported_media_type'});
    if(Number(request.headers.get('content-length'))>1024)return json(413,{error:'body_too_large'});
@@ -30,14 +31,20 @@ export function createStationSaasOnboardingApi({authenticate,db}){
    try{body=JSON.parse(raw);}catch{return json(400,{error:'invalid_json'});}
    const exact=fields=>body&&typeof body==='object'&&!Array.isArray(body)&&
     Object.keys(body).length===fields.length&&fields.every(k=>Object.hasOwn(body,k));
+   const modules=Array.isArray(body?.targetModules)&&body.targetModules.length>=1&&
+    body.targetModules.length<=2&&body.targetModules.every(m=>['hr_payroll','qr_coupon'].includes(m))&&
+    body.targetModules.join(',')===[...new Set(body.targetModules)].sort().join(',');
    const valid=choose?(exact(['stationId','planId','paymentMethod'])&&UUID.test(body.stationId??'')&&
       UUID.test(body.planId??'')&&['card','promptpay'].includes(body.paymentMethod)):
-    schedule?(exact(['stationId','nextPlanId','paymentMethod','effectiveAt','idempotencyKey'])&&
+    (quote||schedule)?(exact(quote?['stationId','nextPlanId','paymentMethod','targetModules']:
+     ['stationId','nextPlanId','paymentMethod','effectiveAt','idempotencyKey','targetModules'])&&
       UUID.test(body.stationId??'')&&UUID.test(body.nextPlanId??'')&&
-      ['card','promptpay'].includes(body.paymentMethod)&&
-      typeof body.effectiveAt==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(body.effectiveAt)&&
-      Number.isFinite(Date.parse(body.effectiveAt))&&new Date(body.effectiveAt).toISOString().slice(0,10)===body.effectiveAt.slice(0,10)&&
-      typeof body.idempotencyKey==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(body.idempotencyKey)):
+      ['card','promptpay'].includes(body.paymentMethod)&&modules&&
+      (quote||(typeof body.effectiveAt==='string'&&
+       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(body.effectiveAt)&&
+       Number.isFinite(Date.parse(body.effectiveAt))&&
+       new Date(body.effectiveAt).toISOString().slice(0,10)===body.effectiveAt.slice(0,10)&&
+       typeof body.idempotencyKey==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(body.idempotencyKey)))):
      (exact(['stationId','changeId'])&&UUID.test(body.stationId??'')&&UUID.test(body.changeId??''));
    if(!valid)return json(400,{error:'invalid_plan_selection'});
   }
@@ -49,7 +56,8 @@ export function createStationSaasOnboardingApi({authenticate,db}){
    if(read)return json(200,{result:await db.stationSaasPlanOptions({
      actorId:actor.id,stationId,
    })});
-   const result=schedule?await db.stationSaasScheduleChange({actorId:actor.id,...body}):
+   const result=quote?await db.stationSaasQuoteChange({actorId:actor.id,...body}):
+    schedule?await db.stationSaasScheduleChange({actorId:actor.id,...body}):
     cancel?await db.stationSaasCancelChange({actorId:actor.id,...body}):
     await db.stationSaasSelectPlan({actorId:actor.id,...body});
    return json(200,{result});

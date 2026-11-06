@@ -242,6 +242,7 @@ export default {
             env,...createSupabaseAdapter(env)})(request);
         if(url.pathname==='/api/station/billing/options' ||
              url.pathname==='/api/station/billing/select' ||
+             url.pathname==='/api/station/billing/change/quote' ||
              url.pathname==='/api/station/billing/change/schedule' ||
              url.pathname==='/api/station/billing/change/cancel')
             return createStationSaasOnboardingApi(createSupabaseAdapter(env))(request);
@@ -414,6 +415,11 @@ export default {
           console.error('oilstation_coupon_expiry_failed');
         }),
       ];
+      // Billing transitions remain inactive unless separately release-gated.
+      if(env.OILSTATION_SAAS_TRANSITION_ENABLED==='true'){
+        tasks.push(db.applyDueSaasChanges(20).catch(()=>
+          console.error('oilstation_saas_transition_failed')));
+      }
       if (env.LINE_NOTIFICATIONS_ENABLED === 'true' && env.LINE_CHANNEL_ACCESS_TOKEN) {
         tasks.push(drainLineNotifications({
           db, accessToken:env.LINE_CHANNEL_ACCESS_TOKEN,limit:10,
