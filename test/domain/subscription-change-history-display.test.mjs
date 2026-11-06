@@ -5,3 +5,10 @@ test('owner history view remains bounded at 20 even if server returns more',()=>
 test('known plan displays name and exact instant',()=>{const r=shape({rows:[row],plans:[{id:'plan-1',name:'Standard'}]})[0];assert.equal(r.name,'Standard');assert.equal(r.effectiveAt,'2026-12-01T00:00:00.000Z');assert.equal(r.viewOnly,true);});
 test('unknown status/time and archived plan are nonexecuting display placeholders',()=>{const r=shape({rows:[{...row,status:'sudo',effectiveAt:'bad'}],plans:[]})[0];assert.equal(r.name,'แพ็กเกจใหม่');assert.equal(r.status,'unknown');assert.equal(r.effectiveAt,null);});
 test('malformed response or excessive limit fails closed',()=>{assert.throws(()=>shape({rows:'bad',plans:[]}));assert.throws(()=>shape({rows:[],plans:[],maxItems:1000}));});
+
+test('owner history hides impossible calendar days and over-range UTC offsets',()=>{
+ for(const effectiveAt of ['2026-02-30T00:00:00Z','2026-11-31T00:00:00Z',
+ '2026-12-01T24:00:00Z','2026-12-01T12:00:00+15:00']){
+  assert.equal(shape({rows:[{...row,effectiveAt}],plans:[]})[0].effectiveAt,null);
+ }
+});
