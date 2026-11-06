@@ -9,7 +9,7 @@ expect(brands.some(x=>x.code==='PTT')).toBe(true);
 await page.locator('[data-ws-screen="overview"] [data-ws-go="stations"]:visible').first().click();
 const add=page.locator('[data-ws-screen="stations"] > .os-add-fab');await expect(add).toBeVisible();await add.click();
 const form=page.locator('#new-station-form');await expect(form).toBeVisible();
-const select=form.locator('#brand-select');await expect(select.locator('option').count()).resolves.toBeGreaterThan(1);
+const select=form.locator('#brand-select');expect(await select.locator('option').count()).toBeGreaterThan(1);
 await select.selectOption('PTT');
 await expect(form.locator('#module-qr')).toBeChecked();
 await expect(form.locator('#module-hr')).not.toBeChecked();
