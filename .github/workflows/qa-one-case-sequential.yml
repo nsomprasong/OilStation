@@ -33,16 +33,19 @@ jobs:
           set -euo pipefail
           git diff --name-status HEAD^ HEAD -- e2e/ > /tmp/qa-batch-e2e-changes.tsv
           mapfile -t all < <(awk 'NF {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
-          mapfile -t changed < <(awk '($1=="A" || ($1=="M" && $2 ~ /^e2e\/qa\.case-master-[a-z0-9-]+-0(39|41)\.pw\.mjs$/)) && $2 ~ /^e2e\/qa\.case-[a-z0-9-]+\.pw\.mjs$/ {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
-          if (( ${#changed[@]} != 6 && ${#changed[@]} != 2 )); then
-            echo "::error::Expected six new cases or exactly two previously unstarted failed 039+041; got ${#changed[@]}"; exit 1
+          mapfile -t changed < <(awk '($1=="A" || ($1=="M" && $2 ~ /^e2e\/qa\.case-master-[a-z0-9-]+-0(39|41|56)\.pw\.mjs$/)) && $2 ~ /^e2e\/qa\.case-[a-z0-9-]+\.pw\.mjs$/ {print $2}' /tmp/qa-batch-e2e-changes.tsv | sort -u)
+          if (( ${#changed[@]} != 6 && ${#changed[@]} != 2 && ${#changed[@]} != 1 )); then
+            echo "::error::Expected six new cases, exact retry 039+041, or failed 056 only; got ${#changed[@]}"; exit 1
           fi
           if (( ${#changed[@]} == 2 )); then
             [[ "${changed[0]}" =~ -039\.pw\.mjs$ && "${changed[1]}" =~ -041\.pw\.mjs$ ]] || {
               echo "::error::Two-case recovery reserved solely for failed 039 and 041"; exit 1; }
           fi
+          if (( ${#changed[@]} == 1 )); then
+            [[ "${changed[0]}" =~ -056\.pw\.mjs$ ]] || { echo "::error::Single-case retry reserved solely for failed 056"; exit 1; }
+          fi
           if (( ${#all[@]} != ${#changed[@]} )); then
-            echo "::error::Only the previously unstarted 039-044 specs may be modified; other cases must be new"; exit 1
+            echo "::error::Only the exact failed 056 or never-started 039/041 specs may be modified; other cases must be new"; exit 1
           fi
           declare -a ids=()
           for spec in "${changed[@]}"; do
@@ -73,11 +76,12 @@ jobs:
             return src.match(/MASTER_UAT_ID='([PSCX]-\d{2}-[HVRF])'/)?.[1];
           });
           const retry=ids.length===2&&ids.includes('P-01-R')&&ids.includes('S-01-V');
-          if((ids.length!==6&&!retry)||ids.some(x=>!x)||new Set(ids).size!==ids.length)
-            throw Error('Six new Master cases or strictly two never-started 039/041 required');
+          const retry056=ids.length===1&&ids[0]==='S-03-V';
+          if((ids.length!==6&&!retry&&!retry056)||ids.some(x=>!x)||new Set(ids).size!==ids.length)
+            throw Error('Six new Master cases or exact failed 039/041/056 retry required');
           const batch=matrix.batches.find(b=>b.lane==='TEST_QUEUE'&&
             ((ids.length===6&&b.caseIds.length===6&&b.caseIds.every(x=>ids.includes(x)))||
-              (retry&&b.batchId==='TEST-6-001')));
+              (retry&&b.batchId==='TEST-6-001')||(retry056&&b.batchId==='TEST-6-003')));
           if(!batch)throw Error('IDs do not match approved Master batch or exact retry');
           console.log('Approved Master UAT batch: '+batch.batchId+' '+ids.join(', '));
           if(ids.some(id=>!matrix.cases.some(x=>x.id===id&&
