@@ -1502,8 +1502,31 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
   } catch { notice('เชื่อมต่อข้อมูลปั๊มไม่สำเร็จ',true); }
   let creationRequestId=null;
   const newStationForm=el('new-station-form');
-  newStationForm.addEventListener('input',()=>{creationRequestId=null;});
-  newStationForm.addEventListener('change',()=>{creationRequestId=null;});
+  // Preserve an UNSUBMITTED station form across a reload in this browser tab.
+  // Never persist the generated request ID or an access token/password.
+  // Names remain session-only, scoped to the same onboarding mode.
+  const draftKey='oilstation_unsaved_station_form_v1';
+  const draftMode=salesMode?'sales':'admin';
+  const preserveDraft=()=>{
+    try{sessionStorage.setItem(draftKey,JSON.stringify({
+      mode:draftMode,organizationName:el('org-name').value,
+      stationName:el('station-name').value,brandCode:el('brand-select').value,
+      qrCoupon:el('module-qr').checked,hrPayroll:el('module-hr').checked,
+    }));}catch{/* blocked session storage must not break station creation */}
+  };
+  try{
+    const saved=JSON.parse(sessionStorage.getItem(draftKey)||'null');
+    if(saved&&saved.mode===draftMode){
+      el('org-name').value=String(saved.organizationName||'').slice(0,160);
+      el('station-name').value=String(saved.stationName||'').slice(0,160);
+      if([...el('brand-select').options].some(o=>o.value===saved.brandCode))
+        el('brand-select').value=saved.brandCode;
+      el('module-qr').checked=saved.qrCoupon===true;
+      el('module-hr').checked=saved.hrPayroll===true;
+    }
+  }catch{/* corrupted/disabled storage must not prevent onboarding */}
+  newStationForm.addEventListener('input',()=>{creationRequestId=null;preserveDraft();});
+  newStationForm.addEventListener('change',()=>{creationRequestId=null;preserveDraft();});
   newStationForm.addEventListener('submit',async(e)=>{
     e.preventDefault();
     const data={organizationName:el('org-name').value.trim(),
@@ -1523,6 +1546,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
       if(!r.ok) return notice('ไม่สามารถสร้างปั๊มได้ ('+responseError(r.data)+')',true);
       notice((salesMode?'เปิดปั๊มและผูกสิทธิค่าคอมมิชชั่นกับบัญชีของคุณแล้ว':'สร้างปั๊มเรียบร้อย')+' เตรียมรายการน้ำมัน '+r.data.station.fuelProductsStaged+' รายการ (ยังไม่เปิดขาย)');
       creationRequestId=null;
+      try{sessionStorage.removeItem(draftKey);}catch{}
       el('new-station-form').reset();
       await loadStations();
     }catch{notice('ขัดข้องระหว่างสร้างปั๊ม กรุณาตรวจสอบรายการก่อนกดซ้ำ',true);}
@@ -1761,6 +1785,7 @@ function dashboard(data, session, publicConfig={}) {
    const {error}=await authClient.auth.signOut();
    if(error)throw error;
    sessionStorage.removeItem('oilstation_last_workspace');
+   sessionStorage.removeItem('oilstation_unsaved_station_form_v1');
    location.replace('/');
   }catch{
    signingOut=false;
