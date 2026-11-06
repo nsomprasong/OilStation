@@ -1108,6 +1108,25 @@ export function createSupabaseAdapter(env) {
             p_request_id:d.requestId,p_approved:d.approved,
             p_station_ids:d.allowed.station,p_company_ids:d.allowed.corporate_company}),
         }),
+      stationRegisterTopupBank: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_register_topup_bank',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_bank_code:d.bankCode,p_account_name:d.accountName,
+            p_encrypted_number:d.encryptedNumber,p_masked_number:d.maskedNumber,
+            p_primary:d.isPrimary}),
+        }),
+      stationTopupBankProfiles: async d=>serviceRequest(env,
+        '/rest/v1/rpc/station_topup_bank_profiles',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+        }),
+      corporateTopupBankTransferDetails: async d=>serviceRequest(env,
+        '/rest/v1/rpc/corporate_topup_bank_transfer_details',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_account_id:d.accountId,
+            p_bank_id:d.bankId}),
+        }),
       reviewTopup: async d=>serviceRequest(env,
         '/rest/v1/rpc/review_verified_corporate_topup',{
           method:'POST',headers:{'content-type':'application/json'},
