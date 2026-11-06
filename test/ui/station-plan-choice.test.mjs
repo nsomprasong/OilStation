@@ -53,3 +53,10 @@ test('station owner sees only server-scoped readonly SaaS transition history',()
  assert.match(source,/ประวัติคำขอเปลี่ยนแพ็กเกจ \(อ่านอย่างเดียว\)/);
  assert.doesNotMatch(source,/\/api\/station\/billing\/(?:schedule|change-request|cancel-change)/);
 });
+
+test('initial checkout prevents repeat POST after a successful pending-payment selection',()=>{
+ const s=readFileSync(new URL('../../src/client/station-plan-choice.js',import.meta.url),'utf8');
+ assert.match(s,/selectionSaved=true/);
+ assert.match(s,/if\(!current\|\|activeSubscription\|\|selectionSaved\)return/);
+ assert.match(s,/finally\{button\.disabled=activeSubscription\|\|selectionSaved;\}/);
+});
