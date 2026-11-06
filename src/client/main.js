@@ -860,10 +860,27 @@ async function stationFinanceWorkspace(token,stationId,target) {
     input.required=true;input.autocomplete='off';outer.append(input);form.append(outer);
     return input;
   };
+  const receivingLabel=document.createElement('label');receivingLabel.className='field';
+  receivingLabel.textContent='รูปแบบบัญชีรับเงิน';
+  const method=document.createElement('select');method.name='receiverMethod';
+  for(const [value,label] of [['promptpay','พร้อมเพย์ (สร้าง QR พร้อมยอดเงิน)'],
+    ['bank','บัญชีธนาคารจริง (ใช้เมื่อไม่มีพร้อมเพย์)']]){
+    const opt=document.createElement('option');opt.value=value;opt.textContent=label;method.append(opt);
+  }
+  receivingLabel.append(method);form.append(receivingLabel);
   const code=field('รหัสธนาคาร (เช่น KBANK)','bankCode',20);
   const holder=field('ชื่อบัญชีรับโอน','accountName',120);
   const number=field('เลขบัญชีธนาคาร (8–20 หลัก)','accountNumber',20);
   number.inputMode='numeric';number.pattern='[0-9]{8,20}';
+  const receiverChanged=()=>{
+    const prompt=method.value==='promptpay';
+    code.parentElement.hidden=prompt;
+    if(prompt)code.value='PROMPTPAY';else if(code.value==='PROMPTPAY')code.value='';
+    number.parentElement.firstChild.textContent=prompt?
+      'หมายเลขพร้อมเพย์ (เบอร์มือถือหรือเลขบัตรประชาชน)':'เลขบัญชีธนาคารจริง (8–20 หลัก)';
+    number.pattern=prompt?'(?:0[689][0-9]{8}|[0-9]{13})':'[0-9]{8,20}';
+  };
+  method.addEventListener('change',receiverChanged);receiverChanged();
   const primaryLabel=document.createElement('label');
   const primary=document.createElement('input');primary.type='checkbox';primary.checked=true;
   primaryLabel.append(primary,document.createTextNode(' บัญชีรับเงินหลัก'));
@@ -871,7 +888,37 @@ async function stationFinanceWorkspace(token,stationId,target) {
   save.className='button primary';save.textContent='บันทึกบัญชีรับโอน';
   const bankStatus=document.createElement('p');bankStatus.setAttribute('role','status');
   form.append(primaryLabel,save,bankStatus);
-  bankSetup.append(bankList,form);target.prepend(bankSetup);
+  const presetForm=document.createElement('form');presetForm.className='coupon-form';
+  const amountsLabel=document.createElement('label');amountsLabel.className='field';
+  amountsLabel.textContent='ยอดเติมเงินให้ลูกค้าเลือก (บาท คั่นด้วยเครื่องหมายจุลภาค สูงสุด 8 ยอด)';
+  const presetInput=document.createElement('input');presetInput.placeholder='500, 1000, 3000, 5000';
+  presetInput.required=true;presetInput.maxLength=120;amountsLabel.append(presetInput);
+  const presetSave=document.createElement('button');presetSave.type='submit';
+  presetSave.className='button secondary';presetSave.textContent='บันทึกยอดเติมที่กำหนด';
+  const presetStatus=document.createElement('p');presetStatus.setAttribute('role','status');
+  presetForm.append(amountsLabel,presetSave,presetStatus);
+  bankSetup.append(bankList,form,presetForm);target.prepend(bankSetup);
+  const loadAmountOptions=async()=>{
+    const r=await getApi('/api/station/topup/amount-options?stationId='+encodeURIComponent(stationId),token);
+    if(!r.ok||!Array.isArray(r.data?.amounts)){presetForm.hidden=true;return;}
+    presetForm.hidden=false;
+    presetInput.value=r.data.amounts.map(v=>(Number(v)/100).toFixed(2)).join(', ');
+  };
+  presetForm.addEventListener('submit',async event=>{
+    event.preventDefault();presetSave.disabled=true;
+    try{
+      const parts=presetInput.value.split(',').map(x=>x.trim());
+      const options=parts.map(x=>bahtToSatang(x));
+      if(options.some(x=>!x)||new Set(options).size!==options.length||
+       options.length<1||options.length>8)throw new Error('bad_amount');
+      const r=await getApi('/api/station/topup/amount-options',token,{
+       method:'POST',body:JSON.stringify({stationId,amounts:options})});
+      if(!r.ok)throw new Error('not_saved');
+      presetStatus.textContent='บันทึกยอดเติมเงินที่กำหนดแล้ว';await loadAmountOptions();
+    }catch{presetStatus.textContent='ยอดเติมไม่ถูกต้อง กรุณาตรวจสอบจำนวนและรูปแบบ';}
+    finally{presetSave.disabled=false;}
+  });
+  loadAmountOptions().catch(()=>{presetForm.hidden=true;});
   async function loadBankSetup(){
     const r=await getApi('/api/station/topup/banks?stationId='+encodeURIComponent(stationId),token);
     if(!r.ok||!Array.isArray(r.data?.banks)){bankSetup.hidden=true;return;}
@@ -897,7 +944,7 @@ async function stationFinanceWorkspace(token,stationId,target) {
        isPrimary:primary.checked};
       const r=await getApi('/api/station/topup/banks',token,{method:'POST',body:JSON.stringify(body)});
       if(!r.ok)throw new Error('bank_registration_failed');
-      form.reset();bankStatus.textContent='บันทึกบัญชีรับเงินแล้ว';
+      form.reset();receiverChanged();bankStatus.textContent='บันทึกบัญชีรับเงินแล้ว';
       await loadBankSetup();
     }catch{bankStatus.textContent='บันทึกไม่ได้ โปรดตรวจสิทธิ์และคีย์เข้ารหัสใน Worker';}
     finally{save.disabled=false;}
