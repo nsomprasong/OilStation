@@ -33,9 +33,9 @@ BEGIN
   UPDATE public.station_bank_accounts b SET is_primary=false
    WHERE b.station_id=p_station_id AND b.active AND b.is_primary;
  END IF;
- INSERT INTO public.station_bank_accounts(station_id,bank_code,account_name,
+ INSERT INTO public.station_bank_accounts(id,station_id,bank_code,account_name,
   account_number_encrypted,account_number_masked,is_primary,active)
- VALUES(p_station_id,p_bank_code,btrim(p_account_name),p_encrypted_number,
+ VALUES(gen_random_uuid(),p_station_id,p_bank_code,btrim(p_account_name),p_encrypted_number,
   p_masked_number,v_primary,true)
  RETURNING id INTO v_id;
  INSERT INTO public.audit_events(actor_id,station_id,entity_type,entity_id,action,after_state)
