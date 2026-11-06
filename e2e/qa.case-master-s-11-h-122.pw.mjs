@@ -1,0 +1,7 @@
+import {masterCase} from '../scripts/qa/master-six-harness.mjs';
+import {STATION_A} from '../scripts/qa/master-six-harness.mjs';
+// OILSTATION_QA_BATCH_RUN protected new Master test.
+const MASTER_UAT_ID='S-11-H';
+masterCase({id:MASTER_UAT_ID,description:'bounded S-11-H role/credit read guard',alias:'s01a-owner',role:'station_owner',scopeType:'station',scopeId:'e22fb5ff-1878-446f-ab8d-585115e8a1a9',check:async({page,headers,expect,BASE})=>{
+const res=await page.request.get(BASE+'/api/station/customer-overview?stationId='+STATION_A,{headers});expect(res.status()).toBe(200);const rows=(await res.json()).accounts;expect(rows).toHaveLength(3);expect(rows.some(x=>BigInt(x.prepaidSatang||'0')>0n)).toBe(true);for(const row of rows){for(const k of ['availableSatang','creditLimitSatang','debtSatang','reservedSatang','pendingTopupSatang'])expect(/^[0-9]+$/.test(String(row[k]))).toBe(true);}await page.locator('[data-ws-screen="overview"] [data-ws-go="customers"]:visible').first().click();const tab=page.locator('[data-context-for="customers"] button[data-os-pane-key="credit"]');await expect(tab).toBeVisible();await tab.click();const cards=page.locator('#station-customer-credit .os-credit-account');await expect(cards).toHaveCount(3);for(const a of rows)await expect(cards.filter({hasText:a.companyName})).toHaveCount(1);console.log('MASTER_CASE S-11-H EXISTING_STATION_CREDIT_LINE_COMPONENTS_AND_THREE_UI_ROWS_PASS (term writes unproven)');
+}});
