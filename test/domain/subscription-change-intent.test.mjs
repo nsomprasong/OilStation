@@ -98,3 +98,14 @@ test('12 mismatched, invalid identity or request key is fail-closed',()=>{
  assert.throws(()=>proposeStationPlanChange({...data,idempotencyKey:'short'}),/idempotency/);
  assert.throws(()=>proposeStationPlanChange({...data,currentSubscriptionId:'wrong'}),/subscription/);
 });
+
+test('13 strict timestamp validation blocks malformed and normalized dates for lifecycle',()=>{
+ const intent=fresh();
+ for(const bad of ['2026-02-30T00:00:00Z','2026-12-01T24:00:00Z',
+  '2026-12-01T00:60:00Z','2026-12-01T00:00:60Z',
+  '2026-12-01T00:00:00+15:00','2026-12-01T00:00:00+14:30','tomorrow']){
+  assert.throws(()=>proposeStationPlanChange({...data,nowUtc:bad}),/invalid transition timestamp/);
+  assert.throws(()=>cancelStationPlanChange({intent,stationId:data.stationId,nowUtc:bad}),/invalid transition timestamp/);
+  assert.throws(()=>inspectPlanChangeActivation({intent,nowUtc:bad,paymentConfirmed:true}),/invalid transition timestamp/);
+ }
+});
