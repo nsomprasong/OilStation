@@ -17,7 +17,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: oilstation-playwright-live-db
+  # Public PR smoke never writes QA; isolate its queue by PR to avoid cancelled pending jobs.
+  # Protected workflow_dispatch runs still serialize on the shared live-DB group.
+  group: ${{ github.event_name == 'pull_request' && format('oilstation-public-pr-{0}', github.event.pull_request.number) || 'oilstation-playwright-live-db' }}
   cancel-in-progress: false
 jobs:
   public-browser:
