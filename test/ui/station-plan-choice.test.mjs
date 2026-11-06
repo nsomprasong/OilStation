@@ -30,8 +30,8 @@ test('existing-subscription plan change is preview-only, never POSTs a replaceme
  assert.match(source,/requestedStartOn:switchDate\.value\|\|null/);
  assert.match(source,/nowUtc:new Date\(\)\.toISOString\(\)/);
  assert.match(source,/switchPreview\.hidden=!activeSubscription/);
- assert.match(source,/if\(!current\|\|activeSubscription\)return/);
- assert.match(source,/button\.disabled=activeSubscription/);
+ assert.match(source,/if\(!current\|\|activeSubscription\|\|selectionSaved\)return/);
+ assert.match(source,/button\.disabled=activeSubscription\|\|selectionSaved/);
  assert.match(source,/ยังไม่บันทึกคำขอ ไม่เปลี่ยนสิทธิ์ และไม่ตัดเงิน/);
  assert.doesNotMatch(source,/\/api\/station\/billing\/(?:switch|schedule|activate|cancel)/);
 });
@@ -52,4 +52,11 @@ test('station owner sees only server-scoped readonly SaaS transition history',()
  assert.match(source,/day\(change\.effectiveAt\)/);
  assert.match(source,/ประวัติคำขอเปลี่ยนแพ็กเกจ \(อ่านอย่างเดียว\)/);
  assert.doesNotMatch(source,/\/api\/station\/billing\/(?:schedule|change-request|cancel-change)/);
+});
+
+test('initial checkout prevents repeat POST after a successful pending-payment selection',()=>{
+ const s=readFileSync(new URL('../../src/client/station-plan-choice.js',import.meta.url),'utf8');
+ assert.match(s,/selectionSaved=true/);
+ assert.match(s,/if\(!current\|\|activeSubscription\|\|selectionSaved\)return/);
+ assert.match(s,/finally\{button\.disabled=activeSubscription\|\|selectionSaved;\}/);
 });

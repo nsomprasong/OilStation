@@ -40,7 +40,7 @@ export function mountStationPlanChoice({target,token,stationId}){
  const status=node('p');status.setAttribute('role','status');status.className='owner-plan-status';
  const info=node('p','ระบบบันทึกตัวเลือกไว้ก่อน โดยยังไม่ตัดเงินหรือเริ่ม Subscription จนกว่าจะมีการยืนยันการชำระเงิน');info.className='hint';
  section.append(steps,station,caption,subscriptionNotice,recentChanges,plans,payment,quote,switchPreview,button,status,info);target.append(section);
- let rows=[],current=null,activeSubscription=false,currentTerm=null;
+ let rows=[],current=null,activeSubscription=false,currentTerm=null,selectionSaved=false;
  const day=value=>{
   const date=new Date(value);
   return Number.isFinite(date.valueOf())?
@@ -84,7 +84,7 @@ export function mountStationPlanChoice({target,token,stationId}){
   const q=chosen[selectedMethod()];
   quote.replaceChildren();
   if(!q){quote.textContent='ยังไม่มีราคาสำหรับแพ็กเกจนี้';button.disabled=true;viewSchedule();return;}
-  button.disabled=activeSubscription;
+  button.disabled=activeSubscription||selectionSaved;
   const details=node('div');
   details.append(node('p','ราคาบริการ '+baht(q.subtotalSatang)),
    node('p','ส่วนลด '+baht(q.discountSatang)),
@@ -157,17 +157,18 @@ export function mountStationPlanChoice({target,token,stationId}){
  payment.addEventListener('change',viewPrice);
  switchDate.addEventListener('change',viewSchedule);
  button.addEventListener('click',async()=>{
-  if(!current||activeSubscription)return;
+  if(!current||activeSubscription||selectionSaved)return;
   button.disabled=true;status.textContent='กำลังบันทึกตัวเลือก…';
   try{
    const data=await request('/api/station/billing/select',{
     stationId,planId:current,paymentMethod:selectedMethod(),
    });
+   selectionSaved=true;
    status.textContent=data?.status==='pending_payment'?
     'บันทึกเรียบร้อย · รอชำระเงิน '+baht(data.amountSatang)+' (ยังไม่ได้ตัดเงิน)':
     'บันทึกสำเร็จ';
   }catch{status.textContent='บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';}
-  finally{button.disabled=activeSubscription;}
+  finally{button.disabled=activeSubscription||selectionSaved;}
  });
  load().catch(()=>{status.textContent='โหลดข้อมูลไม่ได้';});
 }
