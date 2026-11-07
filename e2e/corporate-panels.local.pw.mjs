@@ -11,12 +11,15 @@ const end=main.indexOf('`;\n  const $ = id',start);
 if(start<0||end<start)throw new Error('Corporate template not found');
 const corporateMarkup=main.slice(start+'target.innerHTML = `'.length,end);
 if(corporateMarkup.includes('${'))throw new Error('Template has dynamic data; test fixture needs a safe parser');
-const submenus=readFileSync(new URL('../src/client/functional-submenus.js',import.meta.url),'utf8')
+const activeMarker=readFileSync(new URL('../src/client/moving-active-highlight.js',import.meta.url),'utf8')
+ .replace('export function installMovingActiveHighlight','function installMovingActiveHighlight');
+const submenus=activeMarker+'\n'+readFileSync(new URL('../src/client/functional-submenus.js',import.meta.url),'utf8')
  .replace("import {makeIcon} from './icons.js';",`const makeIcon=name=>{
   const el=document.createElementNS('http://www.w3.org/2000/svg','svg');
   el.setAttribute('aria-hidden','true');
   el.setAttribute('width','18');el.setAttribute('height','18');
   el.style.pointerEvents='none';el.dataset.icon=name;return el;};`)
+ .replace("import {installMovingActiveHighlight} from './moving-active-highlight.js';",'')
  .replace('export function installFunctionalSubmenus','function installFunctionalSubmenus')+
  ';window.installFunctionalSubmenus=installFunctionalSubmenus;';
 
