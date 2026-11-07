@@ -7,7 +7,7 @@ test('Playwright uses the visible Create action then validates the directory sub
  assert.match(nav,/stations:\{kind:'stations',start:'directory'\}/);
  assert.match(nav,/pane\('create','สร้างปั๊ม'/);
  assert.match(nav,/pane\('directory','ปั๊มที่สร้างแล้ว'/);
- assert.match(e2e,/\[data-ws-screen="stations"\] > \.os-add-fab/);
+ assert.match(e2e,/\[data-ws-screen="stations"\] > \.ws-screen-head \.os-station-create-cta/);
  assert.match(e2e,/\[data-context-for="stations"\] \[data-os-pane-key="directory"\]/);
  assert.match(e2e,/await addStation\.click\(\)/);
  assert.match(e2e,/await directoryTab\.click\(\)/);
