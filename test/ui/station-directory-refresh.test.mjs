@@ -60,7 +60,7 @@ test('station cards use colored emerald header, gold button, truthful status and
  assert.match(main,/className='os-station-service-list'/);
  assert.match(main,/createInviteControl\(accessToken,'organization'/);
  assert.match(main,/createInviteControl\(accessToken,'station'/);
- assert.match(main,/fuelPriceEditor\(accessToken,s\.id,editor\)/);
+ assert.match(main,/fuelEditor:\(token,id,host\)=>fuelPriceEditor\(token,id,host,\{embedded:true\}\)/);
  assert.match(css,/\.os-station-card-head\{/);
  assert.match(css,/background-image:linear-gradient\(110deg,#143A2D/);
  assert.match(css,/background:linear-gradient\(120deg,#E5D4A8,#C9AB74\)/);

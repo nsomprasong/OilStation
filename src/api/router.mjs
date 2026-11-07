@@ -1,9 +1,11 @@
+import {normalizeStationProfile} from '../domain/station-profile.mjs';
 // An explicitly injected dependency boundary. Unit tests never access Supabase or secrets.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const IDKEY = /^[a-zA-Z0-9_-]{16,128}$/;
 const LIMIT_BYTES = 16_384;
 const allowMethods = { '/api/health': 'GET', '/api/me': 'GET', '/api/fuel-catalog': 'GET', '/api/coupons': 'POST', '/api/invitations/accept': 'POST',
   '/api/invitations/email-challenge':'POST', '/api/invitations/email-confirm':'POST', '/api/my-accounts': 'GET', '/api/bootstrap': 'POST', '/api/fuel-brands': 'GET',
+  '/api/platform/station-profile': 'GET', '/api/platform/station-profile/update': 'POST',
   '/api/platform/stations': 'GET', '/api/platform/create-station': 'POST',
   '/api/platform/sales/stations': 'GET', '/api/platform/sales/create-station': 'POST',
   '/api/station-fuels': 'GET', '/api/station-fuel-config': 'POST',
@@ -402,6 +404,29 @@ export function createApi({ authenticate, db, now = () => new Date() }) {
       }
       if (path === '/api/fuel-brands') {
         return json(200, { brands: await db.fuelBrands() });
+      }
+      if(path==='/api/platform/station-profile'
+        ||path==='/api/platform/station-profile/update'){
+        const admin=active.some(m=>m.scope_type==='platform'
+          &&m.role_code==='platform_superadmin');
+        if(!admin)return fail(403,'permission_denied');
+        let stationId,details;
+        if(path==='/api/platform/station-profile'){
+          stationId=url.searchParams.get('stationId');
+        }else{
+          if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))
+            return fail(415,'unsupported_media_type');
+          const body=await readBody(request);
+          stationId=body?.stationId;
+          if(!body||Array.isArray(body)||Object.keys(body).length!==2)
+            return fail(400,'invalid_station_profile');
+          details=normalizeStationProfile(body.details);
+          if(!details)return fail(400,'invalid_station_profile');
+        }
+        if(!UUID.test(stationId??''))return fail(400,'invalid_station');
+        return json(200,{profile:path==='/api/platform/station-profile'?
+          await db.platformReadStationProfile({actorId:user.id,stationId}):
+          await db.platformUpdateStationProfile({actorId:user.id,stationId,details})});
       }
       if (['/api/platform/stations','/api/platform/create-station',
             '/api/platform/sales/stations','/api/platform/sales/create-station'].includes(path)) {

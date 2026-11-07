@@ -189,6 +189,7 @@ export default {
           }
         }
         const stationPages=new Set(['/api/fuel-brands',
+          '/api/platform/station-profile','/api/platform/station-profile/update',
           '/api/platform/stations','/api/platform/create-station',
           '/api/platform/sales/stations','/api/platform/sales/create-station',
           '/api/invitations/create','/api/invitations/accept',

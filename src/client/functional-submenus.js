@@ -50,7 +50,7 @@ const DESCRIPTORS={
 const taskTitles=new Set(['sales','stations','billing','customers','hr']);
 const taskDescriptions={
  sales:{team:'สมาชิกทีมขายและสิทธิ์ที่ได้รับ',assignment:'สถานีที่อยู่ในความรับผิดชอบตามสิทธิ์',transfer:'ย้ายผู้ดูแลพร้อมตรวจสอบผลและประวัติ',commission:'ยอดค่าคอมมิชชั่นที่บันทึกจริง ไม่ใช่ยอดอนุมัติจ่าย'},
- stations:{create:'สร้างบัญชีสถานีใหม่ตามสิทธิ์',directory:'รายการสถานีที่บัญชีนี้มีสิทธิ์ดูแล',fuel:'กำหนดสินค้าและราคาของสถานี'},
+ stations:{create:'สร้างบัญชีสถานีใหม่ตามสิทธิ์',directory:'เลือกปั๊มเพื่อดูรายละเอียด ข้อมูลภาษี และราคาน้ำมัน'},
  billing:{plans:'ดูแพ็กเกจและเงื่อนไขที่บันทึกไว้',editor:'เพิ่มหรือแก้ไขข้อมูลแพ็กเกจ',tax:'ตรวจสอบและแก้ไขนโยบายภาษี'},
  customers:{credit:'ยอดพร้อมใช้และบัญชีลูกค้าของสถานี',new:'เปิดบัญชีบริษัทลูกค้าและเชิญผู้ดูแล',link:'ส่งคำขอเชื่อมบริษัทที่มีอยู่แล้ว',report:'รายการเติมน้ำมันที่จบจริง แยกทะเบียนรถ'},
  hr:{people:'รายชื่อและข้อมูลพนักงาน',access:'ตั้งค่าบัญชีและการลงเวลาตามพื้นที่',
@@ -96,8 +96,8 @@ function build(screen,key){
   const entries=[
    pane('create','สร้างปั๊ม','user-plus',[create]),
    pane('directory','ปั๊มที่สร้างแล้ว','building',[directory])];
-  const fuel=widget.querySelector(':scope > #fuel-editor');
-  if(fuel)entries.push(pane('fuel','ตั้งค่าน้ำมัน','fuel',[fuel]));
+  // Station fuel prices live inside the chosen station's Details form.
+  // Never expose a station-ambiguous "Fuel Settings" contextual menu.
   return entries.map(wrapPane).filter(Boolean);
  }
  if(cfg.kind==='billing'){

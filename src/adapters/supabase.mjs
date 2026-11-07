@@ -1049,6 +1049,17 @@ export function createSupabaseAdapter(env) {
           }),
         });
       },
+      platformReadStationProfile: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_read_station_profile',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId}),
+        }),
+      platformUpdateStationProfile: async d=>serviceRequest(env,
+        '/rest/v1/rpc/platform_update_station_profile',{
+          method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify({p_actor_id:d.actorId,p_station_id:d.stationId,
+            p_details:d.details}),
+        }),
       platformStations: async (actorId) => {
         return serviceRequest(env, '/rest/v1/rpc/platform_station_overview', {
           method:'POST',headers:{'content-type':'application/json'},
