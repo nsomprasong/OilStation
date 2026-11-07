@@ -2372,3 +2372,77 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
   will-change:auto;
  }
 }
+
+/* Station GPS + OpenStreetMap picker. One OilStation design token source. */
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-picker{
+ grid-column:1/-1;display:grid;gap:11px;min-width:0;
+ padding:14px;border:1px solid #C6D3C4;border-radius:var(--os-r-sm);
+ background:linear-gradient(140deg,#ECF2E8 0%,#F8F6EC 100%);
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-toolbar{
+ display:flex;align-items:center;justify-content:space-between;
+ flex-wrap:wrap;gap:10px 15px;min-width:0;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-toolbar>strong{
+ font-size:13px;font-weight:760;color:#1B5139;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-actions{
+ display:flex;gap:9px;flex-wrap:wrap;align-items:center;min-width:0;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-actions>.button{
+ margin:0;min-height:41px;padding:9px 14px;
+ border-radius:var(--os-control-r);font-size:12px;font-weight:720;
+ white-space:normal;
+ border:1px solid #C0CDBD;color:#1C4B36;background:#FFFDF6;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-actions>.os-station-location-gps{
+ color:#194635;border-color:#C8A966;
+ background:linear-gradient(125deg,#F6E9CA,#DFCCA0);
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-actions>.button:focus-visible{
+ outline:3px solid #D2AF71;outline-offset:2px;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-feedback{
+ margin:0;font-size:11px;line-height:1.65;color:#53715B;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-feedback[data-tone="success"]{
+ color:#1F6B43;font-weight:700;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-feedback[data-tone="warning"]{
+ color:#885623;font-weight:650;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-map-wrap{
+ display:grid;gap:10px;min-width:0;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-map-wrap[hidden]{
+ display:none!important;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-map{
+ position:relative;isolation:isolate;min-width:0;
+ width:100%;height:clamp(260px,36vw,395px);
+ border:1px solid #AEC4B0;border-radius:12px;overflow:hidden;
+ background:#DEE6DA;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-map.leaflet-container{
+ font-family:inherit;font-size:12px;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-map .leaflet-control-attribution{
+ background:#FFFDF5D9;color:#244D38;font-size:10px;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-location-help{
+ margin:0;font-size:11px;line-height:1.6;color:#486551;
+}
+@media(max-width:650px){
+ #app.workspace-mode [data-ws-screen="stations"] .os-station-location-toolbar{
+  align-items:stretch;flex-direction:column;
+ }
+ #app.workspace-mode [data-ws-screen="stations"] .os-station-location-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+ }
+ #app.workspace-mode [data-ws-screen="stations"] .os-station-location-actions>.button{
+  min-width:0;padding:9px 7px;
+ }
+ #app.workspace-mode [data-ws-screen="stations"] .os-station-location-map{
+  height:290px;
+ }
+}
