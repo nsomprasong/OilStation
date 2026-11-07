@@ -120,7 +120,7 @@ test('P-02/P-10 real Sales browser, API, Supabase and audit @auth', async ({ bro
       // Progressive Workspace intentionally hides its create form and its
       // functional tab until the user presses the visible "+" action.
       // Follow the real UI, never force DOM visibility or dispatch fake events.
-      const addStation = page.locator('[data-ws-screen="stations"] > .os-add-fab');
+      const addStation = page.locator('[data-ws-screen="stations"] > .ws-screen-head .os-station-create-cta');
       await expect(addStation).toBeVisible();
       await addStation.click();
       await expect(page.locator('#new-station-form')).toBeVisible();
