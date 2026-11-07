@@ -101,6 +101,23 @@ function enableCreation(screen,key,task){
  };
  form.addEventListener('os:create-show',show);
  form.addEventListener('os:create-hide',hide);
+ if(key==='stations'){
+  const heading=screen.querySelector(':scope > .ws-screen-head');
+  if(heading&&!heading.querySelector('.os-station-create-cta')){
+   const action=makeButton('สร้างปั๊ม','plus','os-station-create-cta');
+   action.setAttribute('aria-controls',form.id||'');
+   action.setAttribute('aria-expanded','false');
+   action.addEventListener('click',()=>fab.click());
+   const sync=open=>{
+    action.setAttribute('aria-expanded',String(open));
+    const title=action.querySelector('span');
+    if(title)title.textContent=open?'ปิดแบบฟอร์ม':'สร้างปั๊ม';
+   };
+   form.addEventListener('os:create-show',()=>sync(true));
+   form.addEventListener('os:create-hide',()=>sync(false));
+   heading.append(action);
+  }
+ }
  fab.addEventListener('click',()=>{
   if(form.dataset.osBusy==='true')return;
   if(surface.hidden){form.dispatchEvent(new Event('os:prepare-create'));show();}
