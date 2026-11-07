@@ -2,6 +2,7 @@
 // these endpoints; Sales can still hand off initial owners from their cards.
 import {normalizeStationProfile,profileTextLimits} from '../domain/station-profile.mjs';
 import {makeIcon} from './icons.js';
+import {mountStationLocationPicker,disposeStationLocationPicker} from './station-location-picker.js';
 const sections=[
  {name:'ข้อมูลปั๊มน้ำมันและที่ตั้ง',fields:[
   ['stationName','ชื่อปั๊ม / สาขา','text',true],
@@ -47,6 +48,7 @@ export async function mountPlatformStationDetails({
  target,station,token,getApi,fuelEditor,onBack,onSaved,
 }){
  if(!target)return;
+ disposeStationLocationPicker(target);
  target.replaceChildren();target.hidden=false;
  target.dataset.stationId=station.id;
  const heading=document.createElement('div');heading.className='os-profile-page-heading';
@@ -108,6 +110,9 @@ export async function mountPlatformStationDetails({
    taxNote.className='os-profile-tax-note os-profile-wide';
    taxNote.textContent='ข้อมูลนี้เป็นข้อมูลผู้ออกใบกำกับภาษีของปั๊ม ไม่ใช่การออกใบกำกับภาษีอัตโนมัติ หากระบุว่าจด VAT ต้องกรอกชื่อผู้ประกอบการ เลขภาษี รหัสสาขา และที่อยู่ให้ครบ';
    fields.append(taxNote);
+  }
+  if(section.name==='ข้อมูลปั๊มน้ำมันและที่ตั้ง'){
+   mountStationLocationPicker({panel:target,fields});
   }
   block.append(header,fields);form.append(block);
  }
