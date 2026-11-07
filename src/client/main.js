@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import {filterStationDirectory,stationEnabledModules,stationServiceStatus} from './station-directory-model.js';
+import {mountPlatformStationDetails} from './platform-station-details.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountHrAccessSetup } from './hr-access-setup.js';
 import {mountHrPayeeAdvance} from './hr-payments.js';
@@ -1175,12 +1176,14 @@ async function stationCorporateWorkspace(accessToken,stationId,target,{qaMode=fa
   });
 }
 
-async function fuelPriceEditor(accessToken,stationId,target,{qaDemo=false}={}) {
+async function fuelPriceEditor(accessToken,stationId,target,{qaDemo=false,embedded=false}={}) {
   if (!target) return;
   target.replaceChildren();
-  const title=document.createElement('h2');
-  title.textContent='ตั้งราคาน้ำมันและเปิดใช้งาน';
-  target.appendChild(title);
+  if(!embedded){
+    const title=document.createElement('h2');
+    title.textContent='ตั้งราคาน้ำมันและเปิดใช้งาน';
+    target.appendChild(title);
+  }
   const hint=document.createElement('p');
   hint.textContent=qaDemo?
     'ปั๊ม QA: ใช้ราคาทดสอบสมมติ ดีเซล 32.50 และแก๊สโซฮอล์ 95 35.90 บาท/ลิตร · ต้องกดบันทึกผ่านเว็บจริง':
@@ -1597,7 +1600,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         <div class="os-station-directory-heading">
           <div class="os-station-directory-heading-copy">
             <h3 id="os-directory-heading">${salesMode?'ปั๊มที่ฉันรับผิดชอบ':'รายการปั๊มน้ำมันทั้งหมด'}</h3>
-            <p class="os-section-copy">${salesMode?'จัดการปั๊มที่ได้รับมอบหมาย และเชิญเจ้าของเริ่มต้นตามสิทธิ์':'ดูแลรายการปั๊ม ตั้งค่าน้ำมัน และเชิญเจ้าของปั๊ม' }</p>
+            <p class="os-section-copy">${salesMode?'จัดการปั๊มที่ได้รับมอบหมาย และเชิญเจ้าของเริ่มต้นตามสิทธิ์' :'แก้ไขข้อมูลปั๊ม ใบกำกับภาษี และราคาน้ำมันภายในแต่ละปั๊ม' }</p>
           </div>
           <span id="station-count" class="os-directory-count" role="status">กำลังโหลด…</span>
         </div>
@@ -1621,9 +1624,9 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         <div id="station-list" class="module-list os-station-grid" role="list" aria-live="polite" aria-busy="true">
           <p class="os-directory-message">กำลังโหลดรายชื่อปั๊ม…</p>
         </div>
+        <div id="station-details-panel" class="os-station-details-panel" hidden></div>
       </section>
     </div>
-    <div id="fuel-editor"></div>
   `;
   const el=id=>document.getElementById(id);
   const notice=(text,error=false)=>{
@@ -1632,6 +1635,32 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
     el('platform-notice').dataset.tone=error?'error':'neutral';
   };
   let stationRows=[];
+  const detailsTarget=el('station-details-panel');
+  const listPanel=el('station-list');
+  const headingPanel=target.querySelector('.os-station-directory-heading');
+  const toolsPanel=target.querySelector('.os-station-directory-tools');
+  const closeDetails=()=>{
+    detailsTarget.hidden=true;detailsTarget.replaceChildren();
+    detailsTarget.removeAttribute('data-station-id');
+    headingPanel.hidden=false;toolsPanel.hidden=false;listPanel.hidden=false;
+    target.querySelector('.os-station-directory')?.scrollIntoView({block:'start',behavior:'smooth'});
+  };
+  const openDetails=async station=>{
+    if(salesMode)return;
+    headingPanel.hidden=true;toolsPanel.hidden=true;listPanel.hidden=true;
+    detailsTarget.hidden=false;
+    detailsTarget.scrollIntoView({block:'start',behavior:'smooth'});
+    await mountPlatformStationDetails({
+      target:detailsTarget,station,token:accessToken,getApi,
+      fuelEditor:(token,id,host)=>fuelPriceEditor(token,id,host,{embedded:true}),
+      onBack:closeDetails,
+      onSaved:profile=>{
+        const current=stationRows.find(s=>s.id===profile.stationId);
+        if(current)current.stationName=profile.stationName;
+        renderStations();
+      },
+    });
+  };
   const search=el('station-query');
   const filter=el('station-filter');
   function renderStations(){
@@ -1686,23 +1715,12 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         if(toggles[0])toggles[0].textContent='เชิญเจ้าขององค์กร';
         if(toggles[1])toggles[1].textContent='เชิญเจ้าของปั๊ม';
       }else{
-        const manage=document.createElement('button');
-        manage.type='button';manage.className='button os-station-manage';
-        manage.textContent='ตั้งค่าน้ำมัน';
-        manage.addEventListener('click',async()=>{
-          if(manage.disabled)return;
-          manage.disabled=true;
-          const editor=el('fuel-editor');editor.replaceChildren();
-          try{
-            await fuelPriceEditor(accessToken,s.id,editor);
-            editor.scrollIntoView({block:'start',behavior:'smooth'});
-          }catch{notice('เปิดจัดการน้ำมันไม่ได้',true);}
-          finally{manage.disabled=false;}
-        });
-        const invite=createInviteControl(accessToken,'station',s.id,[['station_owner','เจ้าของปั๊ม']]);
-        const button=invite.querySelector(':scope > button');
-        if(button)button.textContent='เชิญเจ้าของ';
-        actions.append(manage,invite);
+        const edit=document.createElement('button');
+        edit.type='button';edit.className='button os-station-manage';
+        edit.textContent='แก้ไขรายละเอียด';
+        edit.setAttribute('aria-label','แก้ไขรายละเอียด '+(s.stationName||'ปั๊มน้ำมัน'));
+        edit.addEventListener('click',()=>{void openDetails(s);});
+        actions.append(edit);
       }
       node.append(head,content,actions);
       frag.append(node);
