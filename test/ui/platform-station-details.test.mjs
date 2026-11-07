@@ -12,9 +12,10 @@ test('no ambiguous platform Fuel tab: only cards open a station-bound detail pan
   main.indexOf('function dashboard(',main.indexOf('async function platformWorkspace(')));
  assert.match(scope,/id="station-details-panel"/);
  assert.doesNotMatch(scope,/id="fuel-editor"/);
- assert.match(scope,/void openDetails\(s\)/);
+ assert.match(scope,/void openDetails\(s,edit\)/);
  assert.match(scope,/fuelEditor:\(token,id,host\)=>fuelPriceEditor\(token,id,host,\{embedded:true\}\)/);
- assert.match(scope,/edit\.textContent='แก้ไขรายละเอียด'/);
+ assert.match(scope,/edit\.append\(makeIcon\('edit'\)\)/);
+ assert.match(scope,/edit\.setAttribute\('aria-label',edit\.title\)/);
  assert.match(scope,/headingPanel\.hidden=true;toolsPanel\.hidden=true;listPanel\.hidden=true/);
  assert.match(scope,/onBack:closeDetails/);
  assert.doesNotMatch(nav,/pane\('fuel','ตั้งค่าน้ำมัน'/);
