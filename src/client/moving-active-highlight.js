@@ -18,6 +18,7 @@ export function installMovingActiveHighlight(rail,{
  rail.dataset.osHighlightLayout=layout;
  rail.prepend(indicator);
  let key=null,hasPosition=false,frame=0,observed=null;
+ let lastRailWidth=0,lastRailHeight=0,lastButtonWidth=0,lastButtonHeight=0;
  const motionReduced=()=>typeof matchMedia==='function'&&
   matchMedia('(prefers-reduced-motion: reduce)').matches;
  const getButton=value=>[...rail.querySelectorAll(selector)].find(button=>
@@ -52,6 +53,19 @@ export function installMovingActiveHighlight(rail,{
   return true;
  }
  const observer=typeof ResizeObserver==='function'?new ResizeObserver(()=>{
+  if(key===null)return;
+  const railRect=rail.getBoundingClientRect();
+  const selected=getButton(key);
+  const targetRect=selected?.getBoundingClientRect();
+  if(!targetRect)return;
+  // ResizeObserver delivers an initial notification whenever we observe a
+  // *new* active button. It is NOT a resize: snapping here would cancel the
+  // 520ms A→B transition on every click.
+  const changed=Math.abs(railRect.width-lastRailWidth)>.5||
+   Math.abs(railRect.height-lastRailHeight)>.5||
+   Math.abs(targetRect.width-lastButtonWidth)>.5||
+   Math.abs(targetRect.height-lastButtonHeight)>.5;
+  if(!changed)return;
   cancelAnimationFrame(frame);
   frame=requestAnimationFrame(()=>align(true));
  }):null;
@@ -63,7 +77,11 @@ export function installMovingActiveHighlight(rail,{
    if(observed)observer.unobserve(observed);
    observed=target;observer.observe(target);
   }
-  return apply(geometry(target.getBoundingClientRect()),snap);
+  const box=target.getBoundingClientRect();
+  const container=rail.getBoundingClientRect();
+  lastRailWidth=container.width;lastRailHeight=container.height;
+  lastButtonWidth=box.width;lastButtonHeight=box.height;
+  return apply(geometry(box),snap);
  }
  function select(next,{snap=false}={}){
   if(typeof next!=='string'||!next)return apply(null);
@@ -91,11 +109,6 @@ export function installMovingActiveHighlight(rail,{
   items[dest].click(); // Use the existing authorized navigation handler.
  }
  rail.addEventListener('keydown',onKeys);
- rail.addEventListener('scroll',onScroll,{passive:true});
- function onScroll(){
-  cancelAnimationFrame(frame);
-  frame=requestAnimationFrame(()=>align(true));
- }
  observer?.observe(rail);
  if(fromRect&&geometry(fromRect))apply(geometry(fromRect),true);
  else{
@@ -111,7 +124,6 @@ export function installMovingActiveHighlight(rail,{
    cancelAnimationFrame(frame);
    observer?.disconnect();
    rail.removeEventListener('keydown',onKeys);
-   rail.removeEventListener('scroll',onScroll);
    indicator.remove();
    rail.classList.remove('os-moving-active-rail');
    delete rail.dataset.osHighlightReady;
