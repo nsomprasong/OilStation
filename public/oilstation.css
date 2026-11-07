@@ -2319,3 +2319,56 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  #app.workspace-mode [data-ws-screen="stations"] .os-profile-fuel-body{grid-template-columns:1fr}
  #app.workspace-mode [data-ws-screen="stations"] .os-profile-page-heading{align-items:flex-start}
 }
+
+/* Station card -> details: edit-origin zoom, both ways (no extra CSS bundle).
+   Sales invitation controls keep their existing layout. */
+#app.workspace-mode [data-ws-screen="stations"] .os-station-card--editable .os-station-actions{
+ display:flex;justify-content:flex-end;align-items:center;flex-wrap:nowrap;
+ margin-top:auto;padding:0 12px 12px;border-top:0;gap:0;
+ background:linear-gradient(155deg,#F9F8F0,#F4F3E9);
+}
+#app.workspace-mode [data-ws-screen="stations"]
+ .os-station-card--editable .os-station-actions>.os-station-edit-icon.button{
+ flex:0 0 42px!important;
+ display:inline-flex;align-items:center;justify-content:center;
+ width:42px!important;height:42px!important;
+ min-width:42px!important;max-width:42px!important;
+ min-height:42px!important;max-height:42px!important;
+ padding:0!important;margin:0!important;
+ border:1px solid #B59357!important;
+ border-radius:13px!important;
+ color:#1B4833;
+ background:linear-gradient(135deg,#F1DCA9 0%,#C3A065 100%);
+ box-shadow:inset 0 2px 0 #FFF4D2,0 5px 13px #123C2930;
+ cursor:pointer;
+ transition:transform 170ms cubic-bezier(.2,.8,.2,1),
+  box-shadow 170ms ease,filter 170ms ease;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-edit-icon .app-icon{
+ width:19px;height:19px;stroke-width:2.1;flex:none;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-edit-icon:hover{
+ transform:translateY(-2px) scale(1.04);
+ filter:brightness(1.045);
+ box-shadow:inset 0 2px 0 #FFF4D2,0 8px 17px #123C2940;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-edit-icon:active{
+ transform:scale(.86) rotate(-7deg);filter:brightness(.98);
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-edit-icon:focus-visible{
+ outline:3px solid #DCB874;outline-offset:3px;
+}
+#app.workspace-mode [data-ws-screen="stations"] .os-station-details-panel.os-station-morphing{
+ position:relative;z-index:2;
+ transform-origin:center center;
+ will-change:transform,opacity,clip-path;
+ backface-visibility:hidden;
+}
+@media(prefers-reduced-motion:reduce){
+ #app.workspace-mode [data-ws-screen="stations"] .os-station-edit-icon{
+  transition:none!important;
+ }
+ #app.workspace-mode [data-ws-screen="stations"] .os-station-details-panel.os-station-morphing{
+  will-change:auto;
+ }
+}
