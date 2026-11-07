@@ -207,7 +207,8 @@ export function installFunctionalSubmenus(root){
   // Hide only its contextual nav; preserve its mounted forms and the standard
   // non-Home workflow selection for all other screens.
   const singleInvitation=state.key==='invitations'&&available.length===1;
-  if(state.nav.hidden!==singleInvitation)state.nav.hidden=singleInvitation;
+  const noMenu=singleInvitation||available.length===0;
+  if(state.nav.hidden!==noMenu)state.nav.hidden=noMenu;
   const signature=singleInvitation?'':available.map(p=>p.id).join('|');
   // A lazy screen can have mounted panes but an emptied/replaced contextual nav.
   // Detect missing buttons and restore only the nav, retaining all loaded forms.
@@ -238,7 +239,7 @@ export function installFunctionalSubmenus(root){
    }
    state.marker?.dispose();
    state.nav.replaceChildren(frag);
-   state.marker=singleInvitation?null:installMovingActiveHighlight(state.nav,{
+   state.marker=noMenu?null:installMovingActiveHighlight(state.nav,{
     selector:'button[data-os-pane-key]',keyAttribute:'osPaneKey',layout:'horizontal',
    });
   }
