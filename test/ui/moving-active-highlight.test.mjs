@@ -37,7 +37,7 @@ test('both sidebar and mobile dock keep one selected location and role filtered 
  assert.doesNotMatch(renderMobileNav(screens),/data-ws-go="finance"/);
 });
 test('functional tabs morph across real authorized task buttons without changing pane selection',()=>{
- assert.match(functional,/state\.marker=singleInvitation\?null:installMovingActiveHighlight/);
+ assert.match(functional,/state\.marker=noMenu\?null:installMovingActiveHighlight/);
  assert.match(functional,/selector:'button\[data-os-pane-key\]'/);
  assert.match(functional,/state\.marker\?\.select\(id\)/);
  assert.match(functional,/state\.marker\?\.dispose\(\)/);
