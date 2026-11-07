@@ -5,7 +5,7 @@ masterCase({id:MASTER_UAT_ID,description:'sales-unsaved-station-draft-survives-h
  check:async({page,auth,headers,expect,BASE})=>{
 await page.locator('[data-ws-screen="overview"] [data-ws-go="stations"]:visible').first().click();
 await expect(page.locator('[data-ws-screen="stations"]:visible')).toBeVisible();
-const add=page.locator('[data-ws-screen="stations"] > .os-add-fab');await expect(add).toBeVisible();await add.click();
+const add=page.locator('[data-ws-screen="stations"] > .ws-screen-head .os-station-create-cta');await expect(add).toBeVisible();await add.click();
 const form=page.locator('#new-station-form');await expect(form).toBeVisible();
 await expect(form).toHaveAttribute('data-os-station-submit-ready','true',{timeout:18000});
 const org='QA UNSAVED DRAFT 097';const station='QA NOT CREATED 097';
