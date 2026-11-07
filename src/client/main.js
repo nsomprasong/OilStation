@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import {filterStationDirectory,stationEnabledModules,stationServiceStatus} from './station-directory-model.js';
 import {mountPlatformStationDetails} from './platform-station-details.js';
+import {disposeStationLocationPicker} from './station-location-picker.js';
 import {editIconRect,morphStationDetails} from './station-card-morph.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountHrAccessSetup } from './hr-access-setup.js';
@@ -1654,6 +1655,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
       await morphStationDetails(detailsTarget,sourceIconRect,{direction:'close'});
     }finally{
       // Always restore navigation, even if animations are unavailable/cancelled.
+      disposeStationLocationPicker(detailsTarget);
       detailsTarget.hidden=true;detailsTarget.replaceChildren();
       detailsTarget.removeAttribute('data-station-id');
       headingPanel.hidden=false;toolsPanel.hidden=false;listPanel.hidden=false;
