@@ -28,7 +28,7 @@ BEGIN
  IF after->>'invoiceTaxId'<>'0123456789012'
   OR after->>'invoiceBranchCode'<>'00000'
   OR after->>'invoiceAddress'<>'QA Invoice Address'
-  OR after->>'latitude'<>'13.7563'
+  OR (after->>'latitude')::numeric<>13.7563
   OR after->>'stationPhone'<>'021234567'
   OR after->'vatRegistered'<>'true'::jsonb
  THEN RAISE EXCEPTION 'QA station save/read failed';END IF;
