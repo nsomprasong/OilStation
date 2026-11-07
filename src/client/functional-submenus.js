@@ -1,4 +1,5 @@
 import {makeIcon} from './icons.js';
+import {installMovingActiveHighlight} from './moving-active-highlight.js';
 
 /** One functional task at a time; never promote data-record cards to navigation. */
 const DESCRIPTORS={
@@ -191,6 +192,7 @@ export function installFunctionalSubmenus(root){
    if(active)button.setAttribute('aria-current','true');
    else button.removeAttribute('aria-current');
   }
+  state.marker?.select(id);
   if(focus)state.nav.scrollIntoView?.({block:'nearest',behavior:'smooth'});
   return true;
  }
@@ -205,7 +207,8 @@ export function installFunctionalSubmenus(root){
   // Hide only its contextual nav; preserve its mounted forms and the standard
   // non-Home workflow selection for all other screens.
   const singleInvitation=state.key==='invitations'&&available.length===1;
-  if(state.nav.hidden!==singleInvitation)state.nav.hidden=singleInvitation;
+  const noMenu=singleInvitation||available.length===0;
+  if(state.nav.hidden!==noMenu)state.nav.hidden=noMenu;
   const signature=singleInvitation?'':available.map(p=>p.id).join('|');
   // A lazy screen can have mounted panes but an emptied/replaced contextual nav.
   // Detect missing buttons and restore only the nav, retaining all loaded forms.
@@ -234,7 +237,11 @@ export function installFunctionalSubmenus(root){
     });
     frag.append(button);
    }
+   state.marker?.dispose();
    state.nav.replaceChildren(frag);
+   state.marker=noMenu?null:installMovingActiveHighlight(state.nav,{
+    selector:'button[data-os-pane-key]',keyAttribute:'osPaneKey',layout:'horizontal',
+   });
   }
   if(!available.some(p=>p.id===state.selected)){
    const preferred=available.find(p=>p.id===state.start)||available[0];
@@ -263,12 +270,14 @@ export function installFunctionalSubmenus(root){
     if(!state||!state.panes.some(p=>p.wrapper?.isConnected)){
      const panes=build(screen,key);
      if(!panes.length)continue;
+     state?.marker?.dispose();
      state={key,panes,nav,selected:state?.selected||null,
-      start:DESCRIPTORS[key]?.start||panes[0].id,signature:null};
+      start:DESCRIPTORS[key]?.start||panes[0].id,signature:null,marker:null};
      states.set(key,state);
     }else if(state.nav!==nav){
      // The outer workspace may replace the contextual menu but not its panes.
-     state.nav=nav;state.signature=null;
+     state.marker?.dispose();
+     state.nav=nav;state.signature=null;state.marker=null;
     }
     syncState(state);
    }
@@ -293,5 +302,8 @@ export function installFunctionalSubmenus(root){
   }
  });
  queueMicrotask(reconcile);
- return {reconcile,disconnect:()=>observer.disconnect()};
+ return {reconcile,disconnect:()=>{
+  observer.disconnect();
+  for(const state of states.values())state.marker?.dispose();
+ }};
 }

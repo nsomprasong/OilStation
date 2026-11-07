@@ -3,6 +3,7 @@ import {renderLogoutDialog,wireLogoutDialog} from './logout-dialog.js';
 import {readNavUsage,saveNavUsage,incrementNavUsage} from './nav-preferences.js';
 import {decorateIcons} from './icons.js';
 import {renderWorkspaceCategories} from './workspace-categories.js';
+import {installMovingActiveHighlight} from './moving-active-highlight.js';
 
 export function selectWorkspaceScreens(memberships=[]){
  const has=(scope,roles)=>memberships.some(m=>m.scopeType===scope&&roles.includes(m.role));
@@ -114,6 +115,10 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
  const views=[...root.querySelectorAll('[data-ws-screen]')];
  const allowed=new Set(views.map(v=>v.dataset.wsScreen));
  const shell=root.querySelector('[data-workspace-shell]');
+ const desktopHighlight=installMovingActiveHighlight(root.querySelector('.os-desktop-side-nav'),{
+  selector:'.os-desktop-side-link[data-ws-go]',keyAttribute:'wsGo',layout:'vertical',
+ });
+ let mobileHighlight=null;
  const current=root.querySelector('#ws-current');
  const groups=[...root.querySelectorAll('[data-context-for]')];
  const homeSearch=root.querySelector('[data-mobile-search-input]');
@@ -132,8 +137,21 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
  const bottom=()=>{
   const nav=root.querySelector('.os-mobile-bottom');
   if(!nav)return;
-  nav.outerHTML=renderMobileNav(screens,counts);
-  decorateIcons(root.querySelector('.os-mobile-bottom'));
+  const markup=renderMobileNav(screens,counts);
+  const before=[...nav.querySelectorAll('button[data-ws-go]')].map(x=>x.dataset.wsGo);
+  const after=[...markup.matchAll(/data-ws-go="([^"]+)"/g)].map(x=>x[1]);
+  // Preserve the same indicator element during ordinary Home navigation.
+  // Only rebuild the frequency-ranked dock when its authorized keys change.
+  if(mobileHighlight&&before.join('|')===after.join('|'))return;
+  const previous=nav.querySelector('button[aria-current="page"]')?.getBoundingClientRect()||null;
+  mobileHighlight?.dispose();
+  nav.outerHTML=markup;
+  const dock=root.querySelector('.os-mobile-bottom');
+  decorateIcons(dock);
+  mobileHighlight=installMovingActiveHighlight(dock.querySelector('.os-mobile-dock-inner'),{
+   selector:'button.os-mobile-tab[data-ws-go]',keyAttribute:'wsGo',
+   layout:'horizontal',fromRect:previous,
+  });
  };
  const navigateTo=(key,{track=false}={})=>{
   if(!allowed.has(key))return false;
@@ -155,6 +173,10 @@ export function wireWorkspaceNavigation(root,{screens=[],userId=null}={}){
    if(active)button.setAttribute('aria-current','page');
    else button.removeAttribute('aria-current');
   });
+  // One backdrop moves A → B. For restored sessions we snap instead of
+  // implying a click; business navigation and permission checks stay above.
+  desktopHighlight?.select(key,{snap:!track});
+  mobileHighlight?.select(key,{snap:!track});
   try{sessionStorage.setItem('oilstation_last_workspace',key);}catch{}
   shell?.dispatchEvent(new CustomEvent('oilstation:screenchange',{detail:{key}}));
   root.querySelector('.ws-main')?.scrollIntoView?.({block:'start',behavior:'auto'});
