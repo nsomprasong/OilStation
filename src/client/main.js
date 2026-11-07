@@ -1734,7 +1734,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
       message.textContent='โหลดรายการปั๊มไม่สำเร็จ กรุณาลองใหม่';
       const retry=document.createElement('button');retry.type='button';
       retry.className='button secondary';retry.textContent='ลองโหลดอีกครั้ง';
-      retry.addEventListener('click',()=>{void loadStations();});
+      retry.addEventListener('click',()=>{void loadStations().catch(()=>{});});
       error.append(message,retry);list.replaceChildren(error);
       throw new Error('station_list_failed');
     }
