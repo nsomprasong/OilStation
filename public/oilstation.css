@@ -2157,3 +2157,12 @@ body:has(#app.auth-mode)>.shell>.topbar,body:has(#app.auth-mode)>.shell>footer{d
  #app.workspace-mode [data-ws-screen="stations"] .os-station-card,
  #app.workspace-mode [data-ws-screen="stations"] .os-station-create-cta{transition:none!important}
 }
+
+/* Main navigation: compact spacing, readable long labels, unchanged ANM-NAV-001 movement. */
+@media(min-width:851px){
+ #app.workspace-mode .os-desktop-side-nav{gap:4px}
+ #app.workspace-mode .os-desktop-side-link{
+  min-height:44px;padding:6px 11px;gap:10px;line-height:1.42;
+ }
+ #app.workspace-mode .os-desktop-side-copy{min-width:0;overflow-wrap:anywhere}
+}
