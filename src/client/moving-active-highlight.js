@@ -10,6 +10,10 @@ export function installMovingActiveHighlight(rail,{
  selector='button[data-ws-go]',keyAttribute='wsGo',layout='horizontal',fromRect=null,
 }={}){
  if(!rail)return null;
+ // Old-CSS browser fixtures do not yet have .os-moving-active-rail.
+ // Anchor the absolute layer to this rail to prevent page overflow on 320px.
+ const priorInlinePosition=rail.style.position;
+ if(getComputedStyle(rail).position==='static')rail.style.position='relative';
  const indicator=document.createElement('span');
  indicator.className='os-moving-active-indicator';
  indicator.setAttribute('aria-hidden','true');
@@ -130,6 +134,7 @@ export function installMovingActiveHighlight(rail,{
    rail.removeEventListener('keydown',onKeys);
    indicator.remove();
    rail.classList.remove('os-moving-active-rail');
+   rail.style.position=priorInlinePosition;
    delete rail.dataset.osHighlightReady;
    delete rail.dataset.osHighlightLayout;
   },
