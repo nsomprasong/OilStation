@@ -1640,6 +1640,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
   const headingPanel=target.querySelector('.os-station-directory-heading');
   const toolsPanel=target.querySelector('.os-station-directory-tools');
   const closeDetails=()=>{
+    delete target.closest('[data-ws-screen="stations"]')?.dataset.osDetailOpen;
     detailsTarget.hidden=true;detailsTarget.replaceChildren();
     detailsTarget.removeAttribute('data-station-id');
     headingPanel.hidden=false;toolsPanel.hidden=false;listPanel.hidden=false;
@@ -1647,6 +1648,8 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
   };
   const openDetails=async station=>{
     if(salesMode)return;
+    const screen=target.closest('[data-ws-screen="stations"]');
+    if(screen)screen.dataset.osDetailOpen='true';
     headingPanel.hidden=true;toolsPanel.hidden=true;listPanel.hidden=true;
     detailsTarget.hidden=false;
     detailsTarget.scrollIntoView({block:'start',behavior:'smooth'});
