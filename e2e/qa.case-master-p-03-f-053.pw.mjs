@@ -5,7 +5,7 @@ masterCase({id:MASTER_UAT_ID,description:'sales-reopen-create-draft-without-savi
  check:async({page,auth,headers,expect,BASE})=>{
 await page.locator('[data-ws-screen="overview"] [data-ws-go="stations"]:visible').first().click();
 await expect(page.locator('[data-ws-screen="stations"]:visible')).toBeVisible();
-const add=page.locator('[data-ws-screen="stations"] > .os-add-fab');
+const add=page.locator('[data-ws-screen="stations"] > .ws-screen-head .os-station-create-cta');
 await expect(add).toBeVisible({timeout:16000});await add.click();
 const form=page.locator('#new-station-form');await expect(form).toBeVisible();
 await expect(form.locator('#module-qr')).toBeChecked();await expect(form.locator('#module-hr')).not.toBeChecked();

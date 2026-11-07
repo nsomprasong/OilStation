@@ -172,7 +172,7 @@ export function installFunctionalSubmenus(root){
    if(description&&description.textContent!==descriptions[id])
     description.textContent=descriptions[id]||found.label;
   }
-  if(taskTitles.has(key)){
+  if(taskTitles.has(key)&&key!=='stations'){
    const screen=root.querySelector('[data-ws-screen="'+key+'"]');
    const heading=screen?.querySelector('.ws-screen-head h2');
    const description=screen?.querySelector('.ws-screen-head p');

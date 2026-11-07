@@ -7,7 +7,7 @@ const branded=await page.request.get(BASE+'/api/fuel-brands',{headers});expect(b
 const brands=(await branded.json()).brands;expect(Array.isArray(brands)).toBe(true);
 expect(brands.some(x=>x.code==='PTT')).toBe(true);
 await page.locator('[data-ws-screen="overview"] [data-ws-go="stations"]:visible').first().click();
-const add=page.locator('[data-ws-screen="stations"] > .os-add-fab');await expect(add).toBeVisible();await add.click();
+const add=page.locator('[data-ws-screen="stations"] > .ws-screen-head .os-station-create-cta');await expect(add).toBeVisible();await add.click();
 const form=page.locator('#new-station-form');await expect(form).toBeVisible();
 await expect(form).toHaveAttribute('data-os-station-submit-ready','true',{timeout:22000});
 const select=form.locator('#brand-select');await expect.poll(()=>select.locator('option').count(),{timeout:12000}).toBeGreaterThan(1);

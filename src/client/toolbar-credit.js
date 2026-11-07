@@ -17,7 +17,9 @@ export function formatCreditSatang(value){
 export function mountToolbarCredit({target,token,memberships=[],shell}={}){
  if(!target)return;
  const scope=toolbarCreditScope(memberships);
- if(scope.kind==='driver'){target.hidden=true;return;}
+ if(scope.kind==='driver'||scope.kind==='unlinked'){
+  target.hidden=true;target.replaceChildren();return;
+ }
  target.hidden=false;target.replaceChildren();
  target.setAttribute('aria-label','วงเงินคงเหลือตามบัญชีที่ได้รับสิทธิ์');
  const copy=document.createElement('span');copy.className='os-toolbar-credit-copy';

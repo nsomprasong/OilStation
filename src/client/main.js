@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
+import {filterStationDirectory,stationEnabledModules,stationServiceStatus} from './station-directory-model.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountHrAccessSetup } from './hr-access-setup.js';
 import {mountHrPayeeAdvance} from './hr-payments.js';
@@ -1593,11 +1594,33 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         </form>
       </section>
       <section class="os-station-directory" aria-labelledby="os-directory-heading">
-        <span class="os-onboarding-label">${salesMode?'ขั้นตอนที่ 2 / บัญชีและบทบาทในปั๊มของฉัน':'ขั้นตอนที่ 2 / เชิญเจ้าของปั๊ม'}</span>
-        <h3 id="os-directory-heading">${salesMode?'ปั๊มที่ฉันรับผิดชอบ':'ปั๊มที่สร้างแล้ว'}</h3>
-        <p class="os-section-copy">${salesMode?'เชิญเจ้าขององค์กรและเจ้าของปั๊มคนแรกเท่านั้น หลังส่งมอบบัญชี Admin จะเป็นผู้เชิญพนักงานของตัวเอง':'เลือกจัดการน้ำมันหรือเชิญเจ้าของปั๊ม เมื่อผู้รับยืนยันคำเชิญแล้ว จึงเลือกแพ็กเกจและวิธีชำระเงินเอง'}</p>
-        <p id="station-count" class="os-directory-count" role="status"></p>
-        <div id="station-list" class="module-list"><p>กำลังโหลดรายชื่อปั๊ม…</p></div>
+        <div class="os-station-directory-heading">
+          <div class="os-station-directory-heading-copy">
+            <h3 id="os-directory-heading">${salesMode?'ปั๊มที่ฉันรับผิดชอบ':'รายการปั๊มน้ำมันทั้งหมด'}</h3>
+            <p class="os-section-copy">${salesMode?'จัดการปั๊มที่ได้รับมอบหมาย และเชิญเจ้าของเริ่มต้นตามสิทธิ์':'ดูแลรายการปั๊ม ตั้งค่าน้ำมัน และเชิญเจ้าของปั๊ม' }</p>
+          </div>
+          <span id="station-count" class="os-directory-count" role="status">กำลังโหลด…</span>
+        </div>
+        <div class="os-station-directory-tools" role="search" aria-label="ค้นหาและกรองปั๊มน้ำมัน">
+          <label class="os-station-search">
+            <i data-ui-icon="search" aria-hidden="true"></i>
+            <span class="sr-only">ค้นหาปั๊ม ชื่อองค์กร หรือแบรนด์</span>
+            <input id="station-query" type="search" autocomplete="off" placeholder="ค้นหาชื่อปั๊ม บริษัท หรือแบรนด์" aria-controls="station-list">
+          </label>
+          <label class="os-station-filter">
+            <span>กรองบริการ</span>
+            <select id="station-filter" aria-controls="station-list">
+              <option value="all">ทั้งหมด</option>
+              <option value="enabled">เปิดใช้บริการ</option>
+              <option value="inactive">ยังไม่เปิดบริการ</option>
+              <option value="qr">เปิด QR Coupon</option>
+              <option value="hr">เปิด HR &amp; Payroll</option>
+            </select>
+          </label>
+        </div>
+        <div id="station-list" class="module-list os-station-grid" role="list" aria-live="polite" aria-busy="true">
+          <p class="os-directory-message">กำลังโหลดรายชื่อปั๊ม…</p>
+        </div>
       </section>
     </div>
     <div id="fuel-editor"></div>
@@ -1608,52 +1631,112 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
     el('platform-notice').textContent=text;
     el('platform-notice').dataset.tone=error?'error':'neutral';
   };
-  async function loadStations(){
-    const r=await getApi(salesMode?'/api/platform/sales/stations':'/api/platform/stations',accessToken);
-    if (!r.ok) throw new Error('station_list_failed');
+  let stationRows=[];
+  const search=el('station-query');
+  const filter=el('station-filter');
+  function renderStations(){
     const list=el('station-list');
-    list.replaceChildren();
-    el('station-count').textContent='ทั้งหมด '+(r.data.stations?.length||0)+' ปั๊ม';
-    if (!r.data.stations?.length) {
-      const msg=document.createElement('p');msg.textContent='ยังไม่มีปั๊มน้ำมันในระบบ';list.appendChild(msg);
-    }
-    for (const s of (r.data.stations||[])) {
-      const node=document.createElement('div');
+    const rows=filterStationDirectory(stationRows,{query:search.value,filter:filter.value});
+    const total=stationRows.length;
+    el('station-count').textContent=rows.length===total?
+      'ทั้งหมด '+total+' ปั๊ม':'แสดง '+rows.length+' จาก '+total+' ปั๊ม';
+    const frag=document.createDocumentFragment();
+    for(const s of rows){
+      const node=document.createElement('article');
       node.className='module-item os-station-card';
-      const name=document.createElement('strong');name.className='os-station-card-name';name.textContent=s.stationName;
-      const detail=document.createElement('div');detail.className='module-subtitle';
-      detail.classList.add('os-station-card-meta');
-      detail.textContent=s.organizationName+' · '+s.brandName+' · '+Object.entries(s.modules||{})
-        .filter(([,status])=>status==='enabled').map(([module])=>module==='qr_coupon'?'QR Coupon':'HR').join(' + ');
+      node.setAttribute('role','listitem');
+      node.dataset.serviceStatus=stationServiceStatus(s);
+      const enabled=stationEnabledModules(s);
+      const head=document.createElement('div');
+      head.className='os-station-card-head';
+      const mark=document.createElement('span');
+      mark.className='os-station-card-icon';mark.append(makeIcon('fuel'));
+      const identity=document.createElement('div');identity.className='os-station-card-identity';
+      const name=document.createElement('h4');
+      name.className='os-station-card-name';name.textContent=s.stationName||'ไม่ระบุชื่อปั๊ม';
+      name.title=s.stationName||'';
+      const brand=document.createElement('p');
+      brand.className='os-station-card-brand';brand.textContent=s.brandName||'ยังไม่ระบุแบรนด์';
+      identity.append(name,brand);
+      head.append(mark,identity);
+      const content=document.createElement('div');content.className='os-station-card-body';
+      const org=document.createElement('p');org.className='os-station-card-organization';
+      org.textContent=s.organizationName||'ไม่ระบุชื่อองค์กร';
+      content.append(org);
+      const info=document.createElement('div');info.className='os-station-service-list';
+      const status=document.createElement('span');status.className='os-station-status';
+      status.classList.add(enabled.length?'is-enabled':'is-inactive');
+      status.textContent=enabled.length?'เปิดบริการ':'ยังไม่เปิดบริการ';
+      info.append(status);
+      for(const [code,label] of [['qr_coupon','QR Coupon'],['hr_payroll','HR & Payroll']]){
+        if(!enabled.includes(code))continue;
+        const tag=document.createElement('span');tag.className='os-station-service-tag';
+        tag.dataset.module=code;tag.textContent=label;info.append(tag);
+      }
+      content.append(info);
+      const actions=document.createElement('div');actions.className='os-station-actions';
       if(salesMode){
-        const hint=document.createElement('p');hint.className='hint';
-        hint.textContent='ปั๊มที่คุณเปิด · เชิญเฉพาะ Admin เริ่มต้น แล้วให้ Admin จัดการพนักงานต่อเอง';
-        const actions=document.createElement('div');actions.className='os-station-actions';
         actions.append(
           createInviteControl(accessToken,'organization',s.organizationId,[
             ['organization_owner','เจ้าขององค์กร']]),
           createInviteControl(accessToken,'station',s.id,[
             ['station_owner','เจ้าของปั๊ม']])
         );
-        node.append(name,detail,hint,actions);list.appendChild(node);continue;
+        const toggles=actions.querySelectorAll('.invite-control > button');
+        if(toggles[0])toggles[0].textContent='เชิญเจ้าขององค์กร';
+        if(toggles[1])toggles[1].textContent='เชิญเจ้าของปั๊ม';
+      }else{
+        const manage=document.createElement('button');
+        manage.type='button';manage.className='button os-station-manage';
+        manage.textContent='ตั้งค่าน้ำมัน';
+        manage.addEventListener('click',async()=>{
+          if(manage.disabled)return;
+          manage.disabled=true;
+          const editor=el('fuel-editor');editor.replaceChildren();
+          try{
+            await fuelPriceEditor(accessToken,s.id,editor);
+            editor.scrollIntoView({block:'start',behavior:'smooth'});
+          }catch{notice('เปิดจัดการน้ำมันไม่ได้',true);}
+          finally{manage.disabled=false;}
+        });
+        const invite=createInviteControl(accessToken,'station',s.id,[['station_owner','เจ้าของปั๊ม']]);
+        const button=invite.querySelector(':scope > button');
+        if(button)button.textContent='เชิญเจ้าของ';
+        actions.append(manage,invite);
       }
-      const manage=document.createElement('button');
-      manage.type='button';manage.className='button secondary';
-      manage.textContent='จัดการน้ำมัน';
-      manage.addEventListener('click',async()=>{
-        const editor=el('fuel-editor');
-        editor.replaceChildren();
-        try{
-          await fuelPriceEditor(accessToken,s.id,editor);
-          editor.scrollIntoView({block:'start',behavior:'smooth'});
-        }catch{notice('เปิดจัดการน้ำมันไม่ได้',true);}
-      });
-      const actions=document.createElement('div');
-      actions.className='os-station-actions';
-      actions.append(manage,
-        createInviteControl(accessToken,'station',s.id,[['station_owner','เจ้าของปั๊ม']]));
-      node.append(name,detail,actions);
-      list.appendChild(node);
+      node.append(head,content,actions);
+      frag.append(node);
+    }
+    if(!rows.length){
+      const empty=document.createElement('div');empty.className='os-directory-message';
+      const title=document.createElement('strong');
+      title.textContent=total?'ไม่พบปั๊มที่ตรงกับการค้นหา':'ยังไม่มีปั๊มน้ำมันในระบบ';
+      const hint=document.createElement('p');
+      hint.textContent=total?'ลองเปลี่ยนคำค้นหาหรือตัวกรองบริการ':'กดสร้างปั๊มเพื่อเริ่มใช้งาน';
+      empty.append(title,hint);frag.append(empty);
+    }
+    list.replaceChildren(frag);
+    list.setAttribute('aria-busy','false');
+  }
+  search.addEventListener('input',renderStations);
+  filter.addEventListener('change',renderStations);
+  async function loadStations(){
+    const list=el('station-list');list.setAttribute('aria-busy','true');
+    try{
+      const r=await getApi(salesMode?'/api/platform/sales/stations':'/api/platform/stations',accessToken);
+      if(!r.ok||!Array.isArray(r.data?.stations))throw new Error('station_list_failed');
+      stationRows=r.data.stations;
+      renderStations();
+    }catch{
+      list.setAttribute('aria-busy','false');
+      const error=document.createElement('div');error.className='os-directory-message is-error';
+      const message=document.createElement('p');
+      message.textContent='โหลดรายการปั๊มไม่สำเร็จ กรุณาลองใหม่';
+      const retry=document.createElement('button');retry.type='button';
+      retry.className='button secondary';retry.textContent='ลองโหลดอีกครั้ง';
+      retry.addEventListener('click',()=>{void loadStations().catch(()=>{});});
+      error.append(message,retry);list.replaceChildren(error);
+      throw new Error('station_list_failed');
     }
   }
   // Block native form submission while async station/brand data is loading.
