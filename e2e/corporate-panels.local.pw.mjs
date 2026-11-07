@@ -122,3 +122,37 @@ test('Corporate four working panels are balanced and follow selected page headin
   await expect(root.locator('#amount-input')).toHaveValue('1250');
  }
 });
+
+test('Fast switching of contextual menu and hidden panels never freezes @public',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await mount(page);
+ const started=Date.now();
+ // Exercise the real submenu mutation reconciler repeatedly, including
+ // transitions through a hidden parent (the old highlight used to trigger
+ // its own [hidden] MutationObserver callback forever).
+ const state=await page.evaluate(async()=>{
+  const nav=document.querySelector('[data-context-for="corporate"] [data-os-functional-menu]');
+  const group=nav.closest('[data-context-for]');
+  const keys=['account','driver','coupon','report'];
+  for(let i=0;i<80;i++){
+   const button=nav.querySelector('[data-os-pane-key="'+keys[i%keys.length]+'"]');
+   if(!button)throw new Error('submenu button disappeared at '+i);
+   button.click();
+   group.hidden=true;
+   await new Promise(resolve=>setTimeout(resolve,0));
+   group.hidden=false;
+   await new Promise(resolve=>setTimeout(resolve,0));
+   if(i%10===0&&nav.querySelectorAll('.os-moving-active-indicator').length!==1)
+    throw new Error('indicator duplicated at '+i);
+  }
+  return {active:nav.querySelector('[aria-pressed="true"]')?.dataset.osPaneKey,
+   markerCount:nav.querySelectorAll('.os-moving-active-indicator').length,
+   noOverflow:document.documentElement.scrollWidth<=document.documentElement.clientWidth+2};
+ });
+ expect(state.active).toBe('report');
+ expect(state.markerCount).toBe(1);
+ expect(state.noOverflow).toBe(true);
+ expect(Date.now()-started).toBeLessThan(12000);
+ await page.locator('[data-context-for="corporate"] [data-os-pane-key="account"]').click();
+ await expect(page.locator('[data-ws-screen="corporate"] .ws-screen-head h2')).toHaveText('บัญชีบริษัท');
+});

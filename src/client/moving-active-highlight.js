@@ -21,7 +21,10 @@ export function installMovingActiveHighlight(rail,{
  // isolated browser fixtures: the visual layer must never block clicks.
  indicator.style.position='absolute';
  indicator.style.pointerEvents='none';
- indicator.hidden=true;
+ // Visibility is decorative; never mutate [hidden] here. The parent
+ // workspace observes [hidden] for real panes. Writing it on every align
+ // triggered an endless MutationObserver -> reconcile -> align cycle.
+ indicator.style.visibility='hidden';
  rail.classList.add('os-moving-active-rail');
  rail.dataset.osHighlightLayout=layout;
  rail.prepend(indicator);
@@ -42,16 +45,17 @@ export function installMovingActiveHighlight(rail,{
  };
  function apply(g,snap=false){
   if(!g){
-   indicator.hidden=true;rail.dataset.osHighlightReady='false';
+   if(indicator.style.visibility!=='hidden')indicator.style.visibility='hidden';
+   if(rail.dataset.osHighlightReady!=='false')rail.dataset.osHighlightReady='false';
    hasPosition=false;return false;
   }
   const instant=snap||!hasPosition||motionReduced();
   if(instant)indicator.style.transition='none';
-  indicator.hidden=false;
+  if(indicator.style.visibility!=='visible')indicator.style.visibility='visible';
   indicator.style.width=g.w+'px';
   indicator.style.height=g.h+'px';
   indicator.style.transform='translate3d('+g.x+'px,'+g.y+'px,0)';
-  rail.dataset.osHighlightReady='true';
+  if(rail.dataset.osHighlightReady!=='true')rail.dataset.osHighlightReady='true';
   if(instant){
    // Start geometry must be painted before enabling the next transition.
    void indicator.offsetWidth;
