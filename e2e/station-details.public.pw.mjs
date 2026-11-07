@@ -22,7 +22,7 @@ async function mount(page){
  await page.evaluate(()=>{
   const app=document.getElementById('app');
   app.className='workspace-mode';
-  app.innerHTML='<section data-ws-screen="stations"><div id="station-details-panel"></div></section>';
+  app.innerHTML='<section data-ws-screen="stations"><div id="station-details-panel" class="os-station-details-panel"></div></section>';
  });
  await page.addStyleTag({content:read('public/oilstation.css')});
  await page.addScriptTag({type:'module',content:source});
