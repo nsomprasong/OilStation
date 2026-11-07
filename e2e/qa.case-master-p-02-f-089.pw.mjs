@@ -8,7 +8,7 @@ const beforeRes=await page.request.get(url,{headers});expect(beforeRes.status())
 const before=(await beforeRes.json()).stations;expect(before).toHaveLength(2);
 await page.locator('[data-ws-screen="overview"] [data-ws-go="stations"]:visible').first().click();
 await expect(page.locator('[data-ws-screen="stations"]:visible')).toBeVisible();
-const add=page.locator('[data-ws-screen="stations"] > .os-add-fab');await expect(add).toBeVisible();await add.click();
+const add=page.locator('[data-ws-screen="stations"] > .ws-screen-head .os-station-create-cta');await expect(add).toBeVisible();await add.click();
 const form=page.locator('#new-station-form');await expect(form).toBeVisible();
 await form.locator('#org-name').fill('QA NETWORK ABORT NEVER CREATED');
 await form.locator('#station-name').fill('QA FIFTH PREVENTED');
@@ -24,7 +24,7 @@ try{
  await p.locator('#qa-login-form button[type="submit"]').click();
  await expect(p.locator('[data-ws-screen="overview"]:visible')).toBeVisible({timeout:35000});
  await p.locator('[data-ws-screen="overview"] [data-ws-go="stations"]:visible').first().click();
- const fab=p.locator('[data-ws-screen="stations"] > .os-add-fab');await expect(fab).toBeVisible();await fab.click();
+ const fab=p.locator('[data-ws-screen="stations"] > .ws-screen-head .os-station-create-cta');await expect(fab).toBeVisible();await fab.click();
  const f=p.locator('#new-station-form');await expect(f).toBeVisible();
  await f.locator('#org-name').fill('QA NETWORK ABORT NEVER CREATED');
  await f.locator('#station-name').fill('QA FIFTH PREVENTED');
