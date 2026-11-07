@@ -3,11 +3,13 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const domain=read('src/domain/station-profile.mjs')
  .replace(/export const /g,'const ').replace(/export function /g,'function ');
+const location=read('src/client/station-location-picker.js')
+ .replace(/^export /gm,'');
 const editor=read('src/client/platform-station-details.js')
  .replace(/^import .*;\s*$/gm,'')
  .replace('export async function mountPlatformStationDetails',
   'async function mountPlatformStationDetails');
-const source=domain+'\n'+editor+'\nwindow.__mountProfile=mountPlatformStationDetails;';
+const source=domain+'\n'+location+'\n'+editor+'\nwindow.__mountProfile=mountPlatformStationDetails;';
 const stationId='22222222-2222-4222-8222-222222222222';
 const savedProfile={
  stationId,stationName:'QA-S01-A',organizationName:'QA Organization S01-A',
