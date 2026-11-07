@@ -13,6 +13,10 @@ export function installMovingActiveHighlight(rail,{
  const indicator=document.createElement('span');
  indicator.className='os-moving-active-indicator';
  indicator.setAttribute('aria-hidden','true');
+ // Fail safe even when the page is running an older CSS bundle, as in
+ // isolated browser fixtures: the visual layer must never block clicks.
+ indicator.style.position='absolute';
+ indicator.style.pointerEvents='none';
  indicator.hidden=true;
  rail.classList.add('os-moving-active-rail');
  rail.dataset.osHighlightLayout=layout;
