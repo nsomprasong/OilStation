@@ -50,7 +50,7 @@ test('SQL override removes Sales staff invites but preserves strictly limited fi
 });
 test('Sales web station directory offers only initial administrator invitations, no staff roles',()=>{
  const s=readFileSync('src/client/main.js','utf8').replace(/\r\n/g,'\n');
- const begin=s.indexOf('if(salesMode){\n        const hint=');
+ const begin=s.indexOf('if(salesMode){\n        actions.append(');
  const end=s.indexOf('node.append(head,content,actions);',begin);
  assert.ok(begin>=0&&end>begin);
  const segment=s.slice(begin,end);
