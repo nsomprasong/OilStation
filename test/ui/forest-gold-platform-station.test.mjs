@@ -38,7 +38,7 @@ test('Forest Gold applies one contextual menu per real Platform/Station workspac
  }
  for(const token of [
   "const taskTitles=new Set(['sales','stations','billing','customers','hr'])",
-  'if(taskTitles.has(key))','heading.textContent=found.label',
+  "if(taskTitles.has(key)&&key!=='stations')",'heading.textContent=found.label',
   "description.textContent=copy",'p.wrapper.hidden','state.selected=id'
  ])assert.ok(submenus.includes(token),'missing task/state contract: '+token);
  assert.match(submenus,/isAvailable=\(state,p\)=>/);
