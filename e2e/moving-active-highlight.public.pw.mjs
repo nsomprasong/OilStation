@@ -9,6 +9,9 @@ const script=read('src/client/moving-active-highlight.js')+
 const screens=selectWorkspaceScreens([{scopeType:'platform',role:'platform_superadmin'}]);
 async function mount(page){
  await page.goto('/');
+ // Wait for asynchronous guest boot to finish before replacing DOM with a
+ // no-login, no-financial-write navigation fixture.
+ await expect(page.locator('#app.auth-mode .os-auth-card')).toBeVisible();
  await page.evaluate(markup=>{
   const app=document.querySelector('#app');
   app.className='workspace-mode';
@@ -18,6 +21,7 @@ async function mount(page){
  await page.addStyleTag({content:css});
  await page.addScriptTag({type:'module',content:script});
  await page.waitForFunction(()=>typeof window.__installMovingActiveHighlight==='function');
+ await expect(page.locator('.os-desktop-side-nav')).toHaveCount(1);
  await page.evaluate(()=>document.fonts?.ready);
 }
 const coords=async locator=>locator.boundingBox();
