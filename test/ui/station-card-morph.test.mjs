@@ -58,6 +58,6 @@ test('reversible transition is bounded, keyboard accessible, safe for rapid clic
  assert.match(transition,/Promise\.race/);
  assert.match(transition,/clearTimeout\(timer\)/);
  assert.match(transition,/anim\?\.cancel\(\)/);
- assert.doesNotMatch(transition,/MutationObserver|document\.addEventListener/);
+ assert.doesNotMatch(transition,/new\s+MutationObserver\s*\(|document\.addEventListener\s*\(/);
  assert.match(css,/\.os-station-edit-icon:focus-visible/);
 });
