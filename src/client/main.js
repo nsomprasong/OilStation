@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { makeIcon, decorateIcons } from './icons.js';
 import {filterStationDirectory,stationEnabledModules,stationServiceStatus} from './station-directory-model.js';
 import {mountPlatformStationDetails} from './platform-station-details.js';
+import {editIconRect,morphStationDetails} from './station-card-morph.js';
 import { mountAttendanceWorkspace } from './attendance.js';
 import { mountHrAccessSetup } from './hr-access-setup.js';
 import {mountHrPayeeAdvance} from './hr-payments.js';
@@ -1639,21 +1640,46 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
   const listPanel=el('station-list');
   const headingPanel=target.querySelector('.os-station-directory-heading');
   const toolsPanel=target.querySelector('.os-station-directory-tools');
-  const closeDetails=()=>{
-    delete target.closest('[data-ws-screen="stations"]')?.dataset.osDetailOpen;
-    detailsTarget.hidden=true;detailsTarget.replaceChildren();
-    detailsTarget.removeAttribute('data-station-id');
-    headingPanel.hidden=false;toolsPanel.hidden=false;listPanel.hidden=false;
-    target.querySelector('.os-station-directory')?.scrollIntoView({block:'start',behavior:'smooth'});
+  const screen=target.closest('[data-ws-screen="stations"]');
+  let transitionBusy=false,closeQueued=false,activeStationId=null;
+  let returnScrollY=0,sourceIconRect=null;
+  const closeDetails=async()=>{
+    if(detailsTarget.hidden)return;
+    if(transitionBusy){closeQueued=true;return;}
+    transitionBusy=true;
+    try{
+      // Return to the detail header so the entire form can collapse smoothly,
+      // even after the user has scrolled to the fuel-price section.
+      detailsTarget.scrollIntoView({block:'start',behavior:'instant'});
+      await morphStationDetails(detailsTarget,sourceIconRect,{direction:'close'});
+    }finally{
+      // Always restore navigation, even if animations are unavailable/cancelled.
+      detailsTarget.hidden=true;detailsTarget.replaceChildren();
+      detailsTarget.removeAttribute('data-station-id');
+      headingPanel.hidden=false;toolsPanel.hidden=false;listPanel.hidden=false;
+      if(screen)delete screen.dataset.osDetailOpen;
+      window.scrollTo({top:returnScrollY,behavior:'instant'});
+      const button=[...listPanel.querySelectorAll('.os-station-edit-icon')].find(
+        item=>item.dataset.stationId===activeStationId);
+      button?.focus({preventScroll:true});
+      activeStationId=null;sourceIconRect=null;
+      closeQueued=false;transitionBusy=false;
+    }
   };
-  const openDetails=async station=>{
-    if(salesMode)return;
-    const screen=target.closest('[data-ws-screen="stations"]');
+  const openDetails=async(station,button)=>{
+    // A single transition may run at a time: rapid double-clicks must never
+    // mount multiple forms or start competing zoom animations.
+    if(salesMode||transitionBusy||!detailsTarget.hidden)return;
+    transitionBusy=true;closeQueued=false;
+    activeStationId=station.id;
+    sourceIconRect=editIconRect(button);
+    returnScrollY=window.scrollY;
     if(screen)screen.dataset.osDetailOpen='true';
     headingPanel.hidden=true;toolsPanel.hidden=true;listPanel.hidden=true;
     detailsTarget.hidden=false;
-    detailsTarget.scrollIntoView({block:'start',behavior:'smooth'});
-    await mountPlatformStationDetails({
+    // The editor immediately mounts a loading state; its authorized fetch
+    // can complete while the page expands, without blocking the animation.
+    void mountPlatformStationDetails({
       target:detailsTarget,station,token:accessToken,getApi,
       fuelEditor:(token,id,host)=>fuelPriceEditor(token,id,host,{embedded:true}),
       onBack:closeDetails,
@@ -1662,7 +1688,15 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         if(current)current.stationName=profile.stationName;
         renderStations();
       },
-    });
+    }).catch(()=>{});
+    try{
+      detailsTarget.scrollIntoView({block:'start',behavior:'instant'});
+      await morphStationDetails(detailsTarget,sourceIconRect,{direction:'open'});
+    }finally{
+      transitionBusy=false;
+      if(closeQueued){closeQueued=false;void closeDetails();}
+      else detailsTarget.querySelector('.os-profile-back')?.focus({preventScroll:true});
+    }
   };
   const search=el('station-query');
   const filter=el('station-filter');
@@ -1718,11 +1752,14 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         if(toggles[0])toggles[0].textContent='เชิญเจ้าขององค์กร';
         if(toggles[1])toggles[1].textContent='เชิญเจ้าของปั๊ม';
       }else{
+        node.classList.add('os-station-card--editable');
         const edit=document.createElement('button');
-        edit.type='button';edit.className='button os-station-manage';
-        edit.textContent='แก้ไขรายละเอียด';
-        edit.setAttribute('aria-label','แก้ไขรายละเอียด '+(s.stationName||'ปั๊มน้ำมัน'));
-        edit.addEventListener('click',()=>{void openDetails(s);});
+        edit.type='button';edit.className='button os-station-manage os-station-edit-icon';
+        edit.dataset.stationId=s.id;
+        edit.title='แก้ไขรายละเอียด '+(s.stationName||'ปั๊มน้ำมัน');
+        edit.setAttribute('aria-label',edit.title);
+        edit.append(makeIcon('edit'));
+        edit.addEventListener('click',()=>{void openDetails(s,edit);});
         actions.append(edit);
       }
       node.append(head,content,actions);
