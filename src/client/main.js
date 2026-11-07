@@ -1752,6 +1752,7 @@ async function platformWorkspace(accessToken,{salesMode=false}={}) {
         if(toggles[0])toggles[0].textContent='เชิญเจ้าขององค์กร';
         if(toggles[1])toggles[1].textContent='เชิญเจ้าของปั๊ม';
       }else{
+        node.classList.add('os-station-card--editable');
         const edit=document.createElement('button');
         edit.type='button';edit.className='button os-station-manage os-station-edit-icon';
         edit.dataset.stationId=s.id;
